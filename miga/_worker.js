@@ -155,7 +155,7 @@ const INSTRUCAO = [
   "Regras obrigatórias:",
   "1) Português do Brasil, formatação do WhatsApp: *negrito*, ~riscado~. Emojis delicados, sem exagero.",
   "2) Estrutura: abertura chamativa; nome do produto em *negrito*; linha de preço (com preço antigo: '~de R$ X~ por *R$ Y*'); cupom só se informado; 1 frase de benefício que combine com o produto; o link sozinho numa linha, exatamente como recebido; fechamento com leve urgência (a promoção ou o estoque podem acabar).",
-  "3) O preço aparece uma única vez, na linha de preço. Nunca repita o preço no nome.",
+  "3) Valores em R$ aparecem SOMENTE na linha de preço, uma única vez cada. Nunca repita o preço (nem o valor da economia) no nome, na frase de benefício, na abertura ou no fechamento.",
   "4) Os benefícios precisam combinar com o produto de verdade (não fale de skincare para um suplemento, por exemplo).",
   "5) Não invente informações: nada de frete grátis, parcelamento, avaliações, estoque exato ou promessas de saúde.",
   "6) Sem hashtags. No máximo 600 caracteres. Responda SOMENTE com a mensagem, sem comentários."
@@ -176,14 +176,14 @@ const EXEMPLOS = [
 const AJUSTES = {
   curto: "Deixe a mensagem bem mais curta (no máximo 4 linhas), mantendo nome, preço e link.",
   emojis: "Use mais emojis delicados, sem poluir a mensagem.",
-  preco: "Dê mais destaque ao preço e à economia (quanto a pessoa economiza, se houver preço antigo).",
+  preco: "Dê mais destaque ao preço e à economia (quanto a pessoa economiza, se houver preço antigo), tudo na própria linha de preço.",
   animada: "Deixe o tom mais animado e empolgado, sem perder o jeito de amiga."
 };
 
 /** Dados do produto no formato que a IA recebe */
 function dadosDoProduto(p) {
   const cat = CATEGORIAS[p.categoria] || CATEGORIAS.outros;
-  const economia = p.precoAntigo ? ` (economia de ${brl(p.precoAntigo - p.precoNovo)})` : "";
+  const economia = p.precoAntigo && p.ajuste === "preco" ? ` (economia de ${brl(p.precoAntigo - p.precoNovo)})` : "";
   return [
     `Produto: ${p.nome}`,
     `Loja: ${LOJAS[p.loja] || "Mercado Livre"}`,
@@ -210,6 +210,23 @@ function montarConversa(p) {
     contents.push({ role: "user", parts: [{ text: dadosDoProduto(p) }] });
   }
   return contents;
+}
+
+/** Deixa valores em R$ só na primeira linha de preço: tira repetições do resto do texto */
+function umPrecoSo(texto, link) {
+  const VALOR = /\s*(?:(?:de|por|só|apenas|a partir de|economia de|economize|economizando|pagando)\s+)*[~*_]*R\$\s?\d[\d.]*(?:,\d{2})?[~*_]*/gi;
+  let achou = false;
+  return texto.split("\n").filter((linha) => {
+    if (!/R\$\s?\d/.test(linha) || linha.includes(link)) return true;
+    if (!achou) { achou = true; return true; }
+    const resto = linha.replace(VALOR, "").replace(/[\s:!.,💸💰🤑🔥✨-]+/gu, "");
+    return resto.length >= 12; // linha que era só o preço repetido: some
+  }).map((linha, i, todas) => {
+    if (!/R\$\s?\d/.test(linha) || linha.includes(link)) return linha;
+    const primeira = todas.findIndex((l) => /R\$\s?\d/.test(l) && !l.includes(link));
+    if (i === primeira) return linha;
+    return linha.replace(VALOR, "").replace(/\(\s*\)/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.!])/g, "$1").trim().replace(/^([^\p{L}]*)(\p{Ll})/u, (m, x, l) => x + l.toUpperCase());
+  }).join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 /** Chama a API REST do Gemini (systemInstruction + conversa) e devolve o texto gerado */
@@ -262,6 +279,7 @@ async function rotaGerar(request, env) {
 
   try {
     const r = await chamarGemini(montarConversa(p), env);
+    r.texto = umPrecoSo(r.texto, p.link);
     // Garante que o link de afiliado está na mensagem
     if (!r.texto.includes(p.link)) r.texto += "\n\n👉 " + p.link;
     return json(r);
