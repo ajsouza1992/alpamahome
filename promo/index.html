@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Alpama Promo</title>
+  <meta name="description" content="Cole o link do Mercado Livre e receba a mensagem de promoção pronta para o WhatsApp.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0f3d2a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Alpama Promo">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo__marca">
+      <img src="icons/icon-192.png" alt="" class="topo__logo">
+      <div>
+        <strong>Alpama <em>Promo</em></strong>
+        <span id="statusIA" class="status">verificando…</span>
+      </div>
+    </div>
+    <button class="icone-btn" id="abrirConfig" type="button" aria-label="Configurações">⚙︎</button>
+  </header>
+
+  <main class="conteudo">
+    <!-- 1. Link -->
+    <section class="bloco">
+      <h2><span class="num">1</span>Link de afiliado</h2>
+      <p class="dica">No Mercado Livre: produto → <b>Compartilhar</b> → copiar link.</p>
+      <div class="linha-link">
+        <input id="link" type="url" inputmode="url" placeholder="https://mercadolivre.com/sec/…" autocomplete="off">
+        <button class="btn btn--claro" id="colar" type="button">Colar</button>
+      </div>
+      <button class="btn btn--primario btn--largo" id="buscar" type="button">Buscar dados do produto</button>
+      <p class="aviso" id="avisoBusca" hidden></p>
+    </section>
+
+    <!-- 2. Produto -->
+    <section class="bloco" id="blocoProduto">
+      <h2><span class="num">2</span>Produto</h2>
+      <div class="produto">
+        <div class="produto__img" id="prodImg"><span>sem foto</span></div>
+        <div class="produto__campos">
+          <label class="campo">Nome<input id="nome" maxlength="200" placeholder="Nome do produto"></label>
+          <div class="duas">
+            <label class="campo">Preço (R$)<input id="preco" inputmode="decimal" placeholder="119,90"></label>
+            <label class="campo">Antes (R$)<input id="precoAntigo" inputmode="decimal" placeholder="opcional"></label>
+          </div>
+        </div>
+      </div>
+      <div class="duas">
+        <label class="campo">Cupom<input id="cupom" maxlength="40" placeholder="opcional"></label>
+        <label class="campo">URL da imagem<input id="imagem" type="url" placeholder="opcional"></label>
+      </div>
+      <label class="campo">Observação para a IA<input id="extra" maxlength="200" placeholder="ex.: ótimo para presente, cor verde"></label>
+    </section>
+
+    <!-- 3. Gerar -->
+    <section class="bloco">
+      <h2><span class="num">3</span>Estilo da mensagem</h2>
+      <div class="tons" id="tons" role="radiogroup" aria-label="Estilo">
+        <button type="button" data-tom="urgente" aria-checked="true" role="radio">Urgente</button>
+        <button type="button" data-tom="divertido" aria-checked="false" role="radio">Divertido</button>
+        <button type="button" data-tom="elegante" aria-checked="false" role="radio">Elegante</button>
+        <button type="button" data-tom="curto" aria-checked="false" role="radio">Curto</button>
+      </div>
+      <button class="btn btn--primario btn--largo btn--grande" id="gerar" type="button">Gerar mensagem com IA</button>
+    </section>
+
+    <!-- 4. Resultado -->
+    <section class="bloco" id="blocoResultado" hidden>
+      <h2><span class="num">4</span>Mensagem pronta</h2>
+      <p class="aviso" id="avisoIA" hidden></p>
+      <div class="whats">
+        <div class="balao">
+          <img id="balaoImg" alt="" hidden>
+          <div id="balaoTexto"></div>
+          <span class="balao__hora" id="balaoHora"></span>
+        </div>
+      </div>
+      <details class="editar">
+        <summary>Editar texto</summary>
+        <textarea id="texto" rows="10"></textarea>
+      </details>
+      <div class="acoes">
+        <button class="btn btn--whats" id="whats" type="button">Enviar no WhatsApp</button>
+        <button class="btn btn--primario" id="compartilhar" type="button">Compartilhar</button>
+        <button class="btn btn--claro" id="copiar" type="button">Copiar</button>
+        <button class="btn btn--claro" id="outra" type="button">Gerar outra</button>
+      </div>
+    </section>
+
+    <!-- Histórico -->
+    <section class="bloco" id="blocoHistorico" hidden>
+      <div class="hist-topo">
+        <h2>Últimas mensagens</h2>
+        <button class="link-btn" id="limparHist" type="button">Limpar</button>
+      </div>
+      <div id="historico" class="historico"></div>
+    </section>
+  </main>
+
+  <dialog id="config" class="dialogo">
+    <form method="dialog" id="configForm">
+      <h2>Configurações</h2>
+      <label class="campo">Senha de acesso do app
+        <input id="senha" type="password" autocomplete="current-password" placeholder="a mesma configurada no Cloudflare">
+      </label>
+      <p class="dica">Fica salva só neste aparelho.</p>
+      <div class="acoes">
+        <button class="btn btn--primario" value="salvar" type="submit">Salvar</button>
+        <button class="btn btn--claro" value="cancelar" type="submit">Fechar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

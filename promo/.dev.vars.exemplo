@@ -1,0 +1,5 @@
+# Copie para .dev.vars para testar localmente com: npx wrangler pages dev .
+GEMINI_API_KEY=cole-sua-chave-aqui
+APP_SENHA=uma-senha-sua
+# GEMINI_MODEL=gemini-2.5-flash
+# ML_TOKEN=
