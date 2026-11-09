@@ -8,8 +8,10 @@ Desenvolvido por **Alpama Soluções**.
 | Arquivo | Função |
 |---|---|
 | `index.html`, `style.css`, `app.js` | O app (roda no celular) |
-| `manifest.json`, `sw.js`, `icon-192.png`, `icon-512.png` | PWA instalável e cache offline |
+| `manifest.json`, `sw.js`, ícones (`icon-*.png`, `maskable-512.png`, `apple-touch-icon.png`, `simbolo.svg`) | PWA instalável e cache offline |
 | `functions/api/gerar.js` | Servidor: monta o prompt e chama o Gemini (**a chave fica aqui, via variável**) |
+| `functions/api/produto.js` + `lib/extrair.js` | Lê o link (Mercado Livre/Shopee) e traz foto, nome e preço |
+| `functions/api/imagem.js` | Entrega a foto do produto para enviar junto no WhatsApp |
 | `functions/api/status.js` | Informa se a IA está configurada |
 
 > A chave do Gemini **não** fica no `app.js`: tudo que está no app pode ser visto por qualquer pessoa.
@@ -42,3 +44,16 @@ Cloudflare → **Zero Trust → Access → Applications → Add an application �
 
 Pronto: qualquer outra pessoa que abrir o endereço vê só a tela de bloqueio do Cloudflare.
 O login dura o tempo configurado (ex.: 1 mês) e é grátis para até 50 usuários.
+
+## Instalar no celular
+
+- **Android (Chrome):** aparece o botão **Instalar** no topo do app. Depois de instalado, o Miga Promo
+  também aparece no "Compartilhar" do app do Mercado Livre/Shopee: escolha-o e o link já chega preenchido.
+- **iPhone (Safari):** o app mostra a dica — **Compartilhar → Adicionar à Tela de Início**.
+- O botão só aparece no endereço publicado com HTTPS (ex.: `miga.alpama.app`), não na prévia.
+
+## Busca automática
+
+Ao colar o link, o app tenta trazer **foto, nome e preço**. O Mercado Livre costuma trazer tudo;
+a Shopee geralmente traz foto e nome, mas **o preço precisa ser digitado** (a Shopee não mostra o preço
+no código da página). Se algo faltar, o app avisa. "Trocar foto" usa uma imagem da galeria.

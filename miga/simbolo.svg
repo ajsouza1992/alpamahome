@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- balão de conversa -->
+  <path d="M100 22c46 0 80 30 80 70s-34 70-80 70c-10 0-19-1.4-28-4l-30 18c-4 2.4-8.6-1.4-7.2-5.8l7.4-23C27 135 20 114 20 92c0-40 34-70 80-70z" fill="#fff"/>
+  <!-- sacolinha -->
+  <path d="M68 76h64l-5 56a8 8 0 0 1-8 7H81a8 8 0 0 1-8-7z" fill="url(#g)"/>
+  <path d="M84 78v-8a16 16 0 0 1 32 0v8" fill="none" stroke="url(#g)" stroke-width="8" stroke-linecap="round"/>
+  <!-- coração -->
+  <path d="M100 126s-17-10-17-22c0-6 4.5-10 9.5-10 3.6 0 6 2 7.5 4.5 1.5-2.5 3.9-4.5 7.5-4.5 5 0 9.5 4 9.5 10 0 12-17 22-17 22z" fill="#fff"/>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3d7f"/><stop offset="1" stop-color="#a45cff"/></linearGradient></defs>
+</svg>

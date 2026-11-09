@@ -4,126 +4,164 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Miga Promo</title>
-  <meta name="description" content="Miga Promo — achadinhos & descontos. Gere mensagens de promoção para o WhatsApp com IA.">
+  <meta name="description" content="Miga Promo — achadinhos de amiga. Cole o link, a IA escreve a promoção para o WhatsApp.">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#e62673">
+  <meta name="theme-color" content="#ff3d7f">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icon-192.png">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="simbolo.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Great+Vibes&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Ícones (SVG) reutilizados no app -->
+  <!-- Biblioteca de ícones (SVG) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-engrenagem" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-baixar" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></symbol>
+    <symbol id="i-colar" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-foto" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></symbol>
+    <symbol id="i-brilho" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+    <symbol id="i-enviar" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></symbol>
     <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-compartilhar-ios" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></symbol>
   </svg>
 
-  <!-- Topo com a marca -->
+  <div class="blobs" aria-hidden="true"><i></i><i></i><i></i></div>
+
+  <!-- Topo -->
   <header class="topo">
-    <img src="logo.jpg" alt="Miga Promo — Achadinhos & Descontos" class="topo__logo">
-    <div class="topo__texto">
-      <h1>Miga Promo</h1>
-      <p>Achadinhos &amp; Descontos</p>
+    <div class="marca">
+      <img src="icon-192.png" alt="" class="marca__ico">
+      <span class="marca__nome">miga<b>promo</b></span>
     </div>
-    <button class="engrenagem" id="abrirConfig" type="button" aria-label="Configurações" title="Configurações">
-      <svg><use href="#i-engrenagem"/></svg>
-    </button>
+    <div class="topo__acoes">
+      <button class="pilula" id="instalar" type="button" hidden><svg><use href="#i-baixar"/></svg>Instalar</button>
+      <button class="redondo" id="abrirConfig" type="button" aria-label="Configurações"><svg><use href="#i-engrenagem"/></svg></button>
+    </div>
   </header>
 
+  <!-- Dica de instalação no iPhone -->
+  <div class="dica-ios" id="dicaIos" hidden>
+    <img src="icon-192.png" alt="">
+    <p>Instale o app: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>.</p>
+    <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
+  </div>
+
   <main class="conteudo">
-    <!-- Formulário do produto -->
-    <form class="cartao" id="form" novalidate>
-      <h2>Novo achadinho 💖</h2>
+    <h1 class="titulo">Cola o link,<br><span>miga</span> 💌</h1>
+
+    <!-- 1. Link -->
+    <section class="cartao">
+      <div class="colar">
+        <input id="link" type="url" inputmode="url" placeholder="Link do Mercado Livre ou Shopee" autocomplete="off" aria-label="Link de afiliado">
+        <button type="button" id="colar" class="colar__btn"><svg><use href="#i-colar"/></svg>Colar</button>
+      </div>
+      <div class="lojas" id="lojas" role="radiogroup" aria-label="Loja">
+        <button type="button" role="radio" data-loja="mercadolivre" aria-checked="true"><i class="ponto ponto--ml"></i>Mercado Livre</button>
+        <button type="button" role="radio" data-loja="shopee" aria-checked="false"><i class="ponto ponto--sh"></i>Shopee</button>
+      </div>
+      <button type="button" class="btn btn--suave" id="buscar"><svg><use href="#i-busca"/></svg><span class="rotulo">Buscar foto, nome e preço</span></button>
+      <p class="aviso" id="avisoBusca" hidden></p>
+    </section>
+
+    <!-- 2. Produto -->
+    <section class="cartao produto">
+      <div class="foto" id="foto">
+        <div class="foto__vazia" id="fotoVazia">
+          <svg><use href="#i-foto"/></svg>
+          <span>A foto aparece aqui</span>
+        </div>
+        <img id="fotoImg" alt="Foto do produto" hidden>
+        <span class="selo" id="selo" hidden></span>
+        <label class="foto__trocar">
+          <input type="file" id="arquivo" accept="image/*" hidden>
+          <svg><use href="#i-foto"/></svg>Trocar foto
+        </label>
+      </div>
 
       <label class="campo">
         <span>Nome do produto</span>
-        <input id="nome" maxlength="200" placeholder="Ex.: Sérum Vitamina C 30ml" required>
+        <input id="nome" maxlength="200" placeholder="Ex.: Vestido Midi Floral">
       </label>
-
       <div class="duas">
-        <label class="campo">
-          <span>Preço antigo <small>(opcional)</small></span>
-          <input id="precoAntigo" inputmode="decimal" placeholder="R$ 89,90">
-        </label>
-        <label class="campo">
-          <span>Preço novo</span>
-          <input id="precoNovo" inputmode="decimal" placeholder="R$ 49,90" required>
-        </label>
+        <label class="campo"><span>De <small>(opcional)</small></span><input id="precoAntigo" inputmode="decimal" placeholder="R$ 129,90"></label>
+        <label class="campo campo--destaque"><span>Por</span><input id="precoNovo" inputmode="decimal" placeholder="R$ 79,90"></label>
       </div>
 
-      <label class="campo">
-        <span>Link de afiliado</span>
-        <input id="link" type="url" inputmode="url" placeholder="Mercado Livre ou Shopee: https://..." required>
-      </label>
-
-      <div class="lojas" id="lojas" role="radiogroup" aria-label="Loja">
-        <button type="button" role="radio" data-loja="mercadolivre" aria-checked="true">Mercado Livre</button>
-        <button type="button" role="radio" data-loja="shopee" aria-checked="false">Shopee</button>
+      <div class="campo">
+        <span>Categoria</span>
+        <div class="categorias" id="categorias" role="radiogroup" aria-label="Categoria">
+          <button type="button" role="radio" data-cat="moda" aria-checked="true"><b>👗</b>Moda e Looks</button>
+          <button type="button" role="radio" data-cat="beleza" aria-checked="false"><b>💄</b>Beleza e Skincare</button>
+          <button type="button" role="radio" data-cat="casa" aria-checked="false"><b>🏡</b>Casa e Decoração</button>
+        </div>
       </div>
 
-      <div class="duas duas--cat">
-        <label class="campo">
-          <span>Categoria</span>
-          <span class="select">
-            <select id="categoria">
-              <option value="moda">👗 Moda e Looks</option>
-              <option value="beleza">💄 Beleza e Skincare</option>
-              <option value="casa">🏡 Casa e Decoração</option>
-            </select>
-          </span>
-        </label>
-        <label class="campo">
-          <span>Cupom <small>(opcional)</small></span>
-          <input id="cupom" maxlength="40" placeholder="MIGA10">
-        </label>
+      <label class="campo"><span>Cupom <small>(opcional)</small></span><input id="cupom" maxlength="40" placeholder="MIGA10"></label>
+      <details class="mais">
+        <summary>Usar endereço de imagem</summary>
+        <input id="imagemUrl" type="url" placeholder="https://...jpg">
+      </details>
+    </section>
+
+    <!-- 3. Resultado -->
+    <section class="cartao resultado" id="resultado" hidden>
+      <div class="resultado__topo">
+        <h2>Prontinho, miga!</h2>
+        <button type="button" class="link" id="refazer"><svg><use href="#i-brilho"/></svg>Gerar outra</button>
       </div>
-
-      <button class="btn btn--principal" id="gerar" type="submit">
-        <span class="rotulo">Gerar Miga Promo ✨</span>
-        <span class="carregando" aria-hidden="true"></span>
-      </button>
-    </form>
-
-    <!-- Resultado -->
-    <section class="cartao cartao--saida" id="saida" hidden>
-      <h2>Prontinho, miga! 💌</h2>
-      <p class="aviso" id="aviso" hidden></p>
-      <textarea id="texto" rows="11" aria-label="Mensagem gerada"></textarea>
-      <div class="acoes">
-        <button class="btn btn--claro" id="copiar" type="button"><svg><use href="#i-copiar"/></svg>Copiar Texto</button>
-        <button class="btn btn--whats" id="whats" type="button"><svg><use href="#i-chat"/></svg>Compartilhar no WhatsApp</button>
+      <p class="aviso" id="avisoIA" hidden></p>
+      <div class="chat">
+        <div class="balao">
+          <img id="balaoImg" alt="" hidden>
+          <div id="balaoTexto"></div>
+          <span class="balao__hora" id="balaoHora"></span>
+        </div>
+      </div>
+      <details class="mais">
+        <summary>Editar texto</summary>
+        <textarea id="texto" rows="10"></textarea>
+      </details>
+      <button type="button" class="btn btn--whats" id="enviarFoto"><svg><use href="#i-enviar"/></svg>Enviar com foto</button>
+      <div class="duas">
+        <button type="button" class="btn btn--branco" id="copiar"><svg><use href="#i-copiar"/></svg>Copiar texto</button>
+        <button type="button" class="btn btn--branco" id="whats"><svg><use href="#i-chat"/></svg>Só o texto</button>
       </div>
     </section>
 
-    <p class="assinatura">Desenvolvido por <strong>Alpama Soluções</strong></p>
+    <p class="assinatura">Desenvolvido por <b>Alpama Soluções</b></p>
   </main>
+
+  <!-- Botão fixo -->
+  <div class="barra">
+    <button type="button" class="btn btn--gerar" id="gerar"><svg><use href="#i-brilho"/></svg><span class="rotulo">Gerar Miga Promo ✨</span><i class="giro"></i></button>
+  </div>
 
   <!-- Configurações -->
   <dialog id="config" class="dialogo">
     <form method="dialog">
-      <div class="dialogo__ico"><svg><use href="#i-engrenagem"/></svg></div>
+      <img src="icon-192.png" alt="" class="dialogo__ico">
       <h2>Configurações</h2>
-      <p class="status" id="status">Verificando conexão…</p>
-      <label class="campo">
-        <span>Senha de acesso</span>
-        <input id="senha" type="password" autocomplete="current-password" placeholder="a mesma do Cloudflare (APP_SENHA)">
-      </label>
+      <p class="status" id="status">Verificando…</p>
+      <label class="campo"><span>Senha de acesso</span><input id="senha" type="password" autocomplete="current-password" placeholder="APP_SENHA do Cloudflare"></label>
       <div class="duas">
-        <button class="btn btn--claro" value="fechar" type="submit">Fechar</button>
-        <button class="btn btn--principal" value="salvar" type="submit">Salvar</button>
+        <button class="btn btn--branco" value="fechar" type="submit">Fechar</button>
+        <button class="btn btn--gerar btn--pequeno" value="salvar" type="submit">Salvar</button>
       </div>
     </form>
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-
   <script src="app.js"></script>
 </body>
 </html>
