@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -136,7 +136,14 @@
         </div>
       </div>
 
-      <label class="campo"><span>Cupom <small>(opcional)</small></span><input id="cupom" maxlength="40" placeholder="Ex.: MIGA10"></label>
+      <div class="campo">
+        <span>Cupom <small>(opcional)</small></span>
+        <div class="cupom-linha">
+          <input id="cupom" maxlength="40" placeholder="Ex.: MIGA10" autocapitalize="characters" aria-label="Cupom">
+          <button type="button" class="btn btn--branco btn--mini" id="salvarCupom">Salvar</button>
+        </div>
+        <div class="cupons" id="cupons" aria-label="Cupons salvos"></div>
+      </div>
 
       <details class="mais">
         <summary>Usar endereço de imagem</summary>
@@ -151,12 +158,22 @@
         <button type="button" class="link" id="refazer"><svg><use href="#i-refazer"/></svg>Outra</button>
       </div>
       <p class="aviso" id="avisoIA" hidden></p>
-      <div class="chat">
+      <div class="chat" id="chat">
+        <div class="balao balao--esqueleto" id="balaoEsqueleto" hidden aria-label="Gerando mensagem">
+          <span class="esq esq--foto"></span><span class="esq"></span><span class="esq esq--curta"></span><span class="esq"></span><span class="esq esq--media"></span>
+        </div>
         <div class="balao">
           <img id="balaoImg" alt="" hidden>
           <div id="balaoTexto"></div>
           <span class="balao__hora" id="balaoHora"></span>
         </div>
+      </div>
+      <div class="ajustes" id="ajustes" role="group" aria-label="Ajustar a mensagem">
+        <span>Ajustar:</span>
+        <button type="button" data-ajuste="curto">Mais curto</button>
+        <button type="button" data-ajuste="emojis">Mais emojis</button>
+        <button type="button" data-ajuste="preco">Focar no preço</button>
+        <button type="button" data-ajuste="animada">Mais animada</button>
       </div>
       <details class="mais">
         <summary>Editar texto</summary>
@@ -258,7 +275,7 @@
   </div>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=8"></script>
-  <script src="app.js?v=8"></script>
+  <script src="firebase-config.js?v=9"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

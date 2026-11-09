@@ -76,10 +76,13 @@ voltados ao público feminino. A dona do app cola o **link de afiliado** de um p
    - lê **JSON-LD** (`@type: Product`), meta tags **Open Graph** (`og:title`, `og:image`) e o preço;
    - no Mercado Livre, tenta o **preço antigo** pelo texto "Antes: X reais com Y centavos";
    - limpa o nome (tira "| Mercado Livre", "- R$ 49,90", "Frete grátis"...);
-   - Shopee normalmente **não** expõe o preço na página → o app pede para digitar.
+   - Shopee normalmente **não** expõe o preço na página → o app avisa, rola até o campo de preço e o destaca.
+   - Leituras ficam **guardadas por 30 minutos** (Cache API do Cloudflare) para não ler a mesma página de novo.
+   - Enquanto busca, foto/nome/preço mostram **blocos piscando** (skeleton).
 3. **Produto**: foto grande (toque abre em tela cheia; "Trocar foto" usa a galeria, reduzida para ~900 px),
    nome, preço antigo (opcional), preço novo, **categoria** (Moda e Looks, Beleza e Skincare, Casa e Decoração,
-   Saúde e Fitness, Outros) e cupom (opcional). Um selo mostra o desconto (%) na hora.
+   Saúde e Fitness, Outros) e cupom (opcional; **cupons salvos** aparecem como etiquetas para tocar).
+   Um selo mostra o desconto (%) na hora.
 4. **Gerar Miga Promo** → `POST api/gerar` (ver seção 5). Se a IA falhar ou não estiver configurada,
    o app usa uma **mensagem pronta** (modelo fixo) e avisa.
 5. **Mensagem pronta**: prévia igual ao WhatsApp (negrito/riscado/links formatados), "Editar texto",
@@ -113,23 +116,22 @@ gera link de afiliado. Busca de dados e envio são feitos por código comum.
 
 - Modelo: **Google Gemini** (`gemini-2.5-flash` por padrão), via REST `v1beta/models/{modelo}:generateContent`,
   chamado **só pelo `_worker.js`** (a chave nunca vai para o celular). `temperature: 0.9`, `maxOutputTokens: 1024`.
-- Entrada enviada: nome, preço novo, preço antigo, link, loja, categoria, cupom.
-- **Prompt** (montado em `montarPrompt`, no `_worker.js`):
-  > Atue como uma curadora de moda, beleza e utilidades para um grupo VIP de WhatsApp focado no público feminino,
-  > chamado Miga Promo. Crie uma mensagem curta, amigável e em tom de confidência (como uma amiga dando uma dica
-  > incrível). O produto é: [NOME]. O preço caiu de [ANTIGO] para [NOVO]. O link de compra é: [LINK].
-  > Loja: [LOJA]. Categoria: [CATEGORIA] — destaque os benefícios dessa categoria ([foco da categoria]).
-  > [Cupom ou "não mencione cupom"]. Emojis delicados, leve senso de urgência (promoção/estoque podem acabar).
-  > Sem hashtags; não repetir o preço no nome; benefícios que combinem com o produto; formatação do WhatsApp;
-  > link sozinho numa linha, exatamente como recebido; não inventar frete/parcelamento/avaliações;
-  > no máximo 600 caracteres; responder só com a mensagem.
+- **`systemInstruction`** (constante `INSTRUCAO`): papel da curadora Miga Promo + regras fixas (estrutura da
+  mensagem, preço uma vez só, benefícios coerentes com o produto, não inventar frete/parcelamento/avaliações/
+  promessas de saúde, sem hashtags, até 600 caracteres, responder só com a mensagem).
+- **Exemplos (few-shot)** (constante `EXEMPLOS`): 2 pares entrada → mensagem ideal, enviados antes do pedido.
+- **Pedido** (função `dadosDoProduto`): nome, loja, categoria (com o foco de benefícios), preço antigo,
+  preço novo (com a economia), cupom e link.
+- **Ajustes** (botões "Mais curto", "Mais emojis", "Focar no preço", "Mais animada"): o app manda o texto atual
+  + o ajuste; a IA reescreve mantendo as regras e o link (constante `AJUSTES`).
 - Se o texto da IA não contiver o link, o worker acrescenta `👉 [link]` no fim.
+- Se a IA falhar ou não estiver configurada, o app usa uma mensagem pronta e avisa.
 
 ## 6. Dados (Firestore)
 ```
 usuarios/{uid}/historico/{id}   → { id, criadoEm, produto: {nome, precoAntigo, precoNovo, link, categoria, loja, cupom},
                                     texto, imagem, enviadoPara: [..], ultimoEnvio }
-usuarios/{uid}/config/app       → { grupos: [{id, nome, link}], convite, atualizadoEm }
+usuarios/{uid}/config/app       → { grupos: [{id, nome, link}], convite, cupons: ["MIGA10", ...], atualizadoEm }
 ```
 - `uid` = conta **anônima** do Firebase (presa ao aparelho/navegador). Trocar de celular ou limpar dados do
   navegador = nova conta (o histórico antigo não aparece).
@@ -137,7 +139,10 @@ usuarios/{uid}/config/app       → { grupos: [{id, nome, link}], convite, atual
 
 ## 7. Segurança
 - Código de acesso conferido no servidor; chave da IA só no servidor.
-- `/api/produto` e `/api/imagem` só aceitam domínios do Mercado Livre e da Shopee (evita proxy aberto).
+- `/api/produto` e `/api/imagem` só aceitam domínios do Mercado Livre e da Shopee, **só https, sem porta e sem
+  usuário/senha na URL**; cada redirecionamento é conferido (proteção contra SSRF).
+- **Limite de tentativas** do código: 10 erros do mesmo IP → bloqueio de 15 minutos (Cache API do Cloudflare;
+  vale por data center — é uma barreira simples, não um firewall).
 - Regras do Firestore isolam os dados por conta.
 - Pasta `/miga/` com `noindex` (fora do Google).
 
@@ -148,7 +153,7 @@ usuarios/{uid}/config/app       → { grupos: [{id, nome, link}], convite, atual
    bloquear; Shopee raramente traz o preço.
 3. **Envio para grupos** não é automático (limitação do WhatsApp).
 4. **Conta anônima** não sincroniza entre aparelhos.
-5. Fotos da galeria são guardadas no Firestore como data URL (limite de 1 MB por documento).
+5. Fotos da galeria são guardadas no Firestore como data URL, reduzidas no aparelho (800 px, JPEG 72% ≈ 60–150 KB).
 6. Sem testes automatizados no repositório; testes foram feitos com navegador automatizado e serviços simulados.
 
 ## 9. Ideias já levantadas (para avaliar)

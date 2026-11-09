@@ -236,3 +236,39 @@ body.travado { overflow: hidden; }
 .select select { line-height: 1.3; color: var(--preto); }
 .entrada__form { width: 100%; display: grid; gap: 12px; text-align: left; }
 .entrada__form input { text-align: center; font-size: 18px; letter-spacing: .08em; }
+
+/* ---------- Cupons salvos ---------- */
+.cupom-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.btn--mini { min-height: 48px; padding: 0 14px; font-size: 14px; box-shadow: 2px 2px 0 var(--preto); }
+.cupons { display: flex; flex-wrap: wrap; gap: 8px; }
+.cupons:empty { display: none; }
+.cupom-chip { display: inline-flex; align-items: center; border: 2px solid var(--preto); border-radius: 999px; background: var(--amarelo); overflow: hidden; font-weight: 700; font-size: 13.5px; }
+.cupom-chip button { border: 0; background: none; cursor: pointer; padding: 6px 4px 6px 12px; font: inherit; }
+.cupom-chip button + button { padding: 6px 10px 6px 6px; font-weight: 500; }
+.cupom-chip button + button svg { width: 14px; height: 14px; display: block; }
+
+/* ---------- Ajustes da mensagem ---------- */
+.ajustes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ajustes span { font-size: 13px; font-weight: 700; }
+.ajustes button { min-height: 38px; padding: 0 12px; border: 2px solid var(--preto); border-radius: 999px; background: var(--branco); font-weight: 600; font-size: 13px; cursor: pointer; }
+.ajustes button:active { background: var(--amarelo); }
+.ajustes button[disabled] { opacity: .5; cursor: wait; }
+
+/* ---------- Carregando (esqueletos piscando) ---------- */
+@keyframes brilhar { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.esq, .foto.carregando, .campo input.carregando {
+  background: linear-gradient(90deg, #f1e7c4 25%, #fbf3d8 50%, #f1e7c4 75%) !important; background-size: 200% 100% !important;
+  animation: brilhar 1.2s linear infinite;
+}
+.foto.carregando > * { visibility: hidden; }
+.balao--esqueleto { display: grid; gap: 8px; width: 92%; }
+.balao--esqueleto[hidden] { display: none; }
+.esq { display: block; height: 12px; border-radius: 6px; }
+.esq--foto { height: 140px; border-radius: 8px; }
+.esq--curta { width: 45%; } .esq--media { width: 70%; }
+.gerando #balaoTexto, .gerando .balao:not(.balao--esqueleto) { display: none; }
+
+/* Shopee: chama atenção para digitar o preço */
+@keyframes pulsar { 0%, 100% { box-shadow: 0 0 0 0 rgba(232, 51, 109, .55); } 50% { box-shadow: 0 0 0 6px rgba(232, 51, 109, 0); } }
+.campo input.pedir { border-color: var(--rosa); animation: pulsar 1.2s ease-in-out 3; }
+@media (prefers-reduced-motion: reduce) { .esq, .foto.carregando, .campo input.carregando, .campo input.pedir { animation: none; } }

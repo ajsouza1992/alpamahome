@@ -115,13 +115,13 @@
       leitor.onload = () => {
         const im = new Image();
         im.onload = () => {
-          const k = Math.min(1, 900 / Math.max(im.width, im.height));
+          const k = Math.min(1, 800 / Math.max(im.width, im.height));
           const tela = document.createElement("canvas");
           tela.width = Math.round(im.width * k); tela.height = Math.round(im.height * k);
           const ctx = tela.getContext("2d");
           ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, tela.width, tela.height);
           ctx.drawImage(im, 0, 0, tela.width, tela.height);
-          ok(tela.toDataURL("image/jpeg", 0.8));
+          ok(tela.toDataURL("image/jpeg", 0.72));
         };
         im.onerror = erro;
         im.src = leitor.result;
@@ -187,8 +187,8 @@
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
       limpar: () => tx("readwrite", (s) => s.clear()),
-      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite) }),
-      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); }
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []) }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); }
     };
   })();
 
@@ -216,9 +216,9 @@
       lerConfig: async () => {
         const d = await fs.getDoc(docConfig());
         const x = d.exists() ? d.data() : {};
-        return { grupos: x.grupos || [], convite: x.convite || "" };
+        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [] };
       },
-      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", atualizadoEm: Date.now() })
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], atualizadoEm: Date.now() })
     };
   }
   let dados = local;
@@ -236,14 +236,14 @@
     b.classList.toggle("ocupado", sim);
     b.querySelector(".rotulo").textContent = sim ? "Entrando..." : "Entrar";
   }
-  /** "ok" | "errado" | "sem-codigo" | "sem-servidor" (prévia) | "rede" */
+  /** "ok" | "errado" | "bloqueado" | "sem-codigo" | "sem-servidor" (prévia) | "rede" */
   async function conferirCodigo(codigo) {
     try {
       const r = await fetch("api/entrar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ codigo }) });
       if (r.status === 404 || r.status === 405) return "sem-servidor";
       const d = await r.json().catch(() => ({}));
       if (r.ok && d.ok) return "ok";
-      return d.codigo === "sem-codigo" ? "sem-codigo" : "errado";
+      return d.codigo === "sem-codigo" || d.codigo === "bloqueado" ? d.codigo : "errado";
     } catch (e) {
       return "rede";
     }
@@ -266,9 +266,11 @@
       dados = criarNuvem();
     }
     mostrarEntrada(false);
-    try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "" }; toast("Não consegui carregar seus grupos"); }
+    try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "", cupons: [] }; toast("Não consegui carregar seus grupos"); }
+    config.cupons = config.cupons || [];
     atualizarContadores();
     renderGruposEnvio();
+    renderCupons();
   }
   function erroFirebase(e) {
     const c = (e && e.code) || "";
@@ -298,6 +300,7 @@
     } else {
       aviso($("#avisoEntrada"),
         r === "errado" ? "Código incorreto. Confira e tente de novo." :
+        r === "bloqueado" ? "Muitas tentativas erradas. Aguarde 15 minutos e tente de novo." :
         r === "sem-codigo" ? "O código de acesso ainda não foi criado no Cloudflare (variável APP_SENHA)." :
         "Sem internet. Tente de novo.");
       $("#codigoAcesso").select();
@@ -399,8 +402,11 @@
     b.disabled = true;
     b.querySelector(".rotulo").textContent = "Buscando…";
     aviso($("#avisoBusca"), "");
+    const carregando = [$("#foto"), c.nome, c.precoNovo];
+    carregando.forEach((el) => el.classList.add("carregando"));
     try {
       const d = await api("produto", { url: link });
+      carregando.forEach((el) => el.classList.remove("carregando"));
       if (d.loja) loja.marcar(d.loja);
       if (d.nome) c.nome.value = limparNome(d.nome);
       if (d.preco) c.precoNovo.value = paraCampo(d.preco);
@@ -408,15 +414,30 @@
       if (d.imagem) { c.imagemUrl.value = d.imagem; definirFoto(d.imagem); }
       atualizarSelo();
       const falta = [!d.imagem && "foto", !d.nome && "nome", !d.preco && "preço"].filter(Boolean);
-      aviso($("#avisoBusca"), falta.length ? `Não achei: ${falta.join(", ")}. Completa aí embaixo.` : "Achei tudo. Confere o preço antes de gerar.", !falta.length);
+      if (!d.preco && d.loja === "shopee") {
+        aviso($("#avisoBusca"), "Na Shopee o preço não aparece na página: digita o preço ali embaixo.", false);
+        pedirPreco();
+      } else {
+        aviso($("#avisoBusca"), falta.length ? `Não achei: ${falta.join(", ")}. Completa aí embaixo.` : "Achei tudo. Confere o preço antes de gerar.", !falta.length);
+        if (!d.preco) pedirPreco();
+      }
     } catch (e) {
       if (e.codigo === "senha") bloquear("O código de acesso mudou. Digite o novo código.");
       else aviso($("#avisoBusca"), e.codigo === "offline" ? "Busca automática indisponível aqui. Preenche os dados e use “Trocar foto”." : `Não consegui ler o produto (${e.message}). Preenche à mão.`);
     } finally {
+      carregando.forEach((el) => el.classList.remove("carregando"));
       b.disabled = false;
       b.querySelector(".rotulo").textContent = "Buscar foto, nome e preço";
     }
   }
+  function pedirPreco() {
+    c.precoNovo.classList.remove("pedir");
+    void c.precoNovo.offsetWidth; // reinicia a animação
+    c.precoNovo.classList.add("pedir");
+    c.precoNovo.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => c.precoNovo.focus({ preventScroll: true }), 350);
+  }
+  c.precoNovo.addEventListener("input", () => c.precoNovo.classList.remove("pedir"));
   $("#buscar").addEventListener("click", buscar);
 
   /* =========================== Gerar mensagem =========================== */
@@ -502,15 +523,29 @@
     salvarTimer = setTimeout(salvarAtual, 700);
   });
 
-  async function gerar() {
+  function esqueletoResultado(sim) {
+    $("#resultado").classList.toggle("gerando", sim);
+    $("#balaoEsqueleto").hidden = !sim;
+    document.querySelectorAll("#ajustes button").forEach((b) => { b.disabled = sim; });
+    if (sim) {
+      $("#resultado").hidden = false;
+      $("#resultado").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+  async function gerar(ajuste) {
     const p = coletar();
     if (!p) return;
+    const ajustando = typeof ajuste === "string" && atual && ultimoLink === p.link;
+    const pedido = ajustando ? { ...p, ajuste, textoAtual: atual.texto } : p;
     ocupado(true);
+    esqueletoResultado(true);
     let texto, avisoMsg = "";
     try {
-      texto = (await api("gerar", p)).texto;
+      texto = (await api("gerar", pedido)).texto;
     } catch (e) {
+      esqueletoResultado(false);
       if (e.codigo === "senha") { ocupado(false); bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      if (ajustando) { ocupado(false); mostrarResultado(""); toast("Não consegui ajustar agora. Tente de novo."); return; }
       const motivo = e.codigo === "sem-chave" ? "a chave da IA ainda não foi configurada" : e.codigo === "offline" ? "o servidor não está disponível aqui" : "a IA não respondeu agora";
       texto = mensagemReserva(p);
       avisoMsg = `Usei uma mensagem pronta porque ${motivo}. Pode editar à vontade.`;
@@ -526,11 +561,37 @@
     };
     ultimoLink = p.link;
     ocupado(false);
+    esqueletoResultado(false);
     mostrarResultado(avisoMsg);
     salvarAtual();
   }
-  $("#gerar").addEventListener("click", gerar);
-  $("#refazer").addEventListener("click", gerar);
+  $("#gerar").addEventListener("click", () => gerar());
+  $("#refazer").addEventListener("click", () => gerar());
+  $("#ajustes").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-ajuste]");
+    if (b && atual) gerar(b.dataset.ajuste);
+  });
+
+  /* =========================== Cupons salvos =========================== */
+  function renderCupons() {
+    $("#cupons").innerHTML = (config.cupons || []).map((cp) => `
+      <span class="cupom-chip">
+        <button type="button" data-usar="${esc(cp)}" title="Usar este cupom">${esc(cp)}</button>
+        <button type="button" data-tirar="${esc(cp)}" aria-label="Apagar cupom ${esc(cp)}"><svg><use href="#i-x"/></svg></button>
+      </span>`).join("");
+  }
+  $("#salvarCupom").addEventListener("click", () => {
+    const cp = c.cupom.value.trim().toUpperCase();
+    if (!cp) { toast("Digite o cupom para salvar"); c.cupom.focus(); return; }
+    c.cupom.value = cp;
+    if (!config.cupons.includes(cp)) { config.cupons = [cp, ...config.cupons].slice(0, 20); gravarConfig(); renderCupons(); }
+    toast("Cupom salvo");
+  });
+  $("#cupons").addEventListener("click", (e) => {
+    const usar = e.target.closest("[data-usar]"), tirar = e.target.closest("[data-tirar]");
+    if (usar) { c.cupom.value = usar.dataset.usar; toast("Cupom aplicado"); }
+    if (tirar) { config.cupons = config.cupons.filter((x) => x !== tirar.dataset.tirar); gravarConfig(); renderCupons(); toast("Cupom apagado"); }
+  });
 
   /* =========================== Enviar =========================== */
   function abrirWhatsApp(texto) { window.open("https://api.whatsapp.com/send?text=" + encodeURIComponent(texto), "_blank", "noopener"); }
@@ -570,7 +631,7 @@
   });
 
   /* =========================== Grupos =========================== */
-  let config = { grupos: [], convite: "" };
+  let config = { grupos: [], convite: "", cupons: [] };
   async function gravarConfig() {
     atualizarContadores();
     try { await dados.gravarConfig(config); } catch (e) { toast("Não consegui salvar os grupos"); }
