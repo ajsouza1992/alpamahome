@@ -122,7 +122,7 @@
     if (!f || !f.type.startsWith("image/")) return;
     foto = { url: URL.createObjectURL(f), arquivo: f };
     mostrarFoto(foto.url);
-    toast("Foto trocada 💖");
+    toast("Foto trocada");
   });
   c.imagemUrl.addEventListener("change", () => usarFotoUrl(c.imagemUrl.value));
 
@@ -206,7 +206,7 @@
     };
     const falhas = [];
     if (!urlOk(p.link)) falhas.push([c.link, "Cola o link de afiliado lá em cima"]);
-    if (!p.nome) falhas.push([c.nome, "Coloca o nome do produto 💕"]);
+    if (!p.nome) falhas.push([c.nome, "Coloca o nome do produto"]);
     if (!p.precoNovo) falhas.push([c.precoNovo, "Coloca o preço “Por”"]);
     if (falhas.length) {
       falhas.forEach(([el]) => el.classList.add("erro"));
@@ -222,7 +222,7 @@
     const b = $("#gerar");
     b.disabled = sim;
     b.classList.toggle("ocupado", sim);
-    b.querySelector(".rotulo").textContent = sim ? "Gerando..." : "Gerar Miga Promo ✨";
+    b.querySelector(".rotulo").textContent = sim ? "Gerando..." : "Gerar Miga Promo";
   }
 
   function formatarWhats(t) {
@@ -311,7 +311,7 @@
   $("#copiar").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(textoAtual()); }
     catch (e) { $("#texto").closest("details").open = true; $("#texto").select(); document.execCommand && document.execCommand("copy"); }
-    toast("Texto copiado! 💖");
+    toast("Texto copiado");
   });
 
   /* =========================== Configurações =========================== */
@@ -346,7 +346,7 @@
     if (!pedidoInstalacao) return;
     pedidoInstalacao.prompt();
     const escolha = await pedidoInstalacao.userChoice.catch(() => ({}));
-    if (escolha.outcome === "accepted") toast("Miga Promo instalado 💖");
+    if (escolha.outcome === "accepted") toast("Miga Promo instalado");
     pedidoInstalacao = null;
     $("#instalar").hidden = true;
   });

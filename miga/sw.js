@@ -4,8 +4,8 @@
  * (pega sempre a versão nova) e, se estiver offline, usa o cache.
  * As chamadas /api/ nunca são guardadas em cache.
  */
-const VERSAO = "miga-promo-v2";
-const ARQUIVOS = ["./", "index.html", "style.css", "app.js", "manifest.json", "simbolo.svg", "icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png"];
+const VERSAO = "miga-promo-v3";
+const ARQUIVOS = ["./", "index.html", "style.css", "app.js", "manifest.json", "favicon.png", "icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (evento) => {
   evento.waitUntil(caches.open(VERSAO).then((cache) => cache.addAll(ARQUIVOS)).then(() => self.skipWaiting()));
