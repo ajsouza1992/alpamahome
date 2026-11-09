@@ -129,22 +129,14 @@ a { color: inherit; }
 .cats::-webkit-scrollbar { display: none; }
 .cats { gap: 12px; padding-bottom: 24px; }
 .cat {
-  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 10px;
-  width: 116px; padding: 14px 8px 12px; border-radius: 22px; border: 1.5px solid var(--line); background: var(--surface);
-  cursor: pointer; font-weight: 600; font-size: 14px; text-align: center; line-height: 1.2; transition: all .18s ease;
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 10px;
+  min-height: 54px; padding: 0 24px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface);
+  cursor: pointer; font-weight: 600; font-size: 15.5px; white-space: nowrap; transition: all .18s ease;
 }
-.cat__ico {
-  width: 64px; height: 64px; border-radius: 18px; background: var(--brand); color: var(--bg);
-  display: grid; place-items: center; transition: transform .2s ease, background .2s, color .2s;
-}
-.cat__ico .ico { width: 36px; height: 36px; }
-.cat__nome { min-height: 2.4em; display: flex; align-items: center; }
-.cat small { font-size: 12px; font-weight: 600; color: var(--ink-2); margin-top: -6px; }
-.cat:hover { border-color: var(--brand); transform: translateY(-2px); }
-.cat:hover .cat__ico { transform: scale(1.06); }
+.cat small { font-size: 12.5px; font-weight: 700; color: var(--brand); background: var(--brand-soft); border-radius: 999px; padding: 2px 9px; }
+.cat:hover { border-color: var(--brand); color: var(--brand); }
 .cat[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: var(--bg); }
-.cat[aria-pressed="true"] .cat__ico { background: var(--bg); color: var(--brand); }
-.cat[aria-pressed="true"] small { color: #b9cbbf; }
+.cat[aria-pressed="true"] small { background: rgba(255,255,255,.16); color: var(--bg); }
 
 /* ---------- Layout ---------- */
 .layout { display: grid; grid-template-columns: 260px 1fr; gap: 32px; align-items: start; padding-bottom: 64px; }
@@ -292,9 +284,7 @@ a { color: inherit; }
   .topbar__inner { flex-wrap: wrap; }
   .topbar__inner .btn-filtros { margin-left: auto; }
   .mod__txt { display: none; }
-  .cat { width: 96px; padding: 12px 6px 10px; font-size: 13px; border-radius: 18px; }
-  .cat__ico { width: 54px; height: 54px; border-radius: 15px; }
-  .cat__ico .ico { width: 30px; height: 30px; }
+  .cat { min-height: 48px; padding: 0 18px; font-size: 14.5px; }
   .card__btn { padding: 12px 12px; font-size: 14px; }
   .card__btn .txt-lg { display: none; }
   .card__btn .txt-sm { display: inline; }
@@ -377,7 +367,7 @@ a { color: inherit; }
    =================================================================== */
 .ico { display: block; }
 .adm__selo {
-  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 999px;
+  display: inline-flex; align-items: center; padding: 7px 16px; border-radius: 999px;
   background: var(--brand); color: var(--bg); font-size: 13px; font-weight: 600;
 }
 .adm__selo > span { width: 26px; height: 26px; border-radius: 50%; background: var(--bg); color: var(--brand); display: grid; place-items: center; }
@@ -387,16 +377,13 @@ a { color: inherit; }
 .abas { display: flex; gap: 10px; padding-top: 24px; padding-bottom: 4px; overflow-x: auto; scrollbar-width: none; }
 .abas::-webkit-scrollbar { display: none; }
 .aba {
-  display: inline-flex; align-items: center; gap: 12px; padding: 8px 22px 8px 8px; border-radius: 20px;
+  display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 26px; border-radius: 999px;
   border: 1.5px solid var(--line); background: var(--surface); font-weight: 600; font-size: 16px; cursor: pointer;
   white-space: nowrap; transition: all .18s;
 }
-.aba__ico { width: 48px; height: 48px; border-radius: 14px; background: var(--surface-2); color: var(--brand); display: grid; place-items: center; transition: all .18s; }
-.aba__ico .ico { width: 26px; height: 26px; }
 .aba b { background: var(--surface-2); border-radius: 999px; padding: 2px 9px; font-size: 13px; }
 .aba:hover { border-color: var(--brand); }
 .aba[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--bg); }
-.aba[aria-selected="true"] .aba__ico { background: var(--bg); color: var(--brand); }
 .aba[aria-selected="true"] b { background: rgba(255,255,255,.18); }
 
 .adm__main { padding-top: 20px; padding-bottom: 64px; }
@@ -429,16 +416,13 @@ a { color: inherit; }
 .link-btn { border: 0; background: none; color: var(--ink-2); text-decoration: underline; cursor: pointer; padding: 0; font-size: 13px; justify-self: start; }
 
 .passo .campo input, .passo .campo textarea { padding: 12px 14px; font-size: 15px; }
-.cat-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; font-weight: 500; }
+.cat-pick { display: flex; flex-wrap: wrap; gap: 8px; font-weight: 500; }
 .cp {
-  display: grid; justify-items: center; gap: 6px; padding: 10px 4px; border-radius: 14px; border: 1.5px solid var(--line);
-  background: var(--bg); cursor: pointer; font-size: 12px; font-weight: 600; text-align: center; line-height: 1.2; transition: all .15s;
+  min-height: 46px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--line);
+  background: var(--bg); cursor: pointer; font-size: 14px; font-weight: 600; transition: all .15s;
 }
-.cp__ico { width: 42px; height: 42px; border-radius: 12px; background: var(--surface-2); color: var(--brand); display: grid; place-items: center; transition: all .15s; }
-.cp__ico .ico { width: 24px; height: 24px; }
 .cp:hover { border-color: var(--brand); }
-.cp[aria-checked="true"] { border-color: var(--brand); background: var(--brand-soft); }
-.cp[aria-checked="true"] .cp__ico { background: var(--brand); color: var(--bg); }
+.cp[aria-checked="true"] { border-color: var(--brand); background: var(--brand); color: var(--bg); }
 
 .cad__acoes { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn--grande { padding: 17px 30px; font-size: 16px; border-radius: 16px; }
@@ -457,8 +441,7 @@ a { color: inherit; }
 }
 @media (max-width: 640px) {
   .adm__selo { display: none; }
-  .aba { padding: 6px 16px 6px 6px; font-size: 15px; gap: 10px; }
-  .aba__ico { width: 40px; height: 40px; border-radius: 12px; }
+  .aba { min-height: 50px; padding: 0 20px; font-size: 15px; }
   .passo { padding: 18px; }
   .drop { min-height: 200px; }
   .item { grid-template-columns: 48px 1fr; }

@@ -153,7 +153,7 @@
 
   f.cat.innerHTML = CATEGORIAS.map((c) => `
     <button type="button" class="cp" role="radio" data-cat="${esc(c.id)}" aria-checked="false">
-      <span class="cp__ico">${window.icone(c.id)}</span>${esc(c.nome)}
+      ${esc(c.nome)}
     </button>`).join("");
   function marcarCategoria(id) {
     categoria = id;

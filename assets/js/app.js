@@ -71,7 +71,7 @@
     const botoes = [{ id: "casa", nome: "Tudo" }]
       .concat(CATEGORIAS.filter((c) => contagem[c.id]))
       .map((c) => `<button class="cat" type="button" data-cat="${c.id === "casa" ? "" : esc(c.id)}">
-          <span class="cat__ico">${window.icone(c.id)}</span><span class="cat__nome">${esc(c.nome)}</span>
+          <span class="cat__nome">${esc(c.nome)}</span>
           <small>${c.id !== "casa" ? contagem[c.id] : produtos.length}</small></button>`);
     el.cats.innerHTML = botoes.join("");
     el.cats.addEventListener("click", (e) => {
