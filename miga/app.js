@@ -332,6 +332,7 @@
     $("#barraGerar").hidden = aba !== "criar";
     if (aba === "historico") renderHistorico();
     if (aba === "grupos") renderGrupos();
+    if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
     window.scrollTo({ top: 0 });
   }
   document.querySelectorAll(".abas button").forEach((b) => b.addEventListener("click", () => irPara(b.dataset.aba)));
@@ -576,6 +577,78 @@
   $("#ajustes").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-ajuste]");
     if (b && atual) gerar(b.dataset.ajuste);
+  });
+
+  /* =========================== Catálogo (mais vendidos) =========================== */
+  const catFiltro = grupoBotoes("#catFiltro", "v");
+  const catLoja = grupoBotoes("#catLoja", "v");
+  let catalogoAtual = [], catalogoCarregado = false;
+
+  function esqueletoCatalogo() {
+    $("#catalogo").innerHTML = Array.from({ length: 6 }, () =>
+      '<div class="produto-cat produto-cat--esq"><div class="produto-cat__foto"></div><span class="esq"></span><span class="esq" style="width:60%"></span></div>').join("");
+  }
+  async function carregarCatalogo() {
+    catalogoCarregado = true;
+    aviso($("#avisoCatalogo"), "");
+    esqueletoCatalogo();
+    let d;
+    try {
+      d = await api(`catalogo?filtro=${catFiltro.valor()}&loja=${catLoja.valor()}`);
+    } catch (e) {
+      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      $("#catalogo").innerHTML = `<p class="vazio-lista">${e.codigo === "offline" ? "O catálogo só funciona no app publicado." : "Não consegui carregar o catálogo agora."}</p>`;
+      return;
+    }
+    const conf = d.configurado || {};
+    if (!conf.mercadolivre && !conf.shopee) {
+      $("#catalogo").innerHTML = `<div class="conectar"><strong>Catálogo ainda não conectado</strong>
+        <span>Para os mais vendidos aparecerem aqui, cadastre as chaves das lojas no Cloudflare (projeto alpama → Configurações → Variáveis e segredos):</span>
+        <ol><li><b>Mercado Livre:</b> ML_APP_ID e ML_SECRET</li><li><b>Shopee:</b> SHOPEE_APP_ID e SHOPEE_SECRET</li></ol>
+        <span>Depois faça uma nova implantação.</span></div>`;
+      return;
+    }
+    if (d.avisos && d.avisos.length) aviso($("#avisoCatalogo"), d.avisos.join(" "));
+    catalogoAtual = d.produtos || [];
+    if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Nenhum produto agora. Tente outra categoria.</p>'; return; }
+    $("#catalogo").innerHTML = catalogoAtual.map((p, i) => `
+      <article class="produto-cat">
+        <div class="produto-cat__foto">
+          ${p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}
+          <span class="produto-cat__loja">${esc(NOME_LOJA[p.loja] || "")}</span>
+        </div>
+        <div class="produto-cat__info">
+          <strong>${esc(p.nome)}</strong>
+          ${p.preco ? `<span class="preco">${brl(p.preco)}</span>` : ""}
+          ${p.comissao ? `<small>Comissão ${String(p.comissao).replace(".", ",")}%</small>` : ""}
+        </div>
+        <button type="button" class="btn btn--rosa" data-gerar="${i}">Gerar oferta</button>
+      </article>`).join("");
+  }
+  [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
+  $("#atualizarCatalogo").addEventListener("click", carregarCatalogo);
+  $("#catalogo").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-gerar]");
+    if (!b) return;
+    const p = catalogoAtual[Number(b.dataset.gerar)];
+    if (!p) return;
+    // Preenche a aba Criar com o produto escolhido
+    c.link.value = p.link;
+    loja.marcar(p.loja);
+    c.nome.value = limparNome(p.nome);
+    c.precoNovo.value = p.preco ? paraCampo(p.preco) : "";
+    c.precoAntigo.value = p.precoAntigo ? paraCampo(p.precoAntigo) : "";
+    c.imagemUrl.value = p.imagem || "";
+    definirFoto(p.imagem || "");
+    categoria.marcar(p.categoria || "outros");
+    atualizarSelo();
+    irPara("criar");
+    if (p.afiliado) {
+      aviso($("#avisoBusca"), "Produto do catálogo com o seu link de afiliado. Confere o preço e é só gerar!", true);
+    } else {
+      aviso($("#avisoBusca"), "Atenção: este link do Mercado Livre ainda não é o seu link de afiliado. Abra o produto, toque em Compartilhar e cole o seu link no campo acima antes de gerar.");
+      c.link.closest(".colar").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   });
 
   /* =========================== Aba Achados =========================== */

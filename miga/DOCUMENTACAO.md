@@ -37,7 +37,7 @@ voltados ao público feminino. A dona do app cola o **link de afiliado** de um p
 - **Sem servidor próprio além do `_worker.js`** (Cloudflare Workers no modo "advanced" do Pages).
 - `_routes.json` faz o worker rodar **só** em `/miga/api/*`; o resto do site é servido direto como estático.
 - **Segredos** ficam só em variáveis do Cloudflare: `GEMINI_API_KEY` (chave da IA) e `APP_SENHA` (código de acesso).
-  Opcional: `GEMINI_MODEL` (padrão `gemini-2.5-flash`).
+  Opcionais: `GEMINI_MODEL` (padrão `gemini-2.5-flash`), `ML_APP_ID` + `ML_SECRET` e `SHOPEE_APP_ID` + `SHOPEE_SECRET` (catálogo).
 - O `firebase-config.js` tem a configuração **pública** do Firebase (projeto `miga-372d3`); a proteção dos dados
   é feita pelas **regras do Firestore**.
 
@@ -100,8 +100,13 @@ voltados ao público feminino. A dona do app cola o **link de afiliado** de um p
 - **Usar imagem** substitui a foto no envio e no histórico (campo `card`, JPEG em data URL); **Baixar** salva no aparelho.
 
 ### 4.3 Aba Achados
-- Busca rápida por termo/sugestão nas 4 lojas (Shopee já ordenada por mais vendidos), atalhos de ofertas e
-  portais de afiliados, e a lista de **cupons salvos**. Espaço reservado para os mais vendidos via API.
+- **Mais vendidos (catálogo automático):** `GET api/catalogo?filtro=moda|beleza|casa|fitness&loja=todas|mercadolivre|shopee`.
+  O worker consulta as APIs oficiais e devolve `{ id, nome, preco, precoAntigo, imagem, link, loja, categoria, afiliado, comissao }`:
+  - Mercado Livre: token `client_credentials` (guardado ~5 h) → `/highlights/MLB/category/{id}` (se a categoria não tiver lista,
+    tenta as subcategorias) → `/items?ids=` e `/products/{id}`. O link **não** é de afiliado (o app avisa para trocar).
+  - Shopee: Affiliate Open API (GraphQL `productOfferV2`, `sortType: 2` = vendas, assinatura SHA256) — o link já é de afiliado.
+  - Resultado guardado 30 min (Cache API). "Gerar oferta" preenche a aba Criar.
+- Busca rápida por termo nas 4 lojas, atalhos de ofertas/portais e **cupons salvos**.
 
 ### 4.4 Aba Histórico
 - Todo produto gerado é salvo (Firestore) com: foto (URL da loja ou imagem da galeria em data URL), nome, preços,

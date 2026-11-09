@@ -11,8 +11,14 @@
  *   GET  /api/status                → diz se a IA está configurada
  *   POST /api/entrar   { codigo }   → confere o código de acesso (APP_SENHA)
  *
+ *   GET  /api/catalogo?filtro=moda|beleza|casa|fitness&loja=todas|mercadolivre|shopee
+ *                                   → mais vendidos (APIs oficiais), lista limpa para o app
+ *
  * Variáveis no Cloudflare (Configurações → Variáveis e segredos):
  *   GEMINI_API_KEY (chave da IA)   APP_SENHA (código de acesso do app)   GEMINI_MODEL (opcional)
+ *   Catálogo (opcionais — cada loja só aparece quando as duas chaves dela existirem):
+ *     ML_APP_ID, ML_SECRET           → Mercado Livre Developers (Minhas aplicações)
+ *     SHOPEE_APP_ID, SHOPEE_SECRET   → Shopee Afiliados → Open API
  */
 
 /* ======================= Leitura do produto ======================= */
@@ -311,7 +317,7 @@ async function rotaImagem(request) {
 }
 
 function rotaStatus(env) {
-  return json({ ia: !!env.GEMINI_API_KEY, codigo: !!env.APP_SENHA });
+  return json({ ia: !!env.GEMINI_API_KEY, codigo: !!env.APP_SENHA, catalogo: { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) } });
 }
 
 /** Confere o código de acesso digitado na tela de entrada (é o valor de APP_SENHA). */
@@ -339,6 +345,130 @@ async function rotaEntrar(request, env) {
   return json({ ok: true });
 }
 
+/* ======================= Catálogo (mais vendidos) ======================= */
+const FILTROS_CATALOGO = {
+  moda: { categoria: "moda", ml: "MLB1430", shopee: "moda feminina" },
+  beleza: { categoria: "beleza", ml: "MLB1246", shopee: "skincare maquiagem" },
+  casa: { categoria: "casa", ml: "MLB1574", shopee: "decoração casa" },
+  fitness: { categoria: "saude", ml: "MLB1276", shopee: "roupa fitness feminina" }
+};
+const ML_API = "https://api.mercadolibre.com";
+const mlHttps = (u) => String(u || "").replace(/^http:/, "https:").replace(/-I\.(jpg|webp|png)$/i, "-O.$1");
+
+/** Token do Mercado Livre (client_credentials), guardado por ~5 horas */
+async function tokenML(env) {
+  const guardado = await lerCache("ml-token", env.ML_APP_ID);
+  if (guardado && guardado.token) return guardado.token;
+  const r = await fetch(ML_API + "/oauth/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
+    body: new URLSearchParams({ grant_type: "client_credentials", client_id: env.ML_APP_ID, client_secret: env.ML_SECRET })
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.access_token) throw new Error("Mercado Livre recusou as chaves (" + (d.message || d.error || r.status) + ")");
+  await gravarCache("ml-token", env.ML_APP_ID, { token: d.access_token }, Math.min(18000, (d.expires_in || 21600) - 600));
+  return d.access_token;
+}
+async function getML(caminho, token) {
+  const r = await fetch(ML_API + caminho, { headers: { authorization: "Bearer " + token, accept: "application/json" } });
+  return { status: r.status, dados: await r.json().catch(() => ({})) };
+}
+/** IDs dos mais vendidos; se a categoria não tiver lista, tenta as subcategorias */
+async function destaquesML(categoria, token) {
+  let r = await getML(`/highlights/MLB/category/${categoria}`, token);
+  if (r.status === 200) return r.dados.content || [];
+  if (r.status !== 404) throw new Error("Mercado Livre: erro " + r.status);
+  const cat = await getML(`/categories/${categoria}`, token);
+  const filhas = (cat.dados.children_categories || []).slice(0, 6);
+  let lista = [];
+  for (const f of filhas) {
+    r = await getML(`/highlights/MLB/category/${f.id}`, token);
+    if (r.status === 200) lista = lista.concat((r.dados.content || []).slice(0, 5));
+    if (lista.length >= 20) break;
+  }
+  return lista;
+}
+async function catalogoML(filtro, env) {
+  const token = await tokenML(env);
+  const destaques = (await destaquesML(filtro.ml, token)).slice(0, 20);
+  const itens = destaques.filter((d) => d.type === "ITEM").map((d) => d.id);
+  const produtos = destaques.filter((d) => d.type === "PRODUCT").map((d) => d.id);
+  const saida = [];
+  if (itens.length) {
+    const r = await getML(`/items?ids=${itens.join(",")}&attributes=id,title,price,original_price,thumbnail,permalink`, token);
+    for (const x of Array.isArray(r.dados) ? r.dados : []) {
+      const b = x.body || {};
+      if (x.code === 200 && b.title && b.price) {
+        saida.push({ id: b.id, nome: b.title, preco: b.price, precoAntigo: b.original_price || null, imagem: mlHttps(b.thumbnail), link: b.permalink, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false });
+      }
+    }
+  }
+  for (const id of produtos.slice(0, 10)) {
+    const r = await getML(`/products/${id}`, token);
+    const b = r.dados || {}, venc = b.buy_box_winner || {};
+    if (r.status === 200 && b.name && venc.price) {
+      saida.push({ id: b.id, nome: b.name, preco: venc.price, precoAntigo: venc.original_price || null, imagem: mlHttps((b.pictures || [])[0] && b.pictures[0].url), link: b.permalink || `https://www.mercadolivre.com.br/p/${b.id}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false });
+    }
+  }
+  return saida;
+}
+
+/** Shopee Affiliate Open API (GraphQL, assinatura SHA256) — o link já vem como link de afiliado */
+async function sha256Hex(texto) {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function catalogoShopee(filtro, env) {
+  const consulta = `{ productOfferV2(keyword: ${JSON.stringify(filtro.shopee)}, sortType: 2, page: 1, limit: 20) { nodes { itemId productName priceMin imageUrl offerLink commissionRate } } }`;
+  const corpo = JSON.stringify({ query: consulta });
+  const ts = Math.floor(Date.now() / 1000);
+  const assinatura = await sha256Hex(env.SHOPEE_APP_ID + ts + corpo + env.SHOPEE_SECRET);
+  const r = await fetch("https://open-api.affiliate.shopee.com.br/graphql", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `SHA256 Credential=${env.SHOPEE_APP_ID}, Timestamp=${ts}, Signature=${assinatura}` },
+    body: corpo
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || (d.errors && d.errors.length)) throw new Error("Shopee: " + ((d.errors && d.errors[0] && d.errors[0].message) || "erro " + r.status));
+  const nos = (d.data && d.data.productOfferV2 && d.data.productOfferV2.nodes) || [];
+  return nos.filter((n) => n.productName && n.offerLink).map((n) => ({
+    id: String(n.itemId), nome: n.productName, preco: Number(n.priceMin) || null, precoAntigo: null,
+    imagem: n.imageUrl, link: n.offerLink, loja: "shopee", categoria: filtro.categoria, afiliado: true,
+    comissao: n.commissionRate ? Math.round(Number(n.commissionRate) * 1000) / 10 : null
+  }));
+}
+
+async function rotaCatalogo(request, env) {
+  if (!senhaOk(request, env)) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  const q = new URL(request.url).searchParams;
+  const nomeFiltro = FILTROS_CATALOGO[q.get("filtro")] ? q.get("filtro") : "moda";
+  const loja = ["mercadolivre", "shopee"].includes(q.get("loja")) ? q.get("loja") : "todas";
+  const configurado = { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) };
+  if (!configurado.mercadolivre && !configurado.shopee) return json({ configurado, produtos: [], avisos: [] });
+
+  const chave = `${nomeFiltro}-${loja}-${configurado.mercadolivre}-${configurado.shopee}`;
+  const guardado = await lerCache("catalogo", chave);
+  if (guardado) return json({ ...guardado, doCache: true });
+
+  const filtro = FILTROS_CATALOGO[nomeFiltro];
+  const tarefas = [];
+  if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env));
+  if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env));
+  const resultados = await Promise.allSettled(tarefas);
+  const produtos = [], avisos = [];
+  for (const r of resultados) {
+    if (r.status === "fulfilled") produtos.push(...r.value);
+    else avisos.push(r.reason && r.reason.message ? r.reason.message : "Uma loja não respondeu.");
+  }
+  // Intercala as lojas para a grade não ficar com uma loja só no topo
+  const ml = produtos.filter((p) => p.loja === "mercadolivre"), sh = produtos.filter((p) => p.loja === "shopee");
+  const mistura = [];
+  for (let i = 0; i < Math.max(ml.length, sh.length); i++) { if (sh[i]) mistura.push(sh[i]); if (ml[i]) mistura.push(ml[i]); }
+  const resposta = { configurado, produtos: mistura.slice(0, 30), avisos };
+  if (mistura.length) await gravarCache("catalogo", chave, resposta, 1800); // 30 minutos
+  return json(resposta);
+}
+
 /* ======================= Roteador ======================= */
 export default {
   async fetch(request, env) {
@@ -352,6 +482,7 @@ export default {
       if (m && m[1] === "imagem" && metodo === "GET") return await rotaImagem(request);
       if (m && m[1] === "status" && metodo === "GET") return rotaStatus(env);
       if (m && m[1] === "entrar" && metodo === "POST") return await rotaEntrar(request, env);
+      if (m && m[1] === "catalogo" && metodo === "GET") return await rotaCatalogo(request, env);
       if (m) return json({ erro: "Rota não encontrada." }, 404);
     } catch (e) {
       return json({ erro: "Erro no servidor: " + (e.message || e) }, 500);

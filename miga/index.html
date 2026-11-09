@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -201,6 +201,26 @@
   <!-- ===== Aba Achados ===== -->
   <div class="aba" id="aba-achados" hidden>
     <section class="bloco">
+      <div class="cabecalho-aba">
+        <h2 class="passo">Mais vendidos</h2>
+        <button type="button" class="link" id="atualizarCatalogo"><svg><use href="#i-refazer"/></svg>Atualizar</button>
+      </div>
+      <div class="alternar alternar--tres" id="catFiltro" role="radiogroup" aria-label="Categoria do catálogo">
+        <button type="button" role="radio" data-v="moda" aria-checked="true">Moda</button>
+        <button type="button" role="radio" data-v="beleza" aria-checked="false">Beleza</button>
+        <button type="button" role="radio" data-v="casa" aria-checked="false">Casa</button>
+        <button type="button" role="radio" data-v="fitness" aria-checked="false">Fitness</button>
+      </div>
+      <div class="alternar" id="catLoja" role="radiogroup" aria-label="Loja do catálogo">
+        <button type="button" role="radio" data-v="todas" aria-checked="true">Todas</button>
+        <button type="button" role="radio" data-v="mercadolivre" aria-checked="false">Mercado Livre</button>
+        <button type="button" role="radio" data-v="shopee" aria-checked="false">Shopee</button>
+      </div>
+      <p class="aviso" id="avisoCatalogo" hidden></p>
+      <div class="catalogo" id="catalogo"></div>
+    </section>
+
+    <section class="bloco">
       <h2 class="passo">Procurar achados</h2>
       <p class="nota">Digite o que procura ou toque numa categoria e escolha a loja. Na Shopee a busca já abre ordenada pelos <b>mais vendidos</b>.</p>
       <label class="campo"><span>O que você procura?</span><input id="achadoTermo" type="search" placeholder="Ex.: vestido midi, sérum, organizador"></label>
@@ -210,10 +230,10 @@
         <button type="button">roupa fitness feminina</button><button type="button">bolsa feminina</button>
       </div>
       <div class="lojas-busca" id="achadoLojas">
-        <button type="button" class="btn btn--branco" data-busca="mercadolivre"><svg><use href="#i-loja"/></svg>Mercado Livre</button>
-        <button type="button" class="btn btn--branco" data-busca="shopee"><svg><use href="#i-loja"/></svg>Shopee</button>
-        <button type="button" class="btn btn--branco" data-busca="amazon"><svg><use href="#i-loja"/></svg>Amazon</button>
-        <button type="button" class="btn btn--branco" data-busca="magalu"><svg><use href="#i-loja"/></svg>Magalu</button>
+        <button type="button" class="btn btn--branco" data-busca="mercadolivre">Mercado Livre</button>
+        <button type="button" class="btn btn--branco" data-busca="shopee">Shopee</button>
+        <button type="button" class="btn btn--branco" data-busca="amazon">Amazon</button>
+        <button type="button" class="btn btn--branco" data-busca="magalu">Magalu</button>
       </div>
       <p class="nota">Achou? No app da loja toque em <b>Compartilhar</b> e escolha o <b>Miga Promo</b> (Android, app instalado), ou copie o seu link de afiliado e cole na aba <b>Criar</b>.</p>
     </section>
@@ -238,10 +258,6 @@
       <p class="nota">Os cupons salvos aparecem na aba Criar para você tocar e usar.</p>
     </section>
 
-    <section class="bloco bloco--breve">
-      <h2 class="passo">Mais vendidos automático</h2>
-      <p class="nota">Quando as APIs da Shopee e do Mercado Livre forem liberadas, os mais vendidos de cada categoria aparecem aqui, com foto, preço e comissão.</p>
-    </section>
   </div>
 
   <!-- ===== Aba Histórico ===== -->
@@ -367,7 +383,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=12"></script>
-  <script src="app.js?v=12"></script>
+  <script src="firebase-config.js?v=13"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>

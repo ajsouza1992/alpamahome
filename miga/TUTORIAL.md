@@ -107,6 +107,14 @@ grupos ficam salvos só no aparelho.
 
 Essas variáveis só são usadas pelo Miga; o ClockFit e o Sort.IA não são afetados.
 
+**Catálogo de mais vendidos (opcional):** adicione também, quando tiver as chaves:
+| Nome | De onde vem |
+|---|---|
+| `ML_APP_ID` e `ML_SECRET` | developers.mercadolivre.com.br → Minhas aplicações → sua aplicação (App ID e Secret Key) |
+| `SHOPEE_APP_ID` e `SHOPEE_SECRET` | affiliate.shopee.com.br → Open API (App ID e Secret) |
+
+Cada loja aparece no catálogo assim que as duas chaves dela estiverem salvas (e após nova implantação).
+
 ### 3.4 Firebase do Miga: domínio autorizado
 No projeto do Firebase do Miga: **Authentication → Configurações → Domínios autorizados** →
 adicione `alpama.app`.
