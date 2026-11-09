@@ -27,7 +27,8 @@
   const paraCampo = (n) => (n ? n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
   const novoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const dataCurta = (t) => new Date(t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-  const NOME_LOJA = { mercadolivre: "Mercado Livre", shopee: "Shopee" };
+  const NOME_LOJA = { mercadolivre: "Mercado Livre", shopee: "Shopee", amazon: "Amazon", magalu: "Magalu" };
+  const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
   const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração", saude: "Saúde e Fitness", outros: "Outros" };
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
   const limparNome = (t) => String(t || "").replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "").replace(/\s{2,}/g, " ").trim();
@@ -348,6 +349,8 @@
     const u = String(url).toLowerCase();
     if (/shopee|shope\.ee|shp\.ee/.test(u)) return "shopee";
     if (/mercadoli[vb]re|mercadolibre|meli\.la/.test(u)) return "mercadolivre";
+    if (/amazon\.|amzn\.to|a\.co\//.test(u)) return "amazon";
+    if (/magazineluiza|magazinevoce|magalu/.test(u)) return "magalu";
     return null;
   }
 
@@ -363,7 +366,7 @@
     colocarImagem(img, fotoAtual);
   }
   $("#fotoImg").addEventListener("click", () => abrirVisor(fotoAtual));
-  $("#balaoImg").addEventListener("click", () => abrirVisor(atual && atual.imagem));
+  $("#balaoImg").addEventListener("click", () => abrirVisor(atual && (atual.card || atual.imagem)));
   $("#arquivo").addEventListener("change", async () => {
     const f = $("#arquivo").files[0];
     $("#arquivo").value = "";
@@ -449,7 +452,7 @@
     outros: "Daqueles achadinhos que facilitam a vida e cabem no bolso ✨"
   };
   function mensagemReserva(p) {
-    const onde = p.loja === "shopee" ? "na Shopee" : "no Mercado Livre";
+    const onde = ONDE_LOJA[p.loja] || "no Mercado Livre";
     const preco = p.precoAntigo ? `~de ${brl(p.precoAntigo)}~ por *${brl(p.precoNovo)}*` : `por apenas *${brl(p.precoNovo)}*`;
     const cupom = p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : "";
     return `Miga, olha esse achadinho ${onde}! 🤫💖\n\n✨ *${p.nome}*\n\n💸 ${preco}${cupom}\n\n${FRASES[p.categoria] || FRASES.outros}\n\n👉 ${p.link}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
@@ -500,9 +503,11 @@
     $("#texto").value = atual.texto;
     $("#balaoTexto").innerHTML = formatarWhats(atual.texto);
     const img = $("#balaoImg");
-    img.hidden = !atual.imagem;
-    colocarImagem(img, atual.imagem);
-    $("#enviarFoto").hidden = !atual.imagem;
+    const foto = atual.card || atual.imagem;
+    img.hidden = !foto;
+    colocarImagem(img, foto);
+    $("#enviarFoto").hidden = !foto;
+    $("#abrirEditor").querySelector(".rotulo").textContent = atual.card ? "Editar a imagem" : "Criar imagem com a cara do Miga";
     $("#balaoHora").textContent = new Date(atual.criadoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     aviso($("#avisoIA"), avisoMsg);
     renderGruposEnvio();
@@ -557,7 +562,8 @@
       produto: p,
       texto: comConvite(texto),
       imagem: fotoAtual,
-      enviadoPara: mesmo ? atual.enviadoPara : []
+      enviadoPara: mesmo ? atual.enviadoPara : [],
+      ...(mesmo && atual.card ? { card: atual.card, cardOpcoes: atual.cardOpcoes } : {})
     };
     ultimoLink = p.link;
     ocupado(false);
@@ -572,8 +578,54 @@
     if (b && atual) gerar(b.dataset.ajuste);
   });
 
+  /* =========================== Aba Achados =========================== */
+  const BUSCA_LOJA = {
+    mercadolivre: (t) => "https://lista.mercadolivre.com.br/" + encodeURIComponent(t.trim().replace(/\s+/g, "-")),
+    shopee: (t) => "https://shopee.com.br/search?keyword=" + encodeURIComponent(t.trim()) + "&sortBy=sales",
+    amazon: (t) => "https://www.amazon.com.br/s?k=" + encodeURIComponent(t.trim()),
+    magalu: (t) => "https://www.magazineluiza.com.br/busca/" + encodeURIComponent(t.trim()) + "/"
+  };
+  $("#achadoSugestoes").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) { $("#achadoTermo").value = b.textContent; toast("Agora escolha a loja"); }
+  });
+  $("#achadoLojas").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-busca]");
+    if (!b) return;
+    const termo = $("#achadoTermo").value.trim();
+    if (!termo) { toast("Digite o que procura ou toque numa sugestão"); $("#achadoTermo").focus(); return; }
+    window.open(BUSCA_LOJA[b.dataset.busca](termo), "_blank", "noopener");
+  });
+  function renderListaCupons() {
+    const l = config.cupons || [];
+    $("#listaCupons").innerHTML = l.length
+      ? l.map((cp) => `<div class="cupom-item"><span>${esc(cp)}</span><button type="button" class="icone-btn" data-tirar="${esc(cp)}" aria-label="Apagar cupom ${esc(cp)}"><svg><use href="#i-lixo"/></svg></button></div>`).join("")
+      : '<p class="vazio-lista">Nenhum cupom salvo ainda.</p>';
+  }
+  function salvarCupom(valor) {
+    const cp = String(valor || "").trim().toUpperCase();
+    if (!cp) return false;
+    if (!config.cupons.includes(cp)) { config.cupons = [cp, ...config.cupons].slice(0, 30); gravarConfig(); }
+    renderCupons();
+    return true;
+  }
+  $("#addCupom").addEventListener("click", () => {
+    if (!salvarCupom($("#novoCupom").value)) { toast("Digite o cupom"); $("#novoCupom").focus(); return; }
+    $("#novoCupom").value = "";
+    toast("Cupom salvo");
+  });
+  $("#listaCupons").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-tirar]");
+    if (!b) return;
+    const ok = await confirmar({ titulo: "Apagar cupom?", texto: `O cupom ${b.dataset.tirar} sai da sua lista.`, ok: "Apagar" });
+    if (!ok) return;
+    config.cupons = config.cupons.filter((x) => x !== b.dataset.tirar);
+    gravarConfig(); renderCupons(); toast("Cupom apagado");
+  });
+
   /* =========================== Cupons salvos =========================== */
   function renderCupons() {
+    renderListaCupons();
     $("#cupons").innerHTML = (config.cupons || []).map((cp) => `
       <span class="cupom-chip">
         <button type="button" data-usar="${esc(cp)}" title="Usar este cupom">${esc(cp)}</button>
@@ -581,16 +633,230 @@
       </span>`).join("");
   }
   $("#salvarCupom").addEventListener("click", () => {
-    const cp = c.cupom.value.trim().toUpperCase();
-    if (!cp) { toast("Digite o cupom para salvar"); c.cupom.focus(); return; }
-    c.cupom.value = cp;
-    if (!config.cupons.includes(cp)) { config.cupons = [cp, ...config.cupons].slice(0, 20); gravarConfig(); renderCupons(); }
+    if (!salvarCupom(c.cupom.value)) { toast("Digite o cupom para salvar"); c.cupom.focus(); return; }
+    c.cupom.value = c.cupom.value.trim().toUpperCase();
     toast("Cupom salvo");
   });
   $("#cupons").addEventListener("click", (e) => {
     const usar = e.target.closest("[data-usar]"), tirar = e.target.closest("[data-tirar]");
     if (usar) { c.cupom.value = usar.dataset.usar; toast("Cupom aplicado"); }
     if (tirar) { config.cupons = config.cupons.filter((x) => x !== tirar.dataset.tirar); gravarConfig(); renderCupons(); toast("Cupom apagado"); }
+  });
+
+  /* =========================== Imagem do achadinho (editor) =========================== */
+  const edFormato = grupoBotoes("#edFormato", "v");
+  const edFundo = grupoBotoes("#edFundo", "v");
+  const PALETAS = {
+    creme: { fundo: "#fff3c4", tituloFundo: "#e8336d", tituloTexto: "#ffffff", nome: "#1d1d1f", preco: "#e8336d", antigo: "#8a817b", rodape: "#1d1d1f", cartao: "#ffffff" },
+    rosa: { fundo: "#e8336d", tituloFundo: "#fff3c4", tituloTexto: "#e8336d", nome: "#ffffff", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", rodape: "#ffffff", cartao: "#ffffff" },
+    branco: { fundo: "#ffffff", tituloFundo: "#e8336d", tituloTexto: "#ffffff", nome: "#1d1d1f", preco: "#e8336d", antigo: "#8a817b", rodape: "#1d1d1f", cartao: "#fff8e4" }
+  };
+  let edFoto = null, edMarca = null;
+
+  function retArredondado(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  /** Quebra o texto em linhas que cabem na largura (com "…" se passar do limite) */
+  function quebrarTexto(ctx, texto, largura, maxLinhas) {
+    const palavras = String(texto).split(/\s+/).filter(Boolean);
+    const linhas = [];
+    let atualLinha = "";
+    for (const pl of palavras) {
+      const teste = atualLinha ? atualLinha + " " + pl : pl;
+      if (ctx.measureText(teste).width <= largura) atualLinha = teste;
+      else { if (atualLinha) linhas.push(atualLinha); atualLinha = pl; }
+    }
+    if (atualLinha) linhas.push(atualLinha);
+    if (linhas.length > maxLinhas) {
+      const corte = linhas.slice(0, maxLinhas);
+      let ult = corte[maxLinhas - 1];
+      while (ult.length > 1 && ctx.measureText(ult + "…").width > largura) ult = ult.slice(0, -1);
+      corte[maxLinhas - 1] = ult.trim() + "…";
+      return corte;
+    }
+    return linhas;
+  }
+
+  function desenharCard() {
+    if (!atual) return;
+    const tela = $("#telaCard");
+    const story = edFormato.valor() === "story";
+    const W = 1080, H = story ? 1920 : 1080;
+    tela.width = W; tela.height = H;
+    const ctx = tela.getContext("2d");
+    const P = PALETAS[edFundo.valor()] || PALETAS.creme;
+    const p = atual.produto;
+    const L = story
+      ? { tituloY: 110, tituloFonte: 56, tituloAlt: 100, fotoY: 260, fotoH: 960, nome1: 1320, nomeFonte: 58, lh: 74, antigoY: 1490, antigoFonte: 46, precoY: 1590, precoFonte: 100, rodapeY: 1650, rodapeFonte: 40, marca: 190, selo: 125 }
+      : { tituloY: 48, tituloFonte: 44, tituloAlt: 80, fotoY: 150, fotoH: 520, nome1: 742, nomeFonte: 44, lh: 54, antigoY: 852, antigoFonte: 34, precoY: 930, precoFonte: 76, rodapeY: 970, rodapeFonte: 30, marca: 124, selo: 98 };
+
+    // Fundo
+    ctx.fillStyle = P.fundo;
+    ctx.fillRect(0, 0, W, H);
+
+    // Título em pílula
+    const titulo = ($("#edTitulo").value.trim() || "ACHADINHO DO DIA").toUpperCase();
+    ctx.font = `800 ${L.tituloFonte}px Poppins`;
+    const tw = ctx.measureText(titulo).width;
+    retArredondado(ctx, (W - tw) / 2 - 40, L.tituloY, tw + 80, L.tituloAlt, L.tituloAlt / 2);
+    ctx.fillStyle = P.tituloFundo; ctx.fill();
+    ctx.fillStyle = P.tituloTexto; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(titulo, W / 2, L.tituloY + L.tituloAlt / 2 + 3);
+
+    // Foto do produto num cartão
+    const fx = 70, fw = W - 140, fy = L.fotoY, fh = L.fotoH;
+    ctx.save();
+    ctx.shadowColor = "rgba(29,29,31,.2)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+    retArredondado(ctx, fx, fy, fw, fh, 44); ctx.fillStyle = P.cartao; ctx.fill();
+    ctx.restore();
+    if (edFoto) {
+      ctx.save();
+      retArredondado(ctx, fx, fy, fw, fh, 44); ctx.clip();
+      const pad = 34, k = Math.min((fw - pad * 2) / edFoto.width, (fh - pad * 2) / edFoto.height);
+      const iw = edFoto.width * k, ih = edFoto.height * k;
+      ctx.drawImage(edFoto, fx + (fw - iw) / 2, fy + (fh - ih) / 2, iw, ih);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "#b9b0a6"; ctx.font = `500 ${L.nomeFonte}px Poppins`; ctx.textAlign = "center";
+      ctx.fillText("sem foto", W / 2, fy + fh / 2);
+    }
+
+    // Selo de desconto
+    const off = p.precoAntigo && p.precoAntigo > p.precoNovo ? Math.round((1 - p.precoNovo / p.precoAntigo) * 100) : 0;
+    if ($("#edSelo").checked && off) {
+      ctx.save();
+      ctx.translate(fx + fw - L.selo * 0.55, fy + L.selo * 0.55);
+      ctx.rotate(-0.17);
+      ctx.beginPath(); ctx.arc(0, 0, L.selo, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffd23f"; ctx.fill();
+      ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
+      ctx.fillStyle = "#1d1d1f"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = `800 ${Math.round(L.selo * 0.56)}px Poppins`;
+      ctx.fillText(`-${off}%`, 0, 4);
+      ctx.restore();
+    }
+
+    // Nome
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = P.nome; ctx.font = `700 ${L.nomeFonte}px Poppins`;
+    const nome = $("#edNome").value.trim() || p.nome;
+    quebrarTexto(ctx, nome, W - 160, 2).forEach((linha, i) => ctx.fillText(linha, 80, L.nome1 + i * L.lh));
+
+    // Preço
+    if ($("#edPreco").checked) {
+      if (p.precoAntigo) {
+        ctx.font = `500 ${L.antigoFonte}px Poppins`; ctx.fillStyle = P.antigo;
+        const pre = "de ", valor = brl(p.precoAntigo);
+        ctx.fillText(pre + valor, 80, L.antigoY);
+        const x0 = 80 + ctx.measureText(pre).width, wv = ctx.measureText(valor).width;
+        ctx.fillRect(x0, L.antigoY - L.antigoFonte * 0.34, wv, Math.max(3, L.antigoFonte / 10));
+      }
+      ctx.font = `800 ${L.precoFonte}px Poppins`; ctx.fillStyle = P.preco;
+      ctx.fillText((p.precoAntigo ? "por " : "") + brl(p.precoNovo), 80, L.precoY);
+    }
+
+    // Rodapé: cupom (pílula amarela) + texto livre
+    let x = 80;
+    const ry = L.rodapeY + (story ? 40 : 30);
+    const cupom = $("#edCupom").value.trim().toUpperCase();
+    ctx.textBaseline = "middle";
+    if (cupom) {
+      ctx.font = `800 ${L.rodapeFonte}px Poppins`;
+      const t = "CUPOM " + cupom, w = ctx.measureText(t).width + 48, h = L.rodapeFonte * 1.9;
+      retArredondado(ctx, x, ry - h / 2, w, h, h / 2);
+      ctx.fillStyle = "#ffd23f"; ctx.fill();
+      ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, x + 24, ry + 2);
+      x += w + 22;
+    }
+    const rodape = $("#edRodape").value.trim();
+    if (rodape) {
+      ctx.font = `600 ${L.rodapeFonte}px Poppins`; ctx.fillStyle = P.rodape;
+      ctx.fillText(quebrarTexto(ctx, rodape, W - x - L.marca - 70, 1)[0] || "", x, ry + 2);
+    }
+
+    // Marca d'água Miga no cantinho
+    if ($("#edMarca").checked && edMarca) {
+      ctx.globalAlpha = 0.97;
+      ctx.drawImage(edMarca, W - L.marca - 36, H - L.marca - 26, L.marca, L.marca);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  async function abrirEditor() {
+    if (!atual) return;
+    const op = atual.cardOpcoes || {};
+    $("#edTitulo").value = op.titulo || "";
+    $("#edNome").value = op.nome || atual.produto.nome;
+    $("#edRodape").value = op.rodape || "";
+    $("#edCupom").value = op.cupom != null ? op.cupom : (atual.produto.cupom || "");
+    $("#edPreco").checked = op.preco !== false;
+    $("#edSelo").checked = op.selo !== false;
+    $("#edMarca").checked = op.marca !== false;
+    edFormato.marcar(op.formato || "quadrado");
+    edFundo.marcar(op.fundo || "creme");
+    $("#usarOriginal").hidden = !atual.card;
+    $("#editor").showModal();
+    document.body.classList.add("travado");
+    desenharCard();
+    try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
+    if (!edMarca) {
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "icon-512.png"; });
+    }
+    edFoto = null;
+    try {
+      const arq = await arquivoDaImagem(atual.imagem);
+      if (arq) edFoto = await createImageBitmap(arq);
+    } catch (e) { edFoto = null; }
+    if (!edFoto && atual.imagem) toast("Não consegui usar a foto aqui — use “Trocar foto” com uma imagem da galeria");
+    desenharCard();
+  }
+  function fecharEditor() { $("#editor").close(); }
+  $("#editor").addEventListener("close", () => document.body.classList.remove("travado"));
+  $("#abrirEditor").addEventListener("click", abrirEditor);
+  $("#fecharEditor").addEventListener("click", fecharEditor);
+  ["#edTitulo", "#edNome", "#edRodape", "#edCupom"].forEach((id) => $(id).addEventListener("input", desenharCard));
+  ["#edPreco", "#edSelo", "#edMarca"].forEach((id) => $(id).addEventListener("change", desenharCard));
+  ["#edFormato", "#edFundo"].forEach((id) => $(id).addEventListener("click", () => setTimeout(desenharCard, 0)));
+
+  function opcoesDoEditor() {
+    return {
+      titulo: $("#edTitulo").value.trim(), nome: $("#edNome").value.trim(), rodape: $("#edRodape").value.trim(),
+      cupom: $("#edCupom").value.trim(), preco: $("#edPreco").checked, selo: $("#edSelo").checked,
+      marca: $("#edMarca").checked, formato: edFormato.valor(), fundo: edFundo.valor()
+    };
+  }
+  $("#usarCard").addEventListener("click", () => {
+    atual.card = $("#telaCard").toDataURL("image/jpeg", 0.82);
+    atual.cardOpcoes = opcoesDoEditor();
+    salvarAtual();
+    fecharEditor();
+    mostrarResultado("");
+    toast("Imagem pronta para enviar");
+  });
+  $("#usarOriginal").addEventListener("click", () => {
+    delete atual.card;
+    delete atual.cardOpcoes;
+    salvarAtual();
+    fecharEditor();
+    mostrarResultado("");
+    toast("Voltei para a foto original");
+  });
+  $("#baixarCard").addEventListener("click", () => {
+    $("#telaCard").toBlob((blob) => {
+      if (!blob) return;
+      const nome = "miga-promo-" + (atual.produto.nome || "achadinho").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").slice(0, 40) + ".jpg";
+      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: nome });
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast("Imagem salva");
+    }, "image/jpeg", 0.9);
   });
 
   /* =========================== Enviar =========================== */
@@ -604,7 +870,7 @@
   $("#enviarFoto").addEventListener("click", async () => {
     if (!atual) return;
     const texto = atual.texto;
-    const arq = await arquivoDaImagem(atual.imagem);
+    const arq = await arquivoDaImagem(atual.card || atual.imagem);
     if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
       try { await navigator.share({ files: [arq], text: texto }); registrarEnvio("WhatsApp (com foto)"); return; }
       catch (e) { if (e.name === "AbortError") return; }
@@ -722,8 +988,9 @@
     }
     $("#historico").innerHTML = itens.map((i) => {
       const p = i.produto;
-      const mini = i.imagem
-        ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+      const fotoMini = i.card || i.imagem;
+      const mini = fotoMini
+        ? `<img src="${esc(fotoMini)}" data-original="${esc(fotoMini)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
         : '<span class="sem-foto"><svg><use href="#i-foto"/></svg></span>';
       const enviado = i.enviadoPara && i.enviadoPara.length
         ? `<span class="etiqueta etiqueta--ok">Enviado: ${esc(i.enviadoPara.join(", "))}</span>`
@@ -805,20 +1072,6 @@
   }
   $("#abrirConfig").addEventListener("click", abrirConfig);
 
-  // Visual do app (Suave ou Rosa) — fica salvo no aparelho
-  function aplicarVisual(v) {
-    const rosa = v === "rosa";
-    $("#visualRosa").disabled = !rosa;
-    $("#corTema").content = rosa ? "#e8336d" : "#fff3c4";
-    document.querySelectorAll("#visual button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.visual === (rosa ? "rosa" : "suave"))));
-  }
-  aplicarVisual(ls.ler("miga_visual"));
-  $("#visual").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-visual]");
-    if (!b) return;
-    ls.gravar("miga_visual", b.dataset.visual);
-    aplicarVisual(b.dataset.visual);
-  });
   $("#sair").addEventListener("click", async () => {
     dialogo.close();
     const ok = await confirmar({

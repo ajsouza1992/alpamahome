@@ -11,8 +11,8 @@
 
 ## 1. O que é
 **Miga Promo** é um aplicativo web instalável (PWA) para quem administra **grupos de promoções no WhatsApp**
-voltados ao público feminino. A dona do app cola o **link de afiliado** de um produto do **Mercado Livre** ou da
-**Shopee**; o app busca foto, nome e preço; a **IA (Google Gemini)** escreve uma mensagem curta no tom de
+voltados ao público feminino. A dona do app cola o **link de afiliado** de um produto do **Mercado Livre**, **Shopee**,
+**Amazon** ou **Magalu**; o app busca foto, nome e preço; a **IA (Google Gemini)** escreve uma mensagem curta no tom de
 "dica de amiga"; e o app ajuda a **enviar para os grupos** do WhatsApp. Tudo fica salvo num **histórico**.
 
 - Uso: **interno** (só a dona usa), protegido por **código de acesso**.
@@ -93,18 +93,28 @@ voltados ao público feminino. A dona do app cola o **link de afiliado** de um p
      (o WhatsApp não permite postar automaticamente; a usuária cola).
 6. Opcional: **convite no fim da mensagem** (link de um grupo escolhido é anexado ao texto).
 
-### 4.3 Aba Histórico
+### 4.2b Imagem com a cara do Miga (editor)
+- Botão **"Criar imagem com a cara do Miga"** na mensagem pronta abre um editor (canvas 1080×1080 ou 1080×1920).
+- Opções: formato (Quadrado/Story), fundo (Creme/Rosa/Branco), título, nome, texto de rodapé, cupom,
+  mostrar preço, selo de desconto, marca d'água Miga (ícone no canto).
+- **Usar imagem** substitui a foto no envio e no histórico (campo `card`, JPEG em data URL); **Baixar** salva no aparelho.
+
+### 4.3 Aba Achados
+- Busca rápida por termo/sugestão nas 4 lojas (Shopee já ordenada por mais vendidos), atalhos de ofertas e
+  portais de afiliados, e a lista de **cupons salvos**. Espaço reservado para os mais vendidos via API.
+
+### 4.4 Aba Histórico
 - Todo produto gerado é salvo (Firestore) com: foto (URL da loja ou imagem da galeria em data URL), nome, preços,
   loja, categoria, cupom, link, texto, data e **para onde já foi enviado**.
 - "Gerar outra" do mesmo produto atualiza o mesmo item. Editar o texto salva sozinho.
 - Ações: buscar, **Abrir** (volta para a aba Criar com tudo preenchido), **Copiar**, **Apagar**, **Apagar tudo**
   (sempre com confirmação no visual do app).
 
-### 4.4 Aba Grupos
+### 4.5 Aba Grupos
 - Cadastro de vários grupos: nome + link de convite (`https://chat.whatsapp.com/...`).
 - Escolha do grupo cujo convite vai no fim das mensagens.
 
-### 4.5 Instalação (PWA)
+### 4.6 Instalação (PWA)
 - Android/Chrome: botão **Instalar** (evento `beforeinstallprompt`).
 - iPhone: dica "Compartilhar → Adicionar à Tela de Início".
 - `share_target`: com o app instalado no Android, o "Compartilhar" do app da loja oferece o Miga Promo
@@ -130,7 +140,7 @@ gera link de afiliado. Busca de dados e envio são feitos por código comum.
 ## 6. Dados (Firestore)
 ```
 usuarios/{uid}/historico/{id}   → { id, criadoEm, produto: {nome, precoAntigo, precoNovo, link, categoria, loja, cupom},
-                                    texto, imagem, enviadoPara: [..], ultimoEnvio }
+                                    texto, imagem, card?, cardOpcoes?, enviadoPara: [..], ultimoEnvio }
 usuarios/{uid}/config/app       → { grupos: [{id, nome, link}], convite, cupons: ["MIGA10", ...], atualizadoEm }
 ```
 - `uid` = conta **anônima** do Firebase (presa ao aparelho/navegador). Trocar de celular ou limpar dados do

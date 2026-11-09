@@ -17,12 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=10">
-  <link rel="stylesheet" href="estilo-rosa.css?v=10" id="visualRosa" disabled>
-  <script>
-    /* Visual escolhido na engrenagem (Suave ou Rosa), aplicado antes de a tela aparecer */
-    try { if (localStorage.getItem("miga_visual") === "rosa") { document.getElementById("visualRosa").disabled = false; document.getElementById("corTema").content = "#e8336d"; } } catch (e) {}
-  </script>
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -44,6 +39,8 @@
     <symbol id="i-criar" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol>
     <symbol id="i-abrir" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+    <symbol id="i-etiqueta" viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.6"/></symbol>
+    <symbol id="i-loja" viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9"/><path d="M4 9h16v2a3 3 0 0 1-5.3 2 3 3 0 0 1-5.4 0A3 3 0 0 1 4 11z"/><path d="M5 13v7h14v-7"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-compartilhar-ios" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></symbol>
   </svg>
@@ -98,6 +95,8 @@
       <div class="alternar" id="lojas" role="radiogroup" aria-label="Loja">
         <button type="button" role="radio" data-loja="mercadolivre" aria-checked="true">Mercado Livre</button>
         <button type="button" role="radio" data-loja="shopee" aria-checked="false">Shopee</button>
+        <button type="button" role="radio" data-loja="amazon" aria-checked="false">Amazon</button>
+        <button type="button" role="radio" data-loja="magalu" aria-checked="false">Magalu</button>
       </div>
       <button type="button" class="btn btn--branco" id="buscar"><svg><use href="#i-busca"/></svg><span class="rotulo">Buscar foto, nome e preço</span></button>
       <p class="aviso" id="avisoBusca" hidden></p>
@@ -180,6 +179,7 @@
         <button type="button" data-ajuste="preco">Focar no preço</button>
         <button type="button" data-ajuste="animada">Mais animada</button>
       </div>
+      <button type="button" class="btn btn--branco" id="abrirEditor"><svg><use href="#i-foto"/></svg><span class="rotulo">Criar imagem com a cara do Miga</span></button>
       <details class="mais">
         <summary>Editar texto</summary>
         <textarea id="texto" rows="10"></textarea>
@@ -195,6 +195,52 @@
         <p class="nota">Em <b>Enviar com foto</b> você marca vários grupos de uma vez no WhatsApp. Ou toque num grupo abaixo: a mensagem é copiada e o grupo abre — é só colar.</p>
         <div class="lista-grupos" id="gruposEnvio"></div>
       </div>
+    </section>
+  </div>
+
+  <!-- ===== Aba Achados ===== -->
+  <div class="aba" id="aba-achados" hidden>
+    <section class="bloco">
+      <h2 class="passo">Procurar achados</h2>
+      <p class="nota">Digite o que procura ou toque numa categoria e escolha a loja. Na Shopee a busca já abre ordenada pelos <b>mais vendidos</b>.</p>
+      <label class="campo"><span>O que você procura?</span><input id="achadoTermo" type="search" placeholder="Ex.: vestido midi, sérum, organizador"></label>
+      <div class="sugestoes" id="achadoSugestoes">
+        <button type="button">vestido feminino</button><button type="button">conjunto feminino</button><button type="button">skincare</button>
+        <button type="button">maquiagem</button><button type="button">decoração casa</button><button type="button">organizador</button>
+        <button type="button">roupa fitness feminina</button><button type="button">bolsa feminina</button>
+      </div>
+      <div class="lojas-busca" id="achadoLojas">
+        <button type="button" class="btn btn--branco" data-busca="mercadolivre"><svg><use href="#i-loja"/></svg>Mercado Livre</button>
+        <button type="button" class="btn btn--branco" data-busca="shopee"><svg><use href="#i-loja"/></svg>Shopee</button>
+        <button type="button" class="btn btn--branco" data-busca="amazon"><svg><use href="#i-loja"/></svg>Amazon</button>
+        <button type="button" class="btn btn--branco" data-busca="magalu"><svg><use href="#i-loja"/></svg>Magalu</button>
+      </div>
+      <p class="nota">Achou? No app da loja toque em <b>Compartilhar</b> e escolha o <b>Miga Promo</b> (Android, app instalado), ou copie o seu link de afiliado e cole na aba <b>Criar</b>.</p>
+    </section>
+
+    <section class="bloco">
+      <h2 class="passo">Atalhos de ofertas</h2>
+      <div class="atalhos">
+        <a href="https://www.mercadolivre.com.br/ofertas" target="_blank" rel="noopener"><svg><use href="#i-etiqueta"/></svg><span><b>Ofertas do dia</b>Mercado Livre</span></a>
+        <a href="https://www.mercadolivre.com.br/l/afiliados-home" target="_blank" rel="noopener"><svg><use href="#i-loja"/></svg><span><b>Central de Afiliados</b>Mercado Livre</span></a>
+        <a href="https://affiliate.shopee.com.br" target="_blank" rel="noopener"><svg><use href="#i-loja"/></svg><span><b>Shopee Afiliados</b>ofertas e links</span></a>
+        <a href="https://associados.amazon.com.br" target="_blank" rel="noopener"><svg><use href="#i-loja"/></svg><span><b>Amazon Associados</b>painel de afiliados</span></a>
+      </div>
+    </section>
+
+    <section class="bloco">
+      <h2 class="passo">Meus cupons</h2>
+      <div class="cupom-linha">
+        <input class="busca-lista" id="novoCupom" maxlength="40" placeholder="Ex.: MIGA10" autocapitalize="characters" aria-label="Novo cupom">
+        <button type="button" class="btn btn--rosa btn--mini" id="addCupom">Salvar</button>
+      </div>
+      <div class="lista-cupons" id="listaCupons"></div>
+      <p class="nota">Os cupons salvos aparecem na aba Criar para você tocar e usar.</p>
+    </section>
+
+    <section class="bloco bloco--breve">
+      <h2 class="passo">Mais vendidos automático</h2>
+      <p class="nota">Quando as APIs da Shopee e do Mercado Livre forem liberadas, os mais vendidos de cada categoria aparecem aqui, com foto, preço e comissão.</p>
     </section>
   </div>
 
@@ -242,6 +288,7 @@
     </div>
     <nav class="abas" aria-label="Seções">
       <button type="button" data-aba="criar" aria-current="page"><svg><use href="#i-criar"/></svg>Criar</button>
+      <button type="button" data-aba="achados"><svg><use href="#i-etiqueta"/></svg>Achados</button>
       <button type="button" data-aba="historico"><svg><use href="#i-historico"/></svg>Histórico <b id="contHistorico" hidden></b></button>
       <button type="button" data-aba="grupos"><svg><use href="#i-grupo"/></svg>Grupos <b id="contGrupos" hidden></b></button>
     </nav>
@@ -251,13 +298,6 @@
   <dialog id="config" class="dialogo">
     <form method="dialog">
       <h2>Configurações</h2>
-      <div class="campo">
-        <span>Visual do app</span>
-        <div class="alternar" id="visual" role="radiogroup" aria-label="Visual do app">
-          <button type="button" role="radio" data-visual="suave" aria-checked="true">Suave</button>
-          <button type="button" role="radio" data-visual="rosa" aria-checked="false">Rosa</button>
-        </div>
-      </div>
       <p class="status" id="status">Verificando…</p>
       <div class="conta">
         <span>Conta</span>
@@ -286,8 +326,48 @@
     <button type="button" class="btn-quadrado visor__fechar" id="fecharVisor" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
 
+  <!-- Editor de imagem (card do achadinho) -->
+  <dialog id="editor" class="editor" aria-label="Criar imagem">
+    <div class="editor__topo">
+      <h2>Imagem do achadinho</h2>
+      <button type="button" class="btn-quadrado" id="fecharEditor" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="editor__corpo">
+      <div class="editor__tela"><canvas id="telaCard" width="1080" height="1080" aria-label="Pré-visualização da imagem"></canvas></div>
+      <div class="editor__campos">
+        <div class="campo"><span>Formato</span>
+          <div class="alternar" id="edFormato" role="radiogroup">
+            <button type="button" role="radio" data-v="quadrado" aria-checked="true">Quadrado (feed)</button>
+            <button type="button" role="radio" data-v="story" aria-checked="false">Story</button>
+          </div>
+        </div>
+        <div class="campo"><span>Fundo</span>
+          <div class="alternar" id="edFundo" role="radiogroup">
+            <button type="button" role="radio" data-v="creme" aria-checked="true">Creme</button>
+            <button type="button" role="radio" data-v="rosa" aria-checked="false">Rosa</button>
+            <button type="button" role="radio" data-v="branco" aria-checked="false">Branco</button>
+          </div>
+        </div>
+        <label class="campo"><span>Título</span><input id="edTitulo" maxlength="30" placeholder="ACHADINHO DO DIA"></label>
+        <label class="campo"><span>Nome do produto</span><input id="edNome" maxlength="90"></label>
+        <label class="campo"><span>Texto do rodapé</span><input id="edRodape" maxlength="40" placeholder="Ex.: Link no grupo 💌"></label>
+        <label class="campo"><span>Cupom</span><input id="edCupom" maxlength="20" placeholder="opcional"></label>
+        <div class="opcoes">
+          <label class="opcao"><input type="checkbox" id="edPreco" checked> Mostrar preço</label>
+          <label class="opcao"><input type="checkbox" id="edSelo" checked> Selo de desconto</label>
+          <label class="opcao"><input type="checkbox" id="edMarca" checked> Marca d'água Miga</label>
+        </div>
+      </div>
+    </div>
+    <div class="editor__acoes">
+      <button type="button" class="btn btn--branco" id="baixarCard"><svg><use href="#i-baixar"/></svg>Baixar</button>
+      <button type="button" class="btn btn--rosa" id="usarCard"><svg><use href="#i-check"/></svg>Usar imagem</button>
+      <button type="button" class="link" id="usarOriginal">Voltar para a foto original</button>
+    </div>
+  </dialog>
+
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=10"></script>
-  <script src="app.js?v=10"></script>
+  <script src="firebase-config.js?v=11"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

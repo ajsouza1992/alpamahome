@@ -19,7 +19,9 @@
 
 const DOMINIOS = {
   mercadolivre: ["mercadolivre.com.br", "mercadolivre.com", "mercadolibre.com", "meli.la", "mlstatic.com"],
-  shopee: ["shopee.com.br", "shope.ee", "shp.ee", "susercontent.com", "shopee.com"]
+  shopee: ["shopee.com.br", "shope.ee", "shp.ee", "susercontent.com", "shopee.com"],
+  amazon: ["amazon.com.br", "amazon.com", "amzn.to", "a.co", "media-amazon.com"],
+  magalu: ["magazineluiza.com.br", "magazinevoce.com.br", "magalu.com", "magalu.com.br", "mlcdn.com.br"]
 };
 const UA = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
 
@@ -79,7 +81,8 @@ function precoAntigoML(html) {
 
 // Tira do nome: "| Mercado Livre", "- R$ 49,90", "Frete grátis" etc. (a loja às vezes junta tudo no título)
 const limparTitulo = (t) => String(t || "")
-  .replace(/\s*[|\-–]\s*(Mercado Livre|MercadoLivre|Shopee Brasil|Shopee).*$/i, "")
+  .replace(/\s*[|\-–:]\s*(Mercado Livre|MercadoLivre|Shopee Brasil|Shopee|Amazon\.com\.br.*|Magazine Luiza|Magalu).*$/i, "")
+  .replace(/^Amazon\.com\.br\s*:\s*/i, "")
   .replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "")
   .replace(/\s*[|\-–]\s*(frete gr[aá]tis|em at[eé] \d+x.*|oferta.*)$/i, "")
   .replace(/^Compre\s+/i, "")
@@ -88,7 +91,7 @@ const limparTitulo = (t) => String(t || "")
 /** Busca os dados do produto a partir do link de afiliado */
 async function extrairProduto(url) {
   const loja = lojaDaUrl(url);
-  if (!loja) throw new Error("Use um link do Mercado Livre ou da Shopee.");
+  if (!loja) throw new Error("Use um link do Mercado Livre, Shopee, Amazon ou Magalu.");
 
   // Segue os redirecionamentos um a um, conferindo se cada destino continua sendo da loja
   let atual = url, r = null;
@@ -128,7 +131,7 @@ const CATEGORIAS = {
 };
 
 // Lojas aceitas (a mensagem cita onde comprar)
-const LOJAS = { mercadolivre: "Mercado Livre", shopee: "Shopee" };
+const LOJAS = { mercadolivre: "Mercado Livre", shopee: "Shopee", amazon: "Amazon", magalu: "Magalu" };
 
 const brl = (v) => "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
