@@ -1,31 +1,31 @@
 {
-  "id": "./",
+  "id": "/miga/",
   "name": "Miga Promo",
   "short_name": "Miga Promo",
   "description": "Achadinhos e descontos — cole o link do Mercado Livre ou Shopee e a IA escreve a promoção. Por Alpama Soluções.",
   "lang": "pt-BR",
-  "start_url": "./?origem=app",
-  "scope": "./",
+  "start_url": "/miga/",
+  "scope": "/miga/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#fff3c4",
   "theme_color": "#fff3c4",
   "icons": [
     {
-      "src": "icone-192.png?v=15",
+      "src": "/miga/icone-192.png?v=16",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icone-512.png?v=15",
+      "src": "/miga/icone-512.png?v=16",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }
   ],
   "share_target": {
-    "action": "./",
+    "action": "/miga/",
     "method": "GET",
     "enctype": "application/x-www-form-urlencoded",
     "params": {
