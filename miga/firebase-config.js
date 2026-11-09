@@ -11,9 +11,16 @@
  * Enquanto estiver null, o app funciona em "modo local" (dados só
  * neste navegador), útil para testar.
  */
-window.FIREBASE_CONFIG = null;
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDDR_7eles8Sq__UQ9wJD3PpQFBiG2Pa48",
+  authDomain: "miga-372d3.firebaseapp.com",
+  projectId: "miga-372d3",
+  storageBucket: "miga-372d3.firebasestorage.app",
+  messagingSenderId: "130311271043",
+  appId: "1:130311271043:web:b1414021525b2233e821b6"
+};
 
-/* Exemplo depois de preenchido:
+/* (modelo) Exemplo depois de preenchido:
 window.FIREBASE_CONFIG = {
   apiKey: "AIza...",
   authDomain: "miga-promo.firebaseapp.com",
