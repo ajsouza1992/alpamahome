@@ -9,7 +9,7 @@ Site estático: HTML + CSS + JavaScript puro, sem servidor e sem banco de dados.
 | Arquivo | Para que serve |
 |---|---|
 | `index.html` | O site público (vitrine com busca e filtros) |
-| `admin.html` | Área do moderador (abas Cadastro, Produtos e Publicar) — botão **Moderador** no topo do site |
+| `admin.html` | Área do moderador (abas Cadastro, Produtos e Publicar) — não aparece no site; acesse digitando `/admin.html` |
 | `produtos.js` | **O catálogo** — lista de produtos e categorias |
 | `assets/js/icones.js` | Ícones das categorias no estilo do logo |
 | `assets/img/logo.png` | Logo / ícone do site |
@@ -18,7 +18,7 @@ Site estático: HTML + CSS + JavaScript puro, sem servidor e sem banco de dados.
 ## Como adicionar produtos
 
 1. No Mercado Livre, abra o produto e use a barra de afiliados → *Compartilhar* → copie o link.
-2. No site, clique em **Moderador** (ou abra `admin.html`). Na aba **Cadastro**:
+2. Abra `SEU-SITE/admin.html` (o endereço não aparece para os clientes). Na aba **Cadastro**:
    - **1 · Link** — cole o link de afiliado (o painel avisa se não for do Mercado Livre);
    - **2 · Imagem** — clique para enviar uma foto, arraste, cole com Ctrl+V, ou cole o endereço da imagem;
    - **3 · Dados** — nome, preço, preço antigo (opcional), categoria e descrição.
