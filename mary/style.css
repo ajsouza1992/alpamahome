@@ -94,6 +94,15 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   border-right: 2.5px solid var(--rosa); border-bottom: 2.5px solid var(--rosa); transform: rotate(45deg); pointer-events: none;
 }
 
+/* Seletor de loja (detectado pelo link) */
+.lojas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: -4px; }
+.lojas button {
+  min-height: 46px; border-radius: 16px; border: 2px solid var(--borda); background: var(--rosa-pastel);
+  font-weight: 800; font-size: 14.5px; color: var(--texto-2); cursor: pointer; transition: all .18s;
+}
+.lojas button[data-loja="mercadolivre"][aria-checked="true"] { background: #fff7c2; border-color: #f5d90a; color: #2d3277; }
+.lojas button[data-loja="shopee"][aria-checked="true"] { background: #ffe6df; border-color: #ee4d2d; color: #c23a1d; }
+
 /* ---------- Botões ---------- */
 .btn {
   position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px;

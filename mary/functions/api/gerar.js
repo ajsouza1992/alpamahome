@@ -12,6 +12,9 @@ const CATEGORIAS = {
   casa: { nome: "Casa e Decoração", foco: "deixar a casa mais aconchegante e bonita, praticidade no dia a dia e o 'efeito uau' de quem visita" }
 };
 
+// Lojas aceitas (a mensagem cita onde comprar)
+const LOJAS = { mercadolivre: "Mercado Livre", shopee: "Shopee" };
+
 const brl = (v) => "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function json(dados, status = 200) {
@@ -37,6 +40,7 @@ export function montarPrompt(p) {
     `O produto é: ${p.nome}.`,
     precos,
     `O link de compra é: ${p.link}`,
+    `Loja: ${LOJAS[p.loja] || "Mercado Livre"} (mencione de forma natural onde comprar).`,
     `Categoria do produto: ${cat.nome}. Destaque os benefícios voltados para essa categoria (${cat.foco}).`,
     cupom,
     "Formate com emojis delicados e crie um leve senso de urgência dizendo que a promoção ou o estoque podem acabar rápido.",
@@ -86,6 +90,7 @@ export async function onRequestPost({ request, env }) {
     precoNovo: Number(b.precoNovo),
     link: String(b.link || "").trim(),
     categoria: String(b.categoria || "moda"),
+    loja: LOJAS[b.loja] ? b.loja : "mercadolivre",
     cupom: String(b.cupom || "").trim().slice(0, 40)
   };
   if (!p.nome || !(p.precoNovo > 0) || !/^https?:\/\//i.test(p.link)) {

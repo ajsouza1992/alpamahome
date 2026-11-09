@@ -61,7 +61,8 @@
   function mensagemReserva(p) {
     const preco = p.precoAntigo ? `~de ${brl(p.precoAntigo)}~ por *${brl(p.precoNovo)}*` : `por apenas *${brl(p.precoNovo)}*`;
     const cupom = p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : "";
-    return `Miga, olha esse achadinho! 🤫💖\n\n✨ *${p.nome}*\n\n💸 ${preco}${cupom}\n\n${FRASES[p.categoria] || ""}\n\n👉 ${p.link}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
+    const ondeComprar = p.loja === "shopee" ? "na Shopee" : "no Mercado Livre";
+    return `Miga, olha esse achadinho ${ondeComprar}! 🤫💖\n\n✨ *${p.nome}*\n\n💸 ${preco}${cupom}\n\n${FRASES[p.categoria] || ""}\n\n👉 ${p.link}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
   }
 
   /* ---------- Formulário ---------- */
@@ -71,6 +72,27 @@
   };
   const botaoGerar = $("#gerar");
 
+  /* ---------- Loja: detectada automaticamente pelo link ---------- */
+  let loja = "mercadolivre";
+  function marcarLoja(id) {
+    loja = id;
+    document.querySelectorAll("#lojas button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.loja === id)));
+  }
+  function detectarLoja(url) {
+    const u = String(url).toLowerCase();
+    if (/shopee|shp\.ee/.test(u)) return "shopee";
+    if (/mercadoli[vb]re|meli\.la|mlstatic/.test(u)) return "mercadolivre";
+    return null;
+  }
+  $("#lojas").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-loja]");
+    if (b) marcarLoja(b.dataset.loja);
+  });
+  campos.link.addEventListener("input", () => {
+    const l = detectarLoja(campos.link.value);
+    if (l) marcarLoja(l);
+  });
+
   function validar() {
     Object.values(campos).forEach((c) => c.classList && c.classList.remove("erro"));
     const p = {
@@ -79,7 +101,8 @@
       precoNovo: lerPreco(campos.precoNovo.value),
       link: campos.link.value.trim(),
       categoria: campos.categoria.value,
-      cupom: campos.cupom.value.trim()
+      cupom: campos.cupom.value.trim(),
+      loja
     };
     const falhas = [];
     if (!p.nome) falhas.push([campos.nome, "Coloca o nome do produto 💕"]);

@@ -32,3 +32,13 @@ Desenvolvido por **Alpama Soluções**.
 
 - Texto/estilo das mensagens: função `montarPrompt` em `functions/api/gerar.js`.
 - Cores: variáveis no topo de `style.css`.
+
+## Deixar o app só para você (recomendado)
+
+Cloudflare → **Zero Trust → Access → Applications → Add an application → Self-hosted**:
+- Domínio: `mary.alpama.app` (o mesmo do app)
+- Política: **Allow** → *Include* → **Emails** → o seu e-mail
+- Método de login: **One-time PIN** (o Cloudflare manda um código para o seu e-mail)
+
+Pronto: qualquer outra pessoa que abrir o endereço vê só a tela de bloqueio do Cloudflare.
+O login dura o tempo configurado (ex.: 1 mês) e é grátis para até 50 usuários.
