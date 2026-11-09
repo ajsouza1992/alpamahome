@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mary Promo</title>
+  <meta name="description" content="Mary Promo — achadinhos & descontos. Gere mensagens de promoção para o WhatsApp com IA.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#e62673">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mary Promo">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Great+Vibes&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ícones (SVG) reutilizados no app -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-engrenagem" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></symbol>
+  </svg>
+
+  <!-- Topo com a marca -->
+  <header class="topo">
+    <img src="logo.jpg" alt="Mary Promo — Achadinhos & Descontos" class="topo__logo">
+    <div class="topo__texto">
+      <h1>Mary Promo</h1>
+      <p>Achadinhos &amp; Descontos</p>
+    </div>
+    <button class="engrenagem" id="abrirConfig" type="button" aria-label="Configurações" title="Configurações">
+      <svg><use href="#i-engrenagem"/></svg>
+    </button>
+  </header>
+
+  <main class="conteudo">
+    <!-- Formulário do produto -->
+    <form class="cartao" id="form" novalidate>
+      <h2>Novo achadinho 💖</h2>
+
+      <label class="campo">
+        <span>Nome do produto</span>
+        <input id="nome" maxlength="200" placeholder="Ex.: Sérum Vitamina C 30ml" required>
+      </label>
+
+      <div class="duas">
+        <label class="campo">
+          <span>Preço antigo <small>(opcional)</small></span>
+          <input id="precoAntigo" inputmode="decimal" placeholder="R$ 89,90">
+        </label>
+        <label class="campo">
+          <span>Preço novo</span>
+          <input id="precoNovo" inputmode="decimal" placeholder="R$ 49,90" required>
+        </label>
+      </div>
+
+      <label class="campo">
+        <span>Link de afiliado</span>
+        <input id="link" type="url" inputmode="url" placeholder="https://..." required>
+      </label>
+
+      <div class="duas duas--cat">
+        <label class="campo">
+          <span>Categoria</span>
+          <span class="select">
+            <select id="categoria">
+              <option value="moda">👗 Moda e Looks</option>
+              <option value="beleza">💄 Beleza e Skincare</option>
+              <option value="casa">🏡 Casa e Decoração</option>
+            </select>
+          </span>
+        </label>
+        <label class="campo">
+          <span>Cupom <small>(opcional)</small></span>
+          <input id="cupom" maxlength="40" placeholder="MARY10">
+        </label>
+      </div>
+
+      <button class="btn btn--principal" id="gerar" type="submit">
+        <span class="rotulo">Gerar Mary Promo ✨</span>
+        <span class="carregando" aria-hidden="true"></span>
+      </button>
+    </form>
+
+    <!-- Resultado -->
+    <section class="cartao cartao--saida" id="saida" hidden>
+      <h2>Prontinho, miga! 💌</h2>
+      <p class="aviso" id="aviso" hidden></p>
+      <textarea id="texto" rows="11" aria-label="Mensagem gerada"></textarea>
+      <div class="acoes">
+        <button class="btn btn--claro" id="copiar" type="button"><svg><use href="#i-copiar"/></svg>Copiar Texto</button>
+        <button class="btn btn--whats" id="whats" type="button"><svg><use href="#i-chat"/></svg>Compartilhar no WhatsApp</button>
+      </div>
+    </section>
+
+    <p class="assinatura">Desenvolvido por <strong>Alpama Soluções</strong></p>
+  </main>
+
+  <!-- Configurações -->
+  <dialog id="config" class="dialogo">
+    <form method="dialog">
+      <div class="dialogo__ico"><svg><use href="#i-engrenagem"/></svg></div>
+      <h2>Configurações</h2>
+      <p class="status" id="status">Verificando conexão…</p>
+      <label class="campo">
+        <span>Senha de acesso</span>
+        <input id="senha" type="password" autocomplete="current-password" placeholder="a mesma do Cloudflare (APP_SENHA)">
+      </label>
+      <div class="duas">
+        <button class="btn btn--claro" value="fechar" type="submit">Fechar</button>
+        <button class="btn btn--principal" value="salvar" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
