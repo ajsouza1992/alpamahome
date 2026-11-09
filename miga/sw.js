@@ -1,11 +1,12 @@
 /**
  * Miga Promo — Service Worker
- * Estratégia "Network First" para os arquivos do app: tenta a internet
- * (pega sempre a versão nova) e, se estiver offline, usa o cache.
- * As chamadas /api/ nunca são guardadas em cache.
+ * Cuida só da pasta do app (ex.: /miga/) e só apaga os próprios caches,
+ * para conviver com outros apps no mesmo domínio (ClockFit, Sort.IA...).
+ * Estratégia "rede primeiro": pega a versão nova e, offline, usa a cópia.
  */
-const VERSAO = "miga-promo-v5";
-const ARQUIVOS = ["./", "index.html", "style.css", "app.js", "manifest.json", "favicon.png", "firebase-config.js", "icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png"];
+const VERSAO = "miga-promo-v6";
+const BASE = new URL("./", self.location).pathname; // ex.: "/miga/"
+const ARQUIVOS = ["./", "index.html", "style.css?v=6", "app.js?v=6", "firebase-config.js?v=6", "manifest.json", "favicon.png", "icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (evento) => {
   evento.waitUntil(caches.open(VERSAO).then((cache) => cache.addAll(ARQUIVOS)).then(() => self.skipWaiting()));
@@ -14,14 +15,15 @@ self.addEventListener("install", (evento) => {
 self.addEventListener("activate", (evento) => {
   evento.waitUntil(
     caches.keys()
-      .then((chaves) => Promise.all(chaves.filter((c) => c !== VERSAO).map((c) => caches.delete(c))))
+      .then((chaves) => Promise.all(chaves.filter((c) => c.startsWith("miga-promo-") && c !== VERSAO).map((c) => caches.delete(c))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", (evento) => {
   const url = new URL(evento.request.url);
-  if (evento.request.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/")) return;
+  if (evento.request.method !== "GET" || url.origin !== location.origin) return;
+  if (!url.pathname.startsWith(BASE) || url.pathname.startsWith(BASE + "api/")) return;
   evento.respondWith(
     fetch(evento.request)
       .then((resposta) => {
@@ -31,6 +33,6 @@ self.addEventListener("fetch", (evento) => {
         }
         return resposta;
       })
-      .catch(() => caches.match(evento.request, { ignoreSearch: true }).then((r) => r || caches.match("index.html")))
+      .catch(() => caches.match(evento.request, { ignoreSearch: true }).then((r) => r || caches.match(BASE)))
   );
 });

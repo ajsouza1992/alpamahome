@@ -29,7 +29,7 @@
   const dataCurta = (t) => new Date(t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const NOME_LOJA = { mercadolivre: "Mercado Livre", shopee: "Shopee" };
   const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração" };
-  const viaServidor = (u) => "/api/imagem?url=" + encodeURIComponent(u);
+  const viaServidor = (u) => "api/imagem?url=" + encodeURIComponent(u);
 
   function lerPreco(txt) {
     let s = String(txt || "").replace(/[^\d.,]/g, "");
@@ -52,7 +52,7 @@
     el.classList.toggle("ok", !!ok);
   }
   async function api(caminho, corpo) {
-    const r = await fetch("/api/" + caminho, {
+    const r = await fetch("api/" + caminho, {
       method: corpo ? "POST" : "GET",
       headers: { "content-type": "application/json", "x-app-senha": ls.ler(CH.senha) },
       body: corpo ? JSON.stringify(corpo) : undefined

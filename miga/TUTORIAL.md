@@ -7,7 +7,7 @@ Tempo total: uns 30 minutos. Você vai usar 4 serviços gratuitos:
 | **GitHub** | Onde fica uma cópia do código (repositório `alpamahome`, pasta `miga`) |
 | **Firebase** | Login anônimo + **Firestore** (guarda histórico e grupos) |
 | **Google AI Studio** | Chave da IA (Gemini) que escreve as mensagens |
-| **Cloudflare Pages** | Publica o app em `miga.alpama.app` |
+| **Cloudflare Pages** | Publica o app em `alpama.app/miga/` |
 
 ---
 
@@ -21,8 +21,7 @@ Tempo total: uns 30 minutos. Você vai usar 4 serviços gratuitos:
 ### 1.2 Ativar o login anônimo
 1. No menu da esquerda: **Criação → Authentication → Vamos começar**.
 2. Aba **Método de login** → clique em **Anônimo** → ative → **Salvar**.
-3. Aba **Configurações → Domínios autorizados → Adicionar domínio** → digite `miga.alpama.app` → **Adicionar**.
-   (Se for testar pelo endereço `....pages.dev` do Cloudflare, adicione ele também.)
+3. Aba **Configurações → Domínios autorizados → Adicionar domínio** → digite `alpama.app` → **Adicionar**.
 
 ### 1.3 Criar o Firestore
 1. Menu: **Criação → Firestore Database → Criar banco de dados**.
@@ -76,52 +75,47 @@ troque a linha `window.FIREBASE_CONFIG = null;` por:
 
 ---
 
-## Parte 3 — Cloudflare Pages (publicar o site)
+## Parte 3 — Cloudflare Pages (publicar junto com o site alpama.app)
 
-Você recebe o arquivo **`miga-promo-site.zip`**. Ele já tem tudo: telas, ícones e o servidor da IA (`_worker.js`).
+O Miga Promo fica em **https://alpama.app/miga/**, no mesmo projeto que já publica o
+`alpama.app` (com o ClockFit em `/clockfit/` e o Sort.IA em `/sortia/`).
 
-### 3.1 Antes de subir: colocar a configuração do Firebase
-O arquivo `firebase-config.js` dentro do zip vem vazio. Escolha um jeito:
-- **Mais fácil:** me mande o bloco `firebaseConfig` (Parte 1.4) que eu devolvo o zip já preenchido; **ou**
-- **Você mesma:** descompacte o zip, abra `firebase-config.js` no Bloco de Notas, troque
-  `window.FIREBASE_CONFIG = null;` pelo bloco da Parte 1.5, salve e **compacte a pasta de novo**
-  (os arquivos precisam ficar na raiz do zip, não dentro de outra pasta).
+Você recebe o arquivo **`site_alpama_com_miga.zip`**: é o seu site de sempre (sem nenhuma mudança no
+ClockFit e no Sort.IA) **mais** a pasta `miga/`, o `_worker.js` (servidor da IA do Miga) e o `_routes.json`
+(faz o servidor rodar **só** em `/miga/api/`, sem pesar no resto do site).
 
-### 3.2 Subir o site (arrastar e soltar)
-1. Acesse **dash.cloudflare.com** → **Workers & Pages → Criar → Pages**.
-2. Escolha **Fazer upload de ativos** (*Upload assets*).
-3. Nome do projeto: `miga-promo` → **Criar projeto**.
-4. **Arraste o `miga-promo-site.zip`** para a área de upload → **Implantar site**.
-5. Em alguns segundos aparece o endereço `miga-promo.pages.dev`.
+### 3.1 Antes de subir: configuração do Firebase do Miga
+O arquivo `miga/firebase-config.js` dentro do zip vem vazio. Me mande o bloco `firebaseConfig`
+(Parte 1.4) que eu devolvo o zip já preenchido. Se subir vazio, o app funciona, mas o histórico e os
+grupos ficam salvos só no aparelho.
 
-### 3.3 Colocar a chave da IA e a senha
-1. No projeto: **Configurações → Variáveis e segredos → Adicionar** (ambiente **Produção**).
-2. Adicione (tipo **Segredo / Criptografar**):
+### 3.2 Subir (no projeto que já existe)
+1. **dash.cloudflare.com → Workers & Pages** → abra o projeto que já publica o **alpama.app**.
+2. **Implantações → Criar implantação** (*Create deployment*) → ambiente **Produção**.
+3. **Arraste o `site_alpama_com_miga.zip`** → **Salvar e implantar**.
+
+> Se esse projeto estiver ligado ao GitHub (sem a opção de upload), copie o conteúdo do zip para o
+> repositório desse site e faça o commit — o Cloudflare publica sozinho.
+
+### 3.3 Chave da IA e senha (no mesmo projeto)
+1. **Configurações → Variáveis e segredos → Adicionar** (ambiente **Produção**, tipo **Criptografar**):
    | Nome | Valor |
    |---|---|
    | `GEMINI_API_KEY` | a chave da Parte 2 |
    | `APP_SENHA` | uma senha que você inventar (o app pede uma vez, na engrenagem) |
-3. **Salvar**.
-4. Para as variáveis valerem, faça uma nova implantação: **Implantações → Criar implantação**
-   e arraste o mesmo `miga-promo-site.zip` de novo.
+2. **Salvar** e faça **mais uma implantação** com o mesmo zip (para as variáveis valerem).
 
-> Sempre que eu te mandar uma versão nova do app, é só repetir: **Criar implantação** → arrastar o zip novo.
+Essas variáveis só são usadas pelo Miga; o ClockFit e o Sort.IA não são afetados.
 
-### 3.4 Usar o domínio alpama.app
-1. No projeto: **Domínios personalizados → Configurar um domínio**.
-2. Digite `miga.alpama.app` → **Continuar → Ativar domínio**.
-   Como o `alpama.app` já está no Cloudflare, o resto é automático (alguns minutos).
-3. Lembre de autorizar esse domínio no Firebase (Parte 1.2, item 3).
-
-> **Alternativa pelo GitHub:** em vez do upload, dá para usar *Conectar ao Git* com o repositório
-> `alpamahome` e **Diretório raiz `miga`** (comando de build vazio, saída `/`). Aí o site atualiza sozinho
-> a cada mudança no GitHub. Os passos 3.3 e 3.4 são iguais.
+### 3.4 Firebase do Miga: domínio autorizado
+No projeto do Firebase do Miga: **Authentication → Configurações → Domínios autorizados** →
+adicione `alpama.app`.
 
 ---
 
 ## Parte 4 — Instalar no celular
 
-1. Abra **https://miga.alpama.app** no celular.
+1. Abra **https://alpama.app/miga/** no celular.
 2. Toque em **Entrar** (login anônimo).
 3. Toque na **engrenagem** → coloque a **senha** (`APP_SENHA`) → **Salvar**.
 4. Instale:

@@ -239,12 +239,14 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     const metodo = request.method;
+    // Aceita /miga/api/... (site alpama.app) e /api/... (app sozinho num domínio)
+    const m = pathname.match(/^(?:\/miga)?\/api\/([a-z]+)$/);
     try {
-      if (pathname === "/api/produto" && metodo === "POST") return await rotaProduto(request, env);
-      if (pathname === "/api/gerar" && metodo === "POST") return await rotaGerar(request, env);
-      if (pathname === "/api/imagem" && metodo === "GET") return await rotaImagem(request);
-      if (pathname === "/api/status" && metodo === "GET") return rotaStatus(env);
-      if (pathname.startsWith("/api/")) return json({ erro: "Rota não encontrada." }, 404);
+      if (m && m[1] === "produto" && metodo === "POST") return await rotaProduto(request, env);
+      if (m && m[1] === "gerar" && metodo === "POST") return await rotaGerar(request, env);
+      if (m && m[1] === "imagem" && metodo === "GET") return await rotaImagem(request);
+      if (m && m[1] === "status" && metodo === "GET") return rotaStatus(env);
+      if (m) return json({ erro: "Rota não encontrada." }, 404);
     } catch (e) {
       return json({ erro: "Erro no servidor: " + (e.message || e) }, 500);
     }
