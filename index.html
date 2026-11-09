@@ -7,136 +7,116 @@
   <meta name="description" content="Achados selecionados para casa: decoração, cama, cozinha, área de lazer e muito mais, com os melhores preços do Mercado Livre e Shopee.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/site.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="assets/img/logo.png">
+  <link rel="apple-touch-icon" href="assets/img/logo.png">
+  <meta name="theme-color" content="#0f3d2a">
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-  <div class="anuncio">
-    <div class="marquee"><span>✦ Achados para casa com preço de oferta</span><span>✦ Links oficiais Mercado Livre &amp; Shopee</span><span>✦ Curadoria nova toda semana</span><span>✦ Achados para casa com preço de oferta</span><span>✦ Links oficiais Mercado Livre &amp; Shopee</span><span>✦ Curadoria nova toda semana</span></div>
-  </div>
-
-  <header class="cabecalho">
-    <div class="wrap cabecalho__in">
-      <a href="./" class="marca" aria-label="Alpama Home — início">alpama<span>.home</span></a>
-      <nav class="menu" id="menu" aria-label="Categorias principais"></nav>
-      <a href="#loja" class="cabecalho__cta">Ver achados</a>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a href="./" class="logo" aria-label="Alpama Home — início">
+        <img class="logo__mark" src="assets/img/logo.png" alt="">
+        <span class="logo__text">Alpama<em>Home</em></span>
+      </a>
+      <label class="search" aria-label="Buscar produtos">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="busca" type="search" placeholder="Buscar sofá, luminária, lençol..." autocomplete="off">
+      </label>
+      <button class="btn-filtros" id="abrirFiltros" type="button" aria-controls="filtros">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filtros
+      </button>
     </div>
   </header>
 
   <section class="hero">
-    <div class="wrap hero__grid">
-      <div class="hero__texto">
-        <p class="selo">Curadoria Alpama · <span id="totalHero"></span> achados</p>
-        <h1>Sua casa,<br><em>do jeito</em> que<br>você sonhou.</h1>
-        <p class="hero__sub">Garimpamos o melhor do Mercado Livre e da Shopee em decoração, cama, cozinha e área de lazer — você só escolhe.</p>
-        <form class="hero__busca" id="heroBusca" role="search">
-          <input type="search" id="buscaHero" placeholder="O que sua casa está pedindo?" aria-label="Buscar produtos">
-          <button type="submit">Buscar</button>
-        </form>
-      </div>
-      <div class="bento" id="bento" aria-label="Categorias em destaque"></div>
-    </div>
-  </section>
-
-  <section class="wrap secao" id="loja">
-    <div class="secao__topo">
-      <h2>Explore por <em>ambiente</em></h2>
-    </div>
-    <div class="ambientes" id="ambientes"></div>
-  </section>
-
-  <section class="wrap secao">
-    <div class="barra" id="barra">
-      <label class="barra__busca">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="busca" type="search" placeholder="Buscar produto..." autocomplete="off" aria-label="Buscar produto">
-      </label>
-      <button class="barra__abrir" id="abrirFiltros" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
-        Filtros <b id="nFiltros" hidden></b>
-      </button>
-
-      <div class="painelf" id="painelf" role="dialog" aria-label="Filtros">
-        <div class="painelf__topo"><strong>Filtros</strong><button type="button" id="fecharFiltros" aria-label="Fechar">✕</button></div>
-
-        <div class="f f--preco">
-          <span class="f__rot">Preço</span>
-          <div class="faixa">
-            <div class="faixa__valores"><output id="vMin"></output><span>—</span><output id="vMax"></output></div>
-            <div class="faixa__slider">
-              <div class="faixa__trilho"><div class="faixa__ativo" id="ativoFaixa"></div></div>
-              <input type="range" id="rMin" aria-label="Preço mínimo">
-              <input type="range" id="rMax" aria-label="Preço máximo">
-            </div>
-          </div>
-          <div class="atalhos" id="atalhos"></div>
-        </div>
-
-        <div class="f">
-          <span class="f__rot">Loja</span>
-          <div class="seg" id="lojas" role="group" aria-label="Loja"></div>
-        </div>
-
-        <div class="f f--linha">
-          <button class="pill" type="button" id="soPromo" aria-pressed="false">% Só ofertas</button>
-          <label class="ordem">
-            <span>Ordenar</span>
-            <select id="ordem">
-              <option value="relevancia">Destaques</option>
-              <option value="menor">Menor preço</option>
-              <option value="maior">Maior preço</option>
-              <option value="desconto">Maior desconto</option>
-              <option value="az">A–Z</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="painelf__rodape">
-          <button type="button" class="link" id="limpar">Limpar tudo</button>
-          <button type="button" class="botao" id="aplicar">Ver <span id="nAplicar"></span> produtos</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="resumo">
-      <p id="contagem" aria-live="polite"></p>
-      <div class="ativos" id="ativos"></div>
-      <button type="button" class="link" id="limparResumo" hidden>Limpar filtros</button>
-    </div>
-
-    <div class="grade" id="grade"></div>
-
-    <div class="vazio" id="vazio" hidden>
-      <div class="vazio__ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
-      <h3>Nada por aqui… ainda</h3>
-      <p>Tente outra palavra ou aumente a faixa de preço.</p>
-      <button class="botao" type="button" data-limpar>Limpar filtros</button>
-    </div>
-  </section>
-
-  <section class="wrap">
-    <div class="faixa-cta">
+    <div class="container hero__inner">
       <div>
-        <h2>Achou, gostou, <em>levou.</em></h2>
-        <p>Todos os produtos são vendidos e entregues pelo Mercado Livre ou Shopee, com a garantia e o frete de cada loja.</p>
+        <p class="eyebrow">Curadoria para o seu lar</p>
+        <h1>Achados bonitos para <span>cada canto</span> da casa.</h1>
+        <p class="hero__sub">Decoração, cama, cozinha, área de lazer e muito mais — selecionados a dedo, com os melhores preços do Mercado Livre e Shopee.</p>
+        <a href="#categorias" class="btn btn--primary">Ver produtos</a>
       </div>
-      <ul>
-        <li><b>1</b> Escolha o achado</li>
-        <li><b>2</b> Compre na loja oficial</li>
-        <li><b>3</b> Receba em casa</li>
-      </ul>
+      <div class="hero__art" aria-hidden="true">
+        <div class="blob blob--1"></div>
+        <div class="blob blob--2"></div>
+        <div class="hero__card">
+          <span>🪴</span><span>🛋️</span><span>🛏️</span><span>☀️</span>
+        </div>
+      </div>
     </div>
   </section>
+
+  <nav class="cats container" id="categorias" aria-label="Categorias"></nav>
+
+  <main class="container layout" id="catalogo">
+    <aside class="filtros" id="filtros" aria-label="Filtros">
+      <div class="filtros__head">
+        <h2>Filtros</h2>
+        <button class="filtros__fechar" id="fecharFiltros" type="button" aria-label="Fechar filtros">✕</button>
+      </div>
+
+      <div class="grupo">
+        <h3>Faixa de preço</h3>
+        <div class="preco-inputs">
+          <label>Mín.<span class="moeda"><i>R$</i><input id="precoMin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></span></label>
+          <label>Máx.<span class="moeda"><i>R$</i><input id="precoMax" type="number" min="0" step="1" inputmode="numeric" placeholder="∞"></span></label>
+        </div>
+        <div class="chips" id="faixas"></div>
+      </div>
+
+      <div class="grupo">
+        <h3>Loja</h3>
+        <div class="checks" id="lojas"></div>
+      </div>
+
+      <div class="grupo">
+        <label class="switch">
+          <input type="checkbox" id="soPromo">
+          <span class="switch__track"></span>
+          Só com desconto
+        </label>
+      </div>
+
+      <button class="btn btn--ghost btn--block" id="limpar" type="button">Limpar filtros</button>
+    </aside>
+
+    <section class="resultados">
+      <div class="resultados__bar">
+        <p id="contagem" aria-live="polite"></p>
+        <label class="ordenar">
+          Ordenar por
+          <select id="ordem">
+            <option value="relevancia">Destaques</option>
+            <option value="menor">Menor preço</option>
+            <option value="maior">Maior preço</option>
+            <option value="desconto">Maior desconto</option>
+            <option value="az">Nome (A–Z)</option>
+          </select>
+        </label>
+      </div>
+      <div class="ativos" id="ativos"></div>
+      <div class="grid" id="grid"></div>
+      <div class="vazio" id="vazio" hidden>
+        <p class="vazio__emoji">🔎</p>
+        <h3>Nenhum produto encontrado</h3>
+        <p>Tente ajustar a busca ou a faixa de preço.</p>
+        <button class="btn btn--primary" type="button" data-limpar>Limpar filtros</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" hidden></div>
 
   <footer class="rodape">
-    <div class="wrap rodape__in">
-      <a href="./" class="marca marca--claro">alpama<span>.home</span></a>
-      <p>Este site contém links de afiliado: ao comprar por eles, posso receber uma comissão, sem custo extra para você. Preços e estoque podem mudar — confira sempre na loja.</p>
-      <p class="rodape__copy">© <span id="ano"></span> Alpama Home</p>
+    <div class="container">
+      <p class="logo logo--small"><img class="logo__mark" src="assets/img/logo.png" alt=""><span class="logo__text">Alpama<em>Home</em></span></p>
+      <p class="aviso">Este site contém links de afiliado. Ao comprar por eles, posso receber uma comissão, sem nenhum custo extra para você. Preços e disponibilidade podem mudar — confira sempre na loja.</p>
+      <p class="copy">© <span id="ano"></span> Alpama Home</p>
     </div>
   </footer>
-
-  <div class="veu" id="veu" hidden></div>
 
   <script src="produtos.js"></script>
   <script src="assets/js/app.js"></script>

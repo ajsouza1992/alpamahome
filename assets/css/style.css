@@ -1,23 +1,23 @@
 :root {
-  --bg: #faf6f0;
+  --bg: #f4f2ec;
   --surface: #ffffff;
-  --surface-2: #f3ece2;
-  --ink: #2b2420;
-  --ink-2: #6b5f57;
-  --line: #e8ded2;
-  --brand: #b5653f;        /* terracota */
+  --surface-2: #e8ebe3;
+  --ink: #13261d;
+  --ink-2: #5a6a61;
+  --line: #dcdfd5;
+  --brand: #0f3d2a;        /* verde do logo */
   --brand-ink: #ffffff;
-  --brand-soft: #f6e4d8;
-  --sage: #7d8f6e;
-  --sage-soft: #e6ebdf;
+  --brand-soft: #dde7df;
+  --sage: #4c6e5e;
+  --sage-soft: #e3eae5;
   --ml: #ffe600;           /* Mercado Livre */
   --ml-ink: #2d3277;
   --shopee: #ee4d2d;
   --amazon: #232f3e;
   --radius: 18px;
   --radius-sm: 10px;
-  --shadow: 0 1px 2px rgba(43, 36, 32, .04), 0 8px 24px rgba(43, 36, 32, .06);
-  --shadow-hover: 0 2px 4px rgba(43, 36, 32, .06), 0 16px 40px rgba(43, 36, 32, .12);
+  --shadow: 0 1px 2px rgba(15, 61, 42, .04), 0 8px 24px rgba(15, 61, 42, .06);
+  --shadow-hover: 0 2px 4px rgba(15, 61, 42, .06), 0 16px 40px rgba(15, 61, 42, .12);
   --serif: "Fraunces", Georgia, serif;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -49,7 +49,7 @@ a { color: inherit; }
 }
 .btn:active { transform: translateY(1px); }
 .btn--primary { background: var(--brand); color: var(--brand-ink); }
-.btn--primary:hover { background: #9f5634; }
+.btn--primary:hover { background: #0a2e1f; }
 .btn--ghost { background: transparent; border-color: var(--line); }
 .btn--ghost:hover { background: var(--surface-2); }
 .btn--block { width: 100%; }
@@ -57,7 +57,7 @@ a { color: inherit; }
 /* ---------- Topo ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 30;
-  background: rgba(250, 246, 240, .85);
+  background: rgba(244, 242, 236, .88);
   backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--line);
 }
@@ -67,6 +67,7 @@ a { color: inherit; }
 .logo__mark {
   width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
   background: var(--brand); color: #fff; font-family: var(--serif); font-size: 22px; font-weight: 600;
+  object-fit: cover;
 }
 .logo__text { font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
 .logo__text em { font-style: italic; font-weight: 400; color: var(--brand); margin-left: 2px; }
@@ -93,7 +94,7 @@ a { color: inherit; }
 .hero__inner { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
 .eyebrow {
   display: inline-block; margin: 0 0 14px; padding: 6px 14px; border-radius: 999px;
-  background: var(--sage-soft); color: #4e5d42; font-size: 13px; font-weight: 600; letter-spacing: .02em;
+  background: var(--sage-soft); color: var(--brand); font-size: 13px; font-weight: 600; letter-spacing: .02em;
 }
 .hero h1 {
   font-family: var(--serif); font-weight: 400; font-size: clamp(34px, 5vw, 58px);
@@ -154,7 +155,7 @@ a { color: inherit; }
   font-size: 13px; cursor: pointer; transition: all .15s;
 }
 .chip:hover { border-color: var(--brand); }
-.chip[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: #7e3f20; font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); font-weight: 600; }
 
 .checks { display: grid; gap: 10px; }
 .check { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
@@ -238,7 +239,7 @@ a { color: inherit; }
 .aviso { color: var(--ink-2); font-size: 13px; max-width: 680px; margin: 0; }
 .copy { color: var(--ink-2); font-size: 13px; margin: 0; }
 
-.overlay { position: fixed; inset: 0; background: rgba(43, 36, 32, .4); z-index: 40; }
+.overlay { position: fixed; inset: 0; background: rgba(15, 61, 42, .4); z-index: 40; }
 
 /* ---------- Responsivo ---------- */
 @media (max-width: 960px) {
@@ -313,7 +314,7 @@ a { color: inherit; }
 .icon-btn:hover { border-color: var(--brand); }
 .icon-btn--perigo:hover { border-color: #c0392b; background: #fdecea; }
 
-.publicar { margin-top: 24px; background: var(--sage-soft); border: 1px solid #cfd8c4; }
+.publicar { margin-top: 24px; background: var(--sage-soft); border: 1px solid #c9d6cc; }
 .publicar ol { margin: 8px 0 16px; padding-left: 20px; color: var(--ink); font-size: 14px; }
 .publicar li { margin-bottom: 4px; }
 .publicar code { background: rgba(255,255,255,.7); padding: 1px 6px; border-radius: 6px; font-size: 13px; }
