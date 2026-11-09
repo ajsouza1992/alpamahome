@@ -1,10 +1,10 @@
 /**
- * Mary Promo — Service Worker
+ * Miga Promo — Service Worker
  * Estratégia "Network First" para os arquivos do app: tenta a internet
  * (pega sempre a versão nova) e, se estiver offline, usa o cache.
  * As chamadas /api/ nunca são guardadas em cache.
  */
-const VERSAO = "mary-promo-v1";
+const VERSAO = "miga-promo-v1";
 const ARQUIVOS = ["./", "index.html", "style.css", "app.js", "manifest.json", "logo.jpg", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (evento) => {

@@ -1,5 +1,5 @@
 /**
- * Mary Promo — POST /api/gerar
+ * Miga Promo — POST /api/gerar
  * Recebe os dados do produto, monta o prompt e chama a API do Gemini.
  * A chave fica SÓ aqui no servidor (variável GEMINI_API_KEY no Cloudflare),
  * nunca no app que roda no celular.
@@ -24,7 +24,7 @@ function json(dados, status = 200) {
   });
 }
 
-/** Monta o prompt base da Mary Promo com os dados do formulário */
+/** Monta o prompt base da Miga Promo com os dados do formulário */
 export function montarPrompt(p) {
   const cat = CATEGORIAS[p.categoria] || CATEGORIAS.moda;
   const precos = p.precoAntigo
@@ -35,7 +35,7 @@ export function montarPrompt(p) {
     : "Não há cupom: NÃO mencione cupom.";
 
   return [
-    "Atue como uma curadora de moda, beleza e utilidades para um grupo VIP de WhatsApp focado no público feminino, chamado Mary Promo.",
+    "Atue como uma curadora de moda, beleza e utilidades para um grupo VIP de WhatsApp focado no público feminino, chamado Miga Promo.",
     "Crie uma mensagem curta, amigável e em tom de confidência (como uma amiga dando uma dica incrível).",
     `O produto é: ${p.nome}.`,
     precos,

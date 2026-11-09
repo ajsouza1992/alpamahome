@@ -1,5 +1,5 @@
 /**
- * Mary Promo — app.js
+ * Miga Promo — app.js
  * Desenvolvido por Alpama Soluções.
  *
  * Fluxo: formulário → POST /api/gerar (servidor chama o Gemini) → texto na tela
@@ -14,7 +14,7 @@
 
   /* ---------- Utilidades ---------- */
   const $ = (s) => document.querySelector(s);
-  const CHAVE_SENHA = "mary_senha";
+  const CHAVE_SENHA = "miga_senha";
 
   const armazenamento = {
     ler(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
@@ -121,7 +121,7 @@
   function carregando(sim) {
     botaoGerar.disabled = sim;
     botaoGerar.classList.toggle("ocupado", sim);
-    botaoGerar.querySelector(".rotulo").textContent = sim ? "Gerando..." : "Gerar Mary Promo ✨";
+    botaoGerar.querySelector(".rotulo").textContent = sim ? "Gerando..." : "Gerar Miga Promo ✨";
   }
 
   function mostrarSaida(texto, aviso) {

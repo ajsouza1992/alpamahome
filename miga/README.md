@@ -1,4 +1,4 @@
-# Mary Promo — Achadinhos & Descontos
+# Miga Promo — Achadinhos & Descontos
 
 PWA para gerar mensagens de promoção com IA (Gemini) no tom "dica de amiga", prontas para o WhatsApp.
 Desenvolvido por **Alpama Soluções**.
@@ -18,14 +18,14 @@ Desenvolvido por **Alpama Soluções**.
 ## Publicar no Cloudflare Pages
 
 1. **Workers & Pages → Criar → Pages → Conectar ao Git** → repositório `alpamahome`.
-2. Branch: `ccr-7374c7ca-pithl7` (ou `main`, depois de juntar) · **Diretório raiz: `mary`** ·
+2. Branch: `ccr-7374c7ca-pithl7` (ou `main`, depois de juntar) · **Diretório raiz: `miga`** ·
    Framework: Nenhum · Comando de build: vazio · Diretório de saída: `/`.
 3. **Configurações → Variáveis e segredos** (tipo *Secret*/criptografado):
    - `GEMINI_API_KEY` = sua chave do Google AI Studio
    - `APP_SENHA` = uma senha sua (o app pede uma vez, na engrenagem)
    - opcional `GEMINI_MODEL` (padrão `gemini-2.5-flash`)
 4. **Implantações → Tentar novamente** para aplicar as variáveis.
-5. **Domínios personalizados** → ex.: `mary.alpama.app`.
+5. **Domínios personalizados** → ex.: `miga.alpama.app`.
 6. No celular: abrir o endereço → engrenagem → senha → menu do navegador → **Adicionar à tela inicial**.
 
 ## Personalizar
@@ -36,7 +36,7 @@ Desenvolvido por **Alpama Soluções**.
 ## Deixar o app só para você (recomendado)
 
 Cloudflare → **Zero Trust → Access → Applications → Add an application → Self-hosted**:
-- Domínio: `mary.alpama.app` (o mesmo do app)
+- Domínio: `miga.alpama.app` (o mesmo do app)
 - Política: **Allow** → *Include* → **Emails** → o seu e-mail
 - Método de login: **One-time PIN** (o Cloudflare manda um código para o seu e-mail)
 
