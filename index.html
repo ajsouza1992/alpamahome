@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alpama Home — Achados para sua casa</title>
+  <meta name="description" content="Achados selecionados para casa: decoração, cama, cozinha, área de lazer e muito mais, com os melhores preços do Mercado Livre e Shopee.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a href="./" class="logo" aria-label="Alpama Home — início">
+        <span class="logo__mark">A</span>
+        <span class="logo__text">Alpama<em>Home</em></span>
+      </a>
+      <label class="search" aria-label="Buscar produtos">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="busca" type="search" placeholder="Buscar sofá, luminária, lençol..." autocomplete="off">
+      </label>
+      <button class="btn-filtros" id="abrirFiltros" type="button" aria-controls="filtros">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filtros
+      </button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero__inner">
+      <div>
+        <p class="eyebrow">Curadoria para o seu lar</p>
+        <h1>Achados bonitos para <span>cada canto</span> da casa.</h1>
+        <p class="hero__sub">Decoração, cama, cozinha, área de lazer e muito mais — selecionados a dedo, com os melhores preços do Mercado Livre e Shopee.</p>
+        <a href="#categorias" class="btn btn--primary">Ver produtos</a>
+      </div>
+      <div class="hero__art" aria-hidden="true">
+        <div class="blob blob--1"></div>
+        <div class="blob blob--2"></div>
+        <div class="hero__card">
+          <span>🪴</span><span>🛋️</span><span>🛏️</span><span>☀️</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="cats container" id="categorias" aria-label="Categorias"></nav>
+
+  <main class="container layout" id="catalogo">
+    <aside class="filtros" id="filtros" aria-label="Filtros">
+      <div class="filtros__head">
+        <h2>Filtros</h2>
+        <button class="filtros__fechar" id="fecharFiltros" type="button" aria-label="Fechar filtros">✕</button>
+      </div>
+
+      <div class="grupo">
+        <h3>Faixa de preço</h3>
+        <div class="preco-inputs">
+          <label>Mín.<span class="moeda"><i>R$</i><input id="precoMin" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></span></label>
+          <label>Máx.<span class="moeda"><i>R$</i><input id="precoMax" type="number" min="0" step="1" inputmode="numeric" placeholder="∞"></span></label>
+        </div>
+        <div class="chips" id="faixas"></div>
+      </div>
+
+      <div class="grupo">
+        <h3>Loja</h3>
+        <div class="checks" id="lojas"></div>
+      </div>
+
+      <div class="grupo">
+        <label class="switch">
+          <input type="checkbox" id="soPromo">
+          <span class="switch__track"></span>
+          Só com desconto
+        </label>
+      </div>
+
+      <button class="btn btn--ghost btn--block" id="limpar" type="button">Limpar filtros</button>
+    </aside>
+
+    <section class="resultados">
+      <div class="resultados__bar">
+        <p id="contagem" aria-live="polite"></p>
+        <label class="ordenar">
+          Ordenar por
+          <select id="ordem">
+            <option value="relevancia">Destaques</option>
+            <option value="menor">Menor preço</option>
+            <option value="maior">Maior preço</option>
+            <option value="desconto">Maior desconto</option>
+            <option value="az">Nome (A–Z)</option>
+          </select>
+        </label>
+      </div>
+      <div class="ativos" id="ativos"></div>
+      <div class="grid" id="grid"></div>
+      <div class="vazio" id="vazio" hidden>
+        <p class="vazio__emoji">🔎</p>
+        <h3>Nenhum produto encontrado</h3>
+        <p>Tente ajustar a busca ou a faixa de preço.</p>
+        <button class="btn btn--primary" type="button" data-limpar>Limpar filtros</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" hidden></div>
+
+  <footer class="rodape">
+    <div class="container">
+      <p class="logo logo--small"><span class="logo__mark">A</span><span class="logo__text">Alpama<em>Home</em></span></p>
+      <p class="aviso">Este site contém links de afiliado. Ao comprar por eles, posso receber uma comissão, sem nenhum custo extra para você. Preços e disponibilidade podem mudar — confira sempre na loja.</p>
+      <p class="copy">© <span id="ano"></span> Alpama Home</p>
+    </div>
+  </footer>
+
+  <script src="produtos.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Painel — Alpama Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a href="./" class="logo"><span class="logo__mark">A</span><span class="logo__text">Alpama<em>Home</em></span></a>
+      <span class="eyebrow" style="margin:0">Painel de produtos</span>
+      <a class="btn btn--ghost" href="index.html?preview=1" target="_blank" style="margin-left:auto">Pré-visualizar no site ↗</a>
+    </div>
+  </header>
+
+  <main class="container admin-main">
+    <div>
+      <section class="painel">
+        <h2 id="formTitulo">Adicionar produto</h2>
+        <p>Cole o seu link de afiliado (Mercado Livre, Shopee...) e preencha os dados.</p>
+        <form class="form" id="form" autocomplete="off">
+          <input type="hidden" id="f-id">
+          <label class="campo">Link de afiliado *
+            <input id="f-link" type="url" required placeholder="https://mercadolivre.com/sec/... ou https://s.shopee.com.br/...">
+            <span class="dica">A loja é detectada automaticamente pelo link.</span>
+          </label>
+          <label class="campo">Nome do produto *
+            <input id="f-nome" required maxlength="140" placeholder="Ex.: Luminária de Mesa Cúpula Linho">
+          </label>
+          <div class="linha">
+            <label class="campo">Preço atual (R$) *
+              <input id="f-preco" required inputmode="decimal" placeholder="129,90">
+            </label>
+            <label class="campo">Preço antigo (R$)
+              <input id="f-antigo" inputmode="decimal" placeholder="opcional">
+            </label>
+          </div>
+          <div class="linha">
+            <label class="campo">Categoria *
+              <select id="f-categoria" required></select>
+            </label>
+            <label class="campo">Loja
+              <select id="f-loja">
+                <option value="mercadolivre">Mercado Livre</option>
+                <option value="shopee">Shopee</option>
+                <option value="amazon">Amazon</option>
+                <option value="outra">Outra</option>
+              </select>
+            </label>
+          </div>
+          <label class="campo">URL da imagem
+            <div class="preview-img">
+              <span class="vazio-img" id="f-img-prev">🖼️</span>
+              <input id="f-imagem" type="url" placeholder="https://http2.mlstatic.com/...jpg">
+            </div>
+            <span class="dica">Na página do produto, clique com o botão direito na foto → “Copiar endereço da imagem”.</span>
+          </label>
+          <label class="campo">Descrição curta
+            <textarea id="f-descricao" maxlength="200" placeholder="opcional"></textarea>
+          </label>
+          <label class="switch"><input type="checkbox" id="f-destaque"><span class="switch__track"></span>Destacar no topo</label>
+          <div class="acoes">
+            <button class="btn btn--primary" type="submit" id="btnSalvar">Adicionar produto</button>
+            <button class="btn btn--ghost" type="button" id="btnCancelar" hidden>Cancelar edição</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="painel publicar">
+        <h2>Publicar no site</h2>
+        <p style="color:var(--ink-2);font-size:14px;margin:0">Suas alterações ficam salvas como rascunho neste navegador. Para que todos vejam:</p>
+        <ol>
+          <li>Clique em <strong>Baixar produtos.js</strong>.</li>
+          <li>Substitua o arquivo <code>produtos.js</code> do site por esse (no GitHub: <em>Add file → Upload files</em>).</li>
+          <li>Pronto! Em 1–2 minutos o site atualiza.</li>
+        </ol>
+        <div class="acoes">
+          <button class="btn btn--primary" type="button" id="btnBaixar">Baixar produtos.js</button>
+          <button class="btn btn--ghost" type="button" id="btnImportar">Importar arquivo</button>
+          <input type="file" id="arquivo" accept=".js,.json" hidden>
+        </div>
+        <p style="margin:14px 0 0;font-size:13px"><button type="button" id="btnDescartar" style="border:0;background:none;color:var(--ink-2);text-decoration:underline;cursor:pointer;padding:0">Descartar rascunho e recarregar o que está publicado</button></p>
+      </section>
+    </div>
+
+    <section class="painel">
+      <div class="lista-head">
+        <h2 style="margin:0">Produtos <small id="total" style="font-family:var(--sans);font-size:14px;color:var(--ink-2);font-weight:400"></small></h2>
+        <input type="search" id="filtroLista" placeholder="Filtrar lista...">
+      </div>
+      <div class="lista" id="lista"></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="produtos.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>
