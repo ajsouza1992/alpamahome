@@ -9,10 +9,7 @@ Desenvolvido por **Alpama Soluções**.
 |---|---|
 | `index.html`, `style.css`, `app.js` | O app (roda no celular) |
 | `manifest.json`, `sw.js`, ícones (`icon-*.png`, `maskable-512.png`, `apple-touch-icon.png`, `simbolo.svg`) | PWA instalável e cache offline |
-| `functions/api/gerar.js` | Servidor: monta o prompt e chama o Gemini (**a chave fica aqui, via variável**) |
-| `functions/api/produto.js` + `lib/extrair.js` | Lê o link (Mercado Livre/Shopee) e traz foto, nome e preço |
-| `functions/api/imagem.js` | Entrega a foto do produto para enviar junto no WhatsApp |
-| `functions/api/status.js` | Informa se a IA está configurada |
+| `_worker.js` | Servidor no Cloudflare: busca do produto, IA (Gemini), imagem e status (**a chave fica numa variável**) |
 
 > A chave do Gemini **não** fica no `app.js`: tudo que está no app pode ser visto por qualquer pessoa.
 > Ela é guardada como segredo no Cloudflare (`GEMINI_API_KEY`).
@@ -32,7 +29,7 @@ Desenvolvido por **Alpama Soluções**.
 
 ## Personalizar
 
-- Texto/estilo das mensagens: função `montarPrompt` em `functions/api/gerar.js`.
+- Texto/estilo das mensagens: função `montarPrompt` em `_worker.js`.
 - Cores: variáveis no topo de `style.css`.
 
 ## Deixar o app só para você (recomendado)

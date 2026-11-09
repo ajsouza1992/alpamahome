@@ -4,7 +4,7 @@ Tempo total: uns 30 minutos. Você vai usar 4 serviços gratuitos:
 
 | Serviço | Para quê |
 |---|---|
-| **GitHub** | Onde o código do app já está (repositório `alpamahome`, pasta `miga`) |
+| **GitHub** | Onde fica uma cópia do código (repositório `alpamahome`, pasta `miga`) |
 | **Firebase** | Login anônimo + **Firestore** (guarda histórico e grupos) |
 | **Google AI Studio** | Chave da IA (Gemini) que escreve as mensagens |
 | **Cloudflare Pages** | Publica o app em `miga.alpama.app` |
@@ -48,10 +48,9 @@ Tempo total: uns 30 minutos. Você vai usar 4 serviços gratuitos:
    };
    ```
 
-### 1.5 Colar a configuração no app (pelo GitHub, sem programar)
-1. No GitHub, abra o repositório **alpamahome** → pasta **`miga`** → arquivo **`firebase-config.js`**.
-2. Clique no **lápis** (Editar).
-3. Troque a linha `window.FIREBASE_CONFIG = null;` por:
+### 1.5 Colar a configuração no app
+Veja o passo **3.1** (ou me mande o bloco que eu preencho). No arquivo **`firebase-config.js`**,
+troque a linha `window.FIREBASE_CONFIG = null;` por:
    ```js
    window.FIREBASE_CONFIG = {
      apiKey: "AIza...",
@@ -63,7 +62,6 @@ Tempo total: uns 30 minutos. Você vai usar 4 serviços gratuitos:
    };
    ```
    (com os **seus** valores do passo 1.4)
-4. Clique em **Commit changes** → **Commit changes**.
 
 > Esses dados do Firebase podem ficar no código: eles são públicos por natureza.
 > A proteção dos dados é feita pelas regras do passo 1.3.
@@ -80,34 +78,44 @@ Tempo total: uns 30 minutos. Você vai usar 4 serviços gratuitos:
 
 ## Parte 3 — Cloudflare Pages (publicar o site)
 
-### 3.1 Criar o projeto
-1. Acesse **dash.cloudflare.com** → **Workers & Pages → Criar → Pages → Conectar ao Git**.
-2. Autorize o GitHub e escolha o repositório **alpamahome** → **Começar configuração**.
-3. Preencha:
-   | Campo | Valor |
-   |---|---|
-   | Nome do projeto | `miga-promo` |
-   | Branch de produção | `ccr-7374c7ca-pithl7` (ou `main`, se o código for juntado lá) |
-   | Predefinição de framework | **Nenhum** |
-   | Comando de build | *(deixe vazio)* |
-   | Diretório de saída do build | `/` |
-   | **Diretório raiz** (em *Configurações avançadas*) | **`miga`** |
-4. **Salvar e implantar**. Em 1–2 minutos aparece um endereço `miga-promo.pages.dev`.
+Você recebe o arquivo **`miga-promo-site.zip`**. Ele já tem tudo: telas, ícones e o servidor da IA (`_worker.js`).
 
-### 3.2 Colocar a chave da IA e a senha
-1. No projeto: **Configurações → Variáveis e segredos → Adicionar**.
+### 3.1 Antes de subir: colocar a configuração do Firebase
+O arquivo `firebase-config.js` dentro do zip vem vazio. Escolha um jeito:
+- **Mais fácil:** me mande o bloco `firebaseConfig` (Parte 1.4) que eu devolvo o zip já preenchido; **ou**
+- **Você mesma:** descompacte o zip, abra `firebase-config.js` no Bloco de Notas, troque
+  `window.FIREBASE_CONFIG = null;` pelo bloco da Parte 1.5, salve e **compacte a pasta de novo**
+  (os arquivos precisam ficar na raiz do zip, não dentro de outra pasta).
+
+### 3.2 Subir o site (arrastar e soltar)
+1. Acesse **dash.cloudflare.com** → **Workers & Pages → Criar → Pages**.
+2. Escolha **Fazer upload de ativos** (*Upload assets*).
+3. Nome do projeto: `miga-promo` → **Criar projeto**.
+4. **Arraste o `miga-promo-site.zip`** para a área de upload → **Implantar site**.
+5. Em alguns segundos aparece o endereço `miga-promo.pages.dev`.
+
+### 3.3 Colocar a chave da IA e a senha
+1. No projeto: **Configurações → Variáveis e segredos → Adicionar** (ambiente **Produção**).
 2. Adicione (tipo **Segredo / Criptografar**):
    | Nome | Valor |
    |---|---|
    | `GEMINI_API_KEY` | a chave da Parte 2 |
    | `APP_SENHA` | uma senha que você inventar (o app pede uma vez, na engrenagem) |
-3. **Salvar**. Depois vá em **Implantações** → nos três pontinhos da última → **Tentar novamente a implantação**
-   (sem isso, as variáveis não valem).
+3. **Salvar**.
+4. Para as variáveis valerem, faça uma nova implantação: **Implantações → Criar implantação**
+   e arraste o mesmo `miga-promo-site.zip` de novo.
 
-### 3.3 Usar o domínio alpama.app
+> Sempre que eu te mandar uma versão nova do app, é só repetir: **Criar implantação** → arrastar o zip novo.
+
+### 3.4 Usar o domínio alpama.app
 1. No projeto: **Domínios personalizados → Configurar um domínio**.
 2. Digite `miga.alpama.app` → **Continuar → Ativar domínio**.
    Como o `alpama.app` já está no Cloudflare, o resto é automático (alguns minutos).
+3. Lembre de autorizar esse domínio no Firebase (Parte 1.2, item 3).
+
+> **Alternativa pelo GitHub:** em vez do upload, dá para usar *Conectar ao Git* com o repositório
+> `alpamahome` e **Diretório raiz `miga`** (comando de build vazio, saída `/`). Aí o site atualiza sozinho
+> a cada mudança no GitHub. Os passos 3.3 e 3.4 são iguais.
 
 ---
 
@@ -138,7 +146,7 @@ Tempo total: uns 30 minutos. Você vai usar 4 serviços gratuitos:
 |---|---|
 | "O login anônimo não está ativado" | Passo 1.2 (ativar **Anônimo**) |
 | "Este endereço não está autorizado" | Passo 1.2, item 3 (domínios autorizados) |
-| "IA ainda não configurada" | Passo 3.2 e **reimplantar** |
+| "IA ainda não configurada" | Passo 3.3 e **nova implantação** |
 | "Senha de acesso inválida" | A senha da engrenagem precisa ser igual à `APP_SENHA` |
 | Busca não traz o preço da Shopee | Normal: a Shopee não mostra o preço na página; digite à mão |
 
