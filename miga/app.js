@@ -928,9 +928,11 @@
     $("#listaGrupos").innerHTML = l.length
       ? l.map((g) => linhaGrupo(g, `<button type="button" class="icone-btn" data-apagar="${esc(g.id)}" aria-label="Apagar ${esc(g.nome)}"><svg><use href="#i-lixo"/></svg></button>`)).join("")
       : '<p class="vazio-lista">Nenhum grupo ainda. Adicione o primeiro acima.</p>';
-    const sel = $("#grupoConvite");
-    sel.innerHTML = '<option value="">Não incluir</option>' + l.filter((g) => g.link).map((g) => `<option value="${esc(g.id)}">${esc(g.nome)}</option>`).join("");
-    sel.value = l.some((g) => g.id === config.convite && g.link) ? config.convite : "";
+    // Escolha do convite em pílulas (no visual do app, sem a lista do sistema)
+    const escolhido = l.some((g) => g.id === config.convite && g.link) ? config.convite : "";
+    const opcoes = [{ id: "", nome: "Não incluir" }].concat(l.filter((g) => g.link));
+    $("#grupoConvite").innerHTML = opcoes.map((g) =>
+      `<button type="button" role="radio" data-id="${esc(g.id)}" aria-checked="${g.id === escolhido}">${esc(g.nome)}</button>`).join("");
   }
   $("#listaGrupos").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-apagar]");
@@ -945,7 +947,14 @@
     renderGrupos();
     toast("Grupo apagado");
   });
-  $("#grupoConvite").addEventListener("change", () => { config.convite = $("#grupoConvite").value; gravarConfig(); toast("Convite atualizado"); });
+  $("#grupoConvite").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-id]");
+    if (!b || b.getAttribute("aria-checked") === "true") return;
+    config.convite = b.dataset.id;
+    gravarConfig();
+    renderGrupos();
+    toast(config.convite ? "Convite incluído no fim das mensagens" : "Convite removido das mensagens");
+  });
 
   function renderGruposEnvio() {
     const l = config.grupos;

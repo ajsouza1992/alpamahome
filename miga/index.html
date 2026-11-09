@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -272,9 +272,9 @@
     <section class="bloco">
       <h2 class="passo">Convite no fim da mensagem</h2>
       <p class="nota">Coloca o link de um grupo no final de toda mensagem, para mais gente entrar.</p>
-      <label class="campo"><span>Grupo</span>
-        <span class="select"><select id="grupoConvite"><option value="">Não incluir</option></select></span>
-      </label>
+      <div class="campo"><span>Grupo</span>
+        <div class="alternar alternar--tres" id="grupoConvite" role="radiogroup" aria-label="Grupo do convite"></div>
+      </div>
     </section>
   </div>
 
@@ -367,7 +367,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=11"></script>
-  <script src="app.js?v=11"></script>
+  <script src="firebase-config.js?v=12"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
