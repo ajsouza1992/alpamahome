@@ -1,0 +1,29 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore — Alpama Home
+// Cole no Firebase: Firestore Database → Regras → Publicar.
+// Troque COLE_SEU_UID_AQUI pelo UID do seu usuário (Authentication → Usuários).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function ehModerador() {
+      return request.auth != null && request.auth.uid == "COLE_SEU_UID_AQUI";
+    }
+
+    // Produtos: qualquer visitante pode ver; só o moderador grava.
+    match /produtos/{id} {
+      allow read: if true;
+      allow create, update: if ehModerador()
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() <= 200
+        && request.resource.data.preco is number
+        && request.resource.data.link is string;
+      allow delete: if ehModerador();
+    }
+
+    // Todo o resto fica fechado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

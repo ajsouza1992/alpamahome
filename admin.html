@@ -11,20 +11,37 @@
   <link rel="icon" type="image/png" href="assets/img/logo.png">
   <meta name="theme-color" content="#0f3d2a">
   <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/firebase-config.js"></script>
 </head>
 <body class="adm">
+  <script>if (window.FIREBASE_CONFIG) document.body.classList.add("bloqueado", "nuvem");</script>
+
+  <section class="login" id="login">
+    <form class="login__box" id="loginForm" novalidate>
+      <img src="assets/img/logo.png" class="login__logo" alt="Alpama Home">
+      <h1>Área do moderador</h1>
+      <p>Acesso restrito. Entre com o e-mail e a senha do seu usuário.</p>
+      <label class="campo">E-mail<input type="email" id="loginEmail" autocomplete="username" required></label>
+      <label class="campo">Senha<input type="password" id="loginSenha" autocomplete="current-password" required></label>
+      <p class="login__erro" id="loginErro" hidden></p>
+      <button class="btn btn--primary btn--grande" type="submit" id="loginBtn">Entrar</button>
+      <a href="./" class="link-btn">← Voltar ao site</a>
+    </form>
+  </section>
+
   <header class="topbar">
     <div class="container topbar__inner">
       <a href="./" class="logo"><img class="logo__mark" src="assets/img/logo.png" alt=""><span class="logo__text">Alpama<em>Home</em></span></a>
       <span class="adm__selo"><span data-ico="cadeado"></span>Moderador</span>
-      <a class="btn btn--ghost adm__ver" href="index.html?preview=1" target="_blank">Ver site ↗</a>
+      <a class="btn btn--ghost adm__ver" id="verSite" href="index.html?preview=1" target="_blank">Ver site ↗</a>
+      <button class="btn btn--ghost adm__sair" id="sair" type="button" hidden>Sair</button>
     </div>
   </header>
 
   <nav class="container abas" role="tablist" aria-label="Seções do painel">
     <button class="aba" role="tab" type="button" data-aba="cadastro" aria-selected="true"><span class="aba__ico" data-ico="casa"></span>Cadastro</button>
     <button class="aba" role="tab" type="button" data-aba="produtos" aria-selected="false"><span class="aba__ico" data-ico="organizacao"></span>Produtos <b id="total">0</b></button>
-    <button class="aba" role="tab" type="button" data-aba="publicar" aria-selected="false"><span class="aba__ico" data-ico="utilidades"></span>Publicar</button>
+    <button class="aba" role="tab" type="button" data-aba="publicar" aria-selected="false"><span class="aba__ico" data-ico="utilidades"></span><span id="abaPublicarNome">Publicar</span></button>
   </nav>
 
   <main class="container adm__main">
@@ -108,7 +125,17 @@
 
     <!-- ============ PUBLICAR ============ -->
     <section class="tela" id="tela-publicar" role="tabpanel" hidden>
-      <div class="painel publicar">
+      <div class="painel publicar" id="blocoNuvem" hidden>
+        <h2>Conta e backup</h2>
+        <p style="color:var(--ink-2);font-size:14px;margin:0 0 6px">Tudo que você salva aqui já aparece no site na hora (para os clientes, em até 5 minutos).</p>
+        <p class="info-tam">Conectado como <strong id="contaEmail"></strong></p>
+        <div class="acoes" style="margin-top:16px">
+          <button class="btn btn--primary btn--grande" type="button" id="btnBackup">Baixar backup</button>
+          <button class="btn btn--ghost btn--grande" type="button" id="btnImportarNuvem">Importar produtos.js</button>
+        </div>
+        <p class="info-tam">Importar adiciona/atualiza os produtos do arquivo no site (útil para trazer o que você cadastrou antes).</p>
+      </div>
+      <div class="painel publicar" id="blocoLocal">
         <h2>Publicar no site</h2>
         <p style="color:var(--ink-2);font-size:14px;margin:0">O que você cadastra fica salvo como rascunho neste navegador. Para todo mundo ver:</p>
         <ol>
@@ -132,6 +159,7 @@
 
   <script src="produtos.js"></script>
   <script src="assets/js/icones.js"></script>
+  <script src="assets/js/firebase.js"></script>
   <script src="assets/js/admin.js"></script>
 </body>
 </html>

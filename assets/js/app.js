@@ -1,4 +1,4 @@
-(function () {
+(async function () {
   "use strict";
 
   const LOJAS = {
@@ -19,10 +19,10 @@
   const CATEGORIAS = window.CATEGORIAS || [];
   const catPorId = Object.fromEntries(CATEGORIAS.map((c) => [c.id, c]));
 
-  // Modo pré-visualização: admin.html → "Pré-visualizar no site"
   let produtos = window.PRODUTOS || [];
   const params = new URLSearchParams(location.search);
-  if (params.get("preview") === "1") {
+  // Modo pré-visualização (só quando o Firebase ainda não está configurado)
+  if (!window.ALPAMA_FIREBASE_ATIVO && params.get("preview") === "1") {
     try {
       const rascunho = JSON.parse(localStorage.getItem("alpama_rascunho") || "null");
       if (Array.isArray(rascunho)) {
@@ -142,7 +142,7 @@
     const loja = LOJAS[p.loja] || LOJAS.outra;
     const cat = catPorId[p.categoria];
     const off = desconto(p);
-    const img = urlSegura(p.imagem);
+    const img = /^data:image\//.test(p.imagem || "") ? p.imagem : urlSegura(p.imagem);
     const link = urlSegura(p.link) || "#";
     return `<article class="card">
       <a class="card__img" href="${esc(link)}" target="_blank" rel="sponsored nofollow noopener" tabindex="-1" aria-hidden="true">
@@ -264,6 +264,40 @@
   $("#ano").textContent = new Date().getFullYear();
 
   document.querySelectorAll("[data-ico]").forEach((n) => { n.innerHTML = window.icone(n.dataset.ico); });
+
+  // ---------- Carrega os produtos (Firebase ou produtos.js) ----------
+  const CACHE = "alpama_cache_v1", CACHE_MIN = 5;
+  async function carregarDoFirebase() {
+    try {
+      const c = JSON.parse(sessionStorage.getItem(CACHE) || "null");
+      if (c && Date.now() - c.t < CACHE_MIN * 60000 && Array.isArray(c.p)) return c.p;
+    } catch (e) { /* ignora */ }
+    const fb = await window.alpamaFirebase();
+    const snap = await fb.fs.getDocs(fb.fs.collection(fb.db, window.ALPAMA_COLECAO));
+    const lista = [];
+    snap.forEach((d) => {
+      const x = d.data();
+      if (x && x.ativo === false) return;
+      lista.push({ ...x, id: d.id, criadoEm: x.criadoEm && x.criadoEm.toMillis ? x.criadoEm.toMillis() : x.criadoEm || 0 });
+    });
+    lista.sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+    try { sessionStorage.setItem(CACHE, JSON.stringify({ t: Date.now(), p: lista })); } catch (e) { /* cheio: segue sem cache */ }
+    return lista;
+  }
+  if (window.ALPAMA_FIREBASE_ATIVO) {
+    el.contagem.textContent = "Carregando produtos…";
+    el.grid.innerHTML = '<div class="card card--carregando"></div>'.repeat(6);
+    try {
+      produtos = await carregarDoFirebase();
+    } catch (e) {
+      console.error(e);
+      produtos = [];
+      el.vazio.querySelector("h3").textContent = "Não foi possível carregar os produtos";
+      el.vazio.querySelector("p").textContent = "Verifique sua conexão e tente novamente em instantes.";
+    }
+  }
+  produtos = produtos.filter((p) => p && p.nome && Number.isFinite(Number(p.preco))).map((p) => ({ ...p, preco: Number(p.preco), precoAntigo: p.precoAntigo ? Number(p.precoAntigo) : null }));
+
   montarCategorias();
   montarFaixas();
   montarLojas();
