@@ -28,7 +28,9 @@
   const novoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const dataCurta = (t) => new Date(t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const NOME_LOJA = { mercadolivre: "Mercado Livre", shopee: "Shopee" };
-  const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração" };
+  const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração", saude: "Saúde e Fitness", outros: "Outros" };
+  /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
+  const limparNome = (t) => String(t || "").replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "").replace(/\s{2,}/g, " ").trim();
   const viaServidor = (u) => "api/imagem?url=" + encodeURIComponent(u);
 
   function lerPreco(txt) {
@@ -400,7 +402,7 @@
     try {
       const d = await api("produto", { url: link });
       if (d.loja) loja.marcar(d.loja);
-      if (d.nome) c.nome.value = d.nome;
+      if (d.nome) c.nome.value = limparNome(d.nome);
       if (d.preco) c.precoNovo.value = paraCampo(d.preco);
       if (d.precoAntigo) c.precoAntigo.value = paraCampo(d.precoAntigo);
       if (d.imagem) { c.imagemUrl.value = d.imagem; definirFoto(d.imagem); }
@@ -421,13 +423,15 @@
   const FRASES = {
     moda: "Esse vai deixar seu look lindo e confortável, do jeitinho que a gente ama 👗",
     beleza: "Pra rotina de autocuidado ficar ainda mais gostosinha 💄",
-    casa: "Pra deixar a casa mais aconchegante e com aquele toque especial 🏡"
+    casa: "Pra deixar a casa mais aconchegante e com aquele toque especial 🏡",
+    saude: "Pra manter a rotina de cuidado e treino em dia, gastando menos 💪",
+    outros: "Daqueles achadinhos que facilitam a vida e cabem no bolso ✨"
   };
   function mensagemReserva(p) {
     const onde = p.loja === "shopee" ? "na Shopee" : "no Mercado Livre";
     const preco = p.precoAntigo ? `~de ${brl(p.precoAntigo)}~ por *${brl(p.precoNovo)}*` : `por apenas *${brl(p.precoNovo)}*`;
     const cupom = p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : "";
-    return `Miga, olha esse achadinho ${onde}! 🤫💖\n\n✨ *${p.nome}*\n\n💸 ${preco}${cupom}\n\n${FRASES[p.categoria]}\n\n👉 ${p.link}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
+    return `Miga, olha esse achadinho ${onde}! 🤫💖\n\n✨ *${p.nome}*\n\n💸 ${preco}${cupom}\n\n${FRASES[p.categoria] || FRASES.outros}\n\n👉 ${p.link}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
   }
   function comConvite(texto) {
     const g = config.grupos.find((x) => x.id === config.convite);
@@ -437,7 +441,7 @@
   function coletar() {
     [c.nome, c.precoNovo, c.link].forEach((x) => x.classList.remove("erro"));
     const p = {
-      nome: c.nome.value.trim(), precoAntigo: lerPreco(c.precoAntigo.value), precoNovo: lerPreco(c.precoNovo.value),
+      nome: limparNome(c.nome.value), precoAntigo: lerPreco(c.precoAntigo.value), precoNovo: lerPreco(c.precoNovo.value),
       link: c.link.value.trim(), categoria: categoria.valor(), loja: loja.valor(), cupom: c.cupom.value.trim()
     };
     const falhas = [];

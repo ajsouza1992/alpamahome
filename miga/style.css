@@ -69,7 +69,10 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 
 /* Botões de escolha (loja e categoria) */
 .alternar { display: grid; grid-template-columns: 1fr 1fr; border: var(--borda); border-radius: 14px; overflow: hidden; }
-.alternar--tres { grid-template-columns: repeat(3, 1fr); }
+.alternar--tres { grid-template-columns: repeat(6, 1fr); }
+.alternar--tres button:nth-child(-n+3) { grid-column: span 2; }
+.alternar--tres button:nth-child(n+4) { grid-column: span 3; border-top: var(--borda); }
+.alternar--tres button:nth-child(4) { border-left: 0; }
 .alternar button { min-height: 46px; padding: 6px 6px; border: 0; border-left: var(--borda); background: var(--branco); font-weight: 600; font-size: 14px; line-height: 1.2; cursor: pointer; transition: background .15s; }
 .alternar button:first-child { border-left: 0; }
 .alternar button:hover { background: var(--creme-claro); }

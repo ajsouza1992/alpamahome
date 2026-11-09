@@ -76,9 +76,13 @@ function precoAntigoML(html) {
   return m ? numero(m[1].replace(/\./g, "") + "," + (m[2] || "0").padStart(2, "0")) : null;
 }
 
+// Tira do nome: "| Mercado Livre", "- R$ 49,90", "Frete grátis" etc. (a loja às vezes junta tudo no título)
 const limparTitulo = (t) => String(t || "")
   .replace(/\s*[|\-–]\s*(Mercado Livre|MercadoLivre|Shopee Brasil|Shopee).*$/i, "")
-  .replace(/^Compre\s+/i, "").trim();
+  .replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "")
+  .replace(/\s*[|\-–]\s*(frete gr[aá]tis|em at[eé] \d+x.*|oferta.*)$/i, "")
+  .replace(/^Compre\s+/i, "")
+  .replace(/\s{2,}/g, " ").trim();
 
 /** Busca os dados do produto a partir do link de afiliado */
 async function extrairProduto(url) {
@@ -109,7 +113,9 @@ async function extrairProduto(url) {
 const CATEGORIAS = {
   moda: { nome: "Moda e Looks", foco: "caimento, conforto, versatilidade para montar looks e como valoriza o corpo" },
   beleza: { nome: "Beleza e Skincare", foco: "resultado na pele/cabelo, praticidade na rotina de autocuidado e sensação de se sentir linda" },
-  casa: { nome: "Casa e Decoração", foco: "deixar a casa mais aconchegante e bonita, praticidade no dia a dia e o 'efeito uau' de quem visita" }
+  casa: { nome: "Casa e Decoração", foco: "deixar a casa mais aconchegante e bonita, praticidade no dia a dia e o 'efeito uau' de quem visita" },
+  saude: { nome: "Saúde e Fitness", foco: "bem-estar, treino, energia, cuidado com o corpo e constância na rotina (sem prometer resultados de saúde)" },
+  outros: { nome: "Achadinhos em geral", foco: "utilidade no dia a dia, custo-benefício e por que vale a pena aproveitar agora" }
 };
 
 // Lojas aceitas (a mensagem cita onde comprar)
@@ -144,7 +150,8 @@ function montarPrompt(p) {
     `Categoria do produto: ${cat.nome}. Destaque os benefícios voltados para essa categoria (${cat.foco}).`,
     cupom,
     "Formate com emojis delicados e crie um leve senso de urgência dizendo que a promoção ou o estoque podem acabar rápido.",
-    "Não use hashtags.",
+    "Não use hashtags. Não repita o preço dentro do nome do produto; o preço aparece uma vez só, na linha de preço.",
+    "Os benefícios precisam combinar com o produto de verdade (ex.: não fale de skincare se o produto é um suplemento).",
     "Regras extras: escreva em português do Brasil com a formatação do WhatsApp (*negrito*, ~riscado~);",
     "coloque o link sozinho em uma linha, exatamente como recebido; não invente informações (frete, parcelamento, avaliações);",
     "no máximo 600 caracteres; responda SOMENTE com a mensagem."
