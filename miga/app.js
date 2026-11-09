@@ -804,6 +804,21 @@
     if (!dialogo.open) dialogo.showModal();
   }
   $("#abrirConfig").addEventListener("click", abrirConfig);
+
+  // Visual do app (Suave ou Rosa) — fica salvo no aparelho
+  function aplicarVisual(v) {
+    const rosa = v === "rosa";
+    $("#visualRosa").disabled = !rosa;
+    $("#corTema").content = rosa ? "#e8336d" : "#fff3c4";
+    document.querySelectorAll("#visual button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.visual === (rosa ? "rosa" : "suave"))));
+  }
+  aplicarVisual(ls.ler("miga_visual"));
+  $("#visual").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-visual]");
+    if (!b) return;
+    ls.gravar("miga_visual", b.dataset.visual);
+    aplicarVisual(b.dataset.visual);
+  });
   $("#sair").addEventListener("click", async () => {
     dialogo.close();
     const ok = await confirmar({

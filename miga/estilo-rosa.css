@@ -1,0 +1,78 @@
+/* =========================================================
+   Miga Promo — opção de visual "Rosa"
+   Carregado POR CIMA do style.css quando a usuária escolhe
+   o visual Rosa (engrenagem → Visual do app).
+   Topo rosa, cartões subindo sobre ele, campos com contorno
+   fino, botão principal amarelo e barra de abas fixa.
+   ========================================================= */
+:root {
+  --fundo: #fffaf0;
+  --campo: #ffffff;
+  --linha: #eadfc8;
+  --sombra: 0 12px 28px -14px rgba(120, 20, 60, .28), 0 2px 6px rgba(29, 29, 31, .05);
+}
+body { background: linear-gradient(180deg, var(--rosa) 0, var(--rosa) 190px, var(--fundo) 190px) no-repeat, var(--fundo); }
+
+/* Topo rosa */
+.topo { background: var(--rosa); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.marca__miga { background: var(--creme); color: var(--rosa); }
+.marca__promo { color: #fff; }
+.btn-quadrado, .btn-mini { background: rgba(255, 255, 255, .18); color: #fff; box-shadow: none; }
+.btn-mini svg { color: #fff; }
+.conteudo { padding-top: 14px; }
+
+/* Cartões */
+.bloco { border-radius: 28px; }
+.passo span { background: var(--amarelo); color: var(--preto); }
+
+/* Campos com contorno fino */
+.campo input, .mais input, textarea, .busca-lista, .select select, .colar {
+  background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha);
+}
+.campo input:focus, .mais input:focus, textarea:focus, .busca-lista:focus, .colar:focus-within {
+  box-shadow: inset 0 0 0 2px var(--rosa);
+}
+.campo input.erro { box-shadow: inset 0 0 0 2px var(--rosa); }
+.foto { background: #fff4f7; box-shadow: inset 0 0 0 1.5px #f6d3de; }
+
+/* Loja: dois botões com contorno */
+.alternar { background: none; padding: 0; gap: 8px; }
+.alternar button { box-shadow: inset 0 0 0 1.5px var(--linha); color: var(--preto); }
+.alternar button[aria-checked="true"] { background: var(--rosa); color: #fff; box-shadow: none; }
+
+/* Categorias: contorno; escolhida em preto */
+.alternar--tres button { background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); color: var(--preto); }
+.alternar--tres button[aria-checked="true"] { background: var(--preto); color: #fff; box-shadow: none; }
+
+/* Botão principal amarelo */
+.btn--gerar { background: var(--amarelo); color: var(--preto); border-radius: 20px; box-shadow: 0 12px 24px -12px rgba(160, 120, 0, .6); }
+.btn--gerar:hover { background: #ffc81a; }
+.btn--gerar .giro { border-color: rgba(29, 29, 31, .25); border-top-color: var(--preto); }
+.entrada .btn--gerar { background: var(--rosa); color: #fff; box-shadow: var(--sombra-rosa); }
+.btn--branco { box-shadow: inset 0 0 0 1.5px var(--linha); }
+
+/* Listas */
+.grupo, .item, .vazio-lista, .conta { background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); }
+.grupo__ico { background: #fff4f7; }
+.etiqueta { background: #fff4f7; }
+.cupom-chip { background: var(--amarelo); }
+.ajustes button { background: var(--branco); color: var(--preto); box-shadow: inset 0 0 0 1.5px var(--linha); }
+
+/* Barra de baixo: botão + abas fixas no rodapé */
+.barra { padding: 0; background: linear-gradient(to top, var(--fundo) 70%, rgba(255, 250, 240, 0)); }
+.barra__gerar { padding: 16px 16px 10px; }
+.abas { max-width: none; border-radius: 0; padding: 4px 8px calc(4px + env(safe-area-inset-bottom)); box-shadow: 0 -1px 0 var(--linha); }
+.abas button { flex-direction: column; gap: 2px; height: 58px; border-radius: 16px; font-size: 12px; }
+.abas button[aria-current="page"] { background: none; color: var(--rosa); }
+.abas button[aria-current="page"]::before { content: ""; position: absolute; top: 2px; width: 26px; height: 4px; border-radius: 4px; background: var(--rosa); }
+.abas b { position: absolute; top: 6px; left: calc(50% + 6px); }
+
+/* Entrada: fundo rosa */
+.entrada { background: radial-gradient(120% 70% at 50% 0%, #f2558a 0%, var(--rosa) 60%); }
+.entrada__titulo { color: #fff; }
+.entrada__texto, .entrada__nota { color: rgba(255, 255, 255, .88); }
+.entrada .assinatura, .entrada .assinatura b { color: rgba(255, 255, 255, .85); }
+.entrada__icone { filter: drop-shadow(0 16px 20px rgba(80, 0, 30, .35)); }
+.entrada__form { border-radius: 26px; }
+
+.toast { bottom: calc(160px + env(safe-area-inset-bottom)); }

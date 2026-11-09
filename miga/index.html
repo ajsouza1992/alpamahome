@@ -6,7 +6,7 @@
   <title>Miga Promo</title>
   <meta name="description" content="Miga Promo — achadinhos e descontos. Cole o link, a IA escreve a promoção para o WhatsApp.">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#fff3c4">
+  <meta name="theme-color" content="#fff3c4" id="corTema">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,6 +18,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="estilo-rosa.css?v=10" id="visualRosa" disabled>
+  <script>
+    /* Visual escolhido na engrenagem (Suave ou Rosa), aplicado antes de a tela aparecer */
+    try { if (localStorage.getItem("miga_visual") === "rosa") { document.getElementById("visualRosa").disabled = false; document.getElementById("corTema").content = "#e8336d"; } } catch (e) {}
+  </script>
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -246,6 +251,13 @@
   <dialog id="config" class="dialogo">
     <form method="dialog">
       <h2>Configurações</h2>
+      <div class="campo">
+        <span>Visual do app</span>
+        <div class="alternar" id="visual" role="radiogroup" aria-label="Visual do app">
+          <button type="button" role="radio" data-visual="suave" aria-checked="true">Suave</button>
+          <button type="button" role="radio" data-visual="rosa" aria-checked="false">Rosa</button>
+        </div>
+      </div>
       <p class="status" id="status">Verificando…</p>
       <div class="conta">
         <span>Conta</span>
