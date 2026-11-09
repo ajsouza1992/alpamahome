@@ -2,12 +2,10 @@
  * Miga Promo — app.js
  * Desenvolvido por Alpama Soluções.
  *
- * Abas: Criar · Histórico · Grupos
- * 1) Cola o link (Mercado Livre/Shopee) → /api/produto traz foto, nome e preço
- * 2) /api/gerar → a IA (Gemini, no servidor) escreve a mensagem
- * 3) A foto recebe a marca d'água Miga Promo no cantinho
- * 4) Envia (com foto, só texto ou para um grupo cadastrado)
- * 5) Tudo fica salvo no Histórico (IndexedDB, só neste aparelho)
+ * Entrada: login anônimo (Firebase Authentication)
+ * Dados:   histórico e grupos no Firestore (usuarios/{uid}/...)
+ *          — sem Firebase configurado, usa o próprio navegador (modo local)
+ * Abas:    Criar · Histórico · Grupos
  *
  * A chave do Gemini NÃO fica aqui: este arquivo é público.
  */
@@ -16,12 +14,12 @@
 
   /* =========================== Utilidades =========================== */
   const $ = (s) => document.querySelector(s);
-  const CH = { senha: "miga_senha", dica: "miga_dica_ios", grupos: "miga_grupos", convite: "miga_convite" };
+  const CH = { senha: "miga_senha", dica: "miga_dica_ios", grupos: "miga_grupos", convite: "miga_convite", entrou: "miga_entrou" };
   const ls = {
     ler(k, padrao = "") { try { const v = localStorage.getItem(k); return v === null ? padrao : v; } catch (e) { return padrao; } },
     gravar(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* ignora */ } },
-    lerJson(k, padrao) { try { return JSON.parse(localStorage.getItem(k)) ?? padrao; } catch (e) { return padrao; } },
-    gravarJson(k, v) { this.gravar(k, JSON.stringify(v)); }
+    remover(k) { try { localStorage.removeItem(k); } catch (e) { /* ignora */ } },
+    lerJson(k, padrao) { try { return JSON.parse(localStorage.getItem(k)) ?? padrao; } catch (e) { return padrao; } }
   };
   const urlOk = (u) => /^https?:\/\//i.test(String(u || "").trim());
   const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -31,6 +29,7 @@
   const dataCurta = (t) => new Date(t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const NOME_LOJA = { mercadolivre: "Mercado Livre", shopee: "Shopee" };
   const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração" };
+  const viaServidor = (u) => "/api/imagem?url=" + encodeURIComponent(u);
 
   function lerPreco(txt) {
     let s = String(txt || "").replace(/[^\d.,]/g, "");
@@ -75,20 +74,102 @@
     }
   }
 
-  /* =========================== Histórico (IndexedDB) =========================== */
-  const historico = (() => {
-    let dbPromessa = null;
-    function abrir() {
-      if (!dbPromessa) {
-        dbPromessa = new Promise((ok, erro) => {
-          const r = indexedDB.open("miga-promo", 1);
-          r.onupgradeneeded = () => r.result.createObjectStore("historico", { keyPath: "id" });
-          r.onsuccess = () => ok(r.result);
-          r.onerror = () => erro(r.error);
-        });
-      }
-      return dbPromessa;
+  /* =========================== Confirmação no padrão do app =========================== */
+  function confirmar({ titulo = "Tem certeza?", texto = "", ok = "Confirmar" } = {}) {
+    const d = $("#confirmar");
+    $("#confirmarTitulo").textContent = titulo;
+    $("#confirmarTexto").textContent = texto;
+    $("#confirmarOk").textContent = ok;
+    d.returnValue = "";
+    d.showModal();
+    return new Promise((resolve) => d.addEventListener("close", () => resolve(d.returnValue === "sim"), { once: true }));
+  }
+
+  /* =========================== Imagens =========================== */
+  // Se a loja bloquear a imagem direta, tenta pelo nosso servidor
+  document.addEventListener("error", (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || !img.dataset.original) return;
+    if (!img.dataset.tentouServidor && urlOk(img.dataset.original)) {
+      img.dataset.tentouServidor = "1";
+      img.src = viaServidor(img.dataset.original);
+    } else if (img.id === "fotoImg") {
+      definirFoto("");
+      toast("A foto não carregou — use “Trocar foto”");
+    } else {
+      img.hidden = true;
     }
+  }, true);
+  function colocarImagem(img, src) {
+    delete img.dataset.tentouServidor;
+    img.dataset.original = src || "";
+    img.referrerPolicy = "no-referrer";
+    if (src) img.src = src; else img.removeAttribute("src");
+  }
+  /** Reduz a foto da galeria para guardar no histórico (JPEG ~100–250 KB) */
+  function compactarArquivo(arquivo) {
+    return new Promise((ok, erro) => {
+      const leitor = new FileReader();
+      leitor.onload = () => {
+        const im = new Image();
+        im.onload = () => {
+          const k = Math.min(1, 900 / Math.max(im.width, im.height));
+          const tela = document.createElement("canvas");
+          tela.width = Math.round(im.width * k); tela.height = Math.round(im.height * k);
+          const ctx = tela.getContext("2d");
+          ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, tela.width, tela.height);
+          ctx.drawImage(im, 0, 0, tela.width, tela.height);
+          ok(tela.toDataURL("image/jpeg", 0.8));
+        };
+        im.onerror = erro;
+        im.src = leitor.result;
+      };
+      leitor.onerror = erro;
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+  /** Arquivo da foto para compartilhar junto com o texto */
+  async function arquivoDaImagem(src) {
+    if (!src) return null;
+    const tentativas = src.startsWith("data:") ? [src] : [viaServidor(src), src];
+    for (const u of tentativas) {
+      try {
+        const r = await fetch(u);
+        const tipo = r.headers.get("content-type") || "";
+        if (r.ok && tipo.startsWith("image/")) {
+          const blob = await r.blob();
+          return new File([blob], "achadinho." + (tipo.split("/")[1] || "jpg").replace("jpeg", "jpg"), { type: blob.type || "image/jpeg" });
+        }
+      } catch (e) { /* tenta a próxima */ }
+    }
+    return null;
+  }
+  // Foto em tela cheia
+  function abrirVisor(src) {
+    if (!src) return;
+    colocarImagem($("#visorImg"), src);
+    $("#visor").hidden = false;
+    document.body.classList.add("travado");
+  }
+  function fecharVisor() { $("#visor").hidden = true; document.body.classList.remove("travado"); }
+  $("#fecharVisor").addEventListener("click", fecharVisor);
+  $("#visor").addEventListener("click", (e) => { if (e.target.id === "visor") fecharVisor(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharVisor(); });
+
+  /* =========================== Dados: Firestore ou local =========================== */
+  const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
+  const cfg = window.FIREBASE_CONFIG;
+  const conta = { nuvem: !!(cfg && cfg.projectId && cfg.apiKey), fb: null, uid: "" };
+
+  // ---- modo local (IndexedDB) ----
+  const local = (() => {
+    let dbP = null;
+    const abrir = () => dbP || (dbP = new Promise((ok, erro) => {
+      const r = indexedDB.open("miga-promo", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("historico", { keyPath: "id" });
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => erro(r.error);
+    }));
     async function tx(modo, fn) {
       const db = await abrir();
       return new Promise((ok, erro) => {
@@ -99,13 +180,114 @@
       });
     }
     return {
-      salvar: (item) => tx("readwrite", (s) => s.put(item)),
+      salvar: (i) => tx("readwrite", (s) => s.put(i)),
       listar: async () => ((await tx("readonly", (s) => s.getAll())) || []).sort((a, b) => b.criadoEm - a.criadoEm),
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
-      limpar: () => tx("readwrite", (s) => s.clear())
+      limpar: () => tx("readwrite", (s) => s.clear()),
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite) }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); }
     };
   })();
+
+  // ---- modo nuvem (Firestore) ----
+  function criarNuvem() {
+    const { fs, db } = conta.fb;
+    const col = () => fs.collection(db, "usuarios", conta.uid, "historico");
+    const docConfig = () => fs.doc(db, "usuarios", conta.uid, "config", "app");
+    return {
+      salvar: (i) => fs.setDoc(fs.doc(col(), i.id), i),
+      listar: async () => {
+        const snap = await fs.getDocs(fs.query(col(), fs.orderBy("criadoEm", "desc")));
+        return snap.docs.map((d) => d.data());
+      },
+      pegar: async (id) => { const d = await fs.getDoc(fs.doc(col(), id)); return d.exists() ? d.data() : null; },
+      apagar: (id) => fs.deleteDoc(fs.doc(col(), id)),
+      limpar: async () => {
+        const snap = await fs.getDocs(col());
+        for (let i = 0; i < snap.docs.length; i += 400) {
+          const lote = fs.writeBatch(db);
+          snap.docs.slice(i, i + 400).forEach((d) => lote.delete(d.ref));
+          await lote.commit();
+        }
+      },
+      lerConfig: async () => {
+        const d = await fs.getDoc(docConfig());
+        const x = d.exists() ? d.data() : {};
+        return { grupos: x.grupos || [], convite: x.convite || "" };
+      },
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", atualizadoEm: Date.now() })
+    };
+  }
+  let dados = local;
+
+  /* =========================== Entrada (login anônimo) =========================== */
+  function mostrarEntrada(sim) {
+    $("#telaEntrada").hidden = !sim;
+    document.body.classList.toggle("travado", sim);
+  }
+  function carregandoEntrada(sim) {
+    const b = $("#entrar");
+    b.disabled = sim;
+    b.classList.toggle("ocupado", sim);
+    b.querySelector(".rotulo").textContent = sim ? "Entrando..." : "Entrar";
+  }
+  async function iniciarFirebase() {
+    const [app, auth, fs] = await Promise.all([import(FB + "firebase-app.js"), import(FB + "firebase-auth.js"), import(FB + "firebase-firestore.js")]);
+    const a = app.initializeApp(cfg);
+    conta.fb = { auth, fs, a: auth.getAuth(a), db: fs.getFirestore(a) };
+  }
+  async function aposEntrar() {
+    mostrarEntrada(false);
+    try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "" }; toast("Não consegui carregar seus grupos"); }
+    atualizarContadores();
+    renderGruposEnvio();
+  }
+
+  $("#entrar").addEventListener("click", async () => {
+    aviso($("#avisoEntrada"), "");
+    if (!conta.nuvem) { ls.gravar(CH.entrou, "1"); aposEntrar(); return; }
+    carregandoEntrada(true);
+    try {
+      if (!conta.fb) await iniciarFirebase();
+      await conta.fb.auth.signInAnonymously(conta.fb.a);
+    } catch (e) {
+      const c = (e && e.code) || "";
+      aviso($("#avisoEntrada"),
+        c.includes("operation-not-allowed") ? "O login anônimo não está ativado no Firebase (Authentication → Método de login → Anônimo)." :
+        c.includes("unauthorized-domain") ? "Este endereço não está autorizado no Firebase (Authentication → Configurações → Domínios autorizados)." :
+        c.includes("network") ? "Sem internet. Tente de novo." : "Não consegui entrar agora. Tente de novo.");
+    } finally {
+      carregandoEntrada(false);
+    }
+  });
+
+  async function iniciarConta() {
+    if (!conta.nuvem) {
+      if (ls.ler(CH.entrou)) aposEntrar(); else mostrarEntrada(true);
+      return;
+    }
+    mostrarEntrada(true);
+    carregandoEntrada(true);
+    try {
+      await iniciarFirebase();
+      conta.fb.auth.onAuthStateChanged(conta.fb.a, (u) => {
+        carregandoEntrada(false);
+        if (u) {
+          conta.uid = u.uid;
+          dados = criarNuvem();
+          aposEntrar();
+        } else {
+          conta.uid = "";
+          dados = local;
+          mostrarEntrada(true);
+        }
+      });
+    } catch (e) {
+      carregandoEntrada(false);
+      aviso($("#avisoEntrada"), "Não consegui conectar ao Firebase. Confira a internet e o arquivo firebase-config.js.");
+    }
+  }
 
   /* =========================== Abas =========================== */
   function irPara(aba) {
@@ -138,33 +320,25 @@
 
   /* =========================== Campos e foto =========================== */
   const c = { link: $("#link"), nome: $("#nome"), precoAntigo: $("#precoAntigo"), precoNovo: $("#precoNovo"), cupom: $("#cupom"), imagemUrl: $("#imagemUrl") };
+  let fotoAtual = ""; // URL da loja ou foto da galeria (data:)
 
-  let foto = { url: "", arquivo: null }; // url da loja OU arquivo da galeria
-  const viaServidor = (u) => "/api/imagem?url=" + encodeURIComponent(u);
-
-  function mostrarFoto(src) {
+  function definirFoto(src) {
+    fotoAtual = src || "";
     const img = $("#fotoImg");
-    img.hidden = !src;
-    $("#fotoVazia").hidden = !!src;
-    if (src) { img.referrerPolicy = "no-referrer"; img.src = src; } else img.removeAttribute("src");
+    img.hidden = !fotoAtual;
+    $("#fotoVazia").hidden = !!fotoAtual;
+    colocarImagem(img, fotoAtual);
   }
-  $("#fotoImg").addEventListener("error", () => {
-    const img = $("#fotoImg"), src = img.getAttribute("src") || "";
-    if (!src) return;
-    if (foto.url && !foto.arquivo && !src.startsWith("/api/imagem")) { img.src = viaServidor(foto.url); return; }
-    mostrarFoto(""); foto = { url: "", arquivo: null };
-    toast("A foto não carregou — use “Trocar foto”");
-  });
-  function usarFotoUrl(url) { foto = { url: urlOk(url) ? url.trim() : "", arquivo: null }; mostrarFoto(foto.url); }
-  $("#arquivo").addEventListener("change", () => {
+  $("#fotoImg").addEventListener("click", () => abrirVisor(fotoAtual));
+  $("#balaoImg").addEventListener("click", () => abrirVisor(atual && atual.imagem));
+  $("#arquivo").addEventListener("change", async () => {
     const f = $("#arquivo").files[0];
     $("#arquivo").value = "";
     if (!f || !f.type.startsWith("image/")) return;
-    foto = { url: URL.createObjectURL(f), arquivo: f };
-    mostrarFoto(foto.url);
-    toast("Foto trocada");
+    try { definirFoto(await compactarArquivo(f)); toast("Foto trocada"); }
+    catch (e) { toast("Não consegui abrir essa foto"); }
   });
-  c.imagemUrl.addEventListener("change", () => usarFotoUrl(c.imagemUrl.value));
+  c.imagemUrl.addEventListener("change", () => definirFoto(urlOk(c.imagemUrl.value) ? c.imagemUrl.value.trim() : ""));
 
   function atualizarSelo() {
     const a = lerPreco(c.precoAntigo.value), n = lerPreco(c.precoNovo.value);
@@ -174,55 +348,6 @@
   }
   c.precoAntigo.addEventListener("input", atualizarSelo);
   c.precoNovo.addEventListener("input", atualizarSelo);
-
-  /* =========================== Marca d'água =========================== */
-  let marcaImg = null;
-  function carregarMarca() {
-    if (!marcaImg) {
-      marcaImg = new Promise((ok, erro) => {
-        const i = new Image();
-        i.onload = () => ok(i);
-        i.onerror = erro;
-        i.src = "marca-dagua.png";
-      });
-    }
-    return marcaImg;
-  }
-  /** Pega a foto atual como Blob (arquivo da galeria ou baixada pelo nosso servidor) */
-  async function blobDaFoto() {
-    if (foto.arquivo) return foto.arquivo;
-    if (!foto.url) return null;
-    const tentativas = /^(blob|data):/.test(foto.url) ? [foto.url] : [viaServidor(foto.url), foto.url];
-    for (const u of tentativas) {
-      try {
-        const r = await fetch(u);
-        if (r.ok && (r.headers.get("content-type") || "").startsWith("image/")) return await r.blob();
-      } catch (e) { /* tenta a próxima */ }
-    }
-    return null;
-  }
-  /** Desenha a foto + selo Miga Promo no canto inferior direito. Devolve um JPEG. */
-  async function fotoComMarca() {
-    const blob = await blobDaFoto();
-    if (!blob) return null;
-    const [img, marca] = await Promise.all([createImageBitmap(blob), carregarMarca()]);
-    const max = 1080;
-    const k = Math.min(1, max / Math.max(img.width, img.height));
-    const w = Math.round(img.width * k), h = Math.round(img.height * k);
-    const tela = document.createElement("canvas");
-    tela.width = w; tela.height = h;
-    const ctx = tela.getContext("2d");
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(img, 0, 0, w, h);
-    const mw = Math.round(Math.min(w, h) * 0.34);
-    const mh = Math.round(mw * marca.height / marca.width);
-    const margem = Math.round(Math.min(w, h) * 0.03);
-    ctx.globalAlpha = 0.95;
-    ctx.drawImage(marca, w - mw - margem, h - mh - margem, mw, mh);
-    ctx.globalAlpha = 1;
-    return new Promise((ok) => tela.toBlob(ok, "image/jpeg", 0.85));
-  }
 
   /* =========================== Buscar produto =========================== */
   c.link.addEventListener("input", () => { const l = detectarLoja(c.link.value); if (l) loja.marcar(l); });
@@ -250,12 +375,12 @@
       if (d.nome) c.nome.value = d.nome;
       if (d.preco) c.precoNovo.value = paraCampo(d.preco);
       if (d.precoAntigo) c.precoAntigo.value = paraCampo(d.precoAntigo);
-      if (d.imagem) { c.imagemUrl.value = d.imagem; usarFotoUrl(d.imagem); }
+      if (d.imagem) { c.imagemUrl.value = d.imagem; definirFoto(d.imagem); }
       atualizarSelo();
       const falta = [!d.imagem && "foto", !d.nome && "nome", !d.preco && "preço"].filter(Boolean);
       aviso($("#avisoBusca"), falta.length ? `Não achei: ${falta.join(", ")}. Completa aí embaixo.` : "Achei tudo. Confere o preço antes de gerar.", !falta.length);
     } catch (e) {
-      if (e.codigo === "senha") { abrirConfig(); toast("Coloca a senha do app"); }
+      if (e.codigo === "senha") { abrirConfig(); toast("Coloca a senha da IA"); }
       else aviso($("#avisoBusca"), e.codigo === "offline" ? "Busca automática indisponível aqui. Preenche os dados e use “Trocar foto”." : `Não consegui ler o produto (${e.message}). Preenche à mão.`);
     } finally {
       b.disabled = false;
@@ -277,11 +402,10 @@
     return `Miga, olha esse achadinho ${onde}! 🤫💖\n\n✨ *${p.nome}*\n\n💸 ${preco}${cupom}\n\n${FRASES[p.categoria]}\n\n👉 ${p.link}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
   }
   function comConvite(texto) {
-    const g = grupos.lista().find((x) => x.id === ls.ler(CH.convite));
+    const g = config.grupos.find((x) => x.id === config.convite);
     if (!g || !g.link || texto.includes(g.link)) return texto;
     return `${texto}\n\n💬 Entre no grupo ${g.nome}: ${g.link}`;
   }
-
   function coletar() {
     [c.nome, c.precoNovo, c.link].forEach((x) => x.classList.remove("erro"));
     const p = {
@@ -315,18 +439,16 @@
       .replace(/(^|[\s(])~([^~\n]+)~/g, "$1<s>$2</s>");
   }
 
-  // Divulgação atual (o que está na tela)
-  let atual = null; // { id, criadoEm, produto, texto, imagem: Blob|null, enviadoPara: [] }
-  let urlImagemAtual = "";
+  // Divulgação atual: { id, criadoEm, produto, texto, imagem (URL ou data:), enviadoPara: [] }
+  let atual = null;
+  let ultimoLink = "";
 
   function mostrarResultado(avisoMsg) {
     $("#texto").value = atual.texto;
     $("#balaoTexto").innerHTML = formatarWhats(atual.texto);
-    if (urlImagemAtual) URL.revokeObjectURL(urlImagemAtual);
-    urlImagemAtual = atual.imagem ? URL.createObjectURL(atual.imagem) : "";
     const img = $("#balaoImg");
-    img.hidden = !urlImagemAtual;
-    if (urlImagemAtual) img.src = urlImagemAtual;
+    img.hidden = !atual.imagem;
+    colocarImagem(img, atual.imagem);
     $("#enviarFoto").hidden = !atual.imagem;
     $("#balaoHora").textContent = new Date(atual.criadoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     aviso($("#avisoIA"), avisoMsg);
@@ -334,10 +456,9 @@
     $("#resultado").hidden = false;
     $("#resultado").scrollIntoView({ behavior: "smooth", block: "start" });
   }
-
   async function salvarAtual() {
     if (!atual) return;
-    try { await historico.salvar(atual); } catch (e) { toast("Não consegui salvar no histórico"); }
+    try { await dados.salvar(atual); } catch (e) { toast("Não consegui salvar no histórico"); }
     atualizarContadores();
   }
   let salvarTimer;
@@ -346,10 +467,9 @@
     atual.texto = $("#texto").value;
     $("#balaoTexto").innerHTML = formatarWhats(atual.texto);
     clearTimeout(salvarTimer);
-    salvarTimer = setTimeout(salvarAtual, 600);
+    salvarTimer = setTimeout(salvarAtual, 700);
   });
 
-  let ultimoLink = "";
   async function gerar() {
     const p = coletar();
     if (!p) return;
@@ -358,23 +478,18 @@
     try {
       texto = (await api("gerar", p)).texto;
     } catch (e) {
-      if (e.codigo === "senha") { ocupado(false); abrirConfig(); toast("Coloca a senha do app"); return; }
+      if (e.codigo === "senha") { ocupado(false); abrirConfig(); toast("Coloca a senha da IA"); return; }
       const motivo = e.codigo === "sem-chave" ? "a chave da IA ainda não foi configurada" : e.codigo === "offline" ? "o servidor não está disponível aqui" : "a IA não respondeu agora";
       texto = mensagemReserva(p);
       avisoMsg = `Usei uma mensagem pronta porque ${motivo}. Pode editar à vontade.`;
     }
-    let imagem = null;
-    try { imagem = await fotoComMarca(); } catch (e) { imagem = null; }
-    if (!imagem && (foto.url || foto.arquivo)) avisoMsg = (avisoMsg ? avisoMsg + " " : "") + "Não consegui aplicar a marca d'água nesta foto; use “Trocar foto”.";
-
-    // "Gerar outra" do mesmo produto atualiza o mesmo item do histórico
-    const mesmo = atual && ultimoLink === p.link;
+    const mesmo = atual && ultimoLink === p.link; // "Outra" do mesmo produto atualiza o mesmo item
     atual = {
       id: mesmo ? atual.id : novoId(),
       criadoEm: mesmo ? atual.criadoEm : Date.now(),
       produto: p,
       texto: comConvite(texto),
-      imagem,
+      imagem: fotoAtual,
       enviadoPara: mesmo ? atual.enviadoPara : []
     };
     ultimoLink = p.link;
@@ -393,16 +508,13 @@
     atual.ultimoEnvio = Date.now();
     salvarAtual();
   }
-
   $("#enviarFoto").addEventListener("click", async () => {
     if (!atual) return;
     const texto = atual.texto;
-    if (atual.imagem) {
-      const arq = new File([atual.imagem], "miga-promo.jpg", { type: "image/jpeg" });
-      if (navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
-        try { await navigator.share({ files: [arq], text: texto }); registrarEnvio("WhatsApp (com foto)"); return; }
-        catch (e) { if (e.name === "AbortError") return; }
-      }
+    const arq = await arquivoDaImagem(atual.imagem);
+    if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
+      try { await navigator.share({ files: [arq], text: texto }); registrarEnvio("WhatsApp (com foto)"); return; }
+      catch (e) { if (e.name === "AbortError") return; }
     }
     if (navigator.share) {
       try { await navigator.share({ text: texto }); registrarEnvio("WhatsApp"); toast("Este aparelho não envia foto junto — mandei só o texto"); return; }
@@ -426,10 +538,11 @@
   });
 
   /* =========================== Grupos =========================== */
-  const grupos = {
-    lista: () => ls.lerJson(CH.grupos, []),
-    gravar: (l) => { ls.gravarJson(CH.grupos, l); atualizarContadores(); }
-  };
+  let config = { grupos: [], convite: "" };
+  async function gravarConfig() {
+    atualizarContadores();
+    try { await dados.gravarConfig(config); } catch (e) { toast("Não consegui salvar os grupos"); }
+  }
   const linkGrupoOk = (u) => /^https:\/\/(chat\.whatsapp\.com|wa\.me)\//i.test(String(u || "").trim());
 
   $("#formGrupo").addEventListener("submit", (e) => {
@@ -438,12 +551,12 @@
     const link = $("#grupoLink").value.trim();
     if (!nome) { toast("Dá um nome para o grupo"); $("#grupoNome").focus(); return; }
     if (link && !linkGrupoOk(link)) { toast("O link precisa começar com https://chat.whatsapp.com/"); $("#grupoLink").focus(); return; }
-    grupos.gravar([...grupos.lista(), { id: novoId(), nome, link }]);
+    config.grupos = [...config.grupos, { id: novoId(), nome, link }];
+    gravarConfig();
     $("#formGrupo").reset();
     renderGrupos();
     toast("Grupo adicionado");
   });
-
   function linhaGrupo(g, acao) {
     return `<div class="grupo" data-id="${esc(g.id)}">
       <span class="grupo__ico"><svg><use href="#i-grupo"/></svg></span>
@@ -452,29 +565,31 @@
     </div>`;
   }
   function renderGrupos() {
-    const l = grupos.lista();
+    const l = config.grupos;
     $("#listaGrupos").innerHTML = l.length
       ? l.map((g) => linhaGrupo(g, `<button type="button" class="icone-btn" data-apagar="${esc(g.id)}" aria-label="Apagar ${esc(g.nome)}"><svg><use href="#i-lixo"/></svg></button>`)).join("")
       : '<p class="vazio-lista">Nenhum grupo ainda. Adicione o primeiro acima.</p>';
-    const sel = $("#grupoConvite"), conviteAtual = ls.ler(CH.convite);
+    const sel = $("#grupoConvite");
     sel.innerHTML = '<option value="">Não incluir</option>' + l.filter((g) => g.link).map((g) => `<option value="${esc(g.id)}">${esc(g.nome)}</option>`).join("");
-    sel.value = l.some((g) => g.id === conviteAtual && g.link) ? conviteAtual : "";
+    sel.value = l.some((g) => g.id === config.convite && g.link) ? config.convite : "";
   }
-  $("#listaGrupos").addEventListener("click", (e) => {
+  $("#listaGrupos").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-apagar]");
     if (!b) return;
-    const g = grupos.lista().find((x) => x.id === b.dataset.apagar);
-    if (g && confirm(`Apagar o grupo “${g.nome}”?`)) {
-      grupos.gravar(grupos.lista().filter((x) => x.id !== g.id));
-      if (ls.ler(CH.convite) === g.id) ls.gravar(CH.convite, "");
-      renderGrupos();
-    }
+    const g = config.grupos.find((x) => x.id === b.dataset.apagar);
+    if (!g) return;
+    const ok = await confirmar({ titulo: "Apagar grupo?", texto: `“${g.nome}” sai da sua lista. O grupo no WhatsApp continua igual.`, ok: "Apagar" });
+    if (!ok) return;
+    config.grupos = config.grupos.filter((x) => x.id !== g.id);
+    if (config.convite === g.id) config.convite = "";
+    gravarConfig();
+    renderGrupos();
+    toast("Grupo apagado");
   });
-  $("#grupoConvite").addEventListener("change", () => { ls.gravar(CH.convite, $("#grupoConvite").value); toast("Convite atualizado"); });
+  $("#grupoConvite").addEventListener("change", () => { config.convite = $("#grupoConvite").value; gravarConfig(); toast("Convite atualizado"); });
 
-  // Lista de grupos dentro do resultado (envio)
   function renderGruposEnvio() {
-    const l = grupos.lista();
+    const l = config.grupos;
     const enviados = (atual && atual.enviadoPara) || [];
     $("#gruposEnvio").innerHTML = l.length
       ? l.map((g) => {
@@ -487,7 +602,7 @@
   $("#gruposEnvio").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-enviar]");
     if (!b || !atual) return;
-    const g = grupos.lista().find((x) => x.id === b.dataset.enviar);
+    const g = config.grupos.find((x) => x.id === b.dataset.enviar);
     if (!g) return;
     const ok = await copiarTexto(atual.texto);
     registrarEnvio(g.nome);
@@ -500,23 +615,23 @@
     }
   });
 
-  /* =========================== Histórico (tela) =========================== */
-  const urlsMiniaturas = [];
+  /* =========================== Histórico =========================== */
   async function renderHistorico() {
     let itens = [];
-    try { itens = await historico.listar(); } catch (e) { $("#historico").innerHTML = '<p class="vazio-lista">O histórico não está disponível neste navegador.</p>'; return; }
+    try { itens = await dados.listar(); }
+    catch (e) { $("#historico").innerHTML = '<p class="vazio-lista">Não consegui carregar o histórico. Confira a internet.</p>'; return; }
     const termo = $("#buscaHistorico").value.trim().toLowerCase();
     if (termo) itens = itens.filter((i) => (i.produto.nome || "").toLowerCase().includes(termo));
-    urlsMiniaturas.splice(0).forEach((u) => URL.revokeObjectURL(u));
     $("#apagarTudo").hidden = !itens.length && !termo;
     if (!itens.length) {
       $("#historico").innerHTML = `<p class="vazio-lista">${termo ? "Nada encontrado." : "Tudo que você gerar aparece aqui."}</p>`;
       return;
     }
     $("#historico").innerHTML = itens.map((i) => {
-      let mini = '<span class="sem-foto"><svg><use href="#i-foto"/></svg></span>';
-      if (i.imagem) { const u = URL.createObjectURL(i.imagem); urlsMiniaturas.push(u); mini = `<img src="${u}" alt="">`; }
       const p = i.produto;
+      const mini = i.imagem
+        ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+        : '<span class="sem-foto"><svg><use href="#i-foto"/></svg></span>';
       const enviado = i.enviadoPara && i.enviadoPara.length
         ? `<span class="etiqueta etiqueta--ok">Enviado: ${esc(i.enviadoPara.join(", "))}</span>`
         : '<span class="etiqueta">Não enviado</span>';
@@ -540,11 +655,13 @@
     const b = e.target.closest("button");
     if (!b) return;
     const id = b.dataset.abrir || b.dataset.copiar || b.dataset.apagar;
-    const item = await historico.pegar(id);
+    let item;
+    try { item = await dados.pegar(id); } catch (err) { toast("Não consegui abrir agora"); return; }
     if (!item) return;
     if (b.dataset.apagar) {
-      if (!confirm(`Apagar “${item.produto.nome}” do histórico?`)) return;
-      await historico.apagar(id);
+      const ok = await confirmar({ titulo: "Apagar do histórico?", texto: `“${item.produto.nome}” será apagado.`, ok: "Apagar" });
+      if (!ok) return;
+      await dados.apagar(id);
       if (atual && atual.id === id) { atual = null; $("#resultado").hidden = true; }
       renderHistorico(); atualizarContadores(); toast("Apagado do histórico");
     } else if (b.dataset.copiar) {
@@ -554,31 +671,30 @@
     }
   });
   $("#apagarTudo").addEventListener("click", async () => {
-    if (!confirm("Apagar TODO o histórico deste aparelho? Isso não pode ser desfeito.")) return;
-    await historico.limpar();
+    const ok = await confirmar({ titulo: "Apagar todo o histórico?", texto: "Todos os produtos salvos serão apagados. Isso não pode ser desfeito.", ok: "Apagar tudo" });
+    if (!ok) return;
+    try { await dados.limpar(); } catch (e) { toast("Não consegui apagar agora"); return; }
     atual = null; $("#resultado").hidden = true;
     renderHistorico(); atualizarContadores(); toast("Histórico apagado");
   });
-
   function abrirDoHistorico(item) {
     const p = item.produto;
     c.link.value = p.link; c.nome.value = p.nome;
     c.precoNovo.value = paraCampo(p.precoNovo); c.precoAntigo.value = paraCampo(p.precoAntigo);
     c.cupom.value = p.cupom || "";
     loja.marcar(p.loja); categoria.marcar(p.categoria);
-    foto = item.imagem ? { url: URL.createObjectURL(item.imagem), arquivo: item.imagem } : { url: "", arquivo: null };
-    mostrarFoto(foto.url);
+    definirFoto(item.imagem || "");
     atualizarSelo();
-    atual = item; ultimoLink = p.link;
+    atual = item; atual.enviadoPara = atual.enviadoPara || []; ultimoLink = p.link;
     irPara("criar");
     mostrarResultado("");
   }
 
   async function atualizarContadores() {
-    const g = grupos.lista().length;
+    const g = config.grupos.length;
     $("#contGrupos").hidden = !g; $("#contGrupos").textContent = g;
     let n = 0;
-    try { n = (await historico.listar()).length; } catch (e) { n = 0; }
+    try { n = (await dados.listar()).length; } catch (e) { n = 0; }
     $("#contHistorico").hidden = !n; $("#contHistorico").textContent = n;
   }
 
@@ -586,6 +702,9 @@
   const dialogo = $("#config");
   function abrirConfig() {
     $("#senha").value = ls.ler(CH.senha);
+    $("#contaInfo").textContent = conta.nuvem
+      ? (conta.uid ? `Conta anônima · código ${conta.uid.slice(0, 8)}` : "Não conectada")
+      : "Modo local (Firebase ainda não configurado)";
     api("status").then((s) => {
       $("#status").textContent = s.ia ? "IA conectada" : "IA ainda não configurada no servidor";
       $("#status").className = "status " + (s.ia ? "ok" : "off");
@@ -595,6 +714,20 @@
   $("#abrirConfig").addEventListener("click", abrirConfig);
   dialogo.addEventListener("close", () => {
     if (dialogo.returnValue === "salvar") { ls.gravar(CH.senha, $("#senha").value); toast("Senha salva neste aparelho"); }
+  });
+  $("#sair").addEventListener("click", async () => {
+    dialogo.close();
+    const ok = await confirmar({
+      titulo: "Sair da conta?",
+      texto: conta.nuvem
+        ? "A conta é anônima: ao sair, você perde o acesso ao histórico e aos grupos salvos nela. Ao entrar de novo, começa uma conta nova."
+        : "Você volta para a tela de entrada. Os dados deste aparelho continuam salvos.",
+      ok: "Sair"
+    });
+    if (!ok) return;
+    atual = null; $("#resultado").hidden = true;
+    if (conta.nuvem && conta.fb) await conta.fb.auth.signOut(conta.fb.a);
+    else { ls.remover(CH.entrou); mostrarEntrada(true); }
   });
 
   /* =========================== Instalar (PWA) =========================== */
@@ -615,8 +748,6 @@
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   }
-  // Pede ao navegador para não apagar o histórico sozinho
-  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
   /* =========================== Início =========================== */
   const q = new URLSearchParams(location.search);
@@ -627,6 +758,5 @@
     history.replaceState(null, "", location.pathname);
     buscar();
   }
-  carregarMarca().catch(() => {});
-  atualizarContadores();
+  iniciarConta();
 })();

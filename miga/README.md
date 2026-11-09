@@ -58,13 +58,16 @@ Ao colar o link, o app tenta trazer **foto, nome e preço**. O Mercado Livre cos
 a Shopee geralmente traz foto e nome, mas **o preço precisa ser digitado** (a Shopee não mostra o preço
 no código da página). Se algo faltar, o app avisa. "Trocar foto" usa uma imagem da galeria.
 
-## Grupos, marca d'água e histórico
+## Publicar
 
-- **Grupos** (aba Grupos): cadastre nome + link de convite (`https://chat.whatsapp.com/...`).
-  No resultado, cada grupo tem o botão **Enviar**: a mensagem é copiada e o grupo abre no WhatsApp — é só colar.
-  Para mandar **com foto** para vários grupos de uma vez, use **Enviar com foto** e marque os grupos no WhatsApp.
-  Nenhum app consegue postar sozinho num grupo do WhatsApp; esse é o caminho permitido.
-- **Convite no fim da mensagem** (opcional): escolha um grupo e o link dele entra no final de toda mensagem.
-- **Marca d'água**: a foto recebe o selo `marca-dagua.png` no canto inferior direito antes de enviar.
-- **Histórico**: tudo que você gera fica salvo **neste aparelho** (IndexedDB), com foto, texto e para onde foi enviado.
-  Dá para abrir de novo, copiar, apagar um item ou apagar tudo. Se trocar de celular ou limpar os dados do navegador, o histórico não vai junto.
+Siga o passo a passo em **[TUTORIAL.md](TUTORIAL.md)** (Firebase + Firestore + Cloudflare Pages).
+
+## Recursos
+
+- **Entrada com login anônimo** (Firebase Authentication).
+- **Histórico e grupos no Firestore** em `usuarios/{uid}/historico` e `usuarios/{uid}/config/app`
+  (regras em `firestore.rules`). Sem `firebase-config.js` preenchido, o app usa o próprio navegador (modo local).
+- **Grupos**: cadastre nome + link de convite; o botão Enviar copia a mensagem e abre o grupo.
+  "Enviar com foto" abre o compartilhamento do celular, onde dá para marcar vários grupos.
+- **Foto do produto em tela cheia** (toque na foto), sem marca d'água.
+- Confirmações e avisos no visual do app.
