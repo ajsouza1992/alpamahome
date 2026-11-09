@@ -32,6 +32,13 @@
     <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></symbol>
     <symbol id="i-refazer" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></symbol>
+    <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-historico" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-grupo" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></symbol>
+    <symbol id="i-criar" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol>
+    <symbol id="i-abrir" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-compartilhar-ios" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></symbol>
   </svg>
@@ -56,6 +63,7 @@
   </div>
 
   <main class="conteudo">
+  <div class="aba" id="aba-criar">
 
     <!-- Passo 1: link -->
     <section class="bloco">
@@ -139,14 +147,62 @@
         <button type="button" class="btn btn--branco" id="copiar"><svg><use href="#i-copiar"/></svg>Copiar</button>
         <button type="button" class="btn btn--branco" id="whats"><svg><use href="#i-chat"/></svg>Só o texto</button>
       </div>
+
+      <div class="enviar-grupos">
+        <h3>Enviar para seus grupos</h3>
+        <p class="nota">Em <b>Enviar com foto</b> você marca vários grupos de uma vez no WhatsApp. Ou toque num grupo abaixo: a mensagem é copiada e o grupo abre — é só colar.</p>
+        <div class="lista-grupos" id="gruposEnvio"></div>
+      </div>
     </section>
+  </div>
+
+  <!-- ===== Aba Histórico ===== -->
+  <div class="aba" id="aba-historico" hidden>
+    <section class="bloco">
+      <div class="cabecalho-aba">
+        <h2 class="passo">Histórico</h2>
+        <button type="button" class="link link--perigo" id="apagarTudo"><svg><use href="#i-lixo"/></svg>Apagar tudo</button>
+      </div>
+      <input class="busca-lista" id="buscaHistorico" type="search" placeholder="Buscar no histórico">
+      <div class="historico" id="historico"></div>
+    </section>
+  </div>
+
+  <!-- ===== Aba Grupos ===== -->
+  <div class="aba" id="aba-grupos" hidden>
+    <section class="bloco">
+      <h2 class="passo">Meus grupos</h2>
+      <form class="form-grupo" id="formGrupo" autocomplete="off">
+        <label class="campo"><span>Nome do grupo</span><input id="grupoNome" maxlength="60" placeholder="Ex.: Achadinhos VIP 1"></label>
+        <label class="campo"><span>Link de convite do grupo</span><input id="grupoLink" type="url" inputmode="url" placeholder="https://chat.whatsapp.com/..."></label>
+        <button type="submit" class="btn btn--rosa"><svg><use href="#i-mais"/></svg>Adicionar grupo</button>
+      </form>
+      <p class="nota">Onde pego o link? No WhatsApp: abra o grupo → nome do grupo → <b>Convidar via link</b> → copiar.</p>
+      <div class="lista-grupos" id="listaGrupos"></div>
+    </section>
+
+    <section class="bloco">
+      <h2 class="passo">Convite no fim da mensagem</h2>
+      <p class="nota">Coloca o link de um grupo no final de toda mensagem, para mais gente entrar.</p>
+      <label class="campo"><span>Grupo</span>
+        <span class="select"><select id="grupoConvite"><option value="">Não incluir</option></select></span>
+      </label>
+    </section>
+  </div>
 
     <p class="assinatura">Desenvolvido por <b>Alpama Soluções</b></p>
   </main>
 
-  <!-- Botão principal fixo -->
+  <!-- Botão principal + abas -->
   <div class="barra">
-    <button type="button" class="btn btn--rosa btn--gerar" id="gerar"><svg><use href="#i-brilho"/></svg><span class="rotulo">Gerar Miga Promo</span><i class="giro"></i></button>
+    <div class="barra__gerar" id="barraGerar">
+      <button type="button" class="btn btn--rosa btn--gerar" id="gerar"><svg><use href="#i-brilho"/></svg><span class="rotulo">Gerar Miga Promo</span><i class="giro"></i></button>
+    </div>
+    <nav class="abas" aria-label="Seções">
+      <button type="button" data-aba="criar" aria-current="page"><svg><use href="#i-criar"/></svg>Criar</button>
+      <button type="button" data-aba="historico"><svg><use href="#i-historico"/></svg>Histórico <b id="contHistorico" hidden></b></button>
+      <button type="button" data-aba="grupos"><svg><use href="#i-grupo"/></svg>Grupos <b id="contGrupos" hidden></b></button>
+    </nav>
   </div>
 
   <!-- Configurações -->

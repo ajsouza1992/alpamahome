@@ -57,3 +57,14 @@ O login dura o tempo configurado (ex.: 1 mês) e é grátis para até 50 usuári
 Ao colar o link, o app tenta trazer **foto, nome e preço**. O Mercado Livre costuma trazer tudo;
 a Shopee geralmente traz foto e nome, mas **o preço precisa ser digitado** (a Shopee não mostra o preço
 no código da página). Se algo faltar, o app avisa. "Trocar foto" usa uma imagem da galeria.
+
+## Grupos, marca d'água e histórico
+
+- **Grupos** (aba Grupos): cadastre nome + link de convite (`https://chat.whatsapp.com/...`).
+  No resultado, cada grupo tem o botão **Enviar**: a mensagem é copiada e o grupo abre no WhatsApp — é só colar.
+  Para mandar **com foto** para vários grupos de uma vez, use **Enviar com foto** e marque os grupos no WhatsApp.
+  Nenhum app consegue postar sozinho num grupo do WhatsApp; esse é o caminho permitido.
+- **Convite no fim da mensagem** (opcional): escolha um grupo e o link dele entra no final de toda mensagem.
+- **Marca d'água**: a foto recebe o selo `marca-dagua.png` no canto inferior direito antes de enviar.
+- **Histórico**: tudo que você gera fica salvo **neste aparelho** (IndexedDB), com foto, texto e para onde foi enviado.
+  Dá para abrir de novo, copiar, apagar um item ou apagar tudo. Se trocar de celular ou limpar os dados do navegador, o histórico não vai junto.
