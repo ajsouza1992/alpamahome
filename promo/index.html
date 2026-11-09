@@ -6,7 +6,7 @@
   <title>Alpama Promo</title>
   <meta name="description" content="Cole o link do Mercado Livre e receba a mensagem de promoção pronta para o WhatsApp.">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#0f3d2a">
+  <meta name="theme-color" content="#0c1a14">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Alpama Promo">
@@ -15,69 +15,83 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-engrenagem" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-colar" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-brilho" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></symbol>
+    <symbol id="i-compartilhar" viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></symbol>
+    <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-refazer" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></symbol>
+    <symbol id="i-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-foto" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></symbol>
+  </svg>
+
   <header class="topo">
     <div class="topo__marca">
       <img src="icons/icon-192.png" alt="" class="topo__logo">
       <div>
-        <strong>Alpama <em>Promo</em></strong>
+        <strong>Alpama Promo</strong>
         <span id="statusIA" class="status">verificando…</span>
       </div>
     </div>
-    <button class="icone-btn" id="abrirConfig" type="button" aria-label="Configurações">⚙︎</button>
+    <button class="engrenagem" id="abrirConfig" type="button" aria-label="Configurações" title="Configurações">
+      <svg><use href="#i-engrenagem"/></svg>
+    </button>
   </header>
 
   <main class="conteudo">
-    <!-- 1. Link -->
-    <section class="bloco">
-      <h2><span class="num">1</span>Link de afiliado</h2>
-      <p class="dica">No Mercado Livre: produto → <b>Compartilhar</b> → copiar link.</p>
-      <div class="linha-link">
-        <input id="link" type="url" inputmode="url" placeholder="https://mercadolivre.com/sec/…" autocomplete="off">
-        <button class="btn btn--claro" id="colar" type="button">Colar</button>
+    <section class="hero">
+      <h1>Link na mão,<br><span>mensagem pronta.</span></h1>
+      <p>Cole o link de afiliado do Mercado Livre e a IA escreve a oferta para o seu grupo.</p>
+
+      <div class="cola">
+        <svg class="cola__ico"><use href="#i-busca"/></svg>
+        <input id="link" type="url" inputmode="url" placeholder="Cole o link aqui" autocomplete="off" aria-label="Link de afiliado">
+        <button class="cola__btn" id="colar" type="button"><svg><use href="#i-colar"/></svg>Colar</button>
       </div>
-      <button class="btn btn--primario btn--largo" id="buscar" type="button">Buscar dados do produto</button>
+      <button class="btn btn--contorno btn--largo" id="buscar" type="button"><span class="rotulo">Buscar dados do produto</span></button>
       <p class="aviso" id="avisoBusca" hidden></p>
+      <p class="dica">Onde pego o link? No app do Mercado Livre: produto → <b>Compartilhar</b> → copiar.</p>
     </section>
 
-    <!-- 2. Produto -->
-    <section class="bloco" id="blocoProduto">
-      <h2><span class="num">2</span>Produto</h2>
+    <section class="cartao" id="blocoProduto">
+      <div class="cartao__titulo"><span class="passo">1</span>Produto</div>
       <div class="produto">
         <div class="produto__img" id="prodImg"><span>sem foto</span></div>
         <div class="produto__campos">
-          <label class="campo">Nome<input id="nome" maxlength="200" placeholder="Nome do produto"></label>
+          <label class="campo"><span>Nome</span><input id="nome" maxlength="200" placeholder="Nome do produto"></label>
           <div class="duas">
-            <label class="campo">Preço (R$)<input id="preco" inputmode="decimal" placeholder="119,90"></label>
-            <label class="campo">Antes (R$)<input id="precoAntigo" inputmode="decimal" placeholder="opcional"></label>
+            <label class="campo"><span>Preço</span><input id="preco" inputmode="decimal" placeholder="R$ 119,90"></label>
+            <label class="campo"><span>Antes</span><input id="precoAntigo" inputmode="decimal" placeholder="opcional"></label>
           </div>
         </div>
       </div>
       <div class="duas">
-        <label class="campo">Cupom<input id="cupom" maxlength="40" placeholder="opcional"></label>
-        <label class="campo">URL da imagem<input id="imagem" type="url" placeholder="opcional"></label>
+        <label class="campo"><span>Cupom</span><input id="cupom" maxlength="40" placeholder="opcional"></label>
+        <label class="campo"><span>Imagem (URL)</span><input id="imagem" type="url" placeholder="opcional"></label>
       </div>
-      <label class="campo">Observação para a IA<input id="extra" maxlength="200" placeholder="ex.: ótimo para presente, cor verde"></label>
+      <label class="campo"><span>Observação para a IA</span><input id="extra" maxlength="200" placeholder="ex.: ótimo para presente, cor verde"></label>
     </section>
 
-    <!-- 3. Gerar -->
-    <section class="bloco">
-      <h2><span class="num">3</span>Estilo da mensagem</h2>
+    <section class="cartao">
+      <div class="cartao__titulo"><span class="passo">2</span>Estilo da mensagem</div>
       <div class="tons" id="tons" role="radiogroup" aria-label="Estilo">
-        <button type="button" data-tom="urgente" aria-checked="true" role="radio">Urgente</button>
-        <button type="button" data-tom="divertido" aria-checked="false" role="radio">Divertido</button>
-        <button type="button" data-tom="elegante" aria-checked="false" role="radio">Elegante</button>
-        <button type="button" data-tom="curto" aria-checked="false" role="radio">Curto</button>
+        <button type="button" data-tom="urgente" aria-checked="true" role="radio"><b>🔥</b>Urgente</button>
+        <button type="button" data-tom="divertido" aria-checked="false" role="radio"><b>😄</b>Divertido</button>
+        <button type="button" data-tom="elegante" aria-checked="false" role="radio"><b>✨</b>Elegante</button>
+        <button type="button" data-tom="curto" aria-checked="false" role="radio"><b>⚡</b>Curto</button>
       </div>
-      <button class="btn btn--primario btn--largo btn--grande" id="gerar" type="button">Gerar mensagem com IA</button>
+      <button class="btn btn--menta btn--largo btn--grande" id="gerar" type="button"><svg><use href="#i-brilho"/></svg><span class="rotulo">Gerar mensagem com IA</span></button>
     </section>
 
-    <!-- 4. Resultado -->
-    <section class="bloco" id="blocoResultado" hidden>
-      <h2><span class="num">4</span>Mensagem pronta</h2>
+    <section class="cartao cartao--resultado" id="blocoResultado" hidden>
+      <div class="cartao__titulo"><span class="passo">3</span>Mensagem pronta</div>
       <p class="aviso" id="avisoIA" hidden></p>
       <div class="whats">
         <div class="balao">
@@ -90,18 +104,17 @@
         <summary>Editar texto</summary>
         <textarea id="texto" rows="10"></textarea>
       </details>
+      <button class="btn btn--whats btn--largo btn--grande" id="whats" type="button"><svg><use href="#i-chat"/></svg>Enviar no WhatsApp</button>
       <div class="acoes">
-        <button class="btn btn--whats" id="whats" type="button">Enviar no WhatsApp</button>
-        <button class="btn btn--primario" id="compartilhar" type="button">Compartilhar</button>
-        <button class="btn btn--claro" id="copiar" type="button">Copiar</button>
-        <button class="btn btn--claro" id="outra" type="button">Gerar outra</button>
+        <button class="btn btn--escuro" id="compartilhar" type="button"><svg><use href="#i-compartilhar"/></svg>Compartilhar</button>
+        <button class="btn btn--escuro" id="copiar" type="button"><svg><use href="#i-copiar"/></svg>Copiar</button>
+        <button class="btn btn--escuro" id="outra" type="button"><svg><use href="#i-refazer"/></svg>Outra</button>
       </div>
     </section>
 
-    <!-- Histórico -->
-    <section class="bloco" id="blocoHistorico" hidden>
+    <section class="cartao" id="blocoHistorico" hidden>
       <div class="hist-topo">
-        <h2>Últimas mensagens</h2>
+        <div class="cartao__titulo"><svg class="mini"><use href="#i-relogio"/></svg>Últimas mensagens</div>
         <button class="link-btn" id="limparHist" type="button">Limpar</button>
       </div>
       <div id="historico" class="historico"></div>
@@ -110,14 +123,15 @@
 
   <dialog id="config" class="dialogo">
     <form method="dialog" id="configForm">
+      <div class="dialogo__ico"><svg><use href="#i-engrenagem"/></svg></div>
       <h2>Configurações</h2>
-      <label class="campo">Senha de acesso do app
-        <input id="senha" type="password" autocomplete="current-password" placeholder="a mesma configurada no Cloudflare">
+      <label class="campo"><span>Senha de acesso do app</span>
+        <input id="senha" type="password" autocomplete="current-password" placeholder="a mesma do Cloudflare (APP_SENHA)">
       </label>
       <p class="dica">Fica salva só neste aparelho.</p>
-      <div class="acoes">
-        <button class="btn btn--primario" value="salvar" type="submit">Salvar</button>
-        <button class="btn btn--claro" value="cancelar" type="submit">Fechar</button>
+      <div class="dialogo__acoes">
+        <button class="btn btn--escuro" value="cancelar" type="submit">Fechar</button>
+        <button class="btn btn--menta" value="salvar" type="submit">Salvar</button>
       </div>
     </form>
   </dialog>

@@ -1,5 +1,5 @@
 // Service worker do Alpama Promo: guarda a "casca" do app para abrir rápido e offline.
-const VERSAO = "promo-v1";
+const VERSAO = "promo-v2";
 const ARQUIVOS = ["./", "index.html", "app.css", "app.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {

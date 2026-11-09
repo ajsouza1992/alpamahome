@@ -45,10 +45,10 @@
   let iaDisponivel = false;
   api("status").then((s) => {
     iaDisponivel = !!s.ia;
-    $("#statusIA").textContent = s.ia ? "IA conectada" : "IA não configurada — usando modelos prontos";
+    $("#statusIA").textContent = s.ia ? "IA conectada" : "IA não configurada · modelos prontos";
     $("#statusIA").className = "status " + (s.ia ? "ok" : "off");
   }).catch(() => {
-    $("#statusIA").textContent = "servidor indisponível — modo offline";
+    $("#statusIA").textContent = "modo offline · modelos prontos";
     $("#statusIA").className = "status off";
   });
 
@@ -99,7 +99,7 @@
     if (!urlOk(link)) { toast("Cole um link começando com https://"); return; }
     const b = $("#buscar");
     b.disabled = true;
-    b.textContent = "Buscando…";
+    b.querySelector(".rotulo").textContent = "Buscando…";
     aviso($("#avisoBusca"), "");
     try {
       const d = await api("produto", { url: link });
@@ -112,7 +112,7 @@
       if (e.codigo !== "senha") aviso($("#avisoBusca"), "Não consegui ler o produto (" + e.message + "). Preencha nome e preço manualmente.");
     } finally {
       b.disabled = false;
-      b.textContent = "Buscar dados do produto";
+      b.querySelector(".rotulo").textContent = "Buscar dados do produto";
     }
   }
   $("#buscar").addEventListener("click", buscar);
@@ -169,18 +169,18 @@
 
     const botoes = [$("#gerar"), $("#outra")];
     botoes.forEach((b) => { b.disabled = true; });
-    $("#gerar").textContent = "Gerando…";
+    $("#gerar .rotulo").textContent = "Gerando…";
     let texto, avisoMsg = "";
     try {
       if (!iaDisponivel) throw Object.assign(new Error("IA não configurada"), { codigo: "sem-chave" });
       texto = (await api("gerar", p)).texto;
     } catch (e) {
-      if (e.codigo === "senha") { botoes.forEach((b) => { b.disabled = false; }); $("#gerar").textContent = "Gerar mensagem com IA"; return; }
+      if (e.codigo === "senha") { botoes.forEach((b) => { b.disabled = false; }); $("#gerar .rotulo").textContent = "Gerar mensagem com IA"; return; }
       texto = modeloPronto(p);
       avisoMsg = e.codigo === "sem-chave" ? "Mensagem feita com modelo pronto (a IA ainda não está configurada)." : "A IA não respondeu agora; usei um modelo pronto. Tente “Gerar outra”.";
     }
     botoes.forEach((b) => { b.disabled = false; });
-    $("#gerar").textContent = "Gerar mensagem com IA";
+    $("#gerar .rotulo").textContent = "Gerar mensagem com IA";
     aviso($("#avisoIA"), avisoMsg);
     mostrarResultado(p, texto);
     salvarHistorico(p, texto);
