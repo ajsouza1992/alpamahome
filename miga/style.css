@@ -231,3 +231,5 @@ body.travado { overflow: hidden; }
 .visor__fechar { position: absolute; top: calc(14px + env(safe-area-inset-top)); right: 14px; }
 .campo > span.select { font-size: 15.5px; font-weight: 500; }
 .select select { line-height: 1.3; color: var(--preto); }
+.entrada__form { width: 100%; display: grid; gap: 12px; text-align: left; }
+.entrada__form input { text-align: center; font-size: 18px; letter-spacing: .08em; }

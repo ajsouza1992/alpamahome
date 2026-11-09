@@ -9,9 +9,10 @@
  *   POST /api/gerar    { ...dados } → mensagem escrita pela IA (Gemini)
  *   GET  /api/imagem?url=...        → foto do produto (para enviar junto no WhatsApp)
  *   GET  /api/status                → diz se a IA está configurada
+ *   POST /api/entrar   { codigo }   → confere o código de acesso (APP_SENHA)
  *
  * Variáveis no Cloudflare (Configurações → Variáveis e segredos):
- *   GEMINI_API_KEY  (obrigatória para a IA)   APP_SENHA (recomendada)   GEMINI_MODEL (opcional)
+ *   GEMINI_API_KEY (chave da IA)   APP_SENHA (código de acesso do app)   GEMINI_MODEL (opcional)
  */
 
 /* ======================= Leitura do produto ======================= */
@@ -231,7 +232,23 @@ async function rotaImagem(request) {
 }
 
 function rotaStatus(env) {
-  return json({ ia: !!env.GEMINI_API_KEY, senha: !!env.APP_SENHA });
+  return json({ ia: !!env.GEMINI_API_KEY, codigo: !!env.APP_SENHA });
+}
+
+/** Confere o código de acesso digitado na tela de entrada (é o valor de APP_SENHA). */
+async function rotaEntrar(request, env) {
+  if (!env.APP_SENHA) return json({ ok: false, codigo: "sem-codigo", erro: "Código de acesso não configurado (APP_SENHA)." }, 503);
+  let b;
+  try { b = await request.json(); } catch (e) { return json({ ok: false, erro: "Requisição inválida." }, 400); }
+  const digitado = new TextEncoder().encode(String(b.codigo || ""));
+  const certo = new TextEncoder().encode(String(env.APP_SENHA));
+  let diferenca = digitado.length ^ certo.length;
+  for (let i = 0; i < certo.length; i++) diferenca |= (digitado[i] || 0) ^ certo[i];
+  if (diferenca !== 0) {
+    await new Promise((ok) => setTimeout(ok, 800)); // atrasa quem tenta adivinhar
+    return json({ ok: false, codigo: "errado", erro: "Código incorreto." }, 401);
+  }
+  return json({ ok: true });
 }
 
 /* ======================= Roteador ======================= */
@@ -246,6 +263,7 @@ export default {
       if (m && m[1] === "gerar" && metodo === "POST") return await rotaGerar(request, env);
       if (m && m[1] === "imagem" && metodo === "GET") return await rotaImagem(request);
       if (m && m[1] === "status" && metodo === "GET") return rotaStatus(env);
+      if (m && m[1] === "entrar" && metodo === "POST") return await rotaEntrar(request, env);
       if (m) return json({ erro: "Rota não encontrada." }, 404);
     } catch (e) {
       return json({ erro: "Erro no servidor: " + (e.message || e) }, 500);

@@ -221,10 +221,12 @@
   }
   let dados = local;
 
-  /* =========================== Entrada (login anônimo) =========================== */
+  /* =========================== Entrada (código de acesso) =========================== */
+  // O código é conferido NO SERVIDOR (variável APP_SENHA do Cloudflare); ele não fica escrito no app.
   function mostrarEntrada(sim) {
     $("#telaEntrada").hidden = !sim;
     document.body.classList.toggle("travado", sim);
+    if (sim) setTimeout(() => $("#codigoAcesso").focus(), 50);
   }
   function carregandoEntrada(sim) {
     const b = $("#entrar");
@@ -232,61 +234,87 @@
     b.classList.toggle("ocupado", sim);
     b.querySelector(".rotulo").textContent = sim ? "Entrando..." : "Entrar";
   }
+  /** "ok" | "errado" | "sem-codigo" | "sem-servidor" (prévia) | "rede" */
+  async function conferirCodigo(codigo) {
+    try {
+      const r = await fetch("api/entrar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ codigo }) });
+      if (r.status === 404 || r.status === 405) return "sem-servidor";
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) return "ok";
+      return d.codigo === "sem-codigo" ? "sem-codigo" : "errado";
+    } catch (e) {
+      return "rede";
+    }
+  }
   async function iniciarFirebase() {
     const [app, auth, fs] = await Promise.all([import(FB + "firebase-app.js"), import(FB + "firebase-auth.js"), import(FB + "firebase-firestore.js")]);
     const a = app.initializeApp(cfg);
     conta.fb = { auth, fs, a: auth.getAuth(a), db: fs.getFirestore(a) };
   }
-  async function aposEntrar() {
+  function usuarioAtual() {
+    return new Promise((ok) => { const parar = conta.fb.auth.onAuthStateChanged(conta.fb.a, (u) => { parar(); ok(u); }); });
+  }
+  /** Depois do código certo: conecta a conta anônima do Firebase e abre o app */
+  async function abrirSessao() {
+    if (conta.nuvem) {
+      if (!conta.fb) await iniciarFirebase();
+      let u = await usuarioAtual();
+      if (!u) u = (await conta.fb.auth.signInAnonymously(conta.fb.a)).user;
+      conta.uid = u.uid;
+      dados = criarNuvem();
+    }
     mostrarEntrada(false);
     try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "" }; toast("Não consegui carregar seus grupos"); }
     atualizarContadores();
     renderGruposEnvio();
   }
+  function erroFirebase(e) {
+    const c = (e && e.code) || "";
+    return c.includes("operation-not-allowed") ? "O login anônimo não está ativado no Firebase (Authentication → Método de login → Anônimo)." :
+      c.includes("unauthorized-domain") ? "Este endereço não está autorizado no Firebase (Authentication → Configurações → Domínios autorizados)." :
+      c.includes("network") ? "Sem internet. Tente de novo." : "Não consegui conectar à sua conta agora. Tente de novo.";
+  }
+  function bloquear(msg) {
+    ls.remover(CH.senha);
+    atual = null;
+    $("#resultado").hidden = true;
+    $("#codigoAcesso").value = "";
+    aviso($("#avisoEntrada"), msg || "");
+    mostrarEntrada(true);
+  }
 
-  $("#entrar").addEventListener("click", async () => {
+  $("#formEntrar").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const codigo = $("#codigoAcesso").value.trim();
     aviso($("#avisoEntrada"), "");
-    if (!conta.nuvem) { ls.gravar(CH.entrou, "1"); aposEntrar(); return; }
+    if (!codigo) { toast("Digite o código de acesso"); $("#codigoAcesso").focus(); return; }
     carregandoEntrada(true);
-    try {
-      if (!conta.fb) await iniciarFirebase();
-      await conta.fb.auth.signInAnonymously(conta.fb.a);
-    } catch (e) {
-      const c = (e && e.code) || "";
+    const r = await conferirCodigo(codigo);
+    if (r === "ok" || r === "sem-servidor") {
+      ls.gravar(CH.senha, codigo);
+      try { await abrirSessao(); } catch (err) { aviso($("#avisoEntrada"), erroFirebase(err)); }
+    } else {
       aviso($("#avisoEntrada"),
-        c.includes("operation-not-allowed") ? "O login anônimo não está ativado no Firebase (Authentication → Método de login → Anônimo)." :
-        c.includes("unauthorized-domain") ? "Este endereço não está autorizado no Firebase (Authentication → Configurações → Domínios autorizados)." :
-        c.includes("network") ? "Sem internet. Tente de novo." : "Não consegui entrar agora. Tente de novo.");
-    } finally {
-      carregandoEntrada(false);
+        r === "errado" ? "Código incorreto. Confira e tente de novo." :
+        r === "sem-codigo" ? "O código de acesso ainda não foi criado no Cloudflare (variável APP_SENHA)." :
+        "Sem internet. Tente de novo.");
+      $("#codigoAcesso").select();
     }
+    carregandoEntrada(false);
   });
 
   async function iniciarConta() {
-    if (!conta.nuvem) {
-      if (ls.ler(CH.entrou)) aposEntrar(); else mostrarEntrada(true);
-      return;
-    }
+    const salvo = ls.ler(CH.senha);
+    if (!salvo) { mostrarEntrada(true); return; }
     mostrarEntrada(true);
     carregandoEntrada(true);
-    try {
-      await iniciarFirebase();
-      conta.fb.auth.onAuthStateChanged(conta.fb.a, (u) => {
-        carregandoEntrada(false);
-        if (u) {
-          conta.uid = u.uid;
-          dados = criarNuvem();
-          aposEntrar();
-        } else {
-          conta.uid = "";
-          dados = local;
-          mostrarEntrada(true);
-        }
-      });
-    } catch (e) {
-      carregandoEntrada(false);
-      aviso($("#avisoEntrada"), "Não consegui conectar ao Firebase. Confira a internet e o arquivo firebase-config.js.");
+    const r = await conferirCodigo(salvo);
+    if (r === "ok" || r === "sem-servidor" || r === "rede") {
+      try { await abrirSessao(); } catch (err) { aviso($("#avisoEntrada"), erroFirebase(err)); }
+    } else {
+      bloquear(r === "sem-codigo" ? "O código de acesso ainda não foi criado no Cloudflare (variável APP_SENHA)." : "O código de acesso mudou. Digite o novo código.");
     }
+    carregandoEntrada(false);
   }
 
   /* =========================== Abas =========================== */
@@ -380,7 +408,7 @@
       const falta = [!d.imagem && "foto", !d.nome && "nome", !d.preco && "preço"].filter(Boolean);
       aviso($("#avisoBusca"), falta.length ? `Não achei: ${falta.join(", ")}. Completa aí embaixo.` : "Achei tudo. Confere o preço antes de gerar.", !falta.length);
     } catch (e) {
-      if (e.codigo === "senha") { abrirConfig(); toast("Coloca a senha da IA"); }
+      if (e.codigo === "senha") bloquear("O código de acesso mudou. Digite o novo código.");
       else aviso($("#avisoBusca"), e.codigo === "offline" ? "Busca automática indisponível aqui. Preenche os dados e use “Trocar foto”." : `Não consegui ler o produto (${e.message}). Preenche à mão.`);
     } finally {
       b.disabled = false;
@@ -478,7 +506,7 @@
     try {
       texto = (await api("gerar", p)).texto;
     } catch (e) {
-      if (e.codigo === "senha") { ocupado(false); abrirConfig(); toast("Coloca a senha da IA"); return; }
+      if (e.codigo === "senha") { ocupado(false); bloquear("O código de acesso mudou. Digite o novo código."); return; }
       const motivo = e.codigo === "sem-chave" ? "a chave da IA ainda não foi configurada" : e.codigo === "offline" ? "o servidor não está disponível aqui" : "a IA não respondeu agora";
       texto = mensagemReserva(p);
       avisoMsg = `Usei uma mensagem pronta porque ${motivo}. Pode editar à vontade.`;
@@ -701,9 +729,8 @@
   /* =========================== Configurações =========================== */
   const dialogo = $("#config");
   function abrirConfig() {
-    $("#senha").value = ls.ler(CH.senha);
     $("#contaInfo").textContent = conta.nuvem
-      ? (conta.uid ? `Conta anônima · código ${conta.uid.slice(0, 8)}` : "Não conectada")
+      ? (conta.uid ? `Conta deste aparelho · ${conta.uid.slice(0, 8)}` : "Não conectada")
       : "Modo local (Firebase ainda não configurado)";
     api("status").then((s) => {
       $("#status").textContent = s.ia ? "IA conectada" : "IA ainda não configurada no servidor";
@@ -712,22 +739,14 @@
     if (!dialogo.open) dialogo.showModal();
   }
   $("#abrirConfig").addEventListener("click", abrirConfig);
-  dialogo.addEventListener("close", () => {
-    if (dialogo.returnValue === "salvar") { ls.gravar(CH.senha, $("#senha").value); toast("Senha salva neste aparelho"); }
-  });
   $("#sair").addEventListener("click", async () => {
     dialogo.close();
     const ok = await confirmar({
-      titulo: "Sair da conta?",
-      texto: conta.nuvem
-        ? "A conta é anônima: ao sair, você perde o acesso ao histórico e aos grupos salvos nela. Ao entrar de novo, começa uma conta nova."
-        : "Você volta para a tela de entrada. Os dados deste aparelho continuam salvos.",
+      titulo: "Sair do app?",
+      texto: "Na próxima vez, o app vai pedir o código de acesso. Seu histórico e seus grupos continuam salvos.",
       ok: "Sair"
     });
-    if (!ok) return;
-    atual = null; $("#resultado").hidden = true;
-    if (conta.nuvem && conta.fb) await conta.fb.auth.signOut(conta.fb.a);
-    else { ls.remover(CH.entrou); mostrarEntrada(true); }
+    if (ok) bloquear("");
   });
 
   /* =========================== Instalar (PWA) =========================== */

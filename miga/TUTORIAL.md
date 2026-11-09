@@ -69,7 +69,7 @@ troque a linha `window.FIREBASE_CONFIG = null;` por:
 
 ## Parte 2 — Chave da IA (Gemini)
 
-1. Acesse **aistudio.google.com** → **Get API key → Create API key**.
+1. Acesse **aistudio.google.com/apikey** → **Criar chave de API** (*Create API key*) → escolha o projeto **Miga** (`miga-372d3`).
 2. Copie a chave (normalmente começa com `AIza`). **Não cole essa chave no código nem no GitHub** —
    ela vai só no Cloudflare (Parte 3).
 
@@ -102,7 +102,7 @@ grupos ficam salvos só no aparelho.
    | Nome | Valor |
    |---|---|
    | `GEMINI_API_KEY` | a chave da Parte 2 |
-   | `APP_SENHA` | uma senha que você inventar (o app pede uma vez, na engrenagem) |
+   | `APP_SENHA` | o **código de acesso** do app (você inventa; é o que vai digitar na tela de entrada) |
 2. **Salvar** e faça **mais uma implantação** com o mesmo zip (para as variáveis valerem).
 
 Essas variáveis só são usadas pelo Miga; o ClockFit e o Sort.IA não são afetados.
@@ -116,9 +116,8 @@ adicione `alpama.app`.
 ## Parte 4 — Instalar no celular
 
 1. Abra **https://alpama.app/miga/** no celular.
-2. Toque em **Entrar** (login anônimo).
-3. Toque na **engrenagem** → coloque a **senha** (`APP_SENHA`) → **Salvar**.
-4. Instale:
+2. Digite o **código de acesso** (o valor de `APP_SENHA`) → **Entrar**.
+3. Instale:
    - **Android (Chrome):** toque em **Instalar** no topo do app.
    - **iPhone (Safari):** **Compartilhar** → **Adicionar à Tela de Início**.
 
@@ -128,8 +127,8 @@ adicione `alpama.app`.
 
 | Teste | Resultado esperado |
 |---|---|
-| Abrir o app | Tela de entrada com o botão **Entrar** |
-| Engrenagem | "IA conectada" e "Conta anônima · código ..." |
+| Abrir o app | Tela de entrada pedindo o **código de acesso** |
+| Engrenagem | "IA conectada" e "Conta deste aparelho · ..." |
 | Colar um link do Mercado Livre → Buscar | Foto, nome e preço preenchidos |
 | Gerar | Mensagem escrita pela IA (sem o aviso de "mensagem pronta") |
 | Firebase → Firestore → Dados | Aparece `usuarios / (seu código) / historico` |
@@ -141,7 +140,8 @@ adicione `alpama.app`.
 | "O login anônimo não está ativado" | Passo 1.2 (ativar **Anônimo**) |
 | "Este endereço não está autorizado" | Passo 1.2, item 3 (domínios autorizados) |
 | "IA ainda não configurada" | Passo 3.3 e **nova implantação** |
-| "Senha de acesso inválida" | A senha da engrenagem precisa ser igual à `APP_SENHA` |
+| "Código incorreto" | Digite exatamente o valor de `APP_SENHA` (maiúsculas e minúsculas contam) |
+| "O código de acesso ainda não foi criado" | Crie a variável `APP_SENHA` (passo 3.3) e faça nova implantação |
 | Busca não traz o preço da Shopee | Normal: a Shopee não mostra o preço na página; digite à mão |
 
 ## Importante sobre a conta anônima
