@@ -53,7 +53,7 @@ voltados ao público feminino. A dona do app cola o **link de afiliado** de um p
 | `manifest.json` | PWA: nome, ícones, cores, `scope ./`, `share_target` (receber link pelo "Compartilhar" do Android) |
 | `sw.js` | Service worker: cache "rede primeiro", só da pasta `/miga/`, só apaga os próprios caches |
 | `firestore.rules` | Regras: cada usuário só lê/grava `usuarios/{uid}/**` |
-| `icon-*.png`, `maskable-512.png`, `apple-touch-icon.png`, `favicon.png` | Ícones |
+| `logo.png`, `icone-*.png`, `apple-touch-icon.png`, `favicon.png` | Ícones |
 | `TUTORIAL.md` | Passo a passo de publicação (Firebase, Gemini, Cloudflare) |
 
 ## 4. Funcionamento, passo a passo

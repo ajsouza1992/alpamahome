@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=14">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -48,7 +48,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada" hidden>
     <div class="entrada__caixa">
-      <img src="icon-512.png" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=14" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -70,14 +70,14 @@
       <span class="marca__promo">PROMO <b>%</b></span>
     </a>
     <div class="topo__acoes">
-      <button class="btn-mini" id="instalar" type="button" hidden><svg><use href="#i-baixar"/></svg>Instalar</button>
+      <button class="btn-mini" id="instalar" type="button" hidden>Instalar</button>
       <button class="btn-quadrado" id="abrirConfig" type="button" aria-label="Configurações"><svg><use href="#i-engrenagem"/></svg></button>
     </div>
   </header>
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="icon-192.png" alt="">
+    <img src="logo.png?v=14" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -90,7 +90,7 @@
       <h2 class="passo"><span>1</span>Link do produto</h2>
       <div class="colar">
         <input id="link" type="url" inputmode="url" placeholder="Cole o link do Mercado Livre ou Shopee" autocomplete="off" aria-label="Link de afiliado">
-        <button type="button" id="colar" class="colar__btn"><svg><use href="#i-colar"/></svg>Colar</button>
+        <button type="button" id="colar" class="colar__btn">Colar</button>
       </div>
       <div class="alternar" id="lojas" role="radiogroup" aria-label="Loja">
         <button type="button" role="radio" data-loja="mercadolivre" aria-checked="true">Mercado Livre</button>
@@ -98,7 +98,7 @@
         <button type="button" role="radio" data-loja="amazon" aria-checked="false">Amazon</button>
         <button type="button" role="radio" data-loja="magalu" aria-checked="false">Magalu</button>
       </div>
-      <button type="button" class="btn btn--branco" id="buscar"><svg><use href="#i-busca"/></svg><span class="rotulo">Buscar foto, nome e preço</span></button>
+      <button type="button" class="btn btn--branco" id="buscar"><span class="rotulo">Buscar foto, nome e preço</span></button>
       <p class="aviso" id="avisoBusca" hidden></p>
     </section>
 
@@ -115,7 +115,7 @@
         <span class="selo" id="selo" hidden></span>
         <label class="foto__trocar">
           <input type="file" id="arquivo" accept="image/*" hidden>
-          <svg><use href="#i-foto"/></svg>Trocar foto
+          Trocar foto
         </label>
       </div>
 
@@ -159,7 +159,7 @@
     <section class="bloco bloco--resultado" id="resultado" hidden>
       <div class="resultado__topo">
         <h2 class="passo"><span>3</span>Mensagem pronta</h2>
-        <button type="button" class="link" id="refazer"><svg><use href="#i-refazer"/></svg>Outra</button>
+        <button type="button" class="link" id="refazer">Outra</button>
       </div>
       <p class="aviso" id="avisoIA" hidden></p>
       <div class="chat" id="chat">
@@ -179,15 +179,15 @@
         <button type="button" data-ajuste="preco">Focar no preço</button>
         <button type="button" data-ajuste="animada">Mais animada</button>
       </div>
-      <button type="button" class="btn btn--branco" id="abrirEditor"><svg><use href="#i-foto"/></svg><span class="rotulo">Criar imagem com a cara do Miga</span></button>
+      <button type="button" class="btn btn--branco" id="abrirEditor"><span class="rotulo">Criar imagem com a cara do Miga</span></button>
       <details class="mais">
         <summary>Editar texto</summary>
         <textarea id="texto" rows="10"></textarea>
       </details>
-      <button type="button" class="btn btn--rosa" id="enviarFoto"><svg><use href="#i-enviar"/></svg>Enviar com foto</button>
+      <button type="button" class="btn btn--rosa" id="enviarFoto">Enviar com foto</button>
       <div class="duas">
-        <button type="button" class="btn btn--branco" id="copiar"><svg><use href="#i-copiar"/></svg>Copiar</button>
-        <button type="button" class="btn btn--branco" id="whats"><svg><use href="#i-chat"/></svg>Só o texto</button>
+        <button type="button" class="btn btn--branco" id="copiar">Copiar</button>
+        <button type="button" class="btn btn--branco" id="whats">Só o texto</button>
       </div>
 
       <div class="enviar-grupos">
@@ -203,7 +203,7 @@
     <section class="bloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Mais vendidos</h2>
-        <button type="button" class="link" id="atualizarCatalogo"><svg><use href="#i-refazer"/></svg>Atualizar</button>
+        <button type="button" class="link" id="atualizarCatalogo">Atualizar</button>
       </div>
       <div class="alternar alternar--tres" id="catFiltro" role="radiogroup" aria-label="Categoria do catálogo">
         <button type="button" role="radio" data-v="moda" aria-checked="true">Moda</button>
@@ -241,10 +241,10 @@
     <section class="bloco">
       <h2 class="passo">Atalhos de ofertas</h2>
       <div class="atalhos">
-        <a href="https://www.mercadolivre.com.br/ofertas" target="_blank" rel="noopener"><svg><use href="#i-etiqueta"/></svg><span><b>Ofertas do dia</b>Mercado Livre</span></a>
-        <a href="https://www.mercadolivre.com.br/l/afiliados-home" target="_blank" rel="noopener"><svg><use href="#i-loja"/></svg><span><b>Central de Afiliados</b>Mercado Livre</span></a>
-        <a href="https://affiliate.shopee.com.br" target="_blank" rel="noopener"><svg><use href="#i-loja"/></svg><span><b>Shopee Afiliados</b>ofertas e links</span></a>
-        <a href="https://associados.amazon.com.br" target="_blank" rel="noopener"><svg><use href="#i-loja"/></svg><span><b>Amazon Associados</b>painel de afiliados</span></a>
+        <a href="https://www.mercadolivre.com.br/ofertas" target="_blank" rel="noopener"><span><b>Ofertas do dia</b>Mercado Livre</span></a>
+        <a href="https://www.mercadolivre.com.br/l/afiliados-home" target="_blank" rel="noopener"><span><b>Central de Afiliados</b>Mercado Livre</span></a>
+        <a href="https://affiliate.shopee.com.br" target="_blank" rel="noopener"><span><b>Shopee Afiliados</b>ofertas e links</span></a>
+        <a href="https://associados.amazon.com.br" target="_blank" rel="noopener"><span><b>Amazon Associados</b>painel de afiliados</span></a>
       </div>
     </section>
 
@@ -265,7 +265,7 @@
     <section class="bloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Histórico</h2>
-        <button type="button" class="link link--perigo" id="apagarTudo"><svg><use href="#i-lixo"/></svg>Apagar tudo</button>
+        <button type="button" class="link link--perigo" id="apagarTudo">Apagar tudo</button>
       </div>
       <input class="busca-lista" id="buscaHistorico" type="search" placeholder="Buscar no histórico">
       <div class="historico" id="historico"></div>
@@ -279,7 +279,7 @@
       <form class="form-grupo" id="formGrupo" autocomplete="off">
         <label class="campo"><span>Nome do grupo</span><input id="grupoNome" maxlength="60" placeholder="Ex.: Achadinhos VIP 1"></label>
         <label class="campo"><span>Link de convite do grupo</span><input id="grupoLink" type="url" inputmode="url" placeholder="https://chat.whatsapp.com/..."></label>
-        <button type="submit" class="btn btn--rosa"><svg><use href="#i-mais"/></svg>Adicionar grupo</button>
+        <button type="submit" class="btn btn--rosa">Adicionar grupo</button>
       </form>
       <p class="nota">Onde pego o link? No WhatsApp: abra o grupo → nome do grupo → <b>Convidar via link</b> → copiar.</p>
       <div class="lista-grupos" id="listaGrupos"></div>
@@ -300,7 +300,7 @@
   <!-- Botão principal + abas -->
   <div class="barra">
     <div class="barra__gerar" id="barraGerar">
-      <button type="button" class="btn btn--rosa btn--gerar" id="gerar"><svg><use href="#i-brilho"/></svg><span class="rotulo">Gerar Miga Promo</span><i class="giro"></i></button>
+      <button type="button" class="btn btn--rosa btn--gerar" id="gerar"><span class="rotulo">Gerar Miga Promo</span><i class="giro"></i></button>
     </div>
     <nav class="abas" aria-label="Seções">
       <button type="button" data-aba="criar" aria-current="page"><svg><use href="#i-criar"/></svg>Criar</button>
@@ -376,14 +376,14 @@
       </div>
     </div>
     <div class="editor__acoes">
-      <button type="button" class="btn btn--branco" id="baixarCard"><svg><use href="#i-baixar"/></svg>Baixar</button>
-      <button type="button" class="btn btn--rosa" id="usarCard"><svg><use href="#i-check"/></svg>Usar imagem</button>
+      <button type="button" class="btn btn--branco" id="baixarCard">Baixar</button>
+      <button type="button" class="btn btn--rosa" id="usarCard">Usar imagem</button>
       <button type="button" class="link" id="usarOriginal">Voltar para a foto original</button>
     </div>
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=13"></script>
-  <script src="app.js?v=13"></script>
+  <script src="firebase-config.js?v=14"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

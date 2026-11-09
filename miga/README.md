@@ -8,7 +8,7 @@ Desenvolvido por **Alpama Soluções**.
 | Arquivo | Função |
 |---|---|
 | `index.html`, `style.css`, `app.js` | O app (roda no celular) |
-| `manifest.json`, `sw.js`, ícones (`icon-*.png`, `maskable-512.png`, `apple-touch-icon.png`, `simbolo.svg`) | PWA instalável e cache offline |
+| `manifest.json`, `sw.js`, ícones (`logo.png`, `icone-*.png`, `apple-touch-icon.png`) | PWA instalável e cache offline |
 | `_worker.js` | Servidor no Cloudflare: busca do produto, IA (Gemini), imagem e status (**a chave fica numa variável**) |
 
 > A chave do Gemini **não** fica no `app.js`: tudo que está no app pode ser visto por qualquer pessoa.

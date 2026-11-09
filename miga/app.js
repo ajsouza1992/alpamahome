@@ -880,7 +880,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "icon-512.png"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=14"; });
     }
     edFoto = null;
     try {
@@ -1036,7 +1036,7 @@
       ? l.map((g) => {
           const feito = enviados.includes(g.nome);
           return linhaGrupo(g, `<button type="button" class="grupo__acao ${feito ? "feito" : "grupo__acao--rosa"}" data-enviar="${esc(g.id)}">
-            <svg><use href="#i-${feito ? "check" : "abrir"}"/></svg>${feito ? "Enviado" : "Enviar"}</button>`);
+            ${feito ? "Enviado" : "Enviar"}</button>`);
         }).join("")
       : '<p class="vazio-lista">Cadastre seus grupos na aba <b>Grupos</b>.</p>';
   }
@@ -1085,9 +1085,9 @@
           <div class="item__meta">${enviado}</div>
         </div>
         <div class="item__acoes">
-          <button type="button" class="grupo__acao grupo__acao--rosa" data-abrir="${esc(i.id)}"><svg><use href="#i-abrir"/></svg>Abrir</button>
-          <button type="button" class="grupo__acao" data-copiar="${esc(i.id)}"><svg><use href="#i-copiar"/></svg>Copiar</button>
-          <button type="button" class="icone-btn" data-apagar="${esc(i.id)}" aria-label="Apagar do histórico"><svg><use href="#i-lixo"/></svg></button>
+          <button type="button" class="grupo__acao grupo__acao--rosa" data-abrir="${esc(i.id)}">Abrir</button>
+          <button type="button" class="grupo__acao" data-copiar="${esc(i.id)}">Copiar</button>
+          <button type="button" class="grupo__acao" data-apagar="${esc(i.id)}">Apagar</button>
         </div>
       </div>`;
     }).join("");
