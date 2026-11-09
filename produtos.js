@@ -8,7 +8,7 @@
  *   preco       preço atual (número, ex.: 129.9)
  *   precoAntigo preço "de" (opcional, mostra % de desconto)
  *   categoria   uma das chaves de CATEGORIAS (abaixo)
- *   loja        "mercadolivre" | "shopee" | "amazon" | "outra"
+ *   loja        "mercadolivre" (por enquanto só Mercado Livre)
  *   link        seu link de afiliado
  *   imagem      URL da imagem (clique direito na foto do produto → copiar endereço)
  *   descricao   texto curto (opcional)
@@ -46,8 +46,8 @@ window.PRODUTOS = [
     preco: 149.0,
     precoAntigo: 199.0,
     categoria: "quarto",
-    loja: "shopee",
-    link: "https://shopee.com.br/",
+    loja: "mercadolivre",
+    link: "https://www.mercadolivre.com.br/",
     imagem: "",
     descricao: "Produto de exemplo — substitua pelo seu link de afiliado no painel.",
     destaque: true
@@ -70,8 +70,8 @@ window.PRODUTOS = [
     preco: 219.9,
     precoAntigo: 279.9,
     categoria: "iluminacao",
-    loja: "shopee",
-    link: "https://shopee.com.br/",
+    loja: "mercadolivre",
+    link: "https://www.mercadolivre.com.br/",
     imagem: "",
     descricao: "Produto de exemplo — substitua pelo seu link de afiliado no painel.",
     destaque: true

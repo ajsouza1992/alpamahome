@@ -68,11 +68,11 @@
   function montarCategorias() {
     const contagem = {};
     produtos.forEach((p) => { contagem[p.categoria] = (contagem[p.categoria] || 0) + 1; });
-    const botoes = [{ id: "", nome: "Tudo", icone: "🏠" }]
+    const botoes = [{ id: "casa", nome: "Tudo" }]
       .concat(CATEGORIAS.filter((c) => contagem[c.id]))
-      .map((c) => `<button class="cat" type="button" data-cat="${esc(c.id)}">
-          <span aria-hidden="true">${c.icone}</span>${esc(c.nome)}
-          <small>${c.id ? contagem[c.id] : produtos.length}</small></button>`);
+      .map((c) => `<button class="cat" type="button" data-cat="${c.id === "casa" ? "" : esc(c.id)}">
+          <span class="cat__ico">${window.icone(c.id)}</span><span class="cat__nome">${esc(c.nome)}</span>
+          <small>${c.id !== "casa" ? contagem[c.id] : produtos.length}</small></button>`);
     el.cats.innerHTML = botoes.join("");
     el.cats.addEventListener("click", (e) => {
       const b = e.target.closest(".cat");
@@ -103,6 +103,7 @@
       .map(([id, l]) => `<label class="check"><input type="checkbox" value="${id}">
         <span class="dot" style="background:${l.cor}"></span>${l.nome}<small>${contagem[id]}</small></label>`)
       .join("");
+    document.getElementById("grupoLoja").hidden = Object.keys(contagem).length < 2;
     el.lojas.addEventListener("change", (e) => {
       if (e.target.checked) estado.lojas.add(e.target.value);
       else estado.lojas.delete(e.target.value);
@@ -145,8 +146,8 @@
     const link = urlSegura(p.link) || "#";
     return `<article class="card">
       <a class="card__img" href="${esc(link)}" target="_blank" rel="sponsored nofollow noopener" tabindex="-1" aria-hidden="true">
-        ${img ? `<img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'card__placeholder',textContent:'${cat ? cat.icone : "🏠"}'}))">`
-              : `<div class="card__placeholder">${cat ? cat.icone : "🏠"}</div>`}
+        ${img ? `<img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-cat="${esc(p.categoria)}">`
+              : `<div class="card__placeholder">${window.icone(p.categoria)}</div>`}
         ${off ? `<span class="badge">-${off}%</span>` : ""}
         <span class="loja loja--${esc(p.loja in LOJAS ? p.loja : "outra")}">${esc(loja.nome)}</span>
       </a>
@@ -211,6 +212,9 @@
   function atualizar() {
     const lista = filtrar();
     el.grid.innerHTML = lista.map(card).join("");
+    el.grid.querySelectorAll("img[data-cat]").forEach((img) => {
+      img.addEventListener("error", () => { img.outerHTML = `<div class="card__placeholder">${window.icone(img.dataset.cat)}</div>`; }, { once: true });
+    });
     el.vazio.hidden = lista.length > 0;
     el.contagem.innerHTML = `<strong>${lista.length}</strong> ${lista.length === 1 ? "produto encontrado" : "produtos encontrados"}`;
     sincronizarControles();
@@ -259,6 +263,7 @@
 
   $("#ano").textContent = new Date().getFullYear();
 
+  document.querySelectorAll("[data-ico]").forEach((n) => { n.innerHTML = window.icone(n.dataset.ico); });
   montarCategorias();
   montarFaixas();
   montarLojas();

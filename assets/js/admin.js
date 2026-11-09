@@ -4,18 +4,26 @@
   const CHAVE = "alpama_rascunho";
   const CATEGORIAS = window.CATEGORIAS || [];
   const catPorId = Object.fromEntries(CATEGORIAS.map((c) => [c.id, c]));
-  const NOMES_LOJA = { mercadolivre: "Mercado Livre", shopee: "Shopee", amazon: "Amazon", outra: "Outra" };
-
   const $ = (s) => document.querySelector(s);
-  const f = {
-    form: $("#form"), id: $("#f-id"), link: $("#f-link"), nome: $("#f-nome"), preco: $("#f-preco"),
-    antigo: $("#f-antigo"), categoria: $("#f-categoria"), loja: $("#f-loja"), imagem: $("#f-imagem"),
-    imgPrev: $("#f-img-prev"), descricao: $("#f-descricao"), destaque: $("#f-destaque"),
-    salvar: $("#btnSalvar"), cancelar: $("#btnCancelar"), titulo: $("#formTitulo")
-  };
 
+  const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const brl = (v) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const urlOk = (u) => (/^https?:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "");
+  const imgOk = (u) => (/^data:image\//.test(String(u || "")) ? u : urlOk(u));
+  const ehML = (u) => /mercadoli[vb]re|mercadolibre|meli\.la|mlstatic/i.test(String(u));
+
+  document.querySelectorAll("[data-ico]").forEach((n) => { n.innerHTML = window.icone(n.dataset.ico); });
+
+  function toast(msg) {
+    const t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove("show"), 2800);
+  }
+
+  // ---------- Dados ----------
   let produtos = carregar();
-
   function carregar() {
     try {
       const r = JSON.parse(localStorage.getItem(CHAVE) || "null");
@@ -24,13 +32,14 @@
     return JSON.parse(JSON.stringify(window.PRODUTOS || []));
   }
   function persistir() {
-    try { localStorage.setItem(CHAVE, JSON.stringify(produtos)); } catch (e) { toast("Não foi possível salvar o rascunho neste navegador."); }
-    render();
+    try {
+      localStorage.setItem(CHAVE, JSON.stringify(produtos));
+      return true;
+    } catch (e) {
+      toast("Espaço do navegador cheio. Baixe o produtos.js e prefira colar o endereço da imagem.");
+      return false;
+    } finally { renderLista(); }
   }
-
-  const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const brl = (v) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const urlSegura = (u) => (/^https?:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "");
 
   // Aceita "1.299,90", "1299.90", "R$ 89,9"
   function lerPreco(txt) {
@@ -42,54 +51,118 @@
     return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
   }
 
-  function detectarLoja(url) {
-    const u = String(url).toLowerCase();
-    if (/mercadoli[vb]re|mercadolibre|meli\.la|mlstatic/.test(u)) return "mercadolivre";
-    if (/shopee|shp\.ee/.test(u)) return "shopee";
-    if (/amazon\.|amzn\.to/.test(u)) return "amazon";
-    return null;
+  // ---------- Abas ----------
+  function irPara(aba) {
+    document.querySelectorAll(".aba").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.aba === aba)));
+    document.querySelectorAll(".tela").forEach((t) => { t.hidden = t.id !== "tela-" + aba; });
+    if (aba === "publicar") infoTamanho();
+    try { history.replaceState(null, "", "#" + aba); } catch (e) { /* ignora */ }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
-  function toast(msg) {
-    const t = $("#toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => t.classList.remove("show"), 2600);
-  }
+  document.querySelectorAll(".aba").forEach((b) => b.addEventListener("click", () => irPara(b.dataset.aba)));
 
   // ---------- Formulário ----------
-  f.categoria.innerHTML = CATEGORIAS.map((c) => `<option value="${esc(c.id)}">${c.icone} ${esc(c.nome)}</option>`).join("");
+  const f = {
+    form: $("#form"), id: $("#f-id"), link: $("#f-link"), nome: $("#f-nome"), preco: $("#f-preco"),
+    antigo: $("#f-antigo"), cat: $("#f-categoria"), imagem: $("#f-imagem"), arquivo: $("#f-arquivo"),
+    descricao: $("#f-descricao"), destaque: $("#f-destaque"), salvar: $("#btnSalvar"), cancelar: $("#btnCancelar")
+  };
+  let imagemEnviada = ""; // data URL quando a foto é enviada do computador
+  let categoria = CATEGORIAS[0] ? CATEGORIAS[0].id : "";
+
+  f.cat.innerHTML = CATEGORIAS.map((c) => `
+    <button type="button" class="cp" role="radio" data-cat="${esc(c.id)}" aria-checked="false">
+      <span class="cp__ico">${window.icone(c.id)}</span>${esc(c.nome)}
+    </button>`).join("");
+  function marcarCategoria(id) {
+    categoria = id;
+    f.cat.querySelectorAll(".cp").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.cat === id)));
+  }
+  f.cat.addEventListener("click", (e) => {
+    const b = e.target.closest(".cp");
+    if (b) marcarCategoria(b.dataset.cat);
+  });
+  marcarCategoria(categoria);
 
   f.link.addEventListener("input", () => {
-    const l = detectarLoja(f.link.value);
-    if (l) f.loja.value = l;
+    const v = f.link.value.trim();
+    $("#avisoLink").hidden = !v || !urlOk(v) || ehML(v);
   });
-  function atualizarPrevImg() {
-    const u = urlSegura(f.imagem.value);
-    const novo = u ? Object.assign(document.createElement("img"), { src: u, alt: "", referrerPolicy: "no-referrer" })
-                   : Object.assign(document.createElement("span"), { className: "vazio-img", textContent: "🖼️" });
-    novo.id = "f-img-prev";
-    if (u) novo.onerror = () => { novo.replaceWith(Object.assign(document.createElement("span"), { id: "f-img-prev", className: "vazio-img", textContent: "⚠️", title: "Imagem não carregou" })); };
-    $("#f-img-prev").replaceWith(novo);
+
+  // Imagem: pré-visualização
+  const dropImg = $("#dropImg"), dropVazio = $("#dropVazio");
+  function mostrarImagem(src) {
+    const s = imgOk(src);
+    dropImg.hidden = !s;
+    dropVazio.hidden = !!s;
+    $("#removerImg").hidden = !s;
+    if (s) dropImg.src = s; else dropImg.removeAttribute("src");
   }
-  f.imagem.addEventListener("input", atualizarPrevImg);
+  dropImg.addEventListener("error", () => { if (dropImg.getAttribute("src")) { mostrarImagem(""); toast("Essa imagem não carregou. Confira o endereço."); } });
+  f.imagem.addEventListener("input", () => { imagemEnviada = ""; mostrarImagem(f.imagem.value); });
+  $("#removerImg").addEventListener("click", () => { imagemEnviada = ""; f.imagem.value = ""; mostrarImagem(""); });
+
+  // Envio de foto: reduz para no máx. 700px e comprime em JPEG
+  function lerArquivo(file) {
+    if (!file || !/^image\//.test(file.type)) { toast("Escolha um arquivo de imagem."); return; }
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 700;
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * k);
+        c.height = Math.round(img.height * k);
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        imagemEnviada = c.toDataURL("image/jpeg", 0.8);
+        f.imagem.value = "";
+        mostrarImagem(imagemEnviada);
+        toast("Foto adicionada ✓");
+      };
+      img.onerror = () => toast("Não consegui abrir essa imagem.");
+      img.src = leitor.result;
+    };
+    leitor.readAsDataURL(file);
+  }
+  f.arquivo.addEventListener("change", () => { lerArquivo(f.arquivo.files[0]); f.arquivo.value = ""; });
+  const drop = $("#drop");
+  drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); f.arquivo.click(); } });
+  ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("sobre"); }));
+  ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("sobre"); }));
+  drop.addEventListener("drop", (e) => {
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) return lerArquivo(file);
+    const url = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
+    if (urlOk(url)) { f.imagem.value = url; imagemEnviada = ""; mostrarImagem(url); }
+  });
+  document.addEventListener("paste", (e) => {
+    if ($("#tela-cadastro").hidden) return;
+    const item = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith("image/"));
+    if (item) { e.preventDefault(); lerArquivo(item.getAsFile()); }
+  });
 
   function limparForm() {
     f.form.reset();
     f.id.value = "";
-    f.titulo.textContent = "Adicionar produto";
-    f.salvar.textContent = "Adicionar produto";
+    imagemEnviada = "";
+    mostrarImagem("");
+    marcarCategoria(CATEGORIAS[0] ? CATEGORIAS[0].id : "");
+    $("#avisoLink").hidden = true;
+    f.salvar.textContent = "Cadastrar produto";
     f.cancelar.hidden = true;
-    atualizarPrevImg();
   }
 
   f.form.addEventListener("submit", (e) => {
     e.preventDefault();
-    const link = urlSegura(f.link.value);
+    const link = urlOk(f.link.value);
     const preco = lerPreco(f.preco.value);
     const antigo = lerPreco(f.antigo.value);
-    if (!link) { toast("Informe um link começando com https://"); f.link.focus(); return; }
+    if (!link) { toast("Cole o link do produto (começando com https://)"); f.link.focus(); return; }
+    if (!f.nome.value.trim()) { toast("Informe o nome do produto"); f.nome.focus(); return; }
     if (preco === null) { toast("Preço inválido. Ex.: 129,90"); f.preco.focus(); return; }
 
     const dados = {
@@ -97,112 +170,106 @@
       nome: f.nome.value.trim(),
       preco,
       precoAntigo: antigo && antigo > preco ? antigo : null,
-      categoria: f.categoria.value,
-      loja: f.loja.value,
+      categoria,
+      loja: "mercadolivre",
       link,
-      imagem: urlSegura(f.imagem.value),
+      imagem: imagemEnviada || urlOk(f.imagem.value),
       descricao: f.descricao.value.trim(),
       destaque: f.destaque.checked
     };
     const i = produtos.findIndex((p) => p.id === dados.id);
-    if (i >= 0) { produtos[i] = dados; toast("Produto atualizado ✓"); }
-    else { produtos.unshift(dados); toast("Produto adicionado ✓"); }
-    persistir();
+    const antes = JSON.stringify(produtos);
+    if (i >= 0) produtos[i] = dados; else produtos.unshift(dados);
+    if (!persistir()) { produtos = JSON.parse(antes); renderLista(); return; }
+    toast(i >= 0 ? "Produto atualizado ✓" : "Produto cadastrado ✓");
     limparForm();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
-  f.cancelar.addEventListener("click", limparForm);
+  f.cancelar.addEventListener("click", () => { limparForm(); irPara("produtos"); });
 
   function editar(id) {
     const p = produtos.find((x) => x.id === id);
     if (!p) return;
+    irPara("cadastro");
     f.id.value = p.id;
     f.link.value = p.link || "";
     f.nome.value = p.nome || "";
     f.preco.value = p.preco != null ? brl(p.preco) : "";
     f.antigo.value = p.precoAntigo ? brl(p.precoAntigo) : "";
-    f.categoria.value = p.categoria;
-    f.loja.value = NOMES_LOJA[p.loja] ? p.loja : "outra";
-    f.imagem.value = p.imagem || "";
+    marcarCategoria(catPorId[p.categoria] ? p.categoria : CATEGORIAS[0].id);
+    const dataImg = /^data:image\//.test(p.imagem || "");
+    imagemEnviada = dataImg ? p.imagem : "";
+    f.imagem.value = dataImg ? "" : p.imagem || "";
+    mostrarImagem(p.imagem);
     f.descricao.value = p.descricao || "";
     f.destaque.checked = !!p.destaque;
-    f.titulo.textContent = "Editar produto";
     f.salvar.textContent = "Salvar alterações";
     f.cancelar.hidden = false;
-    atualizarPrevImg();
-    f.form.scrollIntoView({ behavior: "smooth", block: "start" });
-    f.nome.focus({ preventScroll: true });
+    f.link.dispatchEvent(new Event("input"));
   }
 
   // ---------- Lista ----------
-  const lista = $("#lista");
-  const filtro = $("#filtroLista");
-  function render() {
+  const lista = $("#lista"), filtro = $("#filtroLista");
+  function renderLista() {
+    $("#total").textContent = produtos.length;
     const termo = filtro.value.trim().toLowerCase();
     const vis = produtos.filter((p) => !termo || (p.nome || "").toLowerCase().includes(termo));
-    $("#total").textContent = `(${produtos.length})`;
     if (!vis.length) {
-      lista.innerHTML = `<div class="vazio"><p class="vazio__emoji">📦</p><h3>${produtos.length ? "Nada encontrado" : "Nenhum produto ainda"}</h3><p>${produtos.length ? "Tente outro termo." : "Use o formulário para adicionar o primeiro."}</p></div>`;
+      lista.innerHTML = `<div class="vazio"><div class="vazio__ico">${window.icone("organizacao")}</div><h3>${produtos.length ? "Nada encontrado" : "Nenhum produto ainda"}</h3><p>${produtos.length ? "Tente outro termo." : "Vá na aba Cadastro para adicionar o primeiro."}</p></div>`;
       return;
     }
     lista.innerHTML = vis.map((p) => {
       const cat = catPorId[p.categoria];
-      const img = urlSegura(p.imagem);
+      const img = imgOk(p.imagem);
       return `<div class="item">
-        ${img ? `<img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="vazio-img">${cat ? cat.icone : "🏠"}</span>`}
+        ${img ? `<img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="vazio-img">${window.icone(p.categoria)}</span>`}
         <div class="item__info">
-          <p class="item__nome" title="${esc(p.nome)}">${p.destaque ? "⭐ " : ""}${esc(p.nome)}</p>
+          <p class="item__nome" title="${esc(p.nome)}">${p.destaque ? "★ " : ""}${esc(p.nome)}</p>
           <p class="item__meta">
             <strong>R$ ${brl(p.preco)}</strong>
             ${p.precoAntigo ? `<s>R$ ${brl(p.precoAntigo)}</s>` : ""}
             <span>· ${esc(cat ? cat.nome : p.categoria)}</span>
-            <span class="loja loja--${esc(NOMES_LOJA[p.loja] ? p.loja : "outra")}">${esc(NOMES_LOJA[p.loja] || p.loja)}</span>
+            ${img ? "" : '<span class="sem-foto">sem foto</span>'}
           </p>
         </div>
         <div class="item__acoes">
-          <a class="icon-btn" href="${esc(urlSegura(p.link) || "#")}" target="_blank" rel="noopener" title="Abrir link">↗</a>
-          <button class="icon-btn" type="button" data-acao="duplicar" data-id="${esc(p.id)}" title="Duplicar">⧉</button>
+          <a class="icon-btn" href="${esc(urlOk(p.link) || "#")}" target="_blank" rel="noopener" title="Abrir no Mercado Livre">↗</a>
           <button class="icon-btn" type="button" data-acao="editar" data-id="${esc(p.id)}" title="Editar">✎</button>
           <button class="icon-btn icon-btn--perigo" type="button" data-acao="excluir" data-id="${esc(p.id)}" title="Excluir">🗑</button>
         </div>
       </div>`;
     }).join("");
   }
-  filtro.addEventListener("input", render);
+  filtro.addEventListener("input", renderLista);
   lista.addEventListener("click", (e) => {
     const b = e.target.closest("button[data-acao]");
     if (!b) return;
-    const id = b.dataset.id;
-    if (b.dataset.acao === "editar") editar(id);
-    if (b.dataset.acao === "excluir") {
-      const p = produtos.find((x) => x.id === id);
-      if (p && confirm(`Excluir “${p.nome}”?`)) {
-        produtos = produtos.filter((x) => x.id !== id);
-        persistir();
-        toast("Produto excluído");
-      }
-    }
-    if (b.dataset.acao === "duplicar") {
-      const p = produtos.find((x) => x.id === id);
-      if (p) {
-        const i = produtos.indexOf(p);
-        produtos.splice(i + 1, 0, { ...p, id: "p" + Date.now().toString(36), nome: p.nome + " (cópia)" });
-        persistir();
-        toast("Produto duplicado");
-      }
+    const p = produtos.find((x) => x.id === b.dataset.id);
+    if (!p) return;
+    if (b.dataset.acao === "editar") editar(p.id);
+    if (b.dataset.acao === "excluir" && confirm(`Excluir “${p.nome}”?`)) {
+      produtos = produtos.filter((x) => x.id !== p.id);
+      persistir();
+      toast("Produto excluído");
     }
   });
 
-  // ---------- Exportar / importar ----------
+  // ---------- Publicar ----------
   function gerarArquivo() {
     return `/*
  * ALPAMA HOME — catálogo de produtos
- * Gerado pelo painel (admin.html) em ${new Date().toLocaleString("pt-BR")}.
- * Para atualizar o site, substitua este arquivo pelo novo exportado no painel.
+ * Gerado pelo painel do moderador (admin.html) em ${new Date().toLocaleString("pt-BR")}.
+ * Para atualizar o site, substitua este arquivo pelo novo baixado no painel.
  */
-window.CATEGORIAS = ${JSON.stringify(CATEGORIAS, null, 2)};
+window.CATEGORIAS = ${JSON.stringify(window.CATEGORIAS || [], null, 2)};
 
 window.PRODUTOS = ${JSON.stringify(produtos, null, 2)};
 `;
+  }
+  function infoTamanho() {
+    const kb = Math.round(new Blob([gerarArquivo()]).size / 1024);
+    const fotos = produtos.filter((p) => /^data:image\//.test(p.imagem || "")).length;
+    $("#infoTam").textContent = `${produtos.length} produtos · arquivo com ~${kb} KB` + (fotos ? ` (${fotos} fotos enviadas do computador)` : "") + (kb > 3000 ? " — está ficando grande; prefira colar o endereço da imagem." : "");
   }
 
   $("#btnBaixar").addEventListener("click", () => {
@@ -212,7 +279,7 @@ window.PRODUTOS = ${JSON.stringify(produtos, null, 2)};
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast("produtos.js baixado — agora envie para o site");
+    toast("produtos.js baixado — agora envie para o GitHub");
   });
 
   const arquivo = $("#arquivo");
@@ -229,27 +296,31 @@ window.PRODUTOS = ${JSON.stringify(produtos, null, 2)};
         lidos = Array.isArray(j) ? j : j.produtos || j.PRODUTOS;
       } else {
         const fake = {};
-        new Function("window", txt)(fake); // arquivo produtos.js do próprio site
+        new Function("window", txt)(fake); // o próprio produtos.js do site
         lidos = fake.PRODUTOS;
       }
       if (!Array.isArray(lidos)) throw new Error("formato");
       if (!confirm(`Importar ${lidos.length} produtos? Isso substitui o rascunho atual (${produtos.length}).`)) return;
       produtos = lidos;
       persistir();
+      infoTamanho();
       toast(`${lidos.length} produtos importados ✓`);
     } catch (e) {
-      toast("Arquivo inválido. Use um produtos.js ou .json exportado pelo painel.");
+      toast("Arquivo inválido. Use um produtos.js baixado pelo painel.");
     }
   });
 
   $("#btnDescartar").addEventListener("click", () => {
     if (!confirm("Descartar o rascunho e voltar ao catálogo publicado?")) return;
-    localStorage.removeItem(CHAVE);
+    try { localStorage.removeItem(CHAVE); } catch (e) { /* ignora */ }
     produtos = JSON.parse(JSON.stringify(window.PRODUTOS || []));
-    render();
+    renderLista();
+    infoTamanho();
     limparForm();
     toast("Rascunho descartado");
   });
 
-  render();
+  renderLista();
+  const inicial = location.hash.slice(1);
+  if (["produtos", "publicar"].includes(inicial)) irPara(inicial);
 })();

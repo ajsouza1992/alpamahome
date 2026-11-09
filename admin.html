@@ -4,106 +4,134 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Painel — Alpama Home</title>
+  <title>Moderador — Alpama Home</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="assets/img/logo.png">
-  <link rel="apple-touch-icon" href="assets/img/logo.png">
   <meta name="theme-color" content="#0f3d2a">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body>
+<body class="adm">
   <header class="topbar">
     <div class="container topbar__inner">
       <a href="./" class="logo"><img class="logo__mark" src="assets/img/logo.png" alt=""><span class="logo__text">Alpama<em>Home</em></span></a>
-      <span class="eyebrow" style="margin:0">Painel de produtos</span>
-      <a class="btn btn--ghost" href="index.html?preview=1" target="_blank" style="margin-left:auto">Pré-visualizar no site ↗</a>
+      <span class="adm__selo"><span data-ico="cadeado"></span>Moderador</span>
+      <a class="btn btn--ghost adm__ver" href="index.html?preview=1" target="_blank">Ver site ↗</a>
     </div>
   </header>
 
-  <main class="container admin-main">
-    <div>
-      <section class="painel">
-        <h2 id="formTitulo">Adicionar produto</h2>
-        <p>Cole o seu link de afiliado (Mercado Livre, Shopee...) e preencha os dados.</p>
-        <form class="form" id="form" autocomplete="off">
-          <input type="hidden" id="f-id">
-          <label class="campo">Link de afiliado *
-            <input id="f-link" type="url" required placeholder="https://mercadolivre.com/sec/... ou https://s.shopee.com.br/...">
-            <span class="dica">A loja é detectada automaticamente pelo link.</span>
-          </label>
-          <label class="campo">Nome do produto *
-            <input id="f-nome" required maxlength="140" placeholder="Ex.: Luminária de Mesa Cúpula Linho">
-          </label>
-          <div class="linha">
-            <label class="campo">Preço atual (R$) *
-              <input id="f-preco" required inputmode="decimal" placeholder="129,90">
-            </label>
-            <label class="campo">Preço antigo (R$)
-              <input id="f-antigo" inputmode="decimal" placeholder="opcional">
-            </label>
-          </div>
-          <div class="linha">
-            <label class="campo">Categoria *
-              <select id="f-categoria" required></select>
-            </label>
-            <label class="campo">Loja
-              <select id="f-loja">
-                <option value="mercadolivre">Mercado Livre</option>
-                <option value="shopee">Shopee</option>
-                <option value="amazon">Amazon</option>
-                <option value="outra">Outra</option>
-              </select>
-            </label>
-          </div>
-          <label class="campo">URL da imagem
-            <div class="preview-img">
-              <span class="vazio-img" id="f-img-prev">🖼️</span>
-              <input id="f-imagem" type="url" placeholder="https://http2.mlstatic.com/...jpg">
-            </div>
-            <span class="dica">Na página do produto, clique com o botão direito na foto → “Copiar endereço da imagem”.</span>
-          </label>
-          <label class="campo">Descrição curta
-            <textarea id="f-descricao" maxlength="200" placeholder="opcional"></textarea>
-          </label>
-          <label class="switch"><input type="checkbox" id="f-destaque"><span class="switch__track"></span>Destacar no topo</label>
-          <div class="acoes">
-            <button class="btn btn--primary" type="submit" id="btnSalvar">Adicionar produto</button>
-            <button class="btn btn--ghost" type="button" id="btnCancelar" hidden>Cancelar edição</button>
-          </div>
-        </form>
-      </section>
+  <nav class="container abas" role="tablist" aria-label="Seções do painel">
+    <button class="aba" role="tab" type="button" data-aba="cadastro" aria-selected="true"><span class="aba__ico" data-ico="casa"></span>Cadastro</button>
+    <button class="aba" role="tab" type="button" data-aba="produtos" aria-selected="false"><span class="aba__ico" data-ico="organizacao"></span>Produtos <b id="total">0</b></button>
+    <button class="aba" role="tab" type="button" data-aba="publicar" aria-selected="false"><span class="aba__ico" data-ico="utilidades"></span>Publicar</button>
+  </nav>
 
-      <section class="painel publicar">
+  <main class="container adm__main">
+    <!-- ============ CADASTRO ============ -->
+    <section class="tela" id="tela-cadastro" role="tabpanel">
+      <form id="form" autocomplete="off" novalidate>
+        <input type="hidden" id="f-id">
+        <div class="cad">
+          <div class="cad__col">
+            <div class="passo">
+              <h2><span class="passo__n">1</span>Link do Mercado Livre</h2>
+              <p class="passo__dica">No Mercado Livre, abra o produto e use a barra de afiliados → <b>Compartilhar</b> → copie o link.</p>
+              <div class="campo-link">
+                <span class="ml-tag">ML</span>
+                <input id="f-link" type="url" required placeholder="Cole aqui: https://mercadolivre.com/sec/... ou https://meli.la/...">
+              </div>
+              <p class="aviso-link" id="avisoLink" hidden>Esse link não parece ser do Mercado Livre. Confira se copiou o link de afiliado certo.</p>
+            </div>
+
+            <div class="passo">
+              <h2><span class="passo__n">2</span>Imagem do produto</h2>
+              <label class="drop" id="drop" tabindex="0">
+                <input type="file" id="f-arquivo" accept="image/*" hidden>
+                <div class="drop__vazio" id="dropVazio">
+                  <span class="drop__ico" data-ico="decoracao"></span>
+                  <strong>Clique para enviar uma foto</strong>
+                  <span>ou arraste a imagem aqui · ou cole com Ctrl+V</span>
+                </div>
+                <img id="dropImg" alt="Pré-visualização" hidden>
+              </label>
+              <div class="campo-url">
+                <span>ou cole o endereço da imagem</span>
+                <input id="f-imagem" type="url" placeholder="https://http2.mlstatic.com/D_NQ_NP_....webp">
+              </div>
+              <button type="button" class="link-btn" id="removerImg" hidden>Remover imagem</button>
+            </div>
+          </div>
+
+          <div class="cad__col">
+            <div class="passo">
+              <h2><span class="passo__n">3</span>Dados do produto</h2>
+              <label class="campo">Nome do produto
+                <input id="f-nome" required maxlength="140" placeholder="Ex.: Luminária de Mesa Cúpula Linho">
+              </label>
+              <div class="linha">
+                <label class="campo">Preço atual (R$)
+                  <input id="f-preco" required inputmode="decimal" placeholder="129,90">
+                </label>
+                <label class="campo">Preço antigo (R$) · opcional
+                  <input id="f-antigo" inputmode="decimal" placeholder="199,90">
+                </label>
+              </div>
+              <div class="campo">Categoria
+                <div class="cat-pick" id="f-categoria" role="radiogroup" aria-label="Categoria"></div>
+              </div>
+              <label class="campo">Descrição curta · opcional
+                <textarea id="f-descricao" maxlength="200" placeholder="Ex.: Tecido de linho, 40 cm, bivolt"></textarea>
+              </label>
+              <label class="switch"><input type="checkbox" id="f-destaque"><span class="switch__track"></span>Destacar no topo do site</label>
+            </div>
+
+            <div class="cad__acoes">
+              <button class="btn btn--primary btn--grande" type="submit" id="btnSalvar">Cadastrar produto</button>
+              <button class="btn btn--ghost btn--grande" type="button" id="btnCancelar" hidden>Cancelar edição</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ PRODUTOS ============ -->
+    <section class="tela" id="tela-produtos" role="tabpanel" hidden>
+      <div class="painel">
+        <div class="lista-head">
+          <h2 style="margin:0">Produtos cadastrados</h2>
+          <input type="search" id="filtroLista" placeholder="Buscar na lista...">
+        </div>
+        <div class="lista" id="lista"></div>
+      </div>
+    </section>
+
+    <!-- ============ PUBLICAR ============ -->
+    <section class="tela" id="tela-publicar" role="tabpanel" hidden>
+      <div class="painel publicar">
         <h2>Publicar no site</h2>
-        <p style="color:var(--ink-2);font-size:14px;margin:0">Suas alterações ficam salvas como rascunho neste navegador. Para que todos vejam:</p>
+        <p style="color:var(--ink-2);font-size:14px;margin:0">O que você cadastra fica salvo como rascunho neste navegador. Para todo mundo ver:</p>
         <ol>
+          <li>Confira com <a href="index.html?preview=1" target="_blank">Ver site</a>.</li>
           <li>Clique em <strong>Baixar produtos.js</strong>.</li>
-          <li>Substitua o arquivo <code>produtos.js</code> do site por esse (no GitHub: <em>Add file → Upload files</em>).</li>
-          <li>Pronto! Em 1–2 minutos o site atualiza.</li>
+          <li>No GitHub, substitua o arquivo <code>produtos.js</code> pelo baixado (<em>Add file → Upload files</em> → <em>Commit changes</em>).</li>
+          <li>Em 1–2 minutos o site atualiza.</li>
         </ol>
         <div class="acoes">
-          <button class="btn btn--primary" type="button" id="btnBaixar">Baixar produtos.js</button>
-          <button class="btn btn--ghost" type="button" id="btnImportar">Importar arquivo</button>
+          <button class="btn btn--primary btn--grande" type="button" id="btnBaixar">Baixar produtos.js</button>
+          <button class="btn btn--ghost btn--grande" type="button" id="btnImportar">Importar arquivo</button>
           <input type="file" id="arquivo" accept=".js,.json" hidden>
         </div>
-        <p style="margin:14px 0 0;font-size:13px"><button type="button" id="btnDescartar" style="border:0;background:none;color:var(--ink-2);text-decoration:underline;cursor:pointer;padding:0">Descartar rascunho e recarregar o que está publicado</button></p>
-      </section>
-    </div>
-
-    <section class="painel">
-      <div class="lista-head">
-        <h2 style="margin:0">Produtos <small id="total" style="font-family:var(--sans);font-size:14px;color:var(--ink-2);font-weight:400"></small></h2>
-        <input type="search" id="filtroLista" placeholder="Filtrar lista...">
+        <p class="info-tam" id="infoTam"></p>
+        <p style="margin:14px 0 0;font-size:13px"><button type="button" class="link-btn" id="btnDescartar">Descartar rascunho e voltar ao que está publicado</button></p>
       </div>
-      <div class="lista" id="lista"></div>
     </section>
   </main>
 
   <div class="toast" id="toast" role="status"></div>
 
   <script src="produtos.js"></script>
+  <script src="assets/js/icones.js"></script>
   <script src="assets/js/admin.js"></script>
 </body>
 </html>

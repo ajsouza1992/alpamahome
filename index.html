@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alpama Home — Achados para sua casa</title>
-  <meta name="description" content="Achados selecionados para casa: decoração, cama, cozinha, área de lazer e muito mais, com os melhores preços do Mercado Livre e Shopee.">
+  <meta name="description" content="Achados selecionados para casa: decoração, cama, cozinha, área de lazer e muito mais, com os melhores preços do Mercado Livre.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -28,6 +28,9 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
         Filtros
       </button>
+      <a class="mod" href="admin.html" title="Área do moderador">
+        <span class="mod__ico" data-ico="cadeado"></span><span class="mod__txt">Moderador</span>
+      </a>
     </div>
   </header>
 
@@ -36,14 +39,14 @@
       <div>
         <p class="eyebrow">Curadoria para o seu lar</p>
         <h1>Achados bonitos para <span>cada canto</span> da casa.</h1>
-        <p class="hero__sub">Decoração, cama, cozinha, área de lazer e muito mais — selecionados a dedo, com os melhores preços do Mercado Livre e Shopee.</p>
+        <p class="hero__sub">Decoração, cama, cozinha, área de lazer e muito mais — selecionados a dedo, com os melhores preços do Mercado Livre.</p>
         <a href="#categorias" class="btn btn--primary">Ver produtos</a>
       </div>
       <div class="hero__art" aria-hidden="true">
         <div class="blob blob--1"></div>
         <div class="blob blob--2"></div>
         <div class="hero__card">
-          <span>🪴</span><span>🛋️</span><span>🛏️</span><span>☀️</span>
+          <span data-ico="decoracao"></span><span data-ico="sala"></span><span data-ico="quarto"></span><span data-ico="lazer"></span>
         </div>
       </div>
     </div>
@@ -67,7 +70,7 @@
         <div class="chips" id="faixas"></div>
       </div>
 
-      <div class="grupo">
+      <div class="grupo" id="grupoLoja">
         <h3>Loja</h3>
         <div class="checks" id="lojas"></div>
       </div>
@@ -119,6 +122,7 @@
   </footer>
 
   <script src="produtos.js"></script>
+  <script src="assets/js/icones.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
 </html>
