@@ -343,14 +343,20 @@ body.travado { overflow: hidden; }
 .conectar ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; color: var(--preto); }
 @media (min-width: 560px) { .catalogo { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-/* Botão de filtro de categoria */
-.filtro-linha { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.filtro-btn { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 0 14px 0 18px; border: 0; border-radius: 18px; background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); color: var(--preto); font-size: 15px; cursor: pointer; text-align: left; }
-.filtro-btn span { color: var(--cinza); font-size: 13px; }
-.filtro-btn b { flex: 1; font-weight: 700; }
-.filtro-btn i { font-style: normal; padding: 6px 12px; border-radius: 999px; background: var(--rosa-claro); color: var(--rosa-escuro); font-size: 13px; font-weight: 600; }
-#filtroCat .alternar--tres { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-#filtroCat .alternar--tres button { min-height: 50px; font-size: 15px; border-radius: 16px; }
+/* Filtros do catálogo: dois botões lado a lado que abrem uma folha de opções */
+.filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chip-filtro { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 8px; min-height: 58px; padding: 8px 16px; border: 0; border-radius: 18px; background: var(--campo); color: var(--preto); text-align: left; cursor: pointer; }
+.chip-filtro small { grid-column: 1; font-size: 11.5px; font-weight: 600; color: var(--cinza); text-transform: uppercase; letter-spacing: .04em; }
+.chip-filtro b { grid-column: 1; font-size: 15.5px; font-weight: 700; color: var(--rosa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip-filtro .seta { grid-column: 2; grid-row: 1 / 3; font-size: 16px; color: var(--rosa); }
+.chip-filtro:active { transform: scale(.98); }
+/* Folha de opções que sobe do rodapé */
+.dialogo.folha { margin: auto auto 0; width: 100vw; max-width: 560px; border-radius: 28px 28px 0 0; padding: 22px 18px calc(18px + env(safe-area-inset-bottom)); }
+.dialogo.folha[open] { animation: subir .22s ease-out; }
+@keyframes subir { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+.opcoes-folha { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0; background: none; }
+.opcoes-folha button { min-height: 52px; font-size: 15px; border-radius: 16px; background: var(--campo); }
+.opcoes-folha button[aria-checked="true"] { background: var(--rosa); color: #fff; box-shadow: var(--sombra-rosa); }
 .item__link { display: contents; color: inherit; text-decoration: none; }
 .bn-texto { display: grid; gap: 12px; }
 .bn-texto[hidden] { display: none; }

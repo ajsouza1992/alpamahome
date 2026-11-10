@@ -152,6 +152,8 @@ async function extrairProduto(url) {
       d = { nome: d.nome || d2.nome, preco: d.preco || d2.preco, precoAntigo: d.precoAntigo || d2.precoAntigo, imagem: d.imagem || d2.imagem };
     }
   }
+  // Página genérica da loja (sem o produto): não usa nome nem a logo da loja como se fossem do produto
+  if (/^(shopee|mercado livre|amazon|magalu|magazine luiza)\b/i.test(d.nome || "") || /ofertas incr[ií]veis|compre online|melhores pre[cç]os/i.test(d.nome || "")) { d.nome = ""; d.imagem = ""; }
   const dados = { loja, ...d, urlFinal: pagina.atual };
   if (dados.imagem && dados.imagem.startsWith("//")) dados.imagem = "https:" + dados.imagem;
   if (dados.precoAntigo && dados.preco && dados.precoAntigo <= dados.preco) dados.precoAntigo = null;

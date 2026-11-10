@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=25">
+  <link rel="manifest" href="manifest.json?v=26">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -49,7 +49,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=25" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=26" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -78,7 +78,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=25" alt="">
+    <img src="logo.png?v=26" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -206,11 +206,9 @@
         <h2 class="passo">Mais vendidos</h2>
         <button type="button" class="link" id="atualizarCatalogo">Atualizar</button>
       </div>
-      <button type="button" class="filtro-btn" id="abrirFiltro" aria-haspopup="dialog"><span>Categoria</span><b id="filtroNome">Moda</b><i>Trocar</i></button>
-      <div class="alternar" id="catLoja" role="radiogroup" aria-label="Loja do catálogo">
-        <button type="button" role="radio" data-v="todas" aria-checked="true">Todas</button>
-        <button type="button" role="radio" data-v="mercadolivre" aria-checked="false">Mercado Livre</button>
-        <button type="button" role="radio" data-v="shopee" aria-checked="false">Shopee</button>
+      <div class="filtros">
+        <button type="button" class="chip-filtro" id="abrirFiltro" aria-haspopup="dialog"><small>Categoria</small><b id="filtroNome">Moda</b><span class="seta">▾</span></button>
+        <button type="button" class="chip-filtro" id="abrirLoja" aria-haspopup="dialog"><small>Loja</small><b id="lojaNome">Todas</b><span class="seta">▾</span></button>
       </div>
       <p class="aviso" id="avisoCatalogo" hidden></p>
       <div class="catalogo" id="catalogo"></div>
@@ -317,10 +315,22 @@
   </dialog>
 
   <!-- Confirmação no padrão do app -->
-  <dialog id="filtroCat" class="dialogo">
+  <dialog id="filtroLoja" class="dialogo folha">
+    <form method="dialog">
+      <h2>Escolha a loja</h2>
+      <div class="alternar alternar--tres opcoes-folha" id="catLoja" role="radiogroup" aria-label="Loja do catálogo">
+        <button type="button" role="radio" data-v="todas" aria-checked="true">Todas</button>
+        <button type="button" role="radio" data-v="mercadolivre" aria-checked="false">Mercado Livre</button>
+        <button type="button" role="radio" data-v="shopee" aria-checked="false">Shopee</button>
+      </div>
+      <button class="btn btn--branco" value="nao" type="submit">Fechar</button>
+    </form>
+  </dialog>
+
+  <dialog id="filtroCat" class="dialogo folha">
     <form method="dialog">
       <h2>Escolha a categoria</h2>
-      <div class="alternar alternar--tres" id="catFiltro" role="radiogroup" aria-label="Categoria do catálogo">
+      <div class="alternar alternar--tres opcoes-folha" id="catFiltro" role="radiogroup" aria-label="Categoria do catálogo">
         <button type="button" role="radio" data-v="moda" aria-checked="true">Moda</button>
         <button type="button" role="radio" data-v="beleza" aria-checked="false">Beleza</button>
         <button type="button" role="radio" data-v="perfumes" aria-checked="false">Perfumes</button>
@@ -467,7 +477,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=25"></script>
-  <script src="app.js?v=25"></script>
+  <script src="firebase-config.js?v=26"></script>
+  <script src="app.js?v=26"></script>
 </body>
 </html>

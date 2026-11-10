@@ -388,17 +388,40 @@
 
   /* =========================== Buscar produto =========================== */
   c.link.addEventListener("input", () => { const l = detectarLoja(c.link.value); if (l) loja.marcar(l); });
-  c.link.addEventListener("paste", () => setTimeout(() => { if (urlOk(c.link.value)) buscar(); }, 60));
+  c.link.addEventListener("paste", (e) => {
+    const t = (e.clipboardData && e.clipboardData.getData("text")) || "";
+    const lido = lerTextoCompartilhado(t);
+    if (lido) { e.preventDefault(); doTexto = lido; c.link.value = lido.link; c.link.dispatchEvent(new Event("input")); }
+    setTimeout(() => { if (urlOk(c.link.value)) buscar(); }, 60);
+  });
   $("#colar").addEventListener("click", async () => {
     try {
       const t = (await navigator.clipboard.readText()).trim();
       const m = t.match(/https?:\/\/\S+/);
+      doTexto = lerTextoCompartilhado(t);
       c.link.value = m ? m[0] : t;
       c.link.dispatchEvent(new Event("input"));
       if (m) buscar();
     } catch (e) { c.link.focus(); toast("Toque e segure no campo para colar"); }
   });
 
+  // Texto compartilhado pelo app da loja (ex.: "Dá uma olhada em Vestido X por R$ 49,90 ... https://s.shopee.com.br/abc")
+  let doTexto = null;
+  function lerTextoCompartilhado(t) {
+    const m = String(t || "").match(/https?:\/\/\S+/);
+    if (!m) return null;
+    let resto = String(t).replace(m[0], " ").replace(/\s+/g, " ").trim();
+    const pm = resto.match(/R\$\s?([\d.]+,\d{2}|[\d.]+)/);
+    const preco = pm ? lerPreco(pm[1]) : null;
+    let nome = resto
+      .replace(/(compre|baixe|confira).{0,40}(shopee|mercado livre|amazon|magalu).*$/i, "")
+      .replace(/\s*(por|a partir de|apenas|só)?\s*R\$\s?[\d.,]+.*$/i, "")
+      .replace(/^(d[aá] uma olhada( em| nesse| neste)?|confira( esse| este)?|olha( s[oó])?( esse| isso)?|veja( esse)?|encontrei|achei)\s*[:!-]?\s*/i, "")
+      .replace(/^(isso|esse produto|este produto)?\s*(na|no)\s+(shopee|mercado livre|amazon|magalu|magazine luiza)\s*[:!-]?\s*/i, "")
+      .replace(/[\s:!,.-]+$/, "").trim();
+    if (nome.length < 4 || nome.length > 200) nome = "";
+    return { link: m[0], nome, preco };
+  }
   async function buscar() {
     const link = c.link.value.trim();
     if (!urlOk(link)) { toast("Cola um link começando com https://"); return; }
@@ -412,15 +435,19 @@
       const d = await api("produto", { url: link });
       carregando.forEach((el) => el.classList.remove("carregando"));
       if (d.loja) loja.marcar(d.loja);
+      if (doTexto && doTexto.link === link) {
+        if (!d.nome && doTexto.nome) d.nome = doTexto.nome;
+        if (!d.preco && doTexto.preco) d.preco = doTexto.preco;
+      }
       if (d.nome) c.nome.value = limparNome(d.nome);
       if (d.preco) c.precoNovo.value = paraCampo(d.preco);
       if (d.precoAntigo) c.precoAntigo.value = paraCampo(d.precoAntigo);
       if (d.imagem) { c.imagemUrl.value = d.imagem; definirFoto(d.imagem); }
       atualizarSelo();
       const falta = [!d.imagem && "foto", !d.nome && "nome", !d.preco && "preço"].filter(Boolean);
-      if (!d.preco && d.loja === "shopee") {
-        aviso($("#avisoBusca"), "Na Shopee o preço não aparece na página: digita o preço ali embaixo.", false);
-        pedirPreco();
+      if (d.loja === "shopee" && falta.length) {
+        aviso($("#avisoBusca"), `A Shopee não mostra ${falta.join(", ")} para o app. Dica: no app da Shopee toque em Compartilhar → Copiar link e cole aqui o texto inteiro (vem com nome e preço). A foto: salve a imagem do produto e use “Trocar foto”.`, false);
+        if (!d.preco) pedirPreco();
       } else {
         aviso($("#avisoBusca"), falta.length ? `Não achei: ${falta.join(", ")}. Completa aí embaixo.` : "Achei tudo. Confere o preço antes de gerar.", !falta.length);
         if (!d.preco) pedirPreco();
@@ -627,6 +654,13 @@
   }
   [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
   $("#abrirFiltro").addEventListener("click", () => $("#filtroCat").showModal());
+  $("#abrirLoja").addEventListener("click", () => $("#filtroLoja").showModal());
+  $("#catLoja").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    $("#lojaNome").textContent = b.textContent;
+    $("#filtroLoja").close();
+  });
   $("#catFiltro").addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b) return;
@@ -916,7 +950,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=25"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=26"; });
     }
     edFoto = null;
     try {
@@ -1169,7 +1203,7 @@
     desenharBanner($("#telaBanner"), bnModelo.valor(), bnFormato.valor(), bnFundo.valor(), dadosBanner());
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=25"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=26"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   $("#abrirBanners").addEventListener("click", async () => {
