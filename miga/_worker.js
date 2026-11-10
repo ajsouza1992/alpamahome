@@ -392,10 +392,10 @@ async function getML(caminho, token) {
   return { status: r.status, dados: await r.json().catch(() => ({})) };
 }
 /** IDs dos mais vendidos; se a categoria não tiver lista, tenta as subcategorias */
-async function destaquesML(categoria, token) {
+async function destaquesML(categoria, token, diag) {
   let r = await getML(`/highlights/MLB/category/${categoria}`, token);
-  if (r.status === 200) return r.dados.content || [];
-  if (r.status !== 404) throw new Error("Mercado Livre: erro " + r.status);
+  diag.push("destaques " + r.status);
+  if (r.status === 200 && (r.dados.content || []).length) return r.dados.content;
   const cat = await getML(`/categories/${categoria}`, token);
   const filhas = (cat.dados.children_categories || []).slice(0, 6);
   let lista = [];
@@ -404,30 +404,46 @@ async function destaquesML(categoria, token) {
     if (r.status === 200) lista = lista.concat((r.dados.content || []).slice(0, 5));
     if (lista.length >= 20) break;
   }
+  diag.push("subcategorias " + filhas.length + "/" + lista.length);
   return lista;
+}
+function itemML(b, filtro) {
+  return { id: b.id, nome: b.title, preco: b.price, precoAntigo: b.original_price || null, imagem: mlHttps(b.thumbnail), link: b.permalink, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false };
 }
 async function catalogoML(filtro, env) {
   const token = await tokenML(env);
-  const destaques = (await destaquesML(filtro.ml, token)).slice(0, 20);
+  const diag = [];
+  const destaques = (await destaquesML(filtro.ml, token, diag)).slice(0, 20);
+  const tipos = {};
+  for (const d of destaques) tipos[d.type] = (tipos[d.type] || 0) + 1;
+  diag.push("tipos " + (Object.entries(tipos).map(([t, n]) => t + ":" + n).join(",") || "nenhum"));
   const itens = destaques.filter((d) => d.type === "ITEM").map((d) => d.id);
-  const produtos = destaques.filter((d) => d.type === "PRODUCT").map((d) => d.id);
+  const produtos = destaques.filter((d) => d.type !== "ITEM").map((d) => d.id);
   const saida = [];
   if (itens.length) {
     const r = await getML(`/items?ids=${itens.join(",")}&attributes=id,title,price,original_price,thumbnail,permalink`, token);
+    diag.push("itens " + r.status);
     for (const x of Array.isArray(r.dados) ? r.dados : []) {
       const b = x.body || {};
-      if (x.code === 200 && b.title && b.price) {
-        saida.push({ id: b.id, nome: b.title, preco: b.price, precoAntigo: b.original_price || null, imagem: mlHttps(b.thumbnail), link: b.permalink, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false });
-      }
+      if (x.code === 200 && b.title && b.price) saida.push(itemML(b, filtro));
     }
   }
-  for (const id of produtos.slice(0, 10)) {
+  let falhasProduto = "";
+  for (const id of produtos.slice(0, 12)) {
     const r = await getML(`/products/${id}`, token);
     const b = r.dados || {}, venc = b.buy_box_winner || {};
     if (r.status === 200 && b.name && venc.price) {
       saida.push({ id: b.id, nome: b.name, preco: venc.price, precoAntigo: venc.original_price || null, imagem: mlHttps((b.pictures || [])[0] && b.pictures[0].url), link: b.permalink || `https://www.mercadolivre.com.br/p/${b.id}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false });
-    }
+    } else if (!falhasProduto) falhasProduto = "produto " + r.status + (venc.price ? "" : " sem-preço");
   }
+  if (falhasProduto) diag.push(falhasProduto);
+  // Plano B: busca da categoria ordenada por vendas
+  if (!saida.length) {
+    const r = await getML(`/sites/MLB/search?category=${filtro.ml}&sort=sold_quantity_desc&limit=20`, token);
+    diag.push("busca " + r.status);
+    for (const b of (r.dados && r.dados.results) || []) if (b.title && b.price) saida.push(itemML(b, filtro));
+  }
+  if (!saida.length) throw new Error("Mercado Livre não trouxe produtos (" + diag.join(" · ") + ")");
   return saida;
 }
 
