@@ -87,6 +87,9 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .alternar button[aria-checked="true"] { background: var(--branco); color: var(--preto); box-shadow: 0 2px 8px rgba(29, 29, 31, .1); }
 .alternar--tres { flex-wrap: wrap; padding: 0; background: none; gap: 8px; }
 .alternar--tres button { flex: 0 1 auto; min-height: 40px; padding: 0 16px; background: var(--campo); font-size: 13.5px; }
+.alternar--rolar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 4px 4px 10px; scroll-snap-type: x proximity; }
+.alternar--rolar::-webkit-scrollbar { display: none; }
+.alternar--rolar button { flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; }
 .alternar--tres button[aria-checked="true"] { background: var(--rosa); color: #fff; box-shadow: var(--sombra-rosa); }
 
 /* Foto do produto */
@@ -319,6 +322,8 @@ body.travado { overflow: hidden; }
 
 /* ---------- Catálogo (mais vendidos) ---------- */
 .catalogo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.produto-cat__acoes { display: grid; gap: 6px; }
+.produto-cat__acoes a.btn { text-decoration: none; }
 .produto-cat { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; padding: 8px; border-radius: 20px; background: var(--campo); }
 .produto-cat__foto { position: relative; aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden; background: #fff; }
 .produto-cat__foto img { width: 100%; height: 100%; object-fit: contain; }

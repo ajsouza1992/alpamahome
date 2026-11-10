@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -48,7 +48,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada" hidden>
     <div class="entrada__caixa">
-      <img src="logo.png?v=15" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=16" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -77,7 +77,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=15" alt="">
+    <img src="logo.png?v=16" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -205,11 +205,19 @@
         <h2 class="passo">Mais vendidos</h2>
         <button type="button" class="link" id="atualizarCatalogo">Atualizar</button>
       </div>
-      <div class="alternar alternar--tres" id="catFiltro" role="radiogroup" aria-label="Categoria do catálogo">
+      <div class="alternar alternar--tres alternar--rolar" id="catFiltro" role="radiogroup" aria-label="Categoria do catálogo">
         <button type="button" role="radio" data-v="moda" aria-checked="true">Moda</button>
         <button type="button" role="radio" data-v="beleza" aria-checked="false">Beleza</button>
         <button type="button" role="radio" data-v="casa" aria-checked="false">Casa</button>
         <button type="button" role="radio" data-v="fitness" aria-checked="false">Fitness</button>
+        <button type="button" role="radio" data-v="saude" aria-checked="false">Saúde</button>
+        <button type="button" role="radio" data-v="acessorios" aria-checked="false">Joias e relógios</button>
+        <button type="button" role="radio" data-v="bebes" aria-checked="false">Bebês</button>
+        <button type="button" role="radio" data-v="brinquedos" aria-checked="false">Brinquedos</button>
+        <button type="button" role="radio" data-v="pets" aria-checked="false">Pets</button>
+        <button type="button" role="radio" data-v="eletros" aria-checked="false">Eletrodomésticos</button>
+        <button type="button" role="radio" data-v="celulares" aria-checked="false">Celulares</button>
+        <button type="button" role="radio" data-v="eletronicos" aria-checked="false">Eletrônicos</button>
       </div>
       <div class="alternar" id="catLoja" role="radiogroup" aria-label="Loja do catálogo">
         <button type="button" role="radio" data-v="todas" aria-checked="true">Todas</button>
@@ -383,7 +391,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=15"></script>
-  <script src="app.js?v=15"></script>
+  <script src="firebase-config.js?v=16"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

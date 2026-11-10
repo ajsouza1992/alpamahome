@@ -368,7 +368,15 @@ const FILTROS_CATALOGO = {
   moda: { categoria: "moda", ml: "MLB1430", shopee: "moda feminina" },
   beleza: { categoria: "beleza", ml: "MLB1246", shopee: "skincare maquiagem" },
   casa: { categoria: "casa", ml: "MLB1574", shopee: "decoração casa" },
-  fitness: { categoria: "saude", ml: "MLB1276", shopee: "roupa fitness feminina" }
+  fitness: { categoria: "saude", ml: "MLB1276", shopee: "roupa fitness feminina" },
+  saude: { categoria: "saude", ml: "MLB264586", shopee: "suplemento vitamina" },
+  acessorios: { categoria: "moda", ml: "MLB3937", shopee: "bijuteria feminina" },
+  bebes: { categoria: "outros", ml: "MLB1384", shopee: "bebê enxoval" },
+  brinquedos: { categoria: "outros", ml: "MLB1132", shopee: "brinquedo infantil" },
+  pets: { categoria: "outros", ml: "MLB1071", shopee: "pet cachorro gato" },
+  eletros: { categoria: "casa", ml: "MLB5726", shopee: "eletrodoméstico cozinha" },
+  celulares: { categoria: "outros", ml: "MLB1051", shopee: "acessórios celular" },
+  eletronicos: { categoria: "outros", ml: "MLB1000", shopee: "fone bluetooth" }
 };
 const ML_API = "https://api.mercadolibre.com";
 const mlHttps = (u) => String(u || "").replace(/^http:/, "https:").replace(/-I\.(jpg|webp|png)$/i, "-O.$1");

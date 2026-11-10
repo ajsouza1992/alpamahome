@@ -622,7 +622,10 @@
           ${p.preco ? `<span class="preco">${brl(p.preco)}</span>` : ""}
           ${p.comissao ? `<small>Comissão ${String(p.comissao).replace(".", ",")}%</small>` : ""}
         </div>
-        <button type="button" class="btn btn--rosa" data-gerar="${i}">Gerar oferta</button>
+        <div class="produto-cat__acoes">
+          <button type="button" class="btn btn--rosa" data-gerar="${i}">Gerar oferta</button>
+          <a class="btn btn--branco" href="${esc(p.link)}" target="_blank" rel="noopener">Ver no site</a>
+        </div>
       </article>`).join("");
   }
   [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
@@ -880,7 +883,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=15"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=16"; });
     }
     edFoto = null;
     try {
