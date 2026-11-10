@@ -615,17 +615,14 @@
       <article class="produto-cat">
         <div class="produto-cat__foto">
           ${p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}
-          <span class="produto-cat__loja">${esc(NOME_LOJA[p.loja] || "")}</span>
+          <a class="produto-cat__loja" href="${esc(p.link)}" target="_blank" rel="noopener" title="Abrir no site">${esc(NOME_LOJA[p.loja] || "")} ↗</a>
         </div>
         <div class="produto-cat__info">
           <strong>${esc(p.nome)}</strong>
           ${p.preco ? `<span class="preco">${brl(p.preco)}</span>` : ""}
           ${p.comissao ? `<small>Comissão ${String(p.comissao).replace(".", ",")}%</small>` : ""}
         </div>
-        <div class="produto-cat__acoes">
-          <button type="button" class="btn btn--rosa" data-gerar="${i}">Gerar oferta</button>
-          <a class="btn btn--branco" href="${esc(p.link)}" target="_blank" rel="noopener">Ver no site</a>
-        </div>
+        <button type="button" class="btn btn--rosa" data-gerar="${i}">Gerar oferta</button>
       </article>`).join("");
   }
   [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
@@ -883,7 +880,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=16"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=17"; });
     }
     edFoto = null;
     try {

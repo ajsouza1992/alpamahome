@@ -322,12 +322,10 @@ body.travado { overflow: hidden; }
 
 /* ---------- Catálogo (mais vendidos) ---------- */
 .catalogo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.produto-cat__acoes { display: grid; gap: 6px; }
-.produto-cat__acoes a.btn { text-decoration: none; }
 .produto-cat { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; padding: 8px; border-radius: 20px; background: var(--campo); }
 .produto-cat__foto { position: relative; aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden; background: #fff; }
 .produto-cat__foto img { width: 100%; height: 100%; object-fit: contain; }
-.produto-cat__loja { position: absolute; left: 6px; top: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .92); font-size: 10.5px; font-weight: 700; }
+.produto-cat__loja { position: absolute; left: 6px; top: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, .92); font-size: 11.5px; font-weight: 700; color: var(--preto); text-decoration: none; }
 .produto-cat__info { display: grid; gap: 2px; align-content: start; padding: 0 2px; }
 .produto-cat__info strong { display: -webkit-box; font-size: 12.5px; font-weight: 600; line-height: 1.3; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .produto-cat__info .preco { font-size: 15px; font-weight: 700; color: var(--rosa); }
