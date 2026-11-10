@@ -615,7 +615,7 @@
       <article class="produto-cat">
         <div class="produto-cat__foto">
           ${p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}
-          <a class="produto-cat__loja" href="${esc(p.link)}" target="_blank" rel="noopener" title="Abrir no site">${esc(NOME_LOJA[p.loja] || "")} ↗</a>
+          <a class="produto-cat__loja" href="${esc(p.link)}" target="_blank" rel="noopener" title="Abrir no site">${esc(NOME_LOJA[p.loja] || "")}</a>
         </div>
         <div class="produto-cat__info">
           <strong>${esc(p.nome)}</strong>
@@ -627,13 +627,44 @@
   }
   [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
   $("#atualizarCatalogo").addEventListener("click", carregarCatalogo);
-  $("#catalogo").addEventListener("click", (e) => {
+  // Pede o link de afiliado antes de ir para a aba Criar
+  function pedirLinkAfiliado(p) {
+    const d = $("#pedirLink"), campo = $("#pedirLinkCampo");
+    $("#pedirLinkTexto").textContent = `Toque em “Abrir o produto”, gere o seu link de afiliado ${ONDE_LOJA[p.loja] || ""} (botão Compartilhar da barra de afiliados) e cole aqui.`;
+    $("#pedirLinkAbrir").href = p.link;
+    campo.value = "";
+    aviso($("#pedirLinkAviso"), "");
+    d.returnValue = "";
+    d.showModal();
+    return new Promise((resolve) => d.addEventListener("close", () => resolve(d.returnValue === "sim" ? campo.value.trim() : null), { once: true }));
+  }
+  $("#pedirLinkColar").addEventListener("click", async () => {
+    try {
+      const t = (await navigator.clipboard.readText()).trim();
+      const m = t.match(/https?:\/\/\S+/);
+      $("#pedirLinkCampo").value = m ? m[0] : t;
+    } catch (e) { $("#pedirLinkCampo").focus(); toast("Toque e segure no campo para colar"); }
+  });
+  $("#pedirLinkOk").addEventListener("click", (e) => {
+    const v = $("#pedirLinkCampo").value.trim();
+    const m = v.match(/https?:\/\/\S+/);
+    if (!m) { e.preventDefault(); aviso($("#pedirLinkAviso"), "Cole o link que começa com https://"); return; }
+    $("#pedirLinkCampo").value = m[0];
+    if (m[0] === $("#pedirLinkAbrir").getAttribute("href")) { e.preventDefault(); aviso($("#pedirLinkAviso"), "Esse ainda é o link normal do produto. Gere o seu link de afiliado e cole aqui."); }
+  });
+
+  $("#catalogo").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-gerar]");
     if (!b) return;
     const p = catalogoAtual[Number(b.dataset.gerar)];
     if (!p) return;
+    let link = p.link;
+    if (!p.afiliado) {
+      link = await pedirLinkAfiliado(p);
+      if (!link) return;
+    }
     // Preenche a aba Criar com o produto escolhido
-    c.link.value = p.link;
+    c.link.value = link;
     loja.marcar(p.loja);
     c.nome.value = limparNome(p.nome);
     c.precoNovo.value = p.preco ? paraCampo(p.preco) : "";
@@ -643,12 +674,8 @@
     categoria.marcar(p.categoria || "outros");
     atualizarSelo();
     irPara("criar");
-    if (p.afiliado) {
-      aviso($("#avisoBusca"), "Produto do catálogo com o seu link de afiliado. Confere o preço e é só gerar!", true);
-    } else {
-      aviso($("#avisoBusca"), "Atenção: este link do Mercado Livre ainda não é o seu link de afiliado. Abra o produto, toque em Compartilhar e cole o seu link no campo acima antes de gerar.");
-      c.link.closest(".colar").scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    aviso($("#avisoBusca"), p.preco ? "Pronto! Confere o preço e é só gerar." : "Pronto! Digite o preço e é só gerar.", true);
+    if (!p.preco) setTimeout(pedirPreco, 300);
   });
 
   /* =========================== Aba Achados =========================== */
@@ -880,7 +907,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=17"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=18"; });
     }
     edFoto = null;
     try {

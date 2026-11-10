@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -48,7 +48,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada" hidden>
     <div class="entrada__caixa">
-      <img src="logo.png?v=17" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=18" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -77,7 +77,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=17" alt="">
+    <img src="logo.png?v=18" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -208,6 +208,7 @@
       <div class="alternar alternar--tres alternar--rolar" id="catFiltro" role="radiogroup" aria-label="Categoria do catálogo">
         <button type="button" role="radio" data-v="moda" aria-checked="true">Moda</button>
         <button type="button" role="radio" data-v="beleza" aria-checked="false">Beleza</button>
+        <button type="button" role="radio" data-v="perfumes" aria-checked="false">Perfumes</button>
         <button type="button" role="radio" data-v="casa" aria-checked="false">Casa</button>
         <button type="button" role="radio" data-v="fitness" aria-checked="false">Fitness</button>
         <button type="button" role="radio" data-v="saude" aria-checked="false">Saúde</button>
@@ -244,16 +245,6 @@
         <button type="button" class="btn btn--branco" data-busca="magalu">Magalu</button>
       </div>
       <p class="nota">Achou? No app da loja toque em <b>Compartilhar</b> e escolha o <b>Miga Promo</b> (Android, app instalado), ou copie o seu link de afiliado e cole na aba <b>Criar</b>.</p>
-    </section>
-
-    <section class="bloco">
-      <h2 class="passo">Atalhos de ofertas</h2>
-      <div class="atalhos">
-        <a href="https://www.mercadolivre.com.br/ofertas" target="_blank" rel="noopener"><span><b>Ofertas do dia</b>Mercado Livre</span></a>
-        <a href="https://www.mercadolivre.com.br/l/afiliados-home" target="_blank" rel="noopener"><span><b>Central de Afiliados</b>Mercado Livre</span></a>
-        <a href="https://affiliate.shopee.com.br" target="_blank" rel="noopener"><span><b>Shopee Afiliados</b>ofertas e links</span></a>
-        <a href="https://associados.amazon.com.br" target="_blank" rel="noopener"><span><b>Amazon Associados</b>painel de afiliados</span></a>
-      </div>
     </section>
 
     <section class="bloco">
@@ -333,6 +324,23 @@
   </dialog>
 
   <!-- Confirmação no padrão do app -->
+  <dialog id="pedirLink" class="dialogo">
+    <form method="dialog" id="formPedirLink">
+      <h2>Cole o seu link de afiliado</h2>
+      <p class="dialogo__texto" id="pedirLinkTexto"></p>
+      <a class="btn btn--branco" id="pedirLinkAbrir" href="#" target="_blank" rel="noopener">Abrir o produto</a>
+      <div class="colar">
+        <input id="pedirLinkCampo" type="url" inputmode="url" placeholder="https://meli.la/..." autocomplete="off" aria-label="Seu link de afiliado">
+        <button type="button" id="pedirLinkColar" class="colar__btn">Colar</button>
+      </div>
+      <p class="aviso" id="pedirLinkAviso" hidden></p>
+      <div class="duas">
+        <button class="btn btn--branco" value="nao" type="submit" formnovalidate>Cancelar</button>
+        <button class="btn btn--rosa" value="sim" type="submit" id="pedirLinkOk">Continuar</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="confirmar" class="dialogo">
     <form method="dialog">
       <h2 id="confirmarTitulo">Tem certeza?</h2>
@@ -391,7 +399,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=17"></script>
-  <script src="app.js?v=17"></script>
+  <script src="firebase-config.js?v=18"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>

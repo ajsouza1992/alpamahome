@@ -367,6 +367,7 @@ async function rotaEntrar(request, env) {
 const FILTROS_CATALOGO = {
   moda: { categoria: "moda", ml: "MLB1430", shopee: "moda feminina" },
   beleza: { categoria: "beleza", ml: "MLB1246", shopee: "skincare maquiagem" },
+  perfumes: { categoria: "beleza", ml: "MLB1271", shopee: "perfume feminino" },
   casa: { categoria: "casa", ml: "MLB1574", shopee: "decoração casa" },
   fitness: { categoria: "saude", ml: "MLB1276", shopee: "roupa fitness feminina" },
   saude: { categoria: "saude", ml: "MLB264586", shopee: "suplemento vitamina" },
@@ -395,7 +396,11 @@ async function tokenML(env) {
   await gravarCache("ml-token", env.ML_APP_ID, { token: d.access_token }, Math.min(18000, (d.expires_in || 21600) - 600));
   return d.access_token;
 }
+// O Cloudflare (plano grátis) permite ~50 chamadas por pedido: guardamos uma margem
+let chamadasML = 0;
+const LIMITE_ML = 42;
 async function getML(caminho, token) {
+  if (++chamadasML > LIMITE_ML) return { status: 0, dados: {} };
   const r = await fetch(ML_API + caminho, { headers: { authorization: "Bearer " + token, accept: "application/json" } });
   return { status: r.status, dados: await r.json().catch(() => ({})) };
 }
@@ -425,6 +430,7 @@ async function precoML(id, token) {
   return null;
 }
 async function catalogoML(filtro, env) {
+  chamadasML = 0;
   const token = await tokenML(env);
   const diag = [];
   const destaques = (await destaquesML(filtro.ml, token, diag)).slice(0, 20);
@@ -454,10 +460,10 @@ async function catalogoML(filtro, env) {
   }
 
   // Produtos de catálogo (PRODUCT): preço vem do vencedor ou do primeiro anúncio
-  for (const id of ids("PRODUCT").slice(0, 8)) {
+  for (const id of ids("PRODUCT")) {
     const r = await getML(`/products/${id}`, token);
     const b = r.dados || {};
-    if (r.status !== 200 || !b.name) { diag.push("produto " + r.status); continue; }
+    if (r.status !== 200 || !b.name) { if (r.status) diag.push("produto " + r.status); continue; }
     let preco = (b.buy_box_winner || {}).price || null, antigo = (b.buy_box_winner || {}).original_price || null;
     if (!preco) {
       const it = await getML(`/products/${id}/items?limit=1`, token);
@@ -468,10 +474,10 @@ async function catalogoML(filtro, env) {
   }
 
   // Produtos de vendedor (USER_PRODUCT)
-  for (const id of ids("USER_PRODUCT").slice(0, 8)) {
+  for (const id of ids("USER_PRODUCT")) {
     const r = await getML(`/user-products/${id}`, token);
     const b = r.dados || {};
-    if (r.status !== 200 || !b.name) { diag.push("user-product " + r.status); continue; }
+    if (r.status !== 200 || !b.name) { if (r.status) diag.push("user-product " + r.status); continue; }
     saida.push({ id: b.id || id, nome: b.name, preco: null, precoAntigo: null, imagem: mlHttps(((b.pictures || [])[0] || {}).url || ((b.pictures || [])[0] || {}).secure_url), link: b.permalink || `https://www.mercadolivre.com.br/up/${id}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false });
   }
 

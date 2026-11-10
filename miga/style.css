@@ -225,7 +225,9 @@ body.travado { overflow: hidden; }
 /* ---------- Diálogos ---------- */
 .dialogo { border: 0; border-radius: 26px; box-shadow: 0 30px 60px -20px rgba(29, 29, 31, .4); padding: 24px 20px 20px; width: min(400px, calc(100vw - 32px)); background: var(--branco); color: var(--preto); }
 .dialogo::backdrop { background: rgba(29, 29, 31, .4); backdrop-filter: blur(3px); }
-.dialogo form { display: grid; gap: 14px; }
+.dialogo form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.dialogo a.btn { text-decoration: none; }
+.dialogo .colar input { min-width: 0; }
 .dialogo h2 { margin: 0; font-size: 20px; font-weight: 700; }
 .dialogo__texto { margin: -4px 0 4px; font-size: 15px; color: var(--cinza); }
 .status { margin: -6px 0 0; font-size: 14px; color: var(--cinza); }
