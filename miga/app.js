@@ -916,7 +916,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=23"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=24"; });
     }
     edFoto = null;
     try {
@@ -1009,7 +1009,7 @@
       ...(d.botao ? [["gap", 50], ["pill", d.botao]] : [])] },
     boasvindas: { fundo: "creme", nome: "boas-vindas", blocos: (d) => [
       ["logo", 340], ["gap", 50], ["titulo", ["Bem-vinda,", [["miga! 💖", 1]]]], ["gap", 30],
-      ["sub", "Aqui eu garimpo os melhores achadinhos com desconto, todo dia."], ["gap", 50], ["pill", "Ative as notificações 🔔"]] },
+      ["sub", "Aqui eu garimpo os melhores achadinhos com desconto, todo dia."], ["gap", 50], ["pill", "Ative as notificações"]] },
     comofunciona: { fundo: "creme", nome: "como-funciona", rodape: "Links de afiliada · sem custo a mais pra você", blocos: () => [
       ["logo", 150], ["gap", 40], ["titulo", [[["Como ", 0], ["funciona?", 1]]]], ["gap", 50],
       ["passos", [["Eu garimpo as ofertas", "Shopee, Mercado Livre e Amazon"], ["Você toca no link", "no post, no story ou na bio"], ["Compra pelo mesmo preço", "e ainda ajuda a miga aqui 💕"]]]] },
@@ -1019,16 +1019,16 @@
       ["sub", "+ fitness, saúde e cupons exclusivos"]] },
     stories: { fundo: "rosa", nome: "ofertas-nos-stories", blocos: () => [
       ["logo", 300], ["gap", 50], ["titulo", ["Ofertas", [["relâmpago", 1]], "nos stories ⚡"]], ["gap", 30],
-      ["sub", "As promoções que acabam rápido aparecem primeiro nos stories."], ["gap", 50], ["pill", "Siga e ative as notificações 🔔"]] },
+      ["sub", "As promoções que acabam rápido aparecem primeiro nos stories."], ["gap", 50], ["pill", "Siga e ative as notificações"]] },
     cupons: { fundo: "creme", nome: "cupons", blocos: (d) => [
       ["titulo", ["Cupons", [["todo dia 🎟️", 1]]]], ["gap", 60], ["cupom", d.cupom || "MIGA10"], ["gap", 60],
       ["sub", "Fique de olho nos stories: os melhores cupons acabam rapidinho!"]] },
     siga: { fundo: "rosa", nome: "siga", blocos: (d) => [
       ["logo", 300], ["gap", 50], ["titulo", ["Não perca", "nenhum", [["achadinho 💖", 1]]]], ["gap", 30],
-      ["sub", "Siga a Miga Promo e ative as notificações dos stories."], ["gap", 50], ["pill", d.insta ? "Siga " + d.insta + " ✨" : "Siga a Miga ✨"]] },
+      ["sub", "Siga a Miga Promo e ative as notificações dos stories."], ["gap", 50], ["pill", d.insta ? "Siga " + d.insta : "Siga a Miga"]] },
     achadinho: { fundo: "creme", nome: "achadinho-do-dia", blocos: () => [
       ["logo", 150], ["gap", 30], ["titulo", ["Achadinho", [["do dia ✨", 1]]]], ["gap", 40],
-      ["moldura", 0], ["gap", 40], ["pill", "Toque no link 👆"]] }
+      ["moldura", 0], ["gap", 40], ["pill", "Toque no link"]] }
   };
   const BOAS_VINDAS = ["boasvindas", "comofunciona", "categorias", "stories", "cupons"];
 
@@ -1092,6 +1092,7 @@
         quebrarTexto(ctx, v, LARG, 3).forEach((l, j) => ctx.fillText(l, W / 2, y + FS * 1.38 * j + FS * 0.7));
       }
       if (tipo === "pill") {
+        v = String(v).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").replace(/\s{2,}/g, " ").trim();
         ctx.font = `700 ${Math.round(38 * escala)}px Poppins`;
         const pw = Math.min(W - 120, ctx.measureText(v).width + 110 * escala);
         retArredondado(ctx, (W - pw) / 2, y, pw, h, h / 2); ctx.fillStyle = C.pill; ctx.fill();
@@ -1167,7 +1168,7 @@
     desenharBanner($("#telaBanner"), bnModelo.valor(), bnFormato.valor(), bnFundo.valor(), dadosBanner());
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=23"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=24"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   $("#abrirBanners").addEventListener("click", async () => {

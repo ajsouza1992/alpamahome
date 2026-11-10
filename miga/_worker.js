@@ -30,6 +30,8 @@ const DOMINIOS = {
   magalu: ["magazineluiza.com.br", "magazinevoce.com.br", "magalu.com", "magalu.com.br", "mlcdn.com.br"]
 };
 const UA = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
+// Robô de prévia de links (o mesmo do Facebook/WhatsApp): as lojas entregam a página já com foto, nome e preço
+const UA_PREVIA = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
 
 /** Diz de qual loja é a URL (ou null se não for permitida).
  *  Só aceita https, sem porta e sem usuário/senha embutidos (proteção contra SSRF). */
@@ -85,6 +87,24 @@ function precoAntigoML(html) {
   return m ? numero(m[1].replace(/\./g, "") + "," + (m[2] || "0").padStart(2, "0")) : null;
 }
 
+// Mercado Livre: preço atual ("49 reais com 90 centavos"), que vem depois do "Antes:"
+function precoAtualML(html) {
+  const re = /aria-label=["'](Antes:\s*|Agora:\s*)?([\d.]+)\s*reais(?:\s*com\s*(\d{1,2})\s*centavos)?/gi;
+  let m, passouAntes = false, primeiro = null;
+  while ((m = re.exec(html))) {
+    const v = numero(m[2].replace(/\./g, "") + "," + (m[3] || "0").padStart(2, "0"));
+    if (/Antes/i.test(m[1] || "")) { passouAntes = true; continue; }
+    if (/Agora/i.test(m[1] || "") || passouAntes) return v;
+    if (primeiro === null) primeiro = v;
+  }
+  return primeiro;
+}
+// Preço escrito no texto (ex.: descrição da prévia "R$ 49,90")
+function precoNoTexto(t) {
+  const m = String(t || "").match(/R\$\s?([\d.]+,\d{2})/);
+  return m ? numero(m[1]) : null;
+}
+
 // Tira do nome: "| Mercado Livre", "- R$ 49,90", "Frete grátis" etc. (a loja às vezes junta tudo no título)
 const limparTitulo = (t) => String(t || "")
   .replace(/\s*[|\-–:]\s*(Mercado Livre|MercadoLivre|Shopee Brasil|Shopee|Amazon\.com\.br.*|Magazine Luiza|Magalu).*$/i, "")
@@ -100,27 +120,76 @@ async function extrairProduto(url) {
   if (!loja) throw new Error("Use um link do Mercado Livre, Shopee, Amazon ou Magalu.");
 
   // Segue os redirecionamentos um a um, conferindo se cada destino continua sendo da loja
-  let atual = url, r = null;
-  for (let pulo = 0; pulo < 6; pulo++) {
-    r = await fetch(atual, { redirect: "manual", headers: { "user-agent": UA, "accept-language": "pt-BR,pt;q=0.9", accept: "text/html" } });
-    const destino = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
-    if (!destino) break;
-    atual = new URL(destino, atual).toString();
-    if (!lojaDaUrl(atual)) throw new Error("O link redirecionou para fora da loja.");
+  async function baixar(inicio, ua) {
+    let atual = inicio, r = null;
+    for (let pulo = 0; pulo < 6; pulo++) {
+      r = await fetch(atual, { redirect: "manual", headers: { "user-agent": ua, "accept-language": "pt-BR,pt;q=0.9", accept: "text/html" } });
+      const destino = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
+      if (!destino) break;
+      atual = new URL(destino, atual).toString();
+      if (!lojaDaUrl(atual)) throw new Error("O link redirecionou para fora da loja.");
+    }
+    return { html: r && r.ok ? await r.text() : "", atual };
   }
-  const html = r && r.ok ? await r.text() : "";
-  const ld = produtoJsonLd(html);
+  function ler(html) {
+    const ld = produtoJsonLd(html);
+    const desc = meta(html, "og:description") || meta(html, "description");
+    return {
+      nome: limparTitulo(ld.nome || meta(html, "og:title") || meta(html, "twitter:title")),
+      preco: ld.preco || numero(meta(html, "product:price:amount")) || numero(meta(html, "price")) || (loja === "mercadolivre" ? precoAtualML(html) : null) || precoNoTexto(desc),
+      precoAntigo: loja === "mercadolivre" ? precoAntigoML(html) : null,
+      imagem: ld.imagem || meta(html, "og:image") || meta(html, "twitter:image")
+    };
+  }
 
-  const dados = {
-    loja,
-    nome: limparTitulo(ld.nome || meta(html, "og:title") || meta(html, "twitter:title")),
-    preco: ld.preco || numero(meta(html, "product:price:amount")) || numero(meta(html, "price")),
-    precoAntigo: loja === "mercadolivre" ? precoAntigoML(html) : null,
-    imagem: ld.imagem || meta(html, "og:image") || meta(html, "twitter:image"),
-    urlFinal: atual
-  };
+  // Shopee só entrega foto e nome para o robô de prévia; nas outras lojas tenta o navegador primeiro
+  let pagina = await baixar(url, loja === "shopee" ? UA_PREVIA : UA);
+  let d = ler(pagina.html);
+  if (!(d.nome && d.preco && d.imagem)) {
+    const outra = await baixar(pagina.atual, loja === "shopee" ? UA : UA_PREVIA).catch(() => null);
+    if (outra) {
+      const d2 = ler(outra.html);
+      d = { nome: d.nome || d2.nome, preco: d.preco || d2.preco, precoAntigo: d.precoAntigo || d2.precoAntigo, imagem: d.imagem || d2.imagem };
+    }
+  }
+  const dados = { loja, ...d, urlFinal: pagina.atual };
   if (dados.imagem && dados.imagem.startsWith("//")) dados.imagem = "https:" + dados.imagem;
   if (dados.precoAntigo && dados.preco && dados.precoAntigo <= dados.preco) dados.precoAntigo = null;
+  dados.completo = !!(dados.nome && dados.preco && dados.imagem);
+  return dados;
+}
+
+/** Mercado Livre: completa preço e foto pela API oficial (quando as chaves estão cadastradas) */
+async function completarPelaApiML(dados, env) {
+  if (!(env.ML_APP_ID && env.ML_SECRET)) return dados;
+  const u = dados.urlFinal || "";
+  const norm = (s) => s ? s.toUpperCase().replace("-", "") : null;
+  const idProduto = norm((u.match(/\/p\/(MLB\d+)/i) || [])[1]);
+  const idItem = norm((u.match(/[?&#](?:item_id|wid)=(MLB-?\d+)/i) || [])[1] || (!idProduto && (u.match(/(MLB-?\d{6,})/i) || [])[1]));
+  try {
+    chamadasML = 0;
+    const token = await tokenML(env);
+    if (idItem) {
+      const v = await precoML(idItem, token);
+      if (v) { dados.preco = v.preco; if (v.precoAntigo && v.precoAntigo > v.preco) dados.precoAntigo = v.precoAntigo; }
+      if (!dados.imagem || !dados.nome) {
+        const r = await getML(`/items/${idItem}`, token);
+        if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); }
+      }
+    } else if (idProduto) {
+      const r = await getML(`/products/${idProduto}`, token);
+      const b = r.dados || {};
+      let preco = (b.buy_box_winner || {}).price, antigo = (b.buy_box_winner || {}).original_price;
+      if (!preco) {
+        const it = await getML(`/products/${idProduto}/items?limit=1`, token);
+        const x = ((it.dados && it.dados.results) || [])[0];
+        if (x) { preco = x.price; antigo = x.original_price; }
+      }
+      if (preco) { dados.preco = preco; if (antigo && antigo > preco) dados.precoAntigo = antigo; }
+      if (!dados.nome && b.name) dados.nome = b.name;
+      if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url);
+    }
+  } catch (e) { /* fica com o que veio da página */ }
   dados.completo = !!(dados.nome && dados.preco && dados.imagem);
   return dados;
 }
@@ -340,7 +409,8 @@ async function rotaProduto(request, env) {
   try {
     const guardado = await lerCache("produto", url);
     if (guardado) return json({ ...guardado, doCache: true });
-    const dados = await extrairProduto(url);
+    let dados = await extrairProduto(url);
+    if (dados.loja === "mercadolivre") dados = await completarPelaApiML(dados, env);
     if (dados.nome) await gravarCache("produto", url, dados, 1800); // 30 minutos
     return json(dados);
   } catch (e) {
