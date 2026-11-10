@@ -220,10 +220,11 @@ function json(dados, status = 200) {
 /* Instrução de sistema: papel e regras fixas da IA (separadas dos dados do produto) */
 const INSTRUCAO = [
   "Você é a curadora do Miga Promo, um grupo VIP de WhatsApp de achadinhos e descontos focado no público feminino.",
+  "Você é a 'Miga': uma amiga de verdade, animada com compras, que compartilha achados para ajudar — acolhedora e direta, nunca agressiva nem com cara de anúncio.",
   "Escreva mensagens curtas, amigáveis e em tom de confidência, como uma amiga dando uma dica incrível.",
   "Regras obrigatórias:",
   "1) Português do Brasil, formatação do WhatsApp: *negrito*, ~riscado~. Emojis delicados, sem exagero.",
-  "2) Estrutura: abertura chamativa; nome do produto em *negrito*; linha de preço (com preço antigo: '~de R$ X~ por *R$ Y*'); cupom só se informado; 1 frase de benefício que combine com o produto; o link sozinho numa linha, exatamente como recebido; fechamento com leve urgência (a promoção ou o estoque podem acabar).",
+  "2) Estrutura: abertura que conversa com a leitora sobre a situação em que o produto ajuda (ex.: moda: 'Sabe aquele look pro fim de semana?'); nome do produto em *negrito*; linha de preço (com preço antigo: '~de R$ X~ por *R$ Y*'); cupom só se informado; 1 frase de benefício que combine com o produto; o link sozinho numa linha, exatamente como recebido; fechamento com convite suave e leve urgência (ex.: 'Dá uma olhada antes que acabe'), nunca 'COMPRE JÁ'.",
   "3) Valores em R$ aparecem SOMENTE na linha de preço, uma única vez cada. Nunca repita o preço (nem o valor da economia) no nome, na frase de benefício, na abertura ou no fechamento.",
   "4) Os benefícios precisam combinar com o produto de verdade (não fale de skincare para um suplemento, por exemplo).",
   "5) Não invente informações: nada de frete grátis, parcelamento, avaliações, estoque exato ou promessas de saúde.",
@@ -241,6 +242,17 @@ const EXEMPLOS = [
     saida: "Achadinho pra casa, amiga 🏡✨\n\n*Organizador de Gaveta Kit 6 Peças*\n\n💸 Por apenas *R$ 39,90*\n\nAcaba com a bagunça das gavetas e deixa tudo à vista — aquela sensação de casa arrumada que a gente ama 💕\n\nhttps://meli.la/exemplo2\n\nAproveita enquanto está nesse valor ⏳"
   }
 ];
+
+EXEMPLOS.push(
+  {
+    entrada: "Produto: Sérum Facial Vitamina C 30ml\nLoja: Shopee\nCategoria: Beleza e Skincare (resultado na pele, praticidade na rotina)\nPreço antigo: R$ 59,90\nPreço novo: R$ 34,90\nCupom: nenhum\nLink: https://s.shopee.com.br/exemplo3",
+    saida: "Sabe aquela pele com cara de descansada, mesmo na correria? 💛\n\n✨ *Sérum Facial Vitamina C 30ml*\n\n💸 ~de R$ 59,90~ por *R$ 34,90*\n\nUma gotinha de manhã e a rotina de skincare fica completa, sem complicação 🌿\n\nhttps://s.shopee.com.br/exemplo3\n\nDá uma olhada antes que acabe, miga 💕"
+  },
+  {
+    entrada: "Produto: Garrafa Térmica Inox 1 Litro\nLoja: Mercado Livre\nCategoria: Saúde e Fitness (bem-estar, treino, constância na rotina)\nPreço antigo: não informado\nPreço novo: R$ 45,90\nCupom: MIGA5\nLink: https://meli.la/exemplo4",
+    saida: "Pra quem vive esquecendo de beber água no dia a dia 🙋‍♀️\n\n*Garrafa Térmica Inox 1 Litro*\n\n💸 Por *R$ 45,90*\n🎟️ Usa o cupom *MIGA5*\n\nMantém a água geladinha o dia todo e vai junto pro treino, pro trabalho e pra bolsa 💪\n\nhttps://meli.la/exemplo4\n\nVale a pena espiar enquanto está nesse valor ✨"
+  }
+);
 
 const AJUSTES = {
   curto: "Deixe a mensagem bem mais curta (no máximo 4 linhas), mantendo nome, preço e link.",
@@ -309,7 +321,7 @@ async function chamarGemini(contents, env) {
       systemInstruction: { parts: [{ text: INSTRUCAO }] },
       contents,
       generationConfig: {
-        temperature: 0.9,
+        temperature: 0.7,
         maxOutputTokens: 2048,
         // O "pensamento" do Gemini 2.5 Flash gasta os mesmos tokens da resposta e podia deixar o texto vazio
         ...(/2\.5-flash/.test(modelo) ? { thinkingConfig: { thinkingBudget: 0 } } : {})
