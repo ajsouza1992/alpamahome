@@ -551,7 +551,7 @@
     } catch (e) {
       esqueletoResultado(false);
       if (e.codigo === "senha") { ocupado(false); bloquear("O código de acesso mudou. Digite o novo código."); return; }
-      if (ajustando) { ocupado(false); mostrarResultado(""); toast("Não consegui ajustar agora. Tente de novo."); return; }
+      if (ajustando) { console.warn("Ajuste:", e.message); ocupado(false); mostrarResultado(""); toast(e.codigo === "limite" ? "A IA está com muitos pedidos. Espere um minutinho e tente de novo." : "Não consegui ajustar agora. Tente de novo."); return; }
       const motivo = e.codigo === "sem-chave" ? "a chave da IA ainda não foi configurada" : e.codigo === "offline" ? "o servidor não está disponível aqui" : "a IA não respondeu agora";
       texto = mensagemReserva(p);
       avisoMsg = `Usei uma mensagem pronta porque ${motivo}. Pode editar à vontade.`;
@@ -914,7 +914,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=19"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=20"; });
     }
     edFoto = null;
     try {

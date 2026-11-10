@@ -239,7 +239,12 @@ async function chamarGemini(contents, env) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: INSTRUCAO }] },
       contents,
-      generationConfig: { temperature: 0.9, maxOutputTokens: 1024 }
+      generationConfig: {
+        temperature: 0.9,
+        maxOutputTokens: 2048,
+        // O "pensamento" do Gemini 2.5 Flash gasta os mesmos tokens da resposta e podia deixar o texto vazio
+        ...(/2\.5-flash/.test(modelo) ? { thinkingConfig: { thinkingBudget: 0 } } : {})
+      }
     })
   });
   const d = await r.json().catch(() => ({}));
@@ -249,7 +254,7 @@ async function chamarGemini(contents, env) {
   }
   const partes = d.candidates?.[0]?.content?.parts || [];
   const texto = partes.map((x) => x.text || "").join("").replace(/^```[a-z]*\s*|```$/gi, "").trim();
-  if (!texto) throw new Error("A IA não devolveu texto. Tente de novo.");
+  if (!texto) throw new Error("A IA não devolveu texto (" + (d.candidates?.[0]?.finishReason || "sem resposta") + "). Tente de novo.");
   return { texto, modelo };
 }
 
@@ -278,13 +283,20 @@ async function rotaGerar(request, env) {
   if (p.precoAntigo && p.precoAntigo <= p.precoNovo) p.precoAntigo = null;
 
   try {
-    const r = await chamarGemini(montarConversa(p), env);
+    let r;
+    try {
+      r = await chamarGemini(montarConversa(p), env);
+    } catch (e) {
+      if (!p.ajuste || e.status === 429) throw e;
+      // Segunda tentativa do ajuste: tudo numa mensagem só
+      r = await chamarGemini([{ role: "user", parts: [{ text: `Dados do produto:\n${dadosDoProduto(p)}\n\nMensagem atual:\n${p.textoAtual}\n\nReescreva a mensagem atual. Ajuste pedido: ${AJUSTES[p.ajuste]} Mantenha todas as regras e o link exatamente igual.` }] }], env);
+    }
     r.texto = umPrecoSo(r.texto, p.link);
     // Garante que o link de afiliado está na mensagem
     if (!r.texto.includes(p.link)) r.texto += "\n\n👉 " + p.link;
     return json(r);
   } catch (e) {
-    return json({ erro: e.message, codigo: "ia" }, 502);
+    return json({ erro: e.message, codigo: e.status === 429 ? "limite" : "ia" }, 502);
   }
 }
 
