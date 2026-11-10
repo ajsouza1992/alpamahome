@@ -342,9 +342,11 @@ body.travado { overflow: hidden; }
 @media (min-width: 560px) { .catalogo { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* Botão de filtro de categoria */
-.filtro-btn { display: inline-flex; align-items: center; gap: 8px; align-self: start; justify-self: start; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--campo); color: var(--preto); font-size: 14px; cursor: pointer; }
-.filtro-btn span { color: var(--cinza); }
-.filtro-btn b { font-weight: 700; color: var(--rosa); }
-.filtro-btn svg { width: 18px; height: 18px; }
-#filtroCat .alternar--tres button { min-height: 44px; font-size: 14.5px; }
+.filtro-linha { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.filtro-btn { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 0 14px 0 18px; border: 0; border-radius: 18px; background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); color: var(--preto); font-size: 15px; cursor: pointer; text-align: left; }
+.filtro-btn span { color: var(--cinza); font-size: 13px; }
+.filtro-btn b { flex: 1; font-weight: 700; }
+.filtro-btn i { font-style: normal; padding: 6px 12px; border-radius: 999px; background: var(--rosa-claro); color: var(--rosa-escuro); font-size: 13px; font-weight: 600; }
+#filtroCat .alternar--tres { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#filtroCat .alternar--tres button { min-height: 50px; font-size: 15px; border-radius: 16px; }
 .item__link { display: contents; color: inherit; text-decoration: none; }

@@ -258,6 +258,17 @@ async function chamarGemini(contents, env) {
   return { texto, modelo };
 }
 
+/** Traduz os erros mais comuns do Gemini para algo que dá para resolver */
+function motivoIA(e) {
+  const m = String(e.message || "");
+  if (/api key not valid|API_KEY_INVALID|invalid api key/i.test(m)) return "a chave da IA (GEMINI_API_KEY) é inválida — crie uma nova no Google AI Studio e troque no Cloudflare";
+  if (/permission|PERMISSION_DENIED|not been used|disabled/i.test(m)) return "a chave da IA não tem permissão para o Gemini — ative a Generative Language API no projeto da chave";
+  if (/not found|is not supported/i.test(m)) return "o modelo da IA não existe mais (" + m.slice(0, 80) + ")";
+  if (e.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(m)) return "o limite gratuito da IA acabou por agora — espere um pouco";
+  if (/SAFETY|blocked/i.test(m)) return "a IA bloqueou o texto por segurança — tente outro ajuste";
+  return m.slice(0, 160) || "a IA não respondeu";
+}
+
 async function rotaGerar(request, env) {
   // Senha opcional para ninguém usar sua cota (variável APP_SENHA)
   if (!senhaOk(request, env)) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
@@ -296,7 +307,7 @@ async function rotaGerar(request, env) {
     if (!r.texto.includes(p.link)) r.texto += "\n\n👉 " + p.link;
     return json(r);
   } catch (e) {
-    return json({ erro: e.message, codigo: e.status === 429 ? "limite" : "ia" }, 502);
+    return json({ erro: motivoIA(e), codigo: e.status === 429 ? "limite" : "ia" }, 502);
   }
 }
 
