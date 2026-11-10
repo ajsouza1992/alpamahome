@@ -188,8 +188,8 @@
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
       limpar: () => tx("readwrite", (s) => s.clear()),
-      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []) }),
-      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); }
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), instagram: ls.ler("miga_instagram") || "" }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_instagram", c.instagram || ""); }
     };
   })();
 
@@ -217,9 +217,9 @@
       lerConfig: async () => {
         const d = await fs.getDoc(docConfig());
         const x = d.exists() ? d.data() : {};
-        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [] };
+        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], instagram: x.instagram || "" };
       },
-      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], atualizadoEm: Date.now() })
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], instagram: c.instagram || "", atualizadoEm: Date.now() })
     };
   }
   let dados = local;
@@ -793,13 +793,15 @@
   function desenharCard() {
     if (!atual) return;
     const tela = $("#telaCard");
-    const story = edFormato.valor() === "story";
-    const W = 1080, H = story ? 1920 : 1080;
+    const formato = edFormato.valor(), story = formato === "story", post = formato === "post";
+    const W = 1080, H = story ? 1920 : post ? 1350 : 1080;
     tela.width = W; tela.height = H;
     const ctx = tela.getContext("2d");
     const P = PALETAS[edFundo.valor()] || PALETAS.creme;
     const p = atual.produto;
-    const L = story
+    const L = post
+      ? { tituloY: 60, tituloFonte: 46, tituloAlt: 84, fotoY: 175, fotoH: 700, nome1: 960, nomeFonte: 48, lh: 60, antigoY: 1085, antigoFonte: 36, precoY: 1175, precoFonte: 82, rodapeY: 1215, rodapeFonte: 32, marca: 140, selo: 105 }
+      : story
       ? { tituloY: 110, tituloFonte: 56, tituloAlt: 100, fotoY: 260, fotoH: 960, nome1: 1320, nomeFonte: 58, lh: 74, antigoY: 1490, antigoFonte: 46, precoY: 1590, precoFonte: 100, rodapeY: 1650, rodapeFonte: 40, marca: 190, selo: 125 }
       : { tituloY: 48, tituloFonte: 44, tituloAlt: 80, fotoY: 150, fotoH: 520, nome1: 742, nomeFonte: 44, lh: 54, antigoY: 852, antigoFonte: 34, precoY: 930, precoFonte: 76, rodapeY: 970, rodapeFonte: 30, marca: 124, selo: 98 };
 
@@ -914,7 +916,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=21"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=22"; });
     }
     edFoto = null;
     try {
@@ -955,6 +957,25 @@
     mostrarResultado("");
     toast("Voltei para a foto original");
   });
+  /** Abre o compartilhamento do celular com a imagem (dá para escolher Instagram: feed ou story) */
+  function compartilharTela(canvas, nome) {
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const arq = new File([blob], nome, { type: "image/jpeg" });
+      if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+        try { await navigator.share({ files: [arq] }); return; } catch (e) { if (e.name === "AbortError") return; }
+      }
+      baixarBlob(blob, nome);
+      toast("Imagem salva — abra o Instagram e escolha da galeria");
+    }, "image/jpeg", 0.92);
+  }
+  function baixarBlob(blob, nome) {
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: nome });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  const nomeArquivo = (t) => "miga-promo-" + String(t || "imagem").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) + ".jpg";
+  $("#compartilharCard").addEventListener("click", () => compartilharTela($("#telaCard"), nomeArquivo(atual && atual.produto.nome)));
   $("#baixarCard").addEventListener("click", () => {
     $("#telaCard").toBlob((blob) => {
       if (!blob) return;
@@ -964,6 +985,205 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       toast("Imagem salva");
     }, "image/jpeg", 0.9);
+  });
+
+
+  /* =========================== Banners do Instagram =========================== */
+  const bnModelo = grupoBotoes("#bnModelo", "v");
+  const bnFormato = grupoBotoes("#bnFormato", "v");
+  const bnFundo = grupoBotoes("#bnFundo", "v");
+  const CORES_BN = {
+    creme: { claro: true, texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", bola1: "rgba(255,210,63,.35)", bola2: "rgba(232,51,109,.12)" },
+    rosa: { claro: false, texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", bola1: "rgba(255,255,255,.08)", bola2: "rgba(255,210,63,.25)" }
+  };
+  const arroba = (v) => { const t = String(v || "").trim().replace(/^@+/, "").replace(/\s+/g, ""); return t ? "@" + t : ""; };
+  // Linhas de título: texto simples ou [["parte", destaque?], ...]
+  const MODELOS = {
+    boasvindas: { fundo: "creme", nome: "boas-vindas", blocos: (d) => [
+      ["logo", 340], ["gap", 50], ["titulo", ["Bem-vinda,", [["miga! 💖", 1]]]], ["gap", 30],
+      ["sub", "Aqui eu garimpo os melhores achadinhos com desconto, todo dia."], ["gap", 50], ["pill", "Ative as notificações 🔔"]] },
+    comofunciona: { fundo: "creme", nome: "como-funciona", rodape: "Links de afiliada · você não paga nada a mais", blocos: () => [
+      ["logo", 150], ["gap", 40], ["titulo", [[["Como ", 0], ["funciona?", 1]]]], ["gap", 50],
+      ["passos", [["Eu garimpo as ofertas", "Shopee, Mercado Livre e Amazon"], ["Você toca no link", "no post, no story ou na bio"], ["Compra pelo mesmo preço", "e ainda ajuda a miga aqui 💕"]]]] },
+    categorias: { fundo: "creme", nome: "categorias", blocos: () => [
+      ["titulo", ["O que você", [["vai ", 0], ["encontrar 👀", 1]]]], ["gap", 50],
+      ["cats", [["👗", "Moda"], ["💄", "Beleza"], ["🌸", "Perfumes"], ["🏡", "Casa"]]], ["gap", 40],
+      ["sub", "+ fitness, saúde e cupons exclusivos"]] },
+    stories: { fundo: "rosa", nome: "ofertas-nos-stories", blocos: () => [
+      ["logo", 300], ["gap", 50], ["titulo", ["Ofertas", [["relâmpago", 1]], "nos stories ⚡"]], ["gap", 30],
+      ["sub", "As promoções que acabam rápido aparecem primeiro nos stories."], ["gap", 50], ["pill", "Siga e ative as notificações 🔔"]] },
+    cupons: { fundo: "creme", nome: "cupons", blocos: (d) => [
+      ["titulo", ["Cupons", [["todo dia 🎟️", 1]]]], ["gap", 60], ["cupom", d.cupom || "MIGA10"], ["gap", 60],
+      ["sub", "Fique de olho nos stories: os melhores cupons acabam rapidinho!"]] },
+    siga: { fundo: "rosa", nome: "siga", blocos: (d) => [
+      ["logo", 300], ["gap", 50], ["titulo", ["Não perca", "nenhum", [["achadinho 💖", 1]]]], ["gap", 30],
+      ["sub", "Siga a Miga Promo e ative as notificações dos stories."], ["gap", 50], ["pill", d.insta ? "Siga " + d.insta + " ✨" : "Siga a Miga ✨"]] },
+    achadinho: { fundo: "creme", nome: "achadinho-do-dia", blocos: () => [
+      ["logo", 150], ["gap", 30], ["titulo", ["Achadinho", [["do dia ✨", 1]]]], ["gap", 40],
+      ["moldura", 0], ["gap", 40], ["pill", "Toque no link 👆"]] }
+  };
+  const BOAS_VINDAS = ["boasvindas", "comofunciona", "categorias", "stories", "cupons"];
+
+  function desenharBanner(canvas, modelo, formato, fundoEscolhido, d) {
+    const M = MODELOS[modelo];
+    const W = 1080, H = formato === "story" ? 1920 : formato === "quadrado" ? 1080 : 1350;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    const nomeFundo = fundoEscolhido === "auto" ? M.fundo : fundoEscolhido;
+    const C = CORES_BN[nomeFundo] || CORES_BN.creme;
+    const escala = formato === "quadrado" ? 0.82 : formato === "story" ? 1.12 : 1;
+
+    // Fundo
+    if (C.claro) {
+      const g = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, H * 0.85);
+      g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6");
+      ctx.fillStyle = g;
+    } else ctx.fillStyle = "#e8336d";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(60, 60, 260, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
+
+    const blocos = M.blocos(d);
+    const FT = Math.round(96 * escala), FS = Math.round(40 * escala), LARG = W - 180;
+    // Mede cada bloco
+    const alturas = blocos.map(([tipo, v]) => {
+      if (tipo === "gap") return v * escala;
+      if (tipo === "logo") return v * escala;
+      if (tipo === "titulo") return v.length * FT * 1.08;
+      if (tipo === "sub") { ctx.font = `500 ${FS}px Poppins`; return quebrarTexto(ctx, v, LARG, 3).length * FS * 1.38; }
+      if (tipo === "pill") return 116 * escala;
+      if (tipo === "passos") return v.length * 160 * escala + (v.length - 1) * 26 * escala;
+      if (tipo === "cats") return 2 * 220 * escala + 26 * escala;
+      if (tipo === "cupom") return 170 * escala;
+      if (tipo === "moldura") return Math.min(700, H - 820);
+      return 0;
+    });
+    const total = alturas.reduce((s, x) => s + x, 0);
+    let y = Math.max(60, (H - total) / 2 - (M.rodape ? 20 : 0));
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+
+    blocos.forEach(([tipo, v], i) => {
+      const h = alturas[i];
+      if (tipo === "logo" && edMarca) {
+        const s = h * 1.25; // a imagem tem margem transparente
+        ctx.drawImage(edMarca, (W - s) / 2, y + (h - s) / 2, s, s);
+      }
+      if (tipo === "titulo") {
+        ctx.font = `800 ${FT}px Poppins`;
+        v.forEach((linha, j) => {
+          const partes = typeof linha === "string" ? [[linha, 0]] : linha;
+          const larg = partes.reduce((s, [t]) => s + ctx.measureText(t).width, 0);
+          let x = (W - larg) / 2;
+          ctx.textAlign = "left";
+          partes.forEach(([t, dest]) => { ctx.fillStyle = dest ? C.destaque : C.texto; ctx.fillText(t, x, y + FT * 1.08 * j + FT * 0.56); x += ctx.measureText(t).width; });
+          ctx.textAlign = "center";
+        });
+      }
+      if (tipo === "sub") {
+        ctx.font = `500 ${FS}px Poppins`; ctx.fillStyle = C.sub;
+        quebrarTexto(ctx, v, LARG, 3).forEach((l, j) => ctx.fillText(l, W / 2, y + FS * 1.38 * j + FS * 0.7));
+      }
+      if (tipo === "pill") {
+        ctx.font = `700 ${Math.round(38 * escala)}px Poppins`;
+        const pw = Math.min(W - 120, ctx.measureText(v).width + 110 * escala);
+        retArredondado(ctx, (W - pw) / 2, y, pw, h, h / 2); ctx.fillStyle = C.pill; ctx.fill();
+        ctx.fillStyle = C.pillTexto; ctx.fillText(v, W / 2, y + h / 2 + 2);
+      }
+      if (tipo === "passos") {
+        const ph = 160 * escala, gap = 26 * escala, x0 = 90, pw = W - 180;
+        v.forEach(([t, s], j) => {
+          const py = y + j * (ph + gap);
+          ctx.save(); ctx.shadowColor = "rgba(29,29,31,.18)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+          retArredondado(ctx, x0, py, pw, ph, 40 * escala); ctx.fillStyle = C.cartao; ctx.fill(); ctx.restore();
+          const r = 45 * escala, cx = x0 + 40 * escala + r, cy = py + ph / 2;
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = "#ffd23f"; ctx.fill();
+          ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
+          ctx.fillStyle = "#1d1d1f"; ctx.font = `800 ${Math.round(46 * escala)}px Poppins`; ctx.fillText(String(j + 1), cx, cy + 3);
+          ctx.textAlign = "left";
+          const tx = cx + r + 30 * escala, tl = x0 + pw - tx - 30;
+          ctx.font = `600 ${Math.round(40 * escala)}px Poppins`; ctx.fillStyle = C.cartaoTexto; ctx.fillText(quebrarTexto(ctx, t, tl, 1)[0], tx, cy - 22 * escala);
+          ctx.font = `500 ${Math.round(31 * escala)}px Poppins`; ctx.fillStyle = C.cartaoSub; ctx.fillText(quebrarTexto(ctx, s, tl, 1)[0], tx, cy + 28 * escala);
+          ctx.textAlign = "center";
+        });
+      }
+      if (tipo === "cats") {
+        const gap = 26 * escala, cw = (W - 180 - gap) / 2, ch = 220 * escala;
+        v.forEach(([em, t], j) => {
+          const cx = 90 + (j % 2) * (cw + gap), cy = y + Math.floor(j / 2) * (ch + gap);
+          ctx.save(); ctx.shadowColor = "rgba(29,29,31,.18)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+          retArredondado(ctx, cx, cy, cw, ch, 40 * escala); ctx.fillStyle = C.cartao; ctx.fill(); ctx.restore();
+          ctx.font = `${Math.round(78 * escala)}px Poppins`; ctx.fillStyle = C.cartaoTexto; ctx.fillText(em, cx + cw / 2, cy + ch * 0.38);
+          ctx.font = `700 ${Math.round(50 * escala)}px Poppins`; ctx.fillText(t, cx + cw / 2, cy + ch * 0.75);
+        });
+      }
+      if (tipo === "cupom") {
+        ctx.font = `800 ${Math.round(80 * escala)}px Poppins`;
+        const t = String(v).toUpperCase(), cw = ctx.measureText(t).width + 140 * escala;
+        ctx.save(); ctx.translate(W / 2, y + h / 2); ctx.rotate(-0.05);
+        retArredondado(ctx, -cw / 2, -h / 2, cw, h, 36 * escala); ctx.fillStyle = "#ffffff"; ctx.fill();
+        ctx.setLineDash([22, 14]); ctx.lineWidth = 7; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore();
+      }
+      if (tipo === "moldura") {
+        const s = h;
+        retArredondado(ctx, (W - s) / 2, y, s, s, 60 * escala); ctx.fillStyle = "#ffffff"; ctx.fill();
+        ctx.setLineDash([18, 12]); ctx.lineWidth = 6; ctx.strokeStyle = C.claro ? "#e6d9b0" : "rgba(255,255,255,.6)"; ctx.stroke(); ctx.setLineDash([]);
+        ctx.font = `600 ${Math.round(34 * escala)}px Poppins`; ctx.fillStyle = "#b3a782";
+        ctx.fillText("cole aqui a foto do produto", W / 2, y + s / 2);
+      }
+      y += h;
+    });
+
+    // Rodapé: aviso do modelo + @
+    const rod = [M.rodape, d.insta].filter(Boolean).join("  ·  ");
+    if (rod) {
+      ctx.font = `600 ${Math.round(30 * escala)}px Poppins`; ctx.fillStyle = C.sub;
+      ctx.fillText(rod, W / 2, H - 70 * escala);
+    }
+  }
+  function dadosBanner() {
+    return { insta: arroba($("#bnInsta").value), cupom: $("#bnCupom").value.trim().toUpperCase() || (config.cupons || [])[0] || "" };
+  }
+  function redesenharBanner() { desenharBanner($("#telaBanner"), bnModelo.valor(), bnFormato.valor(), bnFundo.valor(), dadosBanner()); }
+  async function carregarMarca() {
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=22"; });
+    try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
+  }
+  $("#abrirBanners").addEventListener("click", async () => {
+    $("#bnInsta").value = config.instagram || "";
+    $("#banners").showModal();
+    document.body.classList.add("travado");
+    redesenharBanner();
+    await carregarMarca();
+    redesenharBanner();
+  });
+  $("#banners").addEventListener("close", () => document.body.classList.remove("travado"));
+  $("#fecharBanners").addEventListener("click", () => $("#banners").close());
+  ["#bnModelo", "#bnFormato", "#bnFundo"].forEach((id) => $(id).addEventListener("click", () => setTimeout(redesenharBanner, 0)));
+  $("#bnCupom").addEventListener("input", redesenharBanner);
+  let instaTimer;
+  $("#bnInsta").addEventListener("input", () => {
+    redesenharBanner();
+    clearTimeout(instaTimer);
+    instaTimer = setTimeout(() => { config.instagram = arroba($("#bnInsta").value); gravarConfig(); }, 800);
+  });
+  const nomeBanner = (modelo, formato) => `miga-promo-${MODELOS[modelo].nome}-${formato}.jpg`;
+  $("#baixarBanner").addEventListener("click", () => {
+    $("#telaBanner").toBlob((b) => { if (b) { baixarBlob(b, nomeBanner(bnModelo.valor(), bnFormato.valor())); toast("Banner salvo"); } }, "image/jpeg", 0.92);
+  });
+  $("#compartilharBanner").addEventListener("click", () => compartilharTela($("#telaBanner"), nomeBanner(bnModelo.valor(), bnFormato.valor())));
+  $("#baixarBoasVindas").addEventListener("click", async () => {
+    await carregarMarca();
+    const tela = document.createElement("canvas"), d = dadosBanner();
+    // Do último para o primeiro: no Instagram o último postado aparece primeiro
+    const ordem = [...BOAS_VINDAS].reverse();
+    for (let i = 0; i < ordem.length; i++) {
+      desenharBanner(tela, ordem[i], "post", "auto", d);
+      const blob = await new Promise((ok) => tela.toBlob(ok, "image/jpeg", 0.92));
+      if (blob) baixarBlob(blob, `miga-promo-${i + 1}-${MODELOS[ordem[i]].nome}.jpg`);
+      await new Promise((ok) => setTimeout(ok, 500));
+    }
+    toast("5 banners salvos — poste na ordem 1, 2, 3, 4, 5");
   });
 
   /* =========================== Enviar =========================== */

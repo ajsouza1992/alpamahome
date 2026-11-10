@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=21">
+  <link rel="manifest" href="manifest.json?v=22">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
   <!-- Ícones: traço fino, uma cor só -->
@@ -49,7 +49,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada" hidden>
     <div class="entrada__caixa">
-      <img src="logo.png?v=21" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=22" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -78,7 +78,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=21" alt="">
+    <img src="logo.png?v=22" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -235,6 +235,12 @@
     </section>
 
     <section class="bloco">
+      <h2 class="passo">Banners do Instagram</h2>
+      <p class="nota">Posts e stories prontos com a cara do Miga: boas-vindas, como funciona, categorias, cupons e mais.</p>
+      <button type="button" class="btn btn--rosa" id="abrirBanners">Criar banners e stories</button>
+    </section>
+
+    <section class="bloco">
       <h2 class="passo">Meus cupons</h2>
       <div class="cupom-linha">
         <input class="busca-lista" id="novoCupom" maxlength="40" placeholder="Ex.: MIGA10" autocapitalize="characters" aria-label="Novo cupom">
@@ -373,7 +379,8 @@
       <div class="editor__campos">
         <div class="campo"><span>Formato</span>
           <div class="alternar" id="edFormato" role="radiogroup">
-            <button type="button" role="radio" data-v="quadrado" aria-checked="true">Quadrado (feed)</button>
+            <button type="button" role="radio" data-v="quadrado" aria-checked="true">Quadrado</button>
+            <button type="button" role="radio" data-v="post" aria-checked="false">Post 4:5</button>
             <button type="button" role="radio" data-v="story" aria-checked="false">Story</button>
           </div>
         </div>
@@ -396,14 +403,63 @@
       </div>
     </div>
     <div class="editor__acoes">
-      <button type="button" class="btn btn--branco" id="baixarCard">Baixar</button>
+      <div class="duas">
+        <button type="button" class="btn btn--branco" id="baixarCard">Baixar</button>
+        <button type="button" class="btn btn--branco" id="compartilharCard">Postar no Instagram</button>
+      </div>
       <button type="button" class="btn btn--rosa" id="usarCard">Usar imagem</button>
       <button type="button" class="link" id="usarOriginal">Voltar para a foto original</button>
     </div>
   </dialog>
 
+  <dialog id="banners" class="editor" aria-label="Banners do Instagram">
+    <div class="editor__topo">
+      <h2>Banners do Instagram</h2>
+      <button type="button" class="btn-quadrado" id="fecharBanners" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="editor__corpo">
+      <div class="editor__tela"><canvas id="telaBanner" width="1080" height="1350" aria-label="Pré-visualização do banner"></canvas></div>
+      <div class="editor__campos">
+        <div class="campo"><span>Modelo</span>
+          <div class="alternar alternar--tres" id="bnModelo" role="radiogroup">
+            <button type="button" role="radio" data-v="boasvindas" aria-checked="true">Boas-vindas</button>
+            <button type="button" role="radio" data-v="comofunciona" aria-checked="false">Como funciona</button>
+            <button type="button" role="radio" data-v="categorias" aria-checked="false">Categorias</button>
+            <button type="button" role="radio" data-v="stories" aria-checked="false">Ofertas nos stories</button>
+            <button type="button" role="radio" data-v="cupons" aria-checked="false">Cupons</button>
+            <button type="button" role="radio" data-v="siga" aria-checked="false">Siga a Miga</button>
+            <button type="button" role="radio" data-v="achadinho" aria-checked="false">Achadinho do dia</button>
+          </div>
+        </div>
+        <div class="campo"><span>Formato</span>
+          <div class="alternar" id="bnFormato" role="radiogroup">
+            <button type="button" role="radio" data-v="post" aria-checked="true">Post 4:5</button>
+            <button type="button" role="radio" data-v="quadrado" aria-checked="false">Quadrado</button>
+            <button type="button" role="radio" data-v="story" aria-checked="false">Story</button>
+          </div>
+        </div>
+        <div class="campo"><span>Fundo</span>
+          <div class="alternar" id="bnFundo" role="radiogroup">
+            <button type="button" role="radio" data-v="auto" aria-checked="true">Do modelo</button>
+            <button type="button" role="radio" data-v="creme" aria-checked="false">Creme</button>
+            <button type="button" role="radio" data-v="rosa" aria-checked="false">Rosa</button>
+          </div>
+        </div>
+        <label class="campo"><span>Seu @ do Instagram</span><input id="bnInsta" maxlength="30" placeholder="@migapromo" autocomplete="off"></label>
+        <label class="campo"><span>Cupom (modelo Cupons)</span><input id="bnCupom" maxlength="20" placeholder="MIGA10"></label>
+      </div>
+    </div>
+    <div class="editor__acoes">
+      <div class="duas">
+        <button type="button" class="btn btn--branco" id="baixarBanner">Baixar</button>
+        <button type="button" class="btn btn--rosa" id="compartilharBanner">Postar no Instagram</button>
+      </div>
+      <button type="button" class="btn btn--branco" id="baixarBoasVindas">Baixar os 5 de boas-vindas</button>
+    </div>
+  </dialog>
+
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=21"></script>
-  <script src="app.js?v=21"></script>
+  <script src="firebase-config.js?v=22"></script>
+  <script src="app.js?v=22"></script>
 </body>
 </html>
