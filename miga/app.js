@@ -608,9 +608,9 @@
         <span>Depois faça uma nova implantação.</span></div>`;
       return;
     }
-    if (d.avisos && d.avisos.length) aviso($("#avisoCatalogo"), d.avisos.join(" "));
+    if (d.avisos && d.avisos.length) console.info("Catálogo:", d.avisos.join(" | "));
     catalogoAtual = d.produtos || [];
-    if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Nenhum produto agora. Tente outra categoria.</p>'; return; }
+    if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Sem mais vendidos nessa categoria agora. Escolha outra categoria ou outra loja.</p>'; return; }
     $("#catalogo").innerHTML = catalogoAtual.map((p, i) => `
       <article class="produto-cat">
         <div class="produto-cat__foto">
@@ -626,6 +626,13 @@
       </article>`).join("");
   }
   [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
+  $("#abrirFiltro").addEventListener("click", () => $("#filtroCat").showModal());
+  $("#catFiltro").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    $("#filtroNome").textContent = b.textContent;
+    $("#filtroCat").close();
+  });
   $("#atualizarCatalogo").addEventListener("click", carregarCatalogo);
   // Pede o link de afiliado antes de ir para a aba Criar
   function pedirLinkAfiliado(p) {
@@ -907,7 +914,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=18"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=19"; });
     }
     edFoto = null;
     try {
@@ -1104,10 +1111,12 @@
       const enviado = i.enviadoPara && i.enviadoPara.length
         ? `<span class="etiqueta etiqueta--ok">Enviado: ${esc(i.enviadoPara.join(", "))}</span>`
         : '<span class="etiqueta">Não enviado</span>';
+      const site = urlOk(p.link) ? esc(p.link) : "";
+      const abreSite = (html) => site ? `<a class="item__link" href="${site}" target="_blank" rel="noopener" title="Abrir no site">${html}</a>` : html;
       return `<div class="item" data-id="${esc(i.id)}">
-        ${mini}
+        ${abreSite(mini)}
         <div>
-          <strong>${esc(p.nome)}</strong>
+          ${abreSite(`<strong>${esc(p.nome)}</strong>`)}
           <div class="item__meta"><span class="preco">${brl(p.precoNovo)}</span><span>${esc(NOME_LOJA[p.loja] || "")}</span><span>${esc(NOME_CAT[p.categoria] || "")}</span><span>${dataCurta(i.criadoEm)}</span></div>
           <div class="item__meta">${enviado}</div>
         </div>

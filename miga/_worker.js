@@ -365,19 +365,14 @@ async function rotaEntrar(request, env) {
 
 /* ======================= Catálogo (mais vendidos) ======================= */
 const FILTROS_CATALOGO = {
-  moda: { categoria: "moda", ml: "MLB1430", shopee: "moda feminina" },
-  beleza: { categoria: "beleza", ml: "MLB1246", shopee: "skincare maquiagem" },
-  perfumes: { categoria: "beleza", ml: "MLB1271", shopee: "perfume feminino" },
-  casa: { categoria: "casa", ml: "MLB1574", shopee: "decoração casa" },
-  fitness: { categoria: "saude", ml: "MLB1276", shopee: "roupa fitness feminina" },
-  saude: { categoria: "saude", ml: "MLB264586", shopee: "suplemento vitamina" },
-  acessorios: { categoria: "moda", ml: "MLB3937", shopee: "bijuteria feminina" },
-  bebes: { categoria: "outros", ml: "MLB1384", shopee: "bebê enxoval" },
-  brinquedos: { categoria: "outros", ml: "MLB1132", shopee: "brinquedo infantil" },
-  pets: { categoria: "outros", ml: "MLB1071", shopee: "pet cachorro gato" },
-  eletros: { categoria: "casa", ml: "MLB5726", shopee: "eletrodoméstico cozinha" },
-  celulares: { categoria: "outros", ml: "MLB1051", shopee: "acessórios celular" },
-  eletronicos: { categoria: "outros", ml: "MLB1000", shopee: "fone bluetooth" }
+  moda: { categoria: "moda", ml: "MLB1430", busca: "vestido feminino", shopee: "moda feminina" },
+  beleza: { categoria: "beleza", ml: "MLB1246", busca: "skincare", shopee: "skincare maquiagem" },
+  perfumes: { categoria: "beleza", ml: "MLB1271", busca: "perfume feminino", shopee: "perfume feminino" },
+  acessorios: { categoria: "moda", ml: "MLB3937", busca: "relógio feminino", shopee: "bijuteria feminina" },
+  casa: { categoria: "casa", ml: "MLB1574", busca: "decoração casa", shopee: "decoração casa" },
+  fitness: { categoria: "saude", ml: "MLB1276", busca: "roupa fitness feminina", shopee: "roupa fitness feminina" },
+  saude: { categoria: "saude", ml: "MLB264586", busca: "suplemento vitamina", shopee: "suplemento vitamina" },
+  bebes: { categoria: "outros", ml: "MLB1384", busca: "enxoval bebê", shopee: "bebê enxoval" }
 };
 const ML_API = "https://api.mercadolibre.com";
 const mlHttps = (u) => String(u || "").replace(/^http:/, "https:").replace(/-I\.(jpg|webp|png)$/i, "-O.$1");
@@ -420,6 +415,19 @@ async function destaquesML(categoria, token, diag) {
   diag.push("subcategorias " + filhas.length + "/" + lista.length);
   return lista;
 }
+/** Descobre a categoria certa pelo nome (quando o código da categoria não tem lista) */
+async function destaquesPorBusca(termo, token, diag) {
+  const r = await getML(`/sites/MLB/domain_discovery/search?limit=3&q=${encodeURIComponent(termo)}`, token);
+  const cats = [...new Set((Array.isArray(r.dados) ? r.dados : []).map((x) => x.category_id).filter(Boolean))];
+  diag.push("descoberta " + r.status + "/" + cats.length);
+  let lista = [];
+  for (const id of cats) {
+    const h = await getML(`/highlights/MLB/category/${id}`, token);
+    if (h.status === 200) lista = lista.concat(h.dados.content || []);
+    if (lista.length >= 20) break;
+  }
+  return lista;
+}
 function itemML(b, filtro) {
   return { id: b.id, nome: b.title, preco: b.price || null, precoAntigo: b.original_price || null, imagem: mlHttps(b.thumbnail || ((b.pictures || [])[0] || {}).secure_url), link: b.permalink || `https://produto.mercadolivre.com.br/${String(b.id).replace(/^MLB/, "MLB-")}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false };
 }
@@ -433,7 +441,9 @@ async function catalogoML(filtro, env) {
   chamadasML = 0;
   const token = await tokenML(env);
   const diag = [];
-  const destaques = (await destaquesML(filtro.ml, token, diag)).slice(0, 20);
+  let destaques = await destaquesML(filtro.ml, token, diag);
+  if (!destaques.length && filtro.busca) destaques = await destaquesPorBusca(filtro.busca, token, diag);
+  destaques = destaques.slice(0, 20);
   const tipos = {};
   for (const d of destaques) tipos[d.type] = (tipos[d.type] || 0) + 1;
   diag.push("tipos " + (Object.entries(tipos).map(([t, n]) => t + ":" + n).join(",") || "nenhum"));
