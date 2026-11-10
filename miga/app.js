@@ -916,7 +916,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=22"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=23"; });
     }
     edFoto = null;
     try {
@@ -998,11 +998,19 @@
   };
   const arroba = (v) => { const t = String(v || "").trim().replace(/^@+/, "").replace(/\s+/g, ""); return t ? "@" + t : ""; };
   // Linhas de título: texto simples ou [["parte", destaque?], ...]
+  // Título digitado: uma linha por linha; *trecho* fica em destaque
+  const linhasTitulo = (t) => String(t || "").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 4)
+    .map((l) => l.split(/(\*[^*]+\*)/).filter(Boolean).map((p) => /^\*.+\*$/.test(p) ? [p.slice(1, -1), 1] : [p, 0]));
   const MODELOS = {
+    meutexto: { fundo: "creme", nome: "meu-texto", blocos: (d) => [
+      ...(d.logo ? [["logo", 300], ["gap", 50]] : []),
+      ...(d.titulo.length ? [["titulo", d.titulo]] : []),
+      ...(d.texto ? [["gap", 30], ["sub", d.texto]] : []),
+      ...(d.botao ? [["gap", 50], ["pill", d.botao]] : [])] },
     boasvindas: { fundo: "creme", nome: "boas-vindas", blocos: (d) => [
       ["logo", 340], ["gap", 50], ["titulo", ["Bem-vinda,", [["miga! 💖", 1]]]], ["gap", 30],
       ["sub", "Aqui eu garimpo os melhores achadinhos com desconto, todo dia."], ["gap", 50], ["pill", "Ative as notificações 🔔"]] },
-    comofunciona: { fundo: "creme", nome: "como-funciona", rodape: "Links de afiliada · você não paga nada a mais", blocos: () => [
+    comofunciona: { fundo: "creme", nome: "como-funciona", rodape: "Links de afiliada · sem custo a mais pra você", blocos: () => [
       ["logo", 150], ["gap", 40], ["titulo", [[["Como ", 0], ["funciona?", 1]]]], ["gap", 50],
       ["passos", [["Eu garimpo as ofertas", "Shopee, Mercado Livre e Amazon"], ["Você toca no link", "no post, no story ou na bio"], ["Compra pelo mesmo preço", "e ainda ajuda a miga aqui 💕"]]]] },
     categorias: { fundo: "creme", nome: "categorias", blocos: () => [
@@ -1134,19 +1142,32 @@
       y += h;
     });
 
-    // Rodapé: aviso do modelo + @
-    const rod = [M.rodape, d.insta].filter(Boolean).join("  ·  ");
-    if (rod) {
-      ctx.font = `600 ${Math.round(30 * escala)}px Poppins`; ctx.fillStyle = C.sub;
-      ctx.fillText(rod, W / 2, H - 70 * escala);
+    // Marca d'água Miga no cantinho (quando não tem o logo grande)
+    const comMarca = edMarca && !blocos.some(([t, v]) => t === "logo" && v >= 250);
+    if (comMarca) {
+      const s = 150 * escala;
+      ctx.drawImage(edMarca, W - s - 24, H - s - 18, s, s);
     }
+    // Rodapé: aviso do modelo + @
+    const rods = [M.rodape, d.insta].filter(Boolean);
+    ctx.font = `600 ${Math.round(30 * escala)}px Poppins`; ctx.fillStyle = C.sub;
+    rods.forEach((t, k) => {
+      const yy = H - (70 + (rods.length - 1 - k) * 44) * escala;
+      ctx.fillText(quebrarTexto(ctx, t, comMarca ? W - 400 : W - 120, 1)[0] || "", comMarca ? (W - 180) / 2 : W / 2, yy);
+    });
   }
   function dadosBanner() {
-    return { insta: arroba($("#bnInsta").value), cupom: $("#bnCupom").value.trim().toUpperCase() || (config.cupons || [])[0] || "" };
+    return {
+      insta: arroba($("#bnInsta").value), cupom: $("#bnCupom").value.trim().toUpperCase() || (config.cupons || [])[0] || "",
+      titulo: linhasTitulo($("#bnTitulo").value), texto: $("#bnTexto").value.trim(), botao: $("#bnBotao").value.trim(), logo: $("#bnLogo").checked
+    };
   }
-  function redesenharBanner() { desenharBanner($("#telaBanner"), bnModelo.valor(), bnFormato.valor(), bnFundo.valor(), dadosBanner()); }
+  function redesenharBanner() {
+    $("#bnCamposTexto").hidden = bnModelo.valor() !== "meutexto";
+    desenharBanner($("#telaBanner"), bnModelo.valor(), bnFormato.valor(), bnFundo.valor(), dadosBanner());
+  }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=22"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=23"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   $("#abrirBanners").addEventListener("click", async () => {
@@ -1160,7 +1181,8 @@
   $("#banners").addEventListener("close", () => document.body.classList.remove("travado"));
   $("#fecharBanners").addEventListener("click", () => $("#banners").close());
   ["#bnModelo", "#bnFormato", "#bnFundo"].forEach((id) => $(id).addEventListener("click", () => setTimeout(redesenharBanner, 0)));
-  $("#bnCupom").addEventListener("input", redesenharBanner);
+  ["#bnCupom", "#bnTitulo", "#bnTexto", "#bnBotao"].forEach((id) => $(id).addEventListener("input", redesenharBanner));
+  $("#bnLogo").addEventListener("change", redesenharBanner);
   let instaTimer;
   $("#bnInsta").addEventListener("input", () => {
     redesenharBanner();

@@ -11,15 +11,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=22">
+  <link rel="manifest" href="manifest.json?v=23">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=23">
 </head>
-<body>
+<body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-seta-baixo" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -47,9 +47,9 @@
   </svg>
 
   <!-- ===== Tela de entrada (login anônimo) ===== -->
-  <section class="entrada" id="telaEntrada" hidden>
+  <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=22" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=23" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -78,7 +78,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=22" alt="">
+    <img src="logo.png?v=23" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -422,7 +422,8 @@
       <div class="editor__campos">
         <div class="campo"><span>Modelo</span>
           <div class="alternar alternar--tres" id="bnModelo" role="radiogroup">
-            <button type="button" role="radio" data-v="boasvindas" aria-checked="true">Boas-vindas</button>
+            <button type="button" role="radio" data-v="meutexto" aria-checked="true">Meu texto</button>
+            <button type="button" role="radio" data-v="boasvindas" aria-checked="false">Boas-vindas</button>
             <button type="button" role="radio" data-v="comofunciona" aria-checked="false">Como funciona</button>
             <button type="button" role="radio" data-v="categorias" aria-checked="false">Categorias</button>
             <button type="button" role="radio" data-v="stories" aria-checked="false">Ofertas nos stories</button>
@@ -445,6 +446,13 @@
             <button type="button" role="radio" data-v="rosa" aria-checked="false">Rosa</button>
           </div>
         </div>
+        <div class="bn-texto" id="bnCamposTexto">
+          <label class="campo"><span>Título</span><textarea id="bnTitulo" rows="3" maxlength="80" placeholder="Uma linha por vez. Use *asteriscos* para destacar em rosa">Achadinho
+*imperdível* ✨</textarea></label>
+          <label class="campo"><span>Texto</span><textarea id="bnTexto" rows="3" maxlength="160">Corre que esse preço não dura muito!</textarea></label>
+          <label class="campo"><span>Botão (opcional)</span><input id="bnBotao" maxlength="40" value="Link na bio 👆"></label>
+          <label class="opcao"><input type="checkbox" id="bnLogo" checked> Logo grande no topo</label>
+        </div>
         <label class="campo"><span>Seu @ do Instagram</span><input id="bnInsta" maxlength="30" placeholder="@migapromo" autocomplete="off"></label>
         <label class="campo"><span>Cupom (modelo Cupons)</span><input id="bnCupom" maxlength="20" placeholder="MIGA10"></label>
       </div>
@@ -459,7 +467,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=22"></script>
-  <script src="app.js?v=22"></script>
+  <script src="firebase-config.js?v=23"></script>
+  <script src="app.js?v=23"></script>
 </body>
 </html>
