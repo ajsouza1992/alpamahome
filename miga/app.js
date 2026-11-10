@@ -916,7 +916,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=24"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=25"; });
     }
     edFoto = null;
     try {
@@ -1063,7 +1063,7 @@
       if (tipo === "passos") return v.length * 160 * escala + (v.length - 1) * 26 * escala;
       if (tipo === "cats") return 2 * 220 * escala + 26 * escala;
       if (tipo === "cupom") return 170 * escala;
-      if (tipo === "moldura") return Math.min(700, H - 820);
+      if (tipo === "moldura") return Math.min(700, formato === "quadrado" ? H - 600 : H - 820);
       return 0;
     });
     const total = alturas.reduce((s, x) => s + x, 0);
@@ -1138,7 +1138,8 @@
         retArredondado(ctx, (W - s) / 2, y, s, s, 60 * escala); ctx.fillStyle = "#ffffff"; ctx.fill();
         ctx.setLineDash([18, 12]); ctx.lineWidth = 6; ctx.strokeStyle = C.claro ? "#e6d9b0" : "rgba(255,255,255,.6)"; ctx.stroke(); ctx.setLineDash([]);
         ctx.font = `600 ${Math.round(34 * escala)}px Poppins`; ctx.fillStyle = "#b3a782";
-        ctx.fillText("cole aqui a foto do produto", W / 2, y + s / 2);
+        ctx.fillText("cole aqui a foto", W / 2, y + s / 2 - 22 * escala);
+        ctx.fillText("do produto", W / 2, y + s / 2 + 22 * escala);
       }
       y += h;
     });
@@ -1168,7 +1169,7 @@
     desenharBanner($("#telaBanner"), bnModelo.valor(), bnFormato.valor(), bnFundo.valor(), dadosBanner());
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=24"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=25"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   $("#abrirBanners").addEventListener("click", async () => {
