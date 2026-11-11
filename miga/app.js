@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=54"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=55"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=54"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=55"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1606,24 +1606,37 @@
   }
   const contarCat = (k) => fila().filter((i) => k === "todas" || (i.categoria || "outros") === k).length;
   function renderCatsLista() {
-    $("#ppCatNova").querySelector("b").textContent = catNova === "auto" ? "Automático (pelo nome)" : CATS_LISTA[catNova];
-    $("#ppFiltroLista").querySelector("b").textContent = (filtroLista === "todas" ? "Todas" : CATS_LISTA[filtroLista]) + ` (${contarCat(filtroLista)})`;
-    $("#ppFiltroComp").querySelector("b").textContent = ocultarComp ? `Ocultar (${fila().filter(foiCompartilhado).length})` : "Mostrar";
+    const tags = [];
+    if (filtroLista !== "todas") tags.push(["cat", CATS_LISTA[filtroLista]]);
+    if (ocultarComp) tags.push(["comp", "Sem compartilhados"]);
+    if (catNova !== "auto") tags.push(["nova", "Colando em: " + CATS_LISTA[catNova]]);
+    $("#ppTags").innerHTML = tags.map(([k, n]) => `<button type="button" data-tirar-filtro="${k}">${esc(n)} ✕</button>`).join("");
+    $("#ppFiltroQtd").hidden = !tags.length; $("#ppFiltroQtd").textContent = tags.length;
+    const vis = fila().filter((i) => (filtroLista === "todas" || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i))).length;
+    $("#ppTotal").textContent = `${vis} produto${vis === 1 ? "" : "s"}`;
   }
-  $("#ppCatNova").addEventListener("click", async () => {
-    const v = await escolherOpcao("Categoria do produto colado", [["auto", "Automático (pelo nome)"], ...Object.entries(CATS_LISTA)], catNova);
-    if (v) { catNova = v; renderCatsLista(); }
+  const opTexto = (sel, lista, atual, attr) => { $(sel).innerHTML = lista.map(([v, n]) => `<button type="button" data-${attr}="${v}" class="${v === atual ? "on" : ""}">${esc(n)}</button>`).join(""); };
+  function pintarFolhaFiltro() {
+    opTexto("#ffCat", [["todas", `Todas (${contarCat("todas")})`], ...Object.entries(CATS_LISTA).map(([k, n]) => [k, `${n} (${contarCat(k)})`])], filtroLista, "ff-cat");
+    opTexto("#ffComp", [["mostrar", "Todos"], ["ocultar", "Só os não compartilhados"]], ocultarComp ? "ocultar" : "mostrar", "ff-comp");
+    opTexto("#ffNova", [["auto", "Automático (pelo nome)"], ...Object.entries(CATS_LISTA)], catNova, "ff-nova");
+  }
+  function guardarOcultar() { try { localStorage.setItem("miga_ocultar_comp", ocultarComp ? "1" : "0"); } catch (e) { /* segue */ } }
+  $("#ppFiltrar").addEventListener("click", () => { pintarFolhaFiltro(); $("#folhaFiltro").showModal(); });
+  $("#folhaFiltro").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.ffCat) filtroLista = b.dataset.ffCat;
+    else if (b.dataset.ffComp) { ocultarComp = b.dataset.ffComp === "ocultar"; guardarOcultar(); }
+    else if (b.dataset.ffNova) catNova = b.dataset.ffNova;
+    else if (b.id === "ffLimpar") { filtroLista = "todas"; ocultarComp = false; catNova = "auto"; guardarOcultar(); }
+    else return;
+    pintarFolhaFiltro(); renderFila();
   });
-  $("#ppFiltroComp").addEventListener("click", async () => {
-    const v = await escolherOpcao("Produtos já compartilhados", [["mostrar", "Mostrar"], ["ocultar", "Ocultar"]], ocultarComp ? "ocultar" : "mostrar");
-    if (!v) return;
-    ocultarComp = v === "ocultar";
-    try { localStorage.setItem("miga_ocultar_comp", ocultarComp ? "1" : "0"); } catch (e) { /* segue */ }
+  $("#ppTags").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-tirar-filtro]"); if (!b) return;
+    const k = b.dataset.tirarFiltro;
+    if (k === "cat") filtroLista = "todas"; if (k === "comp") { ocultarComp = false; guardarOcultar(); } if (k === "nova") catNova = "auto";
     renderFila();
-  });
-  $("#ppFiltroLista").addEventListener("click", async () => {
-    const v = await escolherOpcao("Mostrar", [["todas", `Todas (${contarCat("todas")})`], ...Object.entries(CATS_LISTA).map(([k, n]) => [k, `${n} (${contarCat(k)})`])], filtroLista);
-    if (v) { filtroLista = v; renderFila(); }
   });
   function renderFila() {
     renderCatsLista();

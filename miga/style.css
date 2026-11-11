@@ -608,3 +608,18 @@ body.travado { overflow: hidden; }
 .vd-foto > span { font-size: 13.5px; font-weight: 700; color: var(--rosa); }
 .vd-foto img { width: 100%; max-width: 200px; aspect-ratio: 1 / 1; object-fit: contain; justify-self: center; border-radius: 16px; background: #fff; }
 .vd-foto .link--foto { justify-self: center; }
+
+/* Lista: botão Filtrar + etiquetas dos filtros ligados */
+.barra-filtro { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.barra-filtro .nota { margin: 0; }
+.btn-filtrar { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); font-size: 14px; font-weight: 600; color: var(--preto); cursor: pointer; }
+.btn-filtrar svg { width: 18px; height: 18px; }
+.btn-filtrar em { font-style: normal; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--rosa); color: #fff; font-size: 12px; display: grid; place-items: center; }
+.tags-filtro { display: flex; flex-wrap: wrap; gap: 6px; }
+.tags-filtro:empty { display: none; }
+.tags-filtro button { min-height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--rosa-claro); color: var(--rosa-escuro); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.grupo-filtro { display: grid; gap: 6px; }
+.grupo-filtro > span { font-size: 12.5px; font-weight: 700; color: var(--cinza); text-transform: uppercase; letter-spacing: .04em; }
+.opcoes-texto { display: flex; flex-wrap: wrap; gap: 6px; }
+.opcoes-texto button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--campo); font-size: 13.5px; font-weight: 600; color: var(--preto); cursor: pointer; }
+.opcoes-texto button.on { background: var(--preto); color: #fff; }
