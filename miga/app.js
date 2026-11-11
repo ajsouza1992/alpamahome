@@ -518,6 +518,26 @@
     const cupom = p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : "";
     return `Miga, olha esse achadinho ${onde}! 🤫💖\n\n✨ *${p.nome}*\n\n💸 ${preco}${cupom}\n\n${FRASES[p.categoria] || FRASES.outros}\n\n👉 ${p.link}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
   }
+  /* Modelos de texto prontos (sem IA): escolhe um e edita à mão se quiser */
+  const MODELOS_TEXTO = {
+    amiga: { nome: "Dica de amiga", f: (p) => mensagemReserva(p) },
+    curta: { nome: "Curta", f: (p, x) => `✨ *${p.nome}*\n💸 ${x.preco}${x.cupom}\n👉 ${p.link}` },
+    preco: { nome: "Preço em destaque", f: (p, x) => `🔥 BAIXOU O PREÇO! 🔥\n\n*${p.nome}*\n\n${p.precoAntigo ? `De ~${brl(p.precoAntigo)}~\nPor *${brl(p.precoNovo)}*${x.off ? ` (${x.off}% OFF)` : ""} 😱` : `Só *${brl(p.precoNovo)}* 😱`}${x.cupom}\n\n👉 ${p.link}` },
+    animada: { nome: "Animada", f: (p, x) => `Gente, CORRE!!! 😍🏃‍♀️💨\n\nAchei *${p.nome}* ${x.onde} e tô apaixonada! 💖\n\n💸 ${x.preco}${x.cupom}\n\n${x.frase}\n\n👉 ${p.link}\n\nNão vai ficar desse preço por muito tempo, hein! ⏳✨` },
+    urgencia: { nome: "Últimas horas", f: (p, x) => `⏰ *ÚLTIMAS HORAS* ⏰\n\n*${p.nome}*\n💸 ${x.preco}${x.cupom}\n\nEsse preço pode acabar a qualquer momento!\n\n👉 ${p.link}` },
+    elegante: { nome: "Elegante", f: (p, x) => `Seleção da Miga 🌸\n\n*${p.nome}*\n${x.preco}${x.cupom}\n\n${x.frase}\n\nConfira aqui: ${p.link}` },
+    pergunta: { nome: "Você usaria?", f: (p, x) => `Você usaria? 👀\n\n*${p.nome}* ${x.onde}\n💸 ${x.preco}${x.cupom}\n\n${x.frase}\n\nMe conta aqui! 👇\n👉 ${p.link}` }
+  };
+  function textoDoModelo(estilo, p) {
+    const x = {
+      onde: ONDE_LOJA[p.loja] || "no Mercado Livre",
+      preco: p.precoAntigo ? `~de ${brl(p.precoAntigo)}~ por *${brl(p.precoNovo)}*` : `por apenas *${brl(p.precoNovo)}*`,
+      cupom: p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : "",
+      off: p.precoAntigo && p.precoAntigo > p.precoNovo ? Math.round((1 - p.precoNovo / p.precoAntigo) * 100) : 0,
+      frase: FRASES[p.categoria] || FRASES.outros
+    };
+    return comConvite((MODELOS_TEXTO[estilo] || MODELOS_TEXTO.amiga).f(p, x));
+  }
   function comConvite(texto) {
     const g = config.grupos.find((x) => x.id === config.convite);
     if (!g || !g.link || texto.includes(g.link)) return texto;
@@ -971,7 +991,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=37"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=38"; });
     }
     edFoto = null;
     try {
@@ -1312,7 +1332,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=37"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=38"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1616,7 +1636,7 @@
     if (wz.passo === "tipoWhats") {
       c.innerHTML = `<h2 class="wz-titulo">O que você quer enviar?</h2>
         <div class="wz-ops">
-          ${opcaoCard("data-tipo-whats", "mensagem", "Mensagem", "Texto da IA com o link, para os grupos e conversas", wz.tipoWhats !== "status")}
+          ${opcaoCard("data-tipo-whats", "mensagem", "Mensagem", "Texto pronto com o link, para os grupos e conversas", wz.tipoWhats !== "status")}
           ${opcaoCard("data-tipo-whats", "status", "Status", "Imagem pronta, no formato do Status (igual ao story)", wz.tipoWhats === "status")}
         </div>
         ${botaoContinuar(true)}`;
@@ -1645,22 +1665,18 @@
     }
     if (wz.passo === "mensagem") {
       if (!item.precoNovo) {
-        c.innerHTML = `<h2 class="wz-titulo">Qual o preço?</h2><p class="nota">Não achei o preço de <b>${esc(item.nome || "este produto")}</b>. Digite para a IA escrever a mensagem.</p>
+        c.innerHTML = `<h2 class="wz-titulo">Qual o preço?</h2><p class="nota">Não achei o preço de <b>${esc(item.nome || "este produto")}</b>. Digite para montar a mensagem.</p>
           <div class="duas"><label class="campo"><span>Preço antigo</span><input id="wzAntigo" inputmode="decimal" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="wzNovoPreco" inputmode="decimal"></label></div>
-          <button type="button" class="btn btn--rosa" id="wzSalvarPreco">Escrever a mensagem</button>`;
+          <button type="button" class="btn btn--rosa" id="wzSalvarPreco">Montar a mensagem</button>`;
         return;
       }
+      if (!item.texto) usarModeloTexto(item.estiloTexto || "amiga");
       c.innerHTML = `<h2 class="wz-titulo">Sua mensagem</h2>
-        <div class="balao wz-balao" id="wzBalao">${item.texto ? formatarWhats(textoCanal(item.texto)) : '<span class="esq" style="width:90%"></span><span class="esq" style="width:70%"></span><span class="esq" style="width:80%"></span>'}</div>
-        <div class="wz-chips" id="wzAjustes">
-          <button type="button" data-ajuste="curto">Mais curta</button><button type="button" data-ajuste="emojis">Mais emojis</button>
-          <button type="button" data-ajuste="preco">Focar no preço</button><button type="button" data-ajuste="animada">Mais animada</button>
-          <button type="button" data-ajuste="nova">Outra mensagem</button>
-        </div>
-        <p class="aviso" id="wzAviso" hidden></p>
-        <details class="mais"><summary>Editar o texto</summary><textarea id="wzTexto" rows="8">${esc(item.texto || "")}</textarea></details>
+        <p class="nota">Escolha o modelo. Para mudar alguma coisa, toque em “Editar o texto”.</p>
+        <div class="wz-chips" id="wzModelosTexto">${Object.entries(MODELOS_TEXTO).map(([k, m]) => `<button type="button" data-estilo="${k}"${(item.estiloTexto || "amiga") === k ? ' class="on"' : ""}>${m.nome}</button>`).join("")}</div>
+        <div class="balao wz-balao" id="wzBalao">${formatarWhats(textoCanal(item.texto))}</div>
+        <details class="mais"${item.textoEditado ? " open" : ""}><summary>Editar o texto</summary><textarea id="wzTexto" rows="9">${esc(item.texto || "")}</textarea></details>
         ${botaoContinuar(!!item.texto)}`;
-      if (!item.texto) gerarTexto();
       return;
     }
     if (wz.passo === "enviar") {
@@ -1700,7 +1716,7 @@
       catch (err) { $("#wzLink").focus(); toast("Toque e segure no campo para colar"); }
       return;
     }
-    const aj = t.closest("[data-ajuste]"); if (aj) { gerarTexto(aj.dataset.ajuste === "nova" ? null : aj.dataset.ajuste); return; }
+    const es = t.closest("[data-estilo]"); if (es) { usarModeloTexto(es.dataset.estilo); mostrarPasso(); return; }
     const ev = t.closest("[data-enviar-op]"); if (ev) { enviarWhats(ev.dataset.enviarOp); return; }
     const gr = t.closest("[data-grupo]"); if (gr) { enviarGrupo(gr.dataset.grupo); return; }
     if (t.closest("#wzPostar")) { postarInstagram(); return; }
@@ -1714,7 +1730,7 @@
       it.precoNovo = novo; it.precoAntigo = lerPreco($("#wzAntigo").value) || null; it.texto = ""; salvarFila(true); mostrarPasso(); return;
     }
   });
-  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "wzTexto") { const it = wzItem(); it.texto = e.target.value; $("#wzBalao").innerHTML = formatarWhats(textoCanal(it.texto)); salvarFila(); } });
+  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "wzTexto") { const it = wzItem(); it.texto = e.target.value; it.textoEditado = true; $("#wzBalao").innerHTML = formatarWhats(textoCanal(it.texto)); salvarFila(); } });
   $("#wzCorpo").addEventListener("change", async (e) => {
     if (e.target.id !== "wzArquivo") return;
     const f = e.target.files && e.target.files[0], it = wzItem();
@@ -1725,23 +1741,10 @@
   $("#wzCorpo").addEventListener("keydown", (e) => { if (e.target.id === "wzLink" && e.key === "Enter") { e.preventDefault(); adicionarNaFila(e.target.value).then((it) => { if (it) { wz.itemId = it.id; mostrarPasso(); } }); } });
 
   // ---------- Mensagem (WhatsApp e Telegram) ----------
-  async function gerarTexto(ajuste) {
+  function usarModeloTexto(estilo) {
     const it = wzItem(); if (!it) return;
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
-    if (!p.precoNovo) { aviso($("#wzAviso"), "Falta o preço novo: edite o produto na Lista."); return; }
-    document.querySelectorAll("#wzAjustes button").forEach((b) => { b.disabled = true; });
-    $("#wzBalao").classList.add("gerando");
-    let texto;
-    try {
-      texto = (await api("gerar", ajuste && it.texto ? { ...p, ajuste, textoAtual: it.texto } : p)).texto;
-      aviso($("#wzAviso"), "");
-    } catch (e) {
-      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
-      if (ajuste) aviso($("#wzAviso"), `Não consegui ajustar: ${e.message}.`);
-      else { texto = mensagemReserva(p); aviso($("#wzAviso"), `A IA não respondeu (${e.message}). Usei uma mensagem pronta.`); }
-    }
-    if (texto) { it.texto = comConvite(texto); salvarFila(true); }
-    if (wz.passo === "mensagem") mostrarPasso();
+    it.estiloTexto = estilo; it.texto = textoDoModelo(estilo, p); it.textoEditado = false; salvarFila();
   }
   async function registrarCompartilhado(canal, onde) {
     const it = wzItem(); if (!it) return;
@@ -1902,7 +1905,7 @@
     if (edMarca) { const s = 140; ctx.drawImage(edMarca, W - s - 24, H - s - 18, s, s); }
   }
   const NUM = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣"];
-  /** Legenda pronta no mesmo estilo da mensagem do WhatsApp (ou a que a IA escreveu / você editou) */
+  /** Legenda pronta no mesmo estilo da mensagem do WhatsApp (ou a que você editou) */
   function legendaPadrao() {
     const L = livre();
     const tema = L.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " ").trim();
@@ -1961,7 +1964,7 @@
         <div class="wz-previa"><canvas id="lvTela"></canvas></div>
         <h3 class="wz-sub">Legenda (já vai junto)</h3>
         <div class="balao wz-balao" id="lvBalao">${formatarWhats(legendaLivre())}</div>
-        <div class="wz-chips"><button type="button" id="lvIA">Escrever com a IA</button><button type="button" id="lvPadrao">Voltar ao texto padrão</button></div>
+        <div class="wz-chips"><button type="button" id="lvPadrao">Voltar ao texto padrão</button></div>
         <details class="mais"><summary>Editar a legenda</summary><textarea id="lvTexto" rows="9">${esc(legendaLivre())}</textarea></details>
         <button type="button" class="btn btn--rosa" id="lvPostar">Postar com a legenda</button>
         <button type="button" class="btn btn--branco" id="lvBaixar">Baixar imagem</button>
@@ -1997,7 +2000,6 @@
       }, "image/jpeg", 0.92);
       return;
     }
-    if (t.closest("#lvIA")) { legendaComIA(); return; }
     if (t.closest("#lvPadrao")) { delete L.legenda; mostrarPasso(); return; }
     if (t.closest("#lvBaixar")) { const tela = document.createElement("canvas"); desenharGrade(tela, { previa: false }); tela.toBlob((b) => { if (b) { baixarBlob(b, "miga-promo-achados.jpg"); toast("Imagem salva"); } }, "image/jpeg", 0.92); }
   });
@@ -2545,8 +2547,8 @@
       ? (conta.uid ? `Conta deste aparelho · ${conta.uid.slice(0, 8)}` : "Não conectada")
       : "Modo local (Firebase ainda não configurado)";
     api("status").then((s) => {
-      $("#status").textContent = s.ia ? "IA conectada" : "IA ainda não configurada no servidor";
-      $("#status").className = "status " + (s.ia ? "ok" : "off");
+      $("#status").textContent = s.catalogo && s.catalogo.mercadolivre ? "Servidor conectado · Mercado Livre ligado" : "Servidor conectado";
+      $("#status").className = "status ok";
     }).catch(() => { $("#status").textContent = "Servidor indisponível (modo offline)"; $("#status").className = "status off"; });
     if (!dialogo.open) dialogo.showModal();
   }
