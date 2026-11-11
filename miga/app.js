@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=44"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=45"; });
     }
     edFoto = null;
     try {
@@ -1445,7 +1445,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=44"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=45"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1602,14 +1602,14 @@
   function renderFila() {
     renderCatsLista();
     const l = fila().filter((i) => filtroLista === "todas" || (i.carregando && true) || (i.categoria || "outros") === filtroLista);
-    $("#ppLista").innerHTML = l.length ? l.map((i) => `<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
+    $("#ppLista").innerHTML = l.length ? l.map((i) => `<div class="pp-linha"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${fotoMini(i)}
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}</span>
           <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button>`).join("") : `<p class="vazio-lista">${fila().length ? "Nenhum produto nessa categoria." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
+      </button><button type="button" class="pp-lixo" data-tirar-item="${esc(i.id)}" aria-label="Tirar ${esc(i.nome || "produto")} da lista"><svg><use href="#i-lixo"/></svg></button></div>`).join("") : `<p class="vazio-lista">${fila().length ? "Nenhum produto nessa categoria." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
   function chaveLink(u) {
@@ -1673,7 +1673,15 @@
     config.fila = fila().filter((i) => !prontos.includes(i));
     renderFila(); salvarFila(true);
   });
-  $("#ppLista").addEventListener("click", (e) => {
+  $("#ppLista").addEventListener("click", async (e) => {
+    const lixo = e.target.closest("[data-tirar-item]");
+    if (lixo) {
+      const it = fila().find((i) => i.id === lixo.dataset.tirarItem);
+      if (!it || !(await confirmar({ titulo: "Tirar da lista?", texto: `“${it.nome || "Produto"}” sai da sua lista.`, ok: "Tirar" }))) return;
+      config.fila = fila().filter((i) => i !== it);
+      renderFila(); salvarFila(true); toast("Produto tirado da lista");
+      return;
+    }
     const b = e.target.closest("[data-pp]");
     if (!b) return;
     const item = fila().find((i) => i.id === b.dataset.pp);
