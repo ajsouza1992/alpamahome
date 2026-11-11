@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=41"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=42"; });
     }
     edFoto = null;
     try {
@@ -1445,7 +1445,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=41"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=42"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1567,7 +1567,16 @@
   };
   const fotoMini = (i) => i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
   /* Categorias na Lista: filtro e categoria do produto colado ("auto" adivinha pelo nome) */
-  const CATS_LISTA = { moda: "👗 Moda", beleza: "💄 Beleza", casa: "🏡 Casa", saude: "💪 Saúde e fitness", outros: "✨ Outros" };
+  const CATS_LISTA = { moda: "Moda", beleza: "Beleza", casa: "Casa", saude: "Saúde e fitness", outros: "Outros" };
+  /** Folha de escolha: um botão abre a lista de opções (sem um monte de botões na tela) */
+  function escolherOpcao(titulo, opcoes, atual) {
+    const d = $("#folhaEscolha");
+    $("#folhaTitulo").textContent = titulo;
+    $("#folhaOpcoes").innerHTML = opcoes.map(([v, n]) => `<button type="submit" value="${esc(v)}" class="${v === atual ? "on" : ""}"><span>${esc(n)}</span>${v === atual ? "<b>✓</b>" : ""}</button>`).join("");
+    d.returnValue = "";
+    d.showModal();
+    return new Promise((ok) => d.addEventListener("close", () => ok(d.returnValue || null), { once: true }));
+  }
   let catNova = "auto", filtroLista = "todas";
   function adivinharCategoria(nome) {
     const n = String(nome || "").toLowerCase();
@@ -1577,13 +1586,19 @@
     if (/cozinha|panela|organizador|decora|almofada|cortina|tapete|lumin|lâmpada|lampada|cadeira|mesa|sof[aá]|cama|len[cç]ol|toalha|pote|airfryer|liquidificador|cafeteira|prateleira|vaso|lixeira|casa/.test(n)) return "casa";
     return "outros";
   }
+  const contarCat = (k) => fila().filter((i) => k === "todas" || (i.categoria || "outros") === k).length;
   function renderCatsLista() {
-    $("#ppCatNova").innerHTML = [["auto", "🔮 Automático"], ...Object.entries(CATS_LISTA)].map(([k, n]) => `<button type="button" data-cat-nova="${k}"${catNova === k ? ' class="on"' : ""}>${n}</button>`).join("");
-    const cont = (k) => fila().filter((i) => k === "todas" || (i.categoria || "outros") === k).length;
-    $("#ppFiltroLista").innerHTML = [["todas", "Todas"], ...Object.entries(CATS_LISTA)].map(([k, n]) => `<button type="button" data-filtro-lista="${k}"${filtroLista === k ? ' class="on"' : ""}>${n} (${cont(k)})</button>`).join("");
+    $("#ppCatNova").querySelector("b").textContent = catNova === "auto" ? "Automático (pelo nome)" : CATS_LISTA[catNova];
+    $("#ppFiltroLista").querySelector("b").textContent = (filtroLista === "todas" ? "Todas" : CATS_LISTA[filtroLista]) + ` (${contarCat(filtroLista)})`;
   }
-  $("#ppCatNova").addEventListener("click", (e) => { const b = e.target.closest("[data-cat-nova]"); if (b) { catNova = b.dataset.catNova; renderCatsLista(); } });
-  $("#ppFiltroLista").addEventListener("click", (e) => { const b = e.target.closest("[data-filtro-lista]"); if (b) { filtroLista = b.dataset.filtroLista; renderFila(); } });
+  $("#ppCatNova").addEventListener("click", async () => {
+    const v = await escolherOpcao("Categoria do produto colado", [["auto", "Automático (pelo nome)"], ...Object.entries(CATS_LISTA)], catNova);
+    if (v) { catNova = v; renderCatsLista(); }
+  });
+  $("#ppFiltroLista").addEventListener("click", async () => {
+    const v = await escolherOpcao("Mostrar", [["todas", `Todas (${contarCat("todas")})`], ...Object.entries(CATS_LISTA).map(([k, n]) => [k, `${n} (${contarCat(k)})`])], filtroLista);
+    if (v) { filtroLista = v; renderFila(); }
+  });
   function renderFila() {
     renderCatsLista();
     const l = fila().filter((i) => filtroLista === "todas" || (i.carregando && true) || (i.categoria || "outros") === filtroLista);
@@ -1716,7 +1731,7 @@
     if (wz.tipoWhats === "status") return [...base, "tipoWhats", "montagem", "cor", "postar"];
     return [...base, "tipoWhats", "mensagem", "enviar"];
   }
-  const filtroCatWz = () => `<div class="wz-chips">${[["todas", "Todas"], ...Object.entries(CATS_LISTA)].map(([k, n]) => `<button type="button" data-wz-cat="${k}"${(wz.filtroCat || "todas") === k ? ' class="on"' : ""}>${n}</button>`).join("")}</div>`;
+  const filtroCatWz = () => `<button type="button" class="chip-filtro chip-filtro--largo" data-wz-cat><small>Categoria</small><b>${(wz.filtroCat && wz.filtroCat !== "todas") ? CATS_LISTA[wz.filtroCat] : "Todas"}</b><span class="seta">▾</span></button>`;
   function iniciarCriar(op = {}) {
     wz = { passo: "canal", canal: null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: "auto" };
     mostrarPasso();
@@ -1839,7 +1854,7 @@
   // Cliques dentro do passo
   $("#wzCorpo").addEventListener("click", async (e) => {
     const t = e.target;
-    const wc = t.closest("[data-wz-cat]"); if (wc) { wz.filtroCat = wc.dataset.wzCat; mostrarPasso(); return; }
+    const wc = t.closest("[data-wz-cat]"); if (wc) { const v = await escolherOpcao("Categoria", [["todas", "Todas"], ...Object.entries(CATS_LISTA)], wz.filtroCat || "todas"); if (v) { wz.filtroCat = v; mostrarPasso(); } return; }
     const op = t.closest("[data-canal]"); if (op) { wz.canal = op.dataset.canal; wz.formato = "story"; wz.tipoWhats = "mensagem"; mostrarPasso(); return; }
     const pr = t.closest("[data-item]"); if (pr) { wz.itemId = pr.dataset.item; mostrarPasso(); return; }
     const tw = t.closest("[data-tipo-whats]"); if (tw) { wz.tipoWhats = tw.dataset.tipoWhats; if (wz.tipoWhats === "status") wz.formato = "story"; mostrarPasso(); return; }

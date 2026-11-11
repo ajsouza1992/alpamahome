@@ -576,3 +576,10 @@ body.travado { overflow: hidden; }
 .conta small.nota { display: block; margin-top: 6px; font-size: 12.5px; }
 .titulos-prontos { gap: 6px; }
 .titulos-prontos button { min-height: 36px; padding: 0 12px; font-size: 12.5px; }
+
+/* Folha de escolha (lista simples, sem ícones) */
+.lista-escolha { display: grid; gap: 2px; max-height: 60dvh; overflow-y: auto; }
+.lista-escolha button { display: flex; align-items: center; justify-content: space-between; min-height: 54px; padding: 0 16px; border: 0; border-radius: 14px; background: none; font-size: 16px; font-weight: 500; color: var(--preto); text-align: left; cursor: pointer; }
+.lista-escolha button:hover { background: var(--campo); }
+.lista-escolha button.on { color: var(--rosa); font-weight: 700; background: #fff7fa; }
+.lista-escolha button b { color: var(--rosa); }
