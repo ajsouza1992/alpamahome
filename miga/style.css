@@ -583,3 +583,4 @@ body.travado { overflow: hidden; }
 .lista-escolha button:hover { background: var(--campo); }
 .lista-escolha button.on { color: var(--rosa); font-weight: 700; background: #fff7fa; }
 .lista-escolha button b { color: var(--rosa); }
+#ppFotoBtn.pedir { box-shadow: 0 0 0 3px var(--rosa); animation: pulsar 1.2s ease-in-out 3; }

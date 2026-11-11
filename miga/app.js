@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=43"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=44"; });
     }
     edFoto = null;
     try {
@@ -1445,7 +1445,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=43"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=44"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1611,11 +1611,21 @@
         <span class="seta">›</span>
       </button>`).join("") : `<p class="vazio-lista">${fila().length ? "Nenhum produto nessa categoria." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
   }
-  async function adicionarNaFila(texto) {
+  /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
+  function chaveLink(u) {
+    try { const x = new URL(String(u || "").trim()); return x.hostname.toLowerCase().replace(/^www\./, "") + x.pathname.replace(/\/+$/, "").toLowerCase(); }
+    catch (e) { return String(u || "").trim().toLowerCase(); }
+  }
+  const mesmoProduto = (i, link) => [i.link, i.urlFinal].filter(Boolean).some((l) => chaveLink(l) === chaveLink(link));
+  /** naLista: veio da aba Lista (recusa repetido e pede o que faltar) */
+  async function adicionarNaFila(texto, naLista) {
     const lido = lerTextoCompartilhado(texto) || { link: String(texto || "").trim(), nome: "", preco: null };
     if (!urlOk(lido.link)) { toast("Cola um link começando com https://"); return null; }
-    const ja = fila().find((i) => i.link === lido.link);
-    if (ja) { toast("Esse produto já está na lista"); return ja; }
+    const ja = fila().find((i) => mesmoProduto(i, lido.link));
+    if (ja) {
+      if (naLista) { toast("Esse produto já está na sua lista"); $("#ppLink").value = ""; return null; }
+      toast("Esse produto já estava na lista"); return ja;
+    }
     const item = { id: novoId(), link: lido.link, loja: detectarLoja(lido.link) || "mercadolivre", nome: lido.nome || "", precoNovo: lido.preco || null, precoAntigo: null, imagem: "", cupom: "", categoria: "outros", texto: "", feito: {}, criadoEm: Date.now(), carregando: true };
     fila().unshift(item);
     $("#ppLink").value = "";
@@ -1627,7 +1637,14 @@
       if (d.preco) item.precoNovo = d.preco;
       if (d.precoAntigo) item.precoAntigo = d.precoAntigo;
       if (d.imagem) item.imagem = d.imagem;
-      if (!item.nome || !item.imagem) toast(item.loja === "shopee" ? "A Shopee não mostrou tudo: toque no produto e complete nome, preço e foto" : "Faltou alguma informação: toque no produto e complete");
+      if (d.urlFinal) item.urlFinal = d.urlFinal;
+      // O link encurtado levou a um produto que já está na lista
+      const repetido = fila().find((i) => i !== item && mesmoProduto(i, item.urlFinal || item.link));
+      if (repetido) {
+        config.fila = fila().filter((i) => i !== item);
+        renderFila(); toast("Esse produto já está na sua lista");
+        return naLista ? null : repetido;
+      }
     } catch (e) {
       if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return null; }
       toast("Não consegui ler o produto: toque nele e complete à mão");
@@ -1635,16 +1652,18 @@
     item.categoria = catNova === "auto" ? adivinharCategoria(item.nome) : catNova;
     delete item.carregando;
     renderFila(); salvarFila(true);
+    // Faltou foto, nome ou preço (comum na Shopee e na Amazon): abre o produto e pede o que falta
+    if (naLista && (!item.imagem || !item.precoNovo || !item.nome) && !ppAtual) abrirItemFila(item, true);
     return item;
   }
-  $("#ppAdicionar").addEventListener("click", () => adicionarNaFila($("#ppLink").value));
-  $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); adicionarNaFila($("#ppLink").value); } });
+  $("#ppAdicionar").addEventListener("click", () => adicionarNaFila($("#ppLink").value, true));
+  $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); adicionarNaFila($("#ppLink").value, true); } });
   $("#ppLink").addEventListener("paste", (e) => {
     const t = (e.clipboardData && e.clipboardData.getData("text")) || "";
-    if (/https?:\/\//.test(t)) { e.preventDefault(); adicionarNaFila(t); }
+    if (/https?:\/\//.test(t)) { e.preventDefault(); adicionarNaFila(t, true); }
   });
   $("#ppColar").addEventListener("click", async () => {
-    try { adicionarNaFila((await navigator.clipboard.readText()).trim()); }
+    try { adicionarNaFila((await navigator.clipboard.readText()).trim(), true); }
     catch (e) { $("#ppLink").focus(); toast("Toque e segure no campo para colar"); }
   });
   $("#ppLimpar").addEventListener("click", async () => {
@@ -1665,7 +1684,7 @@
     $("#ppFotoMini").hidden = !tem; $("#ppSemFoto").hidden = tem;
     if (tem) { $("#ppFotoMini").dataset.original = ppAtual.imagem; colocarImagem($("#ppFotoMini"), ppAtual.imagem); }
   }
-  function abrirItemFila(item) {
+  function abrirItemFila(item, pedirFalta) {
     ppAtual = item;
     $("#ppListaBloco").hidden = true; $("#ppItem").hidden = false;
     mostrarFotoPp();
@@ -1675,7 +1694,19 @@
     $("#ppCupom").value = item.cupom || "";
     $("#ppLinkItem").value = item.link || "";
     ppCategoria.marcar(item.categoria || "outros");
+    mostrarFalta(pedirFalta);
     window.scrollTo({ top: 0 });
+  }
+  function mostrarFalta(destacar) {
+    const it = ppAtual; if (!it) return;
+    const falta = [!it.imagem && "a foto", !it.nome && "o nome", !it.precoNovo && "o preço"].filter(Boolean);
+    const loja = NOME_LOJA[it.loja] || "A loja";
+    aviso($("#ppFalta"), falta.length ? `${loja} não mandou ${falta.join(", ").replace(/, ([^,]*)$/, " e $1")}. Complete aqui:${!it.imagem ? " toque em “Escolher foto” (salve a imagem do produto na galeria antes)." : ""}${!it.precoNovo ? " Digite o preço novo." : ""}` : "");
+    $("#ppFotoBtn").classList.toggle("pedir", !it.imagem && !!destacar);
+    $("#ppNovo").classList.toggle("pedir", !it.precoNovo && !!destacar);
+    $("#ppNome").classList.toggle("pedir", !it.nome && !!destacar);
+    $("#ppFotoBtn").firstChild.textContent = it.imagem ? "Trocar foto" : "Escolher foto";
+    if (destacar && !it.precoNovo && it.imagem) setTimeout(() => $("#ppNovo").focus(), 300);
   }
   function fecharItemFila() {
     ppAtual = null;
@@ -1690,13 +1721,13 @@
   });
   [["#ppNome", (v) => { ppAtual.nome = v.trim(); ppAtual.texto = ""; }], ["#ppAntigo", (v) => { ppAtual.precoAntigo = lerPreco(v); ppAtual.texto = ""; }], ["#ppNovo", (v) => { ppAtual.precoNovo = lerPreco(v); ppAtual.texto = ""; }],
     ["#ppCupom", (v) => { ppAtual.cupom = v.trim(); ppAtual.texto = ""; }], ["#ppLinkItem", (v) => { if (urlOk(v)) { ppAtual.link = v.trim(); ppAtual.texto = ""; } }]]
-    .forEach(([id, f]) => $(id).addEventListener("input", () => { if (!ppAtual) return; f($(id).value); salvarFila(); }));
+    .forEach(([id, f]) => $(id).addEventListener("input", () => { if (!ppAtual) return; f($(id).value); salvarFila(); mostrarFalta(false); }));
   $("#ppCategoria").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && ppAtual) { ppAtual.categoria = b.dataset.v; ppAtual.texto = ""; salvarFila(); } });
   async function trocarFotoPp(arquivo) {
     if (!arquivo || !ppAtual) return;
     try { ppAtual.imagem = await compactarArquivo(arquivo); ppFotos[ppAtual.id] = await createImageBitmap(arquivo); }
     catch (e) { toast("Não consegui abrir essa foto"); return; }
-    mostrarFotoPp(); salvarFila(true); toast("Foto trocada");
+    mostrarFotoPp(); salvarFila(true); mostrarFalta(false); toast("Foto salva");
   }
   $("#ppArquivoTopo").addEventListener("change", (e) => { trocarFotoPp(e.target.files && e.target.files[0]); e.target.value = ""; });
   $("#ppCompartilhar").addEventListener("click", () => {
