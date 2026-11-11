@@ -315,10 +315,15 @@ function umPrecoSo(texto, link) {
 /** Chama a API REST do Gemini (systemInstruction + conversa) e devolve o texto gerado */
 async function chamarGemini(contents, env) {
   const modelo = env.GEMINI_MODEL || "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`;
+  const chave = String(env.GEMINI_API_KEY || "").trim();
+  // Chaves "AIza..." = Google AI Studio; chaves "AQ...." = Vertex AI (modo express)
+  const vertex = chave.startsWith("AQ.");
+  const url = vertex
+    ? `https://aiplatform.googleapis.com/v1/publishers/google/models/${encodeURIComponent(modelo)}:generateContent?key=${encodeURIComponent(chave)}`
+    : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`;
   const r = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+    headers: vertex ? { "content-type": "application/json" } : { "content-type": "application/json", "x-goog-api-key": chave },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: INSTRUCAO }] },
       contents,
@@ -359,6 +364,19 @@ async function rotaGerar(request, env) {
 
   let b;
   try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
+
+  if (Array.isArray(b.produtos)) {
+    const prods = b.produtos.slice(0, 8).map((x) => ({ nome: String(x.nome || "").trim().slice(0, 120), preco: Number(x.preco) > 0 ? Number(x.preco) : null, link: String(x.link || "").trim() }));
+    if (!prods.length) return json({ erro: "Adicione produtos." }, 400);
+    const tema = String(b.tema || "achadinhos").slice(0, 60);
+    const pedido = `Escreva UMA mensagem de WhatsApp apresentando estes achados (tema: ${tema}).\nEstrutura: abertura curta de amiga; cada produto numerado (1️⃣, 2️⃣...) com o nome em *negrito*, o preço na linha seguinte ('por *R$ X*') e o link sozinho na linha de baixo, exatamente como recebido; fechamento com leve urgência. Não repita preços fora do item. Responda SOMENTE com a mensagem.\n\n` +
+      prods.map((x, i) => `${i + 1}. ${x.nome || "Produto " + (i + 1)} | ${x.preco ? brl(x.preco) : "sem preço"} | ${x.link || "sem link"}`).join("\n");
+    try {
+      const r = await chamarGemini([{ role: "user", parts: [{ text: pedido }] }], env);
+      for (const x of prods) if (x.link && !r.texto.includes(x.link)) r.texto += `\n👉 ${x.link}`;
+      return json(r);
+    } catch (e) { return json({ erro: motivoIA(e), codigo: e.status === 429 ? "limite" : "ia" }, 502); }
+  }
 
   const p = {
     nome: String(b.nome || "").trim().slice(0, 200),

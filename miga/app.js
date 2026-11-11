@@ -944,7 +944,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=32"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=33"; });
     }
     edFoto = null;
     try {
@@ -1021,9 +1021,9 @@
   const bnFormato = grupoBotoes("#bnFormato", "v");
   const bnFundo = grupoBotoes("#bnFundo", "v");
   const CORES_BN = {
-    creme: { tipo: "creme", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.35)", bola2: "rgba(232,51,109,.12)", guia: "#d8c99a" },
-    rosa: { tipo: "rosa", texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", bola1: "rgba(255,255,255,.14)", bola2: "rgba(255,255,255,.22)", guia: "rgba(255,255,255,.7)" },
-    branco: { tipo: "branco", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#fff8e4", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.25)", bola2: "rgba(232,51,109,.08)", guia: "#d8c99a" }
+    creme: { tipo: "creme", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.35)", bola2: "rgba(255,255,255,.75)", guia: "#d8c99a" },
+    rosa: { tipo: "rosa", texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", bola1: "rgba(255,255,255,.9)", bola2: "rgba(255,255,255,.95)", guia: "rgba(255,255,255,.7)" },
+    branco: { tipo: "branco", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#fff8e4", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.3)", bola2: "#efeae0", guia: "#d8c99a" }
   };
   const arroba = (v) => { const t = String(v || "").trim().replace(/^@+/, "").replace(/\s+/g, ""); return t ? "@" + t : ""; };
   // Título digitado: uma linha por linha; *trecho* fica em destaque
@@ -1097,7 +1097,7 @@
       ctx.fillStyle = g;
     } else ctx.fillStyle = C.tipo === "rosa" ? "#e8336d" : "#ffffff";
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(60, 60, 260, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
 
     const blocos = [...(d.logo ? [["logo", 260], ["gap", 40]] : []), ...M.blocos(d)].filter(([t, v]) => t !== "titulo" || (v && v.length));
@@ -1284,7 +1284,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=32"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=33"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1513,7 +1513,8 @@
     whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem para os grupos ou imagem para o Status", icone: "i-rede-whats" },
     instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
-    livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" }
+    livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
+    video: { nome: "Vídeo com tema", cor: "#f2a900", desc: "Seu vídeo com a cara do Miga", icone: "i-rede-video" }
   };
   const MONTAGENS = ["achadinho", "relampago", "baixou", "ultimas", "novidade", "enquete"];
   const NOME_MONTAGEM = { achadinho: "Achadinho do dia", relampago: "Oferta relâmpago", baixou: "Baixou o preço", ultimas: "Últimas horas", novidade: "Chegou novidade", enquete: "Você usaria?" };
@@ -1522,6 +1523,7 @@
   const wzItem = () => fila().find((i) => i.id === wz.itemId);
   function passosDe(canal) {
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
+    if (canal === "video") return ["canal", "vArquivo", "vTema", "vPronto"];
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "formato", "montagem", "cor", "postar"];
     if (canal === "telegram") return [...base, "mensagem", "telegram"];
@@ -1559,6 +1561,7 @@
       return;
     }
     if (wz.canal === "livre") { telaLivre(c); return; }
+    if (wz.canal === "video") { telaVideo(c); return; }
     if (wz.passo === "produto") {
       const l2 = fila().filter((x) => !x.carregando);
       c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2><p class="nota">Escolha da sua lista ou cole um link novo.</p>
@@ -1581,8 +1584,8 @@
     if (wz.passo === "tipoWhats") {
       c.innerHTML = `<h2 class="wz-titulo">O que você quer enviar?</h2>
         <div class="wz-ops">
-          ${opcaoCard("data-tipo-whats", "mensagem", "Mensagem", "Texto da IA com o link, para os grupos e conversas", wz.tipoWhats !== "status", '<i class="wz-bolinha" style="background:#25d366"><svg><use href="#i-rede-whats"/></svg></i>')}
-          ${opcaoCard("data-tipo-whats", "status", "Status", "Imagem pronta, no formato do Status (igual ao story)", wz.tipoWhats === "status", '<i class="wz-bolinha" style="background:#128c7e"><svg><use href="#i-foto"/></svg></i>')}
+          ${opcaoCard("data-tipo-whats", "mensagem", "Mensagem", "Texto da IA com o link, para os grupos e conversas", wz.tipoWhats !== "status")}
+          ${opcaoCard("data-tipo-whats", "status", "Status", "Imagem pronta, no formato do Status (igual ao story)", wz.tipoWhats === "status")}
         </div>
         ${botaoContinuar(true)}`;
       return;
@@ -1635,10 +1638,7 @@
         <p class="nota">Com foto, o WhatsApp abre com a imagem do produto e o texto juntos.</p>
         <button type="button" class="btn btn--rosa wz-zap" data-enviar-op="foto">Enviar com foto</button>
         <button type="button" class="btn btn--branco" data-enviar-op="texto">Enviar só o texto</button>
-        <button type="button" class="btn btn--branco" data-enviar-op="copiar">Copiar o texto</button>
-        <h3 class="wz-sub">Nos meus grupos</h3>
-        <div class="wz-grupos">${g.length ? g.map((x) => `<button type="button" class="btn btn--branco" data-grupo="${esc(x.id)}">${esc(x.nome)}${(item.enviadoGrupos || []).includes(x.id) ? " ✓" : ""}</button>`).join("") : '<p class="nota">Cadastre seus grupos na aba <b>Grupos</b> para enviar com um toque.</p>'}</div>
-        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+<button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
       return;
     }
     if (wz.passo === "telegram") {
@@ -1826,7 +1826,7 @@
     if (C.tipo === "creme") { const g = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, H * 0.85); g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6"); ctx.fillStyle = g; }
     else ctx.fillStyle = C.tipo === "rosa" ? "#e8336d" : "#ffffff";
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(60, 60, 260, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
     // Título
     const linhas = linhasTitulo(op.titulo != null ? op.titulo : L.titulo);
@@ -1869,11 +1869,27 @@
     }
     if (edMarca) { const s = 140; ctx.drawImage(edMarca, W - s - 24, H - s - 18, s, s); }
   }
-  function legendaLivre() {
+  const NUM = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣"];
+  /** Legenda pronta no mesmo estilo da mensagem do WhatsApp (ou a que a IA escreveu / você editou) */
+  function legendaPadrao() {
     const L = livre();
-    const titulo = L.titulo.replace(/[*]/g, "").replace(/\n/g, " ").trim();
-    const linhas = L.itens.slice(0, L.n).map((it, k) => `${k + 1}. ${it.nome || "Produto " + (k + 1)}${it.preco ? " — " + brl(it.preco) : ""}${it.link ? "\n👉 " + it.link : ""}`);
-    return `${titulo}\n\n${linhas.join("\n\n")}`;
+    const tema = L.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " ").trim();
+    const itens = L.itens.slice(0, L.n).map((it, k) =>
+      `${NUM[k]} *${it.nome || "Produto " + (k + 1)}*${it.preco ? `\n💸 por *${brl(it.preco)}*` : ""}${it.link ? `\n👉 ${it.link}` : ""}`);
+    return `Miga, separei uns achadinhos pra você! 🛍️💖\n${tema}\n\n${itens.join("\n\n")}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
+  }
+  const legendaLivre = () => { const L = livre(); return L.legenda || legendaPadrao(); };
+  async function legendaComIA() {
+    const L = livre();
+    const b = $("#lvIA"); if (b) { b.disabled = true; b.textContent = "Escrevendo…"; }
+    try {
+      const r = await api("gerar", { produtos: L.itens.slice(0, L.n).map((x) => ({ nome: x.nome, preco: x.preco, link: x.link })), tema: TEMAS_LIVRE[L.tema].nome });
+      L.legenda = comConvite(r.texto); toast("Legenda escrita pela IA");
+    } catch (e) {
+      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      toast("A IA não respondeu: " + e.message);
+    }
+    if (wz.passo === "livre") mostrarPasso();
   }
   async function fotosDaLista() {
     await carregarMarca();
@@ -1911,10 +1927,13 @@
     if (wz.passo === "livre") {
       c.innerHTML = `<h2 class="wz-titulo">Pronto para postar</h2>
         <div class="wz-previa"><canvas id="lvTela"></canvas></div>
-        <button type="button" class="btn btn--rosa" id="lvPostar">Postar</button>
-        <button type="button" class="btn btn--branco" id="lvLegenda">Copiar a legenda com os links</button>
+        <h3 class="wz-sub">Legenda (já vai junto)</h3>
+        <div class="balao wz-balao" id="lvBalao">${formatarWhats(legendaLivre())}</div>
+        <div class="wz-chips"><button type="button" id="lvIA">Escrever com a IA</button><button type="button" id="lvPadrao">Voltar ao texto padrão</button></div>
+        <details class="mais"><summary>Editar a legenda</summary><textarea id="lvTexto" rows="9">${esc(legendaLivre())}</textarea></details>
+        <button type="button" class="btn btn--rosa" id="lvPostar">Postar com a legenda</button>
         <button type="button" class="btn btn--branco" id="lvBaixar">Baixar imagem</button>
-        <p class="nota">A legenda vai com os produtos numerados e os links. No WhatsApp e no Telegram os links ficam clicáveis; no Instagram, link na legenda não abre (use o adesivo no story ou a bio).</p>
+        <p class="nota">No WhatsApp e no Telegram os links da legenda ficam clicáveis. No Instagram, link na legenda não abre: use o adesivo no story ou a bio.</p>
         <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
       desenharGrade($("#lvTela")); fotosDaLista().then(() => desenharGrade($("#lvTela")));
     }
@@ -1946,12 +1965,14 @@
       }, "image/jpeg", 0.92);
       return;
     }
-    if (t.closest("#lvLegenda")) { if (await copiarTexto(legendaLivre())) toast("Legenda copiada"); return; }
+    if (t.closest("#lvIA")) { legendaComIA(); return; }
+    if (t.closest("#lvPadrao")) { delete L.legenda; mostrarPasso(); return; }
     if (t.closest("#lvBaixar")) { const tela = document.createElement("canvas"); desenharGrade(tela, { previa: false }); tela.toBlob((b) => { if (b) { baixarBlob(b, "miga-promo-achados.jpg"); toast("Imagem salva"); } }, "image/jpeg", 0.92); }
   });
   $("#wzCorpo").addEventListener("input", (e) => {
     if (wz.canal !== "livre") return;
     const L = livre();
+    if (e.target.id === "lvTexto") { L.legenda = e.target.value; $("#lvBalao").innerHTML = formatarWhats(L.legenda); return; }
     if (e.target.id === "lvTitulo") { L.titulo = e.target.value; document.querySelectorAll("[data-lv-cor]").forEach((b) => desenharGrade(b.querySelector("canvas"), { cor: b.dataset.lvCor })); return; }
     const campo = e.target.dataset.lvCampo;
     if (campo) {
@@ -1966,6 +1987,202 @@
       if (L.itens.length >= L.n) { toast(`A grade tem ${L.n} lugares`); break; }
       try { L.itens.push({ id: novoId(), foto: await createImageBitmap(f), url: await compactarArquivo(f), nome: "", preco: null, link: "" }); } catch (err) { toast("Não consegui abrir uma das fotos"); }
     }
+    mostrarPasso();
+  });
+
+  /* ---------- Vídeo com o tema do Miga ---------- */
+  const TEMAS_VIDEO = {
+    moldura: { nome: "Moldura", desc: "Vídeo num cartão, título em cima e preço embaixo" },
+    faixa: { nome: "Faixa", desc: "Vídeo em tela cheia com faixa de texto embaixo" },
+    selo: { nome: "Selo", desc: "Vídeo em tela cheia com etiqueta no topo" }
+  };
+  const CORES_VIDEO = {
+    creme: { nome: "Creme", fundo: "#fff3c4", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff" },
+    rosa: { nome: "Rosa", fundo: "#e8336d", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f" },
+    branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff" },
+    preto: { nome: "Preto", fundo: "#1d1d1f", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f" }
+  };
+  function vd() {
+    if (!wz.video) wz.video = { arquivo: null, url: "", tema: "moldura", cor: "creme", titulo: "Achadinho\n*do dia* ✨", rodape: "Link na bio", resultado: null };
+    return wz.video;
+  }
+  /** Formato do arquivo: MP4 quando o celular grava MP4 (Chrome novo), senão WebM */
+  function formatoGravacao() {
+    if (typeof MediaRecorder === "undefined") return null;
+    return ['video/mp4;codecs="avc1.42E01E,mp4a.40.2"', "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) || null;
+  }
+  /** Desenha um quadro: o vídeo + o tema por cima. Medidas pensadas em 1080 × 1920. */
+  function quadroVideo(ctx, W, H, fonte, V) {
+    const k = W / 1080; ctx.save(); ctx.scale(k, k);
+    const w = 1080, h = 1920, C = CORES_VIDEO[V.cor];
+    const vw = fonte ? (fonte.videoWidth || fonte.width) : 0, vh = fonte ? (fonte.videoHeight || fonte.height) : 0;
+    const pintar = (x, y, ww, hh, cobrir) => {
+      if (!vw) { ctx.fillStyle = "#d9d2c3"; ctx.fillRect(x, y, ww, hh); return; }
+      const s = cobrir ? Math.max(ww / vw, hh / vh) : Math.min(ww / vw, hh / vh);
+      const iw = vw * s, ih = vh * s;
+      ctx.save(); ctx.beginPath(); ctx.rect(x, y, ww, hh); ctx.clip();
+      ctx.drawImage(fonte, x + (ww - iw) / 2, y + (hh - ih) / 2, iw, ih); ctx.restore();
+    };
+    const titulo = (y, cor, dest, tam = 92) => {
+      ctx.font = `800 ${tam}px Poppins`; ctx.textBaseline = "middle";
+      linhasTitulo(V.titulo).forEach((partes, j) => {
+        const larg = partes.reduce((s, [t]) => s + ctx.measureText(t).width, 0); let x = (w - larg) / 2; ctx.textAlign = "left";
+        partes.forEach(([t, d]) => { ctx.fillStyle = d ? dest : cor; ctx.fillText(t, x, y + j * tam * 1.08); x += ctx.measureText(t).width; });
+      });
+      ctx.textAlign = "center";
+    };
+    const pilula = (texto, cx, cy, fundo, cor, tam = 44) => {
+      if (!texto) return;
+      ctx.font = `700 ${tam}px Poppins`; const pw = ctx.measureText(texto).width + 90, ph = tam * 2.3;
+      retArredondado(ctx, cx - pw / 2, cy - ph / 2, pw, ph, ph / 2); ctx.fillStyle = fundo; ctx.fill();
+      ctx.fillStyle = cor; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(texto, cx, cy + 2);
+    };
+    const marca = (x, y, s) => { if (edMarca) ctx.drawImage(edMarca, x, y, s, s); };
+    const nl = linhasTitulo(V.titulo).length;
+    if (V.tema === "moldura") {
+      ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = V.cor === "rosa" || V.cor === "preto" ? "rgba(255,255,255,.12)" : "rgba(255,210,63,.35)"; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
+      titulo(150, C.texto, C.destaque);
+      const top = 150 + nl * 100 + 30, alt = h - top - 330;
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; retArredondado(ctx, 70, top, w - 140, alt, 44); ctx.fillStyle = "#000"; ctx.fill(); ctx.restore();
+      ctx.save(); retArredondado(ctx, 70, top, w - 140, alt, 44); ctx.clip(); pintar(70, top, w - 140, alt, true); ctx.restore();
+      pilula(V.rodape, w / 2, h - 210, C.pill, C.pillTexto);
+      marca(w - 190, h - 190, 160);
+    } else if (V.tema === "faixa") {
+      pintar(0, 0, w, h, true);
+      const fh = 140 + nl * 100 + (V.rodape ? 130 : 0), fy = h - fh - 60;
+      retArredondado(ctx, 50, fy, w - 100, fh, 48); ctx.fillStyle = C.fundo; ctx.globalAlpha = .94; ctx.fill(); ctx.globalAlpha = 1;
+      titulo(fy + 110, C.texto, C.destaque, 84);
+      pilula(V.rodape, w / 2, fy + fh - 90, C.pill, C.pillTexto, 40);
+      marca(w - 210, 60, 160);
+    } else {
+      pintar(0, 0, w, h, true);
+      ctx.save(); ctx.translate(w / 2, 230); ctx.rotate(-0.04);
+      const tt = V.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " ");
+      ctx.font = "800 64px Poppins"; const tw = Math.min(w - 120, ctx.measureText(tt).width + 110);
+      retArredondado(ctx, -tw / 2, -70, tw, 140, 70); ctx.fillStyle = C.fundo; ctx.fill();
+      ctx.fillStyle = C.texto; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(quebrarTexto(ctx, tt, tw - 80, 1)[0], 0, 4); ctx.restore();
+      pilula(V.rodape, w / 2, h - 230, C.pill, C.pillTexto);
+      marca(w - 200, h - 200, 160);
+    }
+    ctx.restore();
+  }
+  function telaVideo(c) {
+    const V = vd();
+    if (wz.passo === "vArquivo") {
+      c.innerHTML = `<h2 class="wz-titulo">Escolha o vídeo</h2>
+        <p class="nota">Pode ser um vídeo feito na IA ou gravado no celular. Ele vira um vídeo em pé (formato de story e reels) com o tema do Miga. Recomendo até 60 segundos.</p>
+        ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
+        <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
+        ${botaoContinuar(!!V.url)}`;
+      return;
+    }
+    if (wz.passo === "vTema") {
+      c.innerHTML = `<h2 class="wz-titulo">Tema do vídeo</h2>
+        <div class="wz-miniaturas">${Object.entries(TEMAS_VIDEO).map(([k, t]) => `<button type="button" class="wz-mini${V.tema === k ? " on" : ""}" data-vd-tema="${k}"><canvas width="270" height="480"></canvas><span>${t.nome}</span></button>`).join("")}</div>
+        <div class="campo"><span>Cor</span><div class="alternar" id="vdCor">${Object.entries(CORES_VIDEO).map(([k, x]) => `<button type="button" role="radio" data-vd-cor="${k}" aria-checked="${V.cor === k}">${x.nome}</button>`).join("")}</div></div>
+        <label class="campo"><span>Título (use *asteriscos* para destacar)</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>
+        <label class="campo"><span>Texto do botão (preço, “link na bio”…)</span><input id="vdRodape" maxlength="40" value="${esc(V.rodape)}"></label>
+        ${botaoContinuar(true)}`;
+      pintarTemasVideo();
+      return;
+    }
+    if (wz.passo === "vPronto") {
+      const r = V.resultado;
+      c.innerHTML = `<h2 class="wz-titulo">${r ? "Vídeo pronto" : "Criar o vídeo"}</h2>
+        ${r ? `<video class="vd-previa" src="${r.url}" controls playsinline></video>
+          <p class="nota">Formato: <b>${r.mp4 ? "MP4" : "WebM"}</b>.${r.mp4 ? "" : " Este celular não grava MP4: o WhatsApp aceita, mas o Instagram pode recusar WebM."}</p>
+          <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
+          <button type="button" class="btn btn--branco" id="vdBaixar">Baixar o vídeo</button>
+          <button type="button" class="btn btn--branco" id="vdRefazer">Gravar de novo</button>`
+        : `<div class="wz-previa"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
+          <p class="nota">O app toca o vídeo uma vez com o tema por cima e grava ao mesmo tempo: leva o tempo do próprio vídeo. Deixe o app aberto até terminar.</p>
+          <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
+          <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo</button>`}
+        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+      if (!r) primeiroQuadro().then((v) => quadroVideo($("#vdQuadro").getContext("2d"), 540, 960, v, V));
+    }
+  }
+  function primeiroQuadro() {
+    const V = vd();
+    if (V.quadro) return Promise.resolve(V.quadro);
+    return new Promise((ok) => {
+      const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.src = V.url;
+      v.addEventListener("loadeddata", () => { v.currentTime = Math.min(1, (v.duration || 2) / 3); }, { once: true });
+      v.addEventListener("seeked", () => { V.quadro = v; ok(v); }, { once: true });
+      v.addEventListener("error", () => ok(null), { once: true });
+    });
+  }
+  async function pintarTemasVideo() {
+    await carregarMarca();
+    const v = await primeiroQuadro(), V = vd();
+    document.querySelectorAll("[data-vd-tema]").forEach((b) => quadroVideo(b.querySelector("canvas").getContext("2d"), 270, 480, v, { ...V, tema: b.dataset.vdTema }));
+  }
+  async function gravarVideo() {
+    const V = vd(), tipo = formatoGravacao();
+    if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return; }
+    await carregarMarca();
+    const btn = $("#vdGerar"); btn.disabled = true; btn.textContent = "Gravando… 0%";
+    const barra = $("#vdProgresso"); barra.hidden = false;
+    const W = 1080, H = 1920, tela = document.createElement("canvas"); tela.width = W; tela.height = H;
+    const ctx = tela.getContext("2d"), previa = $("#vdQuadro").getContext("2d");
+    const v = document.createElement("video"); v.src = V.url; v.playsInline = true; v.crossOrigin = "anonymous";
+    await new Promise((ok) => v.addEventListener("loadedmetadata", ok, { once: true }));
+    const fluxo = tela.captureStream(30);
+    let ac = null;
+    try { // som do vídeo
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const dest = ac.createMediaStreamDestination(); ac.createMediaElementSource(v).connect(dest);
+      dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
+    } catch (e) { v.muted = true; }
+    const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
+    const partes = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
+    const fim = new Promise((ok) => { rec.onstop = ok; });
+    let rodando = true;
+    const desenhar = () => {
+      if (!rodando) return;
+      quadroVideo(ctx, W, H, v, V); previa.drawImage(tela, 0, 0, 540, 960);
+      const pct = Math.min(100, Math.round((v.currentTime / (v.duration || 1)) * 100));
+      btn.textContent = `Gravando… ${pct}%`; barra.querySelector("i").style.width = pct + "%";
+      requestAnimationFrame(desenhar);
+    };
+    quadroVideo(ctx, W, H, v, V);
+    rec.start(500);
+    try { await v.play(); } catch (e) { v.muted = true; await v.play(); }
+    desenhar();
+    await new Promise((ok) => v.addEventListener("ended", ok, { once: true }));
+    rodando = false; rec.stop(); await fim;
+    if (ac) ac.close().catch(() => {});
+    const mp4 = tipo.startsWith("video/mp4");
+    const blob = new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" });
+    V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-video.${mp4 ? "mp4" : "webm"}` };
+    mostrarPasso();
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "video") return;
+    const t = e.target, V = vd();
+    const te = t.closest("[data-vd-tema]"); if (te) { V.tema = te.dataset.vdTema; document.querySelectorAll("[data-vd-tema]").forEach((b) => b.classList.toggle("on", b === te)); return; }
+    const co = t.closest("[data-vd-cor]"); if (co) { V.cor = co.dataset.vdCor; document.querySelectorAll("[data-vd-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarTemasVideo(); return; }
+    if (t.closest("#vdGerar")) { gravarVideo(); return; }
+    if (t.closest("#vdRefazer")) { V.resultado = null; mostrarPasso(); return; }
+    if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); toast("Vídeo salvo"); return; }
+    if (t.closest("#vdPostar")) {
+      const r = V.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
+      if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
+      baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram ou o WhatsApp e escolha da galeria");
+    }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal !== "video") return;
+    const V = vd();
+    if (e.target.id === "vdTitulo") { V.titulo = e.target.value; pintarTemasVideo(); }
+    if (e.target.id === "vdRodape") { V.rodape = e.target.value.trim(); pintarTemasVideo(); }
+  });
+  $("#wzCorpo").addEventListener("change", (e) => {
+    if (e.target.id !== "vdArquivo") return;
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const V = vd(); if (V.url) URL.revokeObjectURL(V.url);
+    V.arquivo = f; V.url = URL.createObjectURL(f); V.quadro = null; V.resultado = null;
     mostrarPasso();
   });
 

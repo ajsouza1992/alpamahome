@@ -448,10 +448,14 @@ body.travado { overflow: hidden; }
 .wz-bolinha svg { width: 26px; height: 26px; stroke-width: 1.8; color: #fff; }
 .wz-zap { background: #25d366; box-shadow: none; }
 .wz-formatos .wz-op { gap: 8px; }
-.wz-formatos canvas { height: 150px; width: auto; border-radius: 10px; box-shadow: 0 6px 16px -8px rgba(29,29,31,.35); background: #fff; }
+.wz-formatos canvas { display: block; height: 140px !important; width: auto !important; max-width: 100%; border-radius: 10px; box-shadow: 0 6px 16px -8px rgba(29,29,31,.35); background: #fff; }
 .wz-chips button.on { background: var(--rosa); border-color: var(--rosa); color: #fff; }
 .lv-galeria { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px; border-radius: 18px; background: var(--campo); }
 .lv-galeria img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: #fff; }
 .lv-campos { display: grid; gap: 6px; min-width: 0; }
 .lv-campos input { width: 100%; min-width: 0; min-height: 38px; padding: 6px 12px; font-size: 13.5px; }
 .wz-mini canvas[width="1080"] { aspect-ratio: auto; }
+.vd-previa { display: block; width: auto; max-width: 100%; max-height: 50dvh; margin: 0 auto; border-radius: 16px; background: #000; }
+.vd-progresso { height: 8px; border-radius: 8px; background: var(--linha); overflow: hidden; }
+.vd-progresso i { display: block; height: 100%; width: 0; background: var(--rosa); }
+.vd-progresso[hidden] { display: none; }
