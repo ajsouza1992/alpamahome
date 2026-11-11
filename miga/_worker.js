@@ -316,41 +316,44 @@ function umPrecoSo(texto, link) {
 async function chamarGemini(contents, env) {
   const modelo = env.GEMINI_MODEL || "gemini-2.5-flash";
   const chave = String(env.GEMINI_API_KEY || "").trim();
-  // Chaves "AIza..." = Google AI Studio; chaves "AQ...." = Vertex AI (modo express)
-  const vertex = chave.startsWith("AQ.");
-  const url = vertex
-    ? `https://aiplatform.googleapis.com/v1/publishers/google/models/${encodeURIComponent(modelo)}:generateContent?key=${encodeURIComponent(chave)}`
-    : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`;
-  const r = await fetch(url, {
-    method: "POST",
-    headers: vertex ? { "content-type": "application/json" } : { "content-type": "application/json", "x-goog-api-key": chave },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: INSTRUCAO }] },
-      contents,
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-        // O "pensamento" do Gemini 2.5 Flash gasta os mesmos tokens da resposta e podia deixar o texto vazio
-        ...(/2\.5-flash/.test(modelo) ? { thinkingConfig: { thinkingBudget: 0 } } : {})
-      }
-    })
+  const corpo = JSON.stringify({
+    systemInstruction: { parts: [{ text: INSTRUCAO }] },
+    contents,
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 2048,
+      // O "pensamento" do Gemini 2.5 Flash gasta os mesmos tokens da resposta e podia deixar o texto vazio
+      ...(/2\.5-flash/.test(modelo) ? { thinkingConfig: { thinkingBudget: 0 } } : {})
+    }
   });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    const msg = (d.error && d.error.message) || "Erro " + r.status;
-    throw Object.assign(new Error(msg), { status: r.status });
+  // Chaves "AIza..." = Google AI Studio. Chaves "AQ...." podem ser do AI Studio (ligadas a uma conta de serviço)
+  // ou do Vertex AI: tenta os dois endereços.
+  const caminhos = [
+    { url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`, headers: { "content-type": "application/json", "x-goog-api-key": chave } },
+    ...(chave.startsWith("AQ.") ? [{ url: `https://aiplatform.googleapis.com/v1/publishers/google/models/${encodeURIComponent(modelo)}:generateContent?key=${encodeURIComponent(chave)}`, headers: { "content-type": "application/json" } }] : [])
+  ];
+  let ultimoErro;
+  for (const c of caminhos) {
+    const r = await fetch(c.url, { method: "POST", headers: c.headers, body: corpo });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      ultimoErro = Object.assign(new Error((d.error && d.error.message) || "Erro " + r.status), { status: r.status });
+      if (r.status === 401 || r.status === 403 || r.status === 404) continue; // tenta o outro endereço
+      throw ultimoErro;
+    }
+    const partes = d.candidates?.[0]?.content?.parts || [];
+    const texto = partes.map((x) => x.text || "").join("").replace(/^```[a-z]*\s*|```$/gi, "").trim();
+    if (!texto) throw new Error("A IA não devolveu texto (" + (d.candidates?.[0]?.finishReason || "sem resposta") + "). Tente de novo.");
+    return { texto, modelo };
   }
-  const partes = d.candidates?.[0]?.content?.parts || [];
-  const texto = partes.map((x) => x.text || "").join("").replace(/^```[a-z]*\s*|```$/gi, "").trim();
-  if (!texto) throw new Error("A IA não devolveu texto (" + (d.candidates?.[0]?.finishReason || "sem resposta") + "). Tente de novo.");
-  return { texto, modelo };
+  throw ultimoErro;
 }
 
 /** Traduz os erros mais comuns do Gemini para algo que dá para resolver */
 function motivoIA(e) {
   const m = String(e.message || "");
   if (/api key not valid|API_KEY_INVALID|invalid api key/i.test(m)) return "a chave da IA (GEMINI_API_KEY) é inválida — crie uma nova no Google AI Studio e troque no Cloudflare";
-  if (/permission|PERMISSION_DENIED|not been used|disabled/i.test(m)) return "a chave da IA não tem permissão para o Gemini — ative a Generative Language API no projeto da chave";
+  if (/permission|PERMISSION_DENIED|not been used|disabled/i.test(m)) return "a chave da IA não tem permissão para o Gemini. Google disse: " + m.slice(0, 220);
   if (/not found|is not supported/i.test(m)) return "o modelo da IA não existe mais (" + m.slice(0, 80) + ")";
   if (e.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(m)) return "o limite gratuito da IA acabou por agora — espere um pouco";
   if (/SAFETY|blocked/i.test(m)) return "a IA bloqueou o texto por segurança — tente outro ajuste";

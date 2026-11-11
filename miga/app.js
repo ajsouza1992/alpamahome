@@ -945,7 +945,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=34"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=35"; });
     }
     edFoto = null;
     try {
@@ -1286,7 +1286,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=34"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=35"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2146,10 +2146,12 @@
   function telaVideo(c) {
     const V = vd();
     if (wz.passo === "vDados") {
-      if (!V.iniciado) { V.iniciado = true; if (wz.itemId) usarProdutoNoVideo(wzItem()); }
+      // Já vem preenchido: o produto escolhido, ou o último da lista
+      if (!V.iniciado) { V.iniciado = true; const ini = wzItem() || fila().find((x) => !x.carregando && x.nome); if (ini) usarProdutoNoVideo(ini); }
       const l2 = fila().filter((x) => !x.carregando);
       c.innerHTML = `<h2 class="wz-titulo">O que vai aparecer no vídeo?</h2>
-        <p class="nota">Escolha um produto da lista para preencher, ou digite.</p>
+        <p class="nota">Toque num produto da lista ou cole o link: nome, foto e preço já vêm preenchidos.</p>
+        <div class="colar"><input id="vdLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off"><button type="button" class="colar__btn" id="vdColar">Colar</button></div>
         <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>
         <label class="campo"><span>Título (use *asteriscos* para destacar)</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
@@ -2256,6 +2258,14 @@
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "video") return;
     const t = e.target, V = vd();
+    if (t.closest("#vdColar")) {
+      let txt = $("#vdLink").value.trim();
+      if (!txt) { try { txt = (await navigator.clipboard.readText()).trim(); } catch (err) { $("#vdLink").focus(); toast("Toque e segure no campo para colar"); return; } }
+      toast("Buscando o produto…");
+      const it = await adicionarNaFila(txt);
+      if (it) { usarProdutoNoVideo(it); mostrarPasso(); }
+      return;
+    }
     const vi = t.closest("[data-vd-item]"); if (vi) { const it = fila().find((x) => x.id === vi.dataset.vdItem); usarProdutoNoVideo(V.itemId === it.id ? null : it); mostrarPasso(); return; }
     const te = t.closest("[data-vd-tema]"); if (te) { V.tema = te.dataset.vdTema; document.querySelectorAll("[data-vd-tema]").forEach((b) => b.classList.toggle("on", b === te)); return; }
     const co = t.closest("[data-vd-cor]"); if (co) { V.cor = co.dataset.vdCor; document.querySelectorAll("[data-vd-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarTemasVideo(); return; }
