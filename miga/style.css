@@ -572,3 +572,7 @@ body.travado { overflow: hidden; }
   #ppItem { max-width: none; }
 }
 @media (min-width: 1500px) { .conteudo { padding-left: 64px; padding-right: 64px; } }
+.conta .btn { margin-top: 10px; width: 100%; }
+.conta small.nota { display: block; margin-top: 6px; font-size: 12.5px; }
+.titulos-prontos { gap: 6px; }
+.titulos-prontos button { min-height: 36px; padding: 0 12px; font-size: 12.5px; }

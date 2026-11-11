@@ -132,6 +132,31 @@
     });
   }
   /** Arquivo da foto para compartilhar junto com o texto */
+  /* Títulos prontos para tocar (o que está entre *asteriscos* sai em destaque) */
+  const TITULOS_PRONTOS = ["Achadinho\n*do dia* ✨", "Oferta\n*relâmpago* ⚡", "*Baixou*\no preço! 📉", "*Últimas*\nhoras ⏰", "Chegou\n*novidade* 💖", "Achados\n*da semana* 🛍️", "Cupom\n*do dia* 🎟️", "Só\n*hoje* 🔥", "Achados de\n*beleza* 💄", "Casa\n*arrumadinha* 🏡", "Looks com\n*desconto* 👗", "Treino\n*em dia* 💪"];
+  const chipsTitulos = (alvo) => `<div class="wz-chips titulos-prontos" data-alvo="${alvo}">${TITULOS_PRONTOS.map((t, i) => `<button type="button" data-titulo-pronto="${i}">${esc(t.replace(/\*/g, "").replace(/\n/g, " "))}</button>`).join("")}</div>`;
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-titulo-pronto]");
+    if (!b) return;
+    const alvo = document.getElementById(b.closest("[data-alvo]").dataset.alvo);
+    if (!alvo) return;
+    alvo.value = TITULOS_PRONTOS[+b.dataset.tituloPronto];
+    alvo.dispatchEvent(new Event("input", { bubbles: true }));
+    b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+  });
+  /** Converte a foto (webp, png…) para JPEG ou PNG, que o WhatsApp e a área de transferência aceitam */
+  async function converterImagem(arq, tipo = "image/jpeg") {
+    if (!arq) return null;
+    try {
+      const bmp = await createImageBitmap(arq);
+      const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+      const x = c.getContext("2d");
+      if (tipo === "image/jpeg") { x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); }
+      x.drawImage(bmp, 0, 0);
+      return await new Promise((ok) => c.toBlob((b) => ok(b ? new File([b], "achadinho." + (tipo === "image/png" ? "png" : "jpg"), { type: tipo }) : arq), tipo, 0.92));
+    } catch (e) { return arq; }
+  }
+  const noComputador = () => matchMedia("(pointer: fine)").matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
   async function arquivoDaImagem(src) {
     if (!src) return null;
     const tentativas = src.startsWith("data:") ? [src] : [viaServidor(src), src];
@@ -287,6 +312,9 @@
       dados = criarNuvem();
     }
     mostrarEntrada(false);
+    await carregarDados();
+  }
+  async function carregarDados(listaDoAparelho) {
     try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "", cupons: [] }; toast("Não consegui carregar seus grupos"); }
     config.cupons = config.cupons || [];
     try {
@@ -295,6 +323,12 @@
       if (!config.fila.length && config.filaAntiga && config.filaAntiga.length) { config.fila = config.filaAntiga; await dados.gravarFila(config.fila); }
     } catch (e) { config.fila = config.fila || []; toast("Não consegui carregar a lista: " + (e.code || e.message)); }
     delete config.filaAntiga;
+    // Ao ligar a conta Google: junta a lista que estava neste aparelho
+    if (listaDoAparelho && listaDoAparelho.length) {
+      const links = new Set(config.fila.map((i) => i.link));
+      const novos = listaDoAparelho.filter((i) => !links.has(i.link));
+      if (novos.length) { config.fila = [...novos, ...config.fila]; try { await dados.gravarFila(config.fila); } catch (e) { /* segue */ } }
+    }
     atualizarContadores();
     renderGruposEnvio();
     renderCupons();
@@ -304,6 +338,42 @@
     if (recebidoPendente) { const t = recebidoPendente; recebidoPendente = ""; irPara("postar"); adicionarNaFila(t); }
   }
   let recebidoPendente = "";
+  /** Liga a conta deste aparelho a uma conta Google: abre a mesma conta no celular e no computador */
+  async function entrarComGoogle() {
+    if (!conta.nuvem || !conta.fb) { toast("A nuvem (Firebase) não está configurada"); return; }
+    const { auth, a } = conta.fb, prov = new auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: "select_account" });
+    const listaAqui = fila().filter((i) => !i.carregando).map(({ carregando, ...i }) => i);
+    try {
+      if (a.currentUser && a.currentUser.isAnonymous) await auth.linkWithPopup(a.currentUser, prov);
+      else await auth.signInWithPopup(a, prov);
+    } catch (e) {
+      if (e.code === "auth/credential-already-in-use" || e.code === "auth/email-already-in-use") {
+        const cred = auth.GoogleAuthProvider.credentialFromError(e);
+        if (!cred) { toast("Não consegui entrar com o Google. Tente de novo."); return; }
+        await auth.signInWithCredential(a, cred);
+      } else {
+        toast(e.code === "auth/operation-not-allowed" ? "Ative o login com Google no Firebase (Authentication → Método de login → Google)"
+          : e.code === "auth/unauthorized-domain" ? "Autorize o domínio alpama.app no Firebase (Authentication → Configurações)"
+          : e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request" ? "Login cancelado"
+          : "Não consegui entrar com o Google: " + (e.code || e.message));
+        return;
+      }
+    }
+    conta.uid = a.currentUser.uid; dados = criarNuvem();
+    await carregarDados(listaAqui);
+    if (!$("#aba-postar").hidden) renderFila();
+    mostrarConta();
+    toast("Pronto! Entre com esse mesmo Google nos outros aparelhos");
+  }
+  function mostrarConta() {
+    const u = conta.fb && conta.fb.a.currentUser;
+    $("#contaInfo").textContent = !conta.nuvem ? "Modo local (Firebase ainda não configurado)"
+      : !u ? "Não conectada" : u.isAnonymous ? `Só neste aparelho · ${u.uid.slice(0, 8)}` : `Google · ${u.email || u.uid.slice(0, 8)}`;
+    $("#entrarGoogle").hidden = !conta.nuvem || !!(u && !u.isAnonymous);
+    $("#notaGoogle").hidden = $("#entrarGoogle").hidden;
+  }
+  $("#entrarGoogle").addEventListener("click", entrarComGoogle);
   function erroFirebase(e) {
     const c = (e && e.code) || "";
     return c.includes("operation-not-allowed") ? "O login anônimo não está ativado no Firebase (Authentication → Método de login → Anônimo)." :
@@ -991,7 +1061,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=38"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=39"; });
     }
     edFoto = null;
     try {
@@ -1316,6 +1386,7 @@
       produto: { nome: $("#bnNome").value.trim(), antigo: lerPreco($("#bnAntigo").value), novo: lerPreco($("#bnNovo").value) }
     };
   }
+  document.querySelectorAll(".titulos-prontos[data-alvo]:empty").forEach((d) => { d.outerHTML = chipsTitulos(d.dataset.alvo); });
   function redesenharBanner() {
     const M = MODELOS[bnModelo.valor()];
     $("#bnCamposProduto").hidden = !M.produto;
@@ -1332,7 +1403,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=38"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=39"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1761,8 +1832,18 @@
   }
   async function enviarWhats(modo) {
     const it = wzItem(), texto = it.texto;
+    if (modo === "foto" && noComputador()) {
+      // Computador: a foto vai para a área de transferência e o WhatsApp abre com o texto pronto
+      const png = (async () => converterImagem(await arquivoDaImagem(it.imagem), "image/png"))();
+      let copiou = false;
+      try { await navigator.clipboard.write([new ClipboardItem({ "image/png": png.then((f) => f || Promise.reject()) })]); copiou = true; } catch (e) { copiou = false; }
+      abrirWhatsApp(texto);
+      toast(copiou ? "A foto foi copiada: na conversa do WhatsApp, aperte Ctrl+V para colar a foto e envie com o texto" : "O WhatsApp abriu com o texto. Para a foto, use “Baixar” e arraste para a conversa");
+      registrarCompartilhado("whatsapp", "WhatsApp");
+      return;
+    }
     if (modo === "foto") {
-      const arq = it.imagem ? await arquivoDaImagem(it.imagem) : null;
+      const arq = it.imagem ? await converterImagem(await arquivoDaImagem(it.imagem)) : null;
       if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
         try { await navigator.share({ files: [arq], text: texto }); registrarCompartilhado("whatsapp", "WhatsApp (com foto)"); return; }
         catch (e) { if (e.name === "AbortError") return; }
@@ -1952,7 +2033,7 @@
     if (wz.passo === "tema") {
       c.innerHTML = `<h2 class="wz-titulo">Tema e cor</h2>
         <div class="wz-chips" id="lvTemas">${Object.entries(TEMAS_LIVRE).map(([k, v]) => `<button type="button" data-lv-tema="${k}"${L.tema === k ? ' class="on"' : ""}>${v.nome}</button>`).join("")}</div>
-        <label class="campo"><span>Título (use *asteriscos* para destacar)</span><textarea id="lvTitulo" rows="2">${esc(L.titulo)}</textarea></label>
+        <label class="campo"><span>Título</span><textarea id="lvTitulo" rows="2">${esc(L.titulo)}</textarea></label>${chipsTitulos("lvTitulo")}
         <div class="wz-miniaturas">${["creme", "rosa", "branco", "preto"].map((cr) => `<button type="button" class="wz-mini${L.cor === cr ? " on" : ""}" data-lv-cor="${cr}"><canvas></canvas><span>${CORES_NOME[cr]}</span></button>`).join("")}</div>
         ${botaoContinuar(true)}`;
       const pintar = () => document.querySelectorAll("[data-lv-cor]").forEach((b) => desenharGrade(b.querySelector("canvas"), { cor: b.dataset.lvCor }));
@@ -2185,7 +2266,7 @@
         <p class="nota">Toque num produto da lista ou cole o link: nome, foto e preço já vêm preenchidos.</p>
         <div class="colar"><input id="vdLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off"><button type="button" class="colar__btn" id="vdColar">Colar</button></div>
         <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>
-        <label class="campo"><span>Título (use *asteriscos* para destacar)</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>
+        <label class="campo"><span>Título</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>${chipsTitulos("vdTitulo")}
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
         <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
         <label class="campo"><span>Cupom (opcional)</span><input id="vdCupom" value="${esc(V.cupom)}" maxlength="20"></label>
@@ -2543,9 +2624,7 @@
   /* =========================== Configurações =========================== */
   const dialogo = $("#config");
   function abrirConfig() {
-    $("#contaInfo").textContent = conta.nuvem
-      ? (conta.uid ? `Conta deste aparelho · ${conta.uid.slice(0, 8)}` : "Não conectada")
-      : "Modo local (Firebase ainda não configurado)";
+    mostrarConta();
     api("status").then((s) => {
       $("#status").textContent = s.catalogo && s.catalogo.mercadolivre ? "Servidor conectado · Mercado Livre ligado" : "Servidor conectado";
       $("#status").className = "status ok";
