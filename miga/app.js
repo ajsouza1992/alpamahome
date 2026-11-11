@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=47"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=48"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=47"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=48"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1797,7 +1797,7 @@
   }
   $("#wzVoltar").addEventListener("click", () => irPasso(-1));
   const opcaoCard = (attr, v, titulo, desc, on, extra = "") => `<button type="button" class="wz-op${on ? " on" : ""}" ${attr}="${esc(v)}">${extra}<span><b>${esc(titulo)}</b>${desc ? `<small>${esc(desc)}</small>` : ""}</span></button>`;
-  const botaoContinuar = (ok, rot = "Continuar") => `<button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button>`;
+  const botaoContinuar = (ok, rot = "Continuar") => `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button></div>`;
 
   function mostrarPasso() {
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
@@ -1818,10 +1818,11 @@
     if (wz.canal === "video") { telaVideo(c); return; }
     if (wz.passo === "produto") {
       const l2 = fila().filter((x) => !x.carregando && (wz.filtroCat === undefined || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
-      c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2><p class="nota">Escolha da sua lista ou cole um link novo.</p>
+      c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2>
+        <div class="colar"><input id="wzLink" type="url" inputmode="url" placeholder="Cole um link novo" autocomplete="off"><button type="button" class="colar__btn" id="wzColar">Colar</button></div>
+        <p class="nota">Ou escolha da sua lista:</p>
         ${filtroCatWz()}
         <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"} · ${esc(NOME_LOJA[x.loja] || "")}</small></span></button>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
-        <div class="colar"><input id="wzLink" type="url" inputmode="url" placeholder="Ou cole um link novo" autocomplete="off"><button type="button" class="colar__btn" id="wzColar">Colar</button></div>
         ${botaoContinuar(!!item)}`;
       return;
     }
