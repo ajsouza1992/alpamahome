@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=57">
+  <link rel="manifest" href="manifest.json?v=58">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=57">
+  <link rel="stylesheet" href="style.css?v=58">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -55,7 +55,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=57" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=58" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem para o WhatsApp, o Instagram e o Telegram.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -89,7 +89,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=57" alt="">
+    <img src="logo.png?v=58" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -382,17 +382,44 @@
   </div>
 
   <!-- Configurações -->
-  <dialog id="config" class="dialogo">
-    <form method="dialog">
-      <h2>Configurações</h2>
-      <p class="status" id="status">Verificando…</p>
-      <div class="conta">
-        <span>Conta</span>
+  <dialog id="config" class="dialogo folha">
+    <form method="dialog" class="ajustes">
+      <h2>Ajustes</h2>
+
+      <section class="aj-bloco">
+        <h3>Seu @ do Instagram</h3>
+        <p class="nota">Aparece nas artes e nas mensagens.</p>
+        <input id="ajInsta" maxlength="30" placeholder="@migapromo.oficial" autocomplete="off">
+      </section>
+
+      <section class="aj-bloco">
+        <h3>Seus cupons</h3>
+        <p class="nota">Ficam prontos para usar na hora de criar.</p>
+        <div class="aj-linha"><input id="ajCupom" maxlength="40" placeholder="Ex.: MIGA10" autocapitalize="characters"><button type="button" class="btn btn--rosa" id="ajAddCupom">Salvar</button></div>
+        <div class="aj-cupons" id="ajCupons"></div>
+      </section>
+
+      <section class="aj-bloco">
+        <h3>Onde você costuma postar</h3>
+        <p class="nota">Já vem marcado quando você for compartilhar.</p>
+        <div class="opcoes-texto" id="ajLugares"></div>
+      </section>
+
+      <section class="aj-bloco">
+        <label class="aj-chave"><span><b>Esconder os já compartilhados</b><small>A lista mostra só o que falta postar</small></span><input type="checkbox" id="ajOcultar"><i></i></label>
+      </section>
+
+      <section class="aj-bloco conta">
+        <h3>Sua conta</h3>
         <strong id="contaInfo">—</strong>
         <button type="button" class="btn btn--rosa" id="entrarGoogle">Usar a mesma conta em todos os aparelhos</button>
         <small class="nota" id="notaGoogle">Entre com o seu Google aqui e no outro aparelho: a lista, o histórico e os grupos ficam iguais nos dois.</small>
-        <button type="button" class="link link--perigo" id="sair">Sair (pede o código e o Google de novo)</button>
-      </div>
+        <div class="aj-linha aj-acoes">
+          <button type="button" class="link" id="ajAtualizar">Atualizar o app</button>
+          <button type="button" class="link link--perigo" id="sair">Sair</button>
+        </div>
+      </section>
+
       <button class="btn btn--branco" value="fechar" type="submit">Fechar</button>
     </form>
   </dialog>
@@ -599,7 +626,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=57"></script>
-  <script src="app.js?v=57"></script>
+  <script src="firebase-config.js?v=58"></script>
+  <script src="app.js?v=58"></script>
 </body>
 </html>

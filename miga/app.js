@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=57"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=58"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=57"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=58"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1612,6 +1612,7 @@
     if (catNova !== "auto") tags.push(["nova", "Colando em: " + CATS_LISTA[catNova]]);
     $("#ppTags").innerHTML = tags.map(([k, n]) => `<button type="button" data-tirar-filtro="${k}">${esc(n)} ✕</button>`).join("");
     $("#ppFiltroQtd").hidden = !tags.length; $("#ppFiltroQtd").textContent = tags.length;
+    $("#ppFiltrar").classList.toggle("ativo", !!tags.length);
     const vis = fila().filter((i) => (filtroLista === "todas" || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i))).length;
     $("#ppTotal").textContent = `${vis} produto${vis === 1 ? "" : "s"}`;
   }
@@ -2187,7 +2188,7 @@
     if (wz.passo === "resumo") {
       const prox = fila().find((x) => x.id !== item.id && !x.carregando && !Object.values(x.feito || {}).some(Boolean));
       c.innerHTML = `<div class="rt-fim"><div class="rt-big">✓</div><h2 class="wz-titulo">${wz.lugares.every((k) => wz.res[k] === "feito") ? "Tudo postado!" : "Roteiro concluído"}</h2>
-        <div class="rt-lista">${wz.lugares.map((k) => `<div><span>${LUGARES[k].nome}</span><b class="${wz.res[k] === "feito" ? "ok" : ""}">${wz.res[k] === "feito" ? "✓ postado" : "pulado"}</b></div>`).join("")}</div></div>
+        <div class="rt-lista">${wz.lugares.map((k) => `<div><span>${LUGARES[k].nome}</span><b class="${wz.res[k] === "feito" ? "ok" : ""}">${wz.res[k] === "feito" ? "Postado" : "Pulado"}</b></div>`).join("")}</div></div>
         ${prox ? `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="rtProximo">Próximo produto da lista</button></div><p class="nota wz-centro">Próximo: <b>${esc(prox.nome || "produto")}</b></p>` : '<p class="nota wz-centro">Não há mais produtos para postar na lista.</p>'}
         <button type="button" class="btn btn--branco" id="rtLista">Voltar para a lista</button>`;
       return true;
@@ -2242,7 +2243,11 @@
       const k = lg.dataset.lugar;
       wz.lugares = wz.lugares.includes(k) ? wz.lugares.filter((x) => x !== k) : Object.keys(LUGARES).filter((x) => x === k || wz.lugares.includes(x));
       try { localStorage.setItem("miga_lugares", JSON.stringify(wz.lugares)); } catch (err) { /* segue */ }
-      mostrarPasso(); return;
+      // Atualiza só o que mudou (sem redesenhar a tela e sem voltar ao topo)
+      lg.classList.toggle("on", wz.lugares.includes(k));
+      const n = wz.lugares.length, b = $("#wzContinuar");
+      b.disabled = !n; b.textContent = `Começar (${n} ${n === 1 ? "lugar" : "lugares"})`;
+      return;
     }
     if (t.closest("#rtPostar")) { postarLugar(); return; }
     if (t.closest("#rtPular")) { wz.res[wz.lugares[wz.idx]] = "pulado"; avancarRoteiro(); return; }
@@ -3004,14 +3009,49 @@
 
   /* =========================== Configurações =========================== */
   const dialogo = $("#config");
+  function pintarAjustes() {
+    $("#ajCupons").innerHTML = (config.cupons || []).length
+      ? config.cupons.map((cp) => `<span class="aj-cupom">${esc(cp)}<button type="button" data-aj-tirar="${esc(cp)}" aria-label="Apagar cupom ${esc(cp)}">✕</button></span>`).join("")
+      : '<small class="nota">Nenhum cupom salvo ainda.</small>';
+    const marcados = lugaresSalvos();
+    $("#ajLugares").innerHTML = Object.entries(LUGARES).map(([k, l]) => `<button type="button" data-aj-lugar="${k}" class="${marcados.includes(k) ? "on" : ""}">${esc(l.nome)}</button>`).join("");
+    $("#ajOcultar").checked = ocultarComp;
+  }
   function abrirConfig() {
     mostrarConta();
-    api("status").then((s) => {
-      $("#status").textContent = s.catalogo && s.catalogo.mercadolivre ? "Servidor conectado · Mercado Livre ligado" : "Servidor conectado";
-      $("#status").className = "status ok";
-    }).catch(() => { $("#status").textContent = "Servidor indisponível (modo offline)"; $("#status").className = "status off"; });
+    $("#ajInsta").value = config.instagram || "";
+    pintarAjustes();
     if (!dialogo.open) dialogo.showModal();
   }
+  let ajInstaTimer;
+  $("#ajInsta").addEventListener("input", () => {
+    clearTimeout(ajInstaTimer);
+    ajInstaTimer = setTimeout(() => { config.instagram = arroba($("#ajInsta").value); gravarConfig(); }, 600);
+  });
+  $("#ajAddCupom").addEventListener("click", () => {
+    if (!salvarCupom($("#ajCupom").value)) { toast("Digite o cupom"); $("#ajCupom").focus(); return; }
+    $("#ajCupom").value = ""; pintarAjustes(); toast("Cupom salvo");
+  });
+  $("#ajCupom").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("#ajAddCupom").click(); } });
+  dialogo.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-aj-tirar]");
+    if (t) { config.cupons = config.cupons.filter((x) => x !== t.dataset.ajTirar); gravarConfig(); renderCupons(); pintarAjustes(); toast("Cupom apagado"); return; }
+    const l = e.target.closest("[data-aj-lugar]");
+    if (l) {
+      const k = l.dataset.ajLugar; let m = lugaresSalvos();
+      m = m.includes(k) ? m.filter((x) => x !== k) : [...m, k];
+      if (!m.length) { toast("Deixe pelo menos um lugar marcado"); return; }
+      try { localStorage.setItem("miga_lugares", JSON.stringify(m)); } catch (err) { /* segue */ }
+      l.classList.toggle("on", m.includes(k));
+    }
+  });
+  $("#ajOcultar").addEventListener("change", (e) => { ocultarComp = e.target.checked; guardarOcultar(); renderFila(); });
+  $("#ajAtualizar").addEventListener("click", async () => {
+    toast("Atualizando…");
+    try { const r = await navigator.serviceWorker?.getRegistrations?.(); for (const x of r || []) await x.unregister(); } catch (e) { /* segue */ }
+    try { for (const k of await caches.keys()) await caches.delete(k); } catch (e) { /* segue */ }
+    location.reload();
+  });
   $("#abrirConfig").addEventListener("click", abrirConfig);
 
   $("#sair").addEventListener("click", async () => {
