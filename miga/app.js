@@ -403,14 +403,15 @@
   async function iniciarConta() {
     ls.remover(CH.senha); // código de acesso antigo: não é mais usado
     if (!conta.nuvem) { mostrarEntrada(false); await carregarDados(); return; }
+    // Enquanto confere se já está logada: só o logo (sem botão e sem "Entrando...")
+    $("#passoGoogle").hidden = true;
     mostrarEntrada(true);
-    carregandoEntrada(true);
     try {
       await iniciarFirebase();
       const u = await usuarioAtual();
       if (u && !u.isAnonymous) await abrirComConta(); else pedirGoogle();
     } catch (e) { pedirGoogle(erroFirebase(e)); }
-    carregandoEntrada(false);
+    $("#passoGoogle").hidden = false;
   }
 
   /* =========================== Abas =========================== */
@@ -1050,7 +1051,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=61"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=62"; });
     }
     edFoto = null;
     try {
@@ -1406,7 +1407,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=61"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=62"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
