@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=50"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=51"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=50"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=51"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2216,7 +2216,8 @@
         <h3 class="wz-sub">Legenda (já vai junto)</h3>
         <div class="balao wz-balao" id="lvBalao">${formatarWhats(legendaLivre())}</div>
         <div class="wz-chips"><button type="button" id="lvPadrao">Voltar ao texto padrão</button></div>
-        <details class="mais"><summary>Editar a legenda</summary><textarea id="lvTexto" rows="9">${esc(legendaLivre())}</textarea></details>
+        <label class="campo"><span>Editar o texto</span><textarea id="lvTexto" rows="10">${esc(legendaLivre())}</textarea></label>
+        <button type="button" class="btn btn--branco" id="lvCopiarTexto">Copiar só o texto</button>
         <button type="button" class="btn btn--rosa" id="lvPostar">Postar com a legenda</button>
         <button type="button" class="btn btn--branco" id="lvBaixar">Baixar imagem</button>
         <p class="nota">No WhatsApp e no Telegram os links da legenda ficam clicáveis. No Instagram, link na legenda não abre: use o adesivo no story ou a bio.</p>
@@ -2252,6 +2253,11 @@
       return;
     }
     if (t.closest("#lvPadrao")) { delete L.legenda; mostrarPasso(); return; }
+    if (t.closest("#lvCopiarTexto")) {
+      if (await copiarTexto(legendaLivre())) toast("Texto copiado");
+      else { $("#lvTexto").focus(); $("#lvTexto").select(); toast("Toque e segure no texto para copiar"); }
+      return;
+    }
     if (t.closest("#lvBaixar")) { const tela = document.createElement("canvas"); desenharGrade(tela, { previa: false }); tela.toBlob((b) => { if (b) { baixarBlob(b, "miga-promo-achados.jpg"); toast("Imagem salva"); } }, "image/jpeg", 0.92); }
   });
   $("#wzCorpo").addEventListener("input", (e) => {
