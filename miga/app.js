@@ -188,8 +188,10 @@
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
       limpar: () => tx("readwrite", (s) => s.clear()),
-      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), instagram: ls.ler("miga_instagram") || "", fila: ls.lerJson("miga_fila", []) }),
-      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_instagram", c.instagram || ""); ls.gravar("miga_fila", JSON.stringify(c.fila || [])); }
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), instagram: ls.ler("miga_instagram") || "" }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_instagram", c.instagram || ""); },
+      lerFila: async () => ls.lerJson("miga_fila", []),
+      gravarFila: async (l) => { ls.gravar("miga_fila", JSON.stringify(l)); }
     };
   })();
 
@@ -198,6 +200,8 @@
     const { fs, db } = conta.fb;
     const col = () => fs.collection(db, "usuarios", conta.uid, "historico");
     const docConfig = () => fs.doc(db, "usuarios", conta.uid, "config", "app");
+    const colLista = () => fs.collection(db, "usuarios", conta.uid, "lista");
+    const salvos = new Map(); // o que já está salvo na nuvem (para gravar só o que mudou)
     return {
       salvar: (i) => fs.setDoc(fs.doc(col(), i.id), i),
       listar: async () => {
@@ -217,9 +221,25 @@
       lerConfig: async () => {
         const d = await fs.getDoc(docConfig());
         const x = d.exists() ? d.data() : {};
-        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], instagram: x.instagram || "", fila: x.fila || [] };
+        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], instagram: x.instagram || "", filaAntiga: x.fila || [] };
       },
-      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], instagram: c.instagram || "", fila: JSON.parse(JSON.stringify((c.fila || []).map(({ carregando, ...i }) => i))), atualizadoEm: Date.now() })
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], instagram: c.instagram || "", atualizadoEm: Date.now() }, { merge: true }),
+      // Lista: um documento por produto em usuarios/{uid}/lista/{id} (as fotos não estouram o limite de 1 MB)
+      lerFila: async () => {
+        const snap = await fs.getDocs(colLista());
+        const l = snap.docs.map((d) => d.data()).sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+        l.forEach((i) => { salvos.set(i.id, JSON.stringify(i)); });
+        return l;
+      },
+      gravarFila: async (l) => {
+        const ids = new Set(l.map((i) => i.id)), tarefas = [];
+        for (const i of l) {
+          const limpo = JSON.parse(JSON.stringify(i)); const txt = JSON.stringify(limpo);
+          if (salvos.get(i.id) !== txt) { tarefas.push(fs.setDoc(fs.doc(colLista(), i.id), limpo).then(() => salvos.set(i.id, txt))); }
+        }
+        for (const id of [...salvos.keys()]) if (!ids.has(id)) tarefas.push(fs.deleteDoc(fs.doc(colLista(), id)).then(() => salvos.delete(id)));
+        await Promise.all(tarefas);
+      }
     };
   }
   let dados = local;
@@ -269,6 +289,12 @@
     mostrarEntrada(false);
     try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "", cupons: [] }; toast("Não consegui carregar seus grupos"); }
     config.cupons = config.cupons || [];
+    try {
+      config.fila = await dados.lerFila();
+      // Lista antiga (guardada junto das configurações): passa para a coleção nova
+      if (!config.fila.length && config.filaAntiga && config.filaAntiga.length) { config.fila = config.filaAntiga; await dados.gravarFila(config.fila); }
+    } catch (e) { config.fila = config.fila || []; toast("Não consegui carregar a lista: " + (e.code || e.message)); }
+    delete config.filaAntiga;
     atualizarContadores();
     renderGruposEnvio();
     renderCupons();
@@ -945,7 +971,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=36"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=37"; });
     }
     edFoto = null;
     try {
@@ -1286,7 +1312,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=36"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=37"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1391,7 +1417,11 @@
   let ppSalvarTimer;
   function salvarFila(logo) {
     clearTimeout(ppSalvarTimer);
-    const ir = () => { gravarConfig(); contarFila(); };
+    const ir = async () => {
+      contarFila();
+      try { await dados.gravarFila(fila().filter((i) => !i.carregando).map(({ carregando, ...i }) => i)); }
+      catch (e) { toast("Não consegui salvar a lista na nuvem: " + (e.code || e.message)); }
+    };
     if (logo) ir(); else ppSalvarTimer = setTimeout(ir, 600);
   }
   function contarFila() {
