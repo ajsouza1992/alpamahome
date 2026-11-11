@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=51"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=52"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=51"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=52"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1632,7 +1632,18 @@
     try { const x = new URL(String(u || "").trim()); return x.hostname.toLowerCase().replace(/^www\./, "") + x.pathname.replace(/\/+$/, "").toLowerCase(); }
     catch (e) { return String(u || "").trim().toLowerCase(); }
   }
-  const mesmoProduto = (i, link) => [i.link, i.urlFinal].filter(Boolean).some((l) => chaveLink(l) === chaveLink(link));
+  /** Código do produto dentro do endereço (Mercado Livre MLB…, Shopee i.loja.item, Amazon /dp/…, Magalu /p/…) */
+  function idProduto(u) {
+    const s = String(u || "");
+    const m = s.match(/MLB-?(\d{6,})/i) || s.match(/[-.]i\.(\d+\.\d+)/) || s.match(/\/product\/(\d+\/\d+)/) || s.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i) || s.match(/\/p\/([a-z0-9]{6,})\//i);
+    return m ? m[1].toUpperCase() : "";
+  }
+  // Mesmo produto: mesmo link colado, ou o mesmo código de produto (nunca só a página genérica da loja)
+  const mesmoProduto = (i, link) => {
+    if (chaveLink(i.link) === chaveLink(link)) return true;
+    const alvo = idProduto(link);
+    return !!alvo && [i.link, i.urlFinal].some((l) => idProduto(l) === alvo);
+  };
   /** naLista: veio da aba Lista (recusa repetido e pede o que faltar) */
   async function adicionarNaFila(texto, naLista) {
     const lido = lerTextoCompartilhado(texto) || { link: String(texto || "").trim(), nome: "", preco: null };
