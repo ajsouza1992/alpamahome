@@ -273,7 +273,11 @@
     renderGruposEnvio();
     renderCupons();
     contarFila();
+    iniciarCriar();
+    // Link compartilhado de outro app (Shopee, Mercado Livre...): vai para a Lista
+    if (recebidoPendente) { const t = recebidoPendente; recebidoPendente = ""; irPara("postar"); adicionarNaFila(t); }
   }
+  let recebidoPendente = "";
   function erroFirebase(e) {
     const c = (e && e.code) || "";
     return c.includes("operation-not-allowed") ? "O login anônimo não está ativado no Firebase (Authentication → Método de login → Anônimo)." :
@@ -330,11 +334,12 @@
     document.querySelectorAll(".abas button").forEach((b) => {
       if (b.dataset.aba === aba) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
-    $("#barraGerar").hidden = aba !== "criar";
+    $("#barraGerar").hidden = true;
     if (aba === "historico") renderHistorico();
     if (aba === "grupos") renderGrupos();
-    if (aba === "postar" && !ppAtual) renderFila();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
+    if (aba === "postar" && !ppAtual) renderFila();
+    if (aba === "criar" && !wz.passo) iniciarCriar();
     window.scrollTo({ top: 0 });
   }
   document.querySelectorAll(".abas button").forEach((b) => b.addEventListener("click", () => irPara(b.dataset.aba)));
@@ -939,7 +944,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=30"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=31"; });
     }
     edFoto = null;
     try {
@@ -1279,7 +1284,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=30"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=31"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1376,13 +1381,10 @@
     toast("5 imagens salvas — poste na ordem 1, 2, 3, 4, 5");
   });
 
-  /* =========================== Aba Postar (lista de produtos → WhatsApp e Instagram) =========================== */
-  const ppCanal = grupoBotoes("#ppCanal", "v");
-  const ppFormato = grupoBotoes("#ppFormato", "v");
-  const ppModelo = grupoBotoes("#ppModelo", "v");
-  const ppFundo = grupoBotoes("#ppFundo", "v");
-  let ppAtual = null;          // item aberto
-  const ppFotos = {};          // fotos já carregadas (por item)
+  /* =========================== Lista (curadoria dos produtos) =========================== */
+  const ppCategoria = grupoBotoes("#ppCategoria", "v");
+  let ppAtual = null;          // produto aberto na edição
+  const ppFotos = {};          // fotos já abertas (por produto), para as montagens
   const fila = () => (config.fila = config.fila || []);
   let ppSalvarTimer;
   function salvarFila(logo) {
@@ -1391,29 +1393,31 @@
     if (logo) ir(); else ppSalvarTimer = setTimeout(ir, 600);
   }
   function contarFila() {
-    const n = fila().filter((i) => !(i.feito && i.feito.whatsapp && i.feito.instagram)).length;
+    const n = fila().length;
     $("#contPostar").hidden = !n; $("#contPostar").textContent = n;
   }
+  const tagsFeito = (i) => {
+    const f = i.feito || {};
+    return ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span class="ok">${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]} ✓</span>`).join("");
+  };
+  const fotoMini = (i) => i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
   function renderFila() {
     const l = fila();
-    $("#ppLista").innerHTML = l.length ? l.map((i) => {
-      const f = i.feito || {};
-      const foto = i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
-      return `<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
-        ${foto}
+    $("#ppLista").innerHTML = l.length ? l.map((i) => `<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
+        ${fotoMini(i)}
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}</span>
-          <span class="pp-tags"><span class="${f.whatsapp ? "ok" : ""}">WhatsApp${f.whatsapp ? " ✓" : ""}</span><span class="${f.instagram ? "ok" : ""}">Instagram${f.instagram ? " ✓" : ""}</span></span>
+          <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button>`;
-    }).join("") : '<p class="vazio-lista">Cole os links dos produtos que você vai divulgar hoje.</p>';
+      </button>`).join("") : '<p class="vazio-lista">Cole aqui os links dos produtos que você vai divulgar.</p>';
   }
   async function adicionarNaFila(texto) {
     const lido = lerTextoCompartilhado(texto) || { link: String(texto || "").trim(), nome: "", preco: null };
-    if (!urlOk(lido.link)) { toast("Cola um link começando com https://"); return; }
-    if (fila().some((i) => i.link === lido.link)) { toast("Esse produto já está na lista"); return; }
-    const item = { id: novoId(), link: lido.link, loja: detectarLoja(lido.link) || "mercadolivre", nome: lido.nome || "", precoNovo: lido.preco || null, precoAntigo: null, imagem: "", cupom: "", categoria: "outros", texto: "", modelo: "achadinho", feito: {}, criadoEm: Date.now(), carregando: true };
+    if (!urlOk(lido.link)) { toast("Cola um link começando com https://"); return null; }
+    const ja = fila().find((i) => i.link === lido.link);
+    if (ja) { toast("Esse produto já está na lista"); return ja; }
+    const item = { id: novoId(), link: lido.link, loja: detectarLoja(lido.link) || "mercadolivre", nome: lido.nome || "", precoNovo: lido.preco || null, precoAntigo: null, imagem: "", cupom: "", categoria: "outros", texto: "", feito: {}, criadoEm: Date.now(), carregando: true };
     fila().unshift(item);
     $("#ppLink").value = "";
     renderFila();
@@ -1424,14 +1428,14 @@
       if (d.preco) item.precoNovo = d.preco;
       if (d.precoAntigo) item.precoAntigo = d.precoAntigo;
       if (d.imagem) item.imagem = d.imagem;
-      if (!d.nome && !item.nome) toast(item.loja === "shopee" ? "A Shopee não mostrou o produto: toque nele e complete (ou cole o texto inteiro do Compartilhar)" : "Não achei o nome: toque no produto e complete");
+      if (!item.nome || !item.imagem) toast(item.loja === "shopee" ? "A Shopee não mostrou tudo: toque no produto e complete nome, preço e foto" : "Faltou alguma informação: toque no produto e complete");
     } catch (e) {
-      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return null; }
       toast("Não consegui ler o produto: toque nele e complete à mão");
     }
     delete item.carregando;
-    renderFila();
-    salvarFila(true);
+    renderFila(); salvarFila(true);
+    return item;
   }
   $("#ppAdicionar").addEventListener("click", () => adicionarNaFila($("#ppLink").value));
   $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); adicionarNaFila($("#ppLink").value); } });
@@ -1444,20 +1448,23 @@
     catch (e) { $("#ppLink").focus(); toast("Toque e segure no campo para colar"); }
   });
   $("#ppLimpar").addEventListener("click", async () => {
-    const prontos = fila().filter((i) => i.feito && i.feito.whatsapp && i.feito.instagram);
-    if (!prontos.length) { toast("Nenhum produto com WhatsApp e Instagram prontos"); return; }
-    if (!(await confirmar({ titulo: "Tirar os prontos?", texto: `${prontos.length} produto(s) já postados no WhatsApp e no Instagram saem da lista.`, ok: "Tirar" }))) return;
+    const prontos = fila().filter((i) => Object.values(i.feito || {}).some(Boolean));
+    if (!prontos.length) { toast("Nenhum produto compartilhado ainda"); return; }
+    if (!(await confirmar({ titulo: "Tirar os já compartilhados?", texto: `${prontos.length} produto(s) já compartilhados saem da lista (continuam no Histórico).`, ok: "Tirar" }))) return;
     config.fila = fila().filter((i) => !prontos.includes(i));
     renderFila(); salvarFila(true);
   });
-
-  // Abrir um produto da lista
   $("#ppLista").addEventListener("click", (e) => {
     const b = e.target.closest("[data-pp]");
     if (!b) return;
     const item = fila().find((i) => i.id === b.dataset.pp);
     if (item && !item.carregando) abrirItemFila(item);
   });
+  function mostrarFotoPp() {
+    const tem = !!(ppAtual && ppAtual.imagem);
+    $("#ppFotoMini").hidden = !tem; $("#ppSemFoto").hidden = tem;
+    if (tem) { $("#ppFotoMini").dataset.original = ppAtual.imagem; colocarImagem($("#ppFotoMini"), ppAtual.imagem); }
+  }
   function abrirItemFila(item) {
     ppAtual = item;
     $("#ppListaBloco").hidden = true; $("#ppItem").hidden = false;
@@ -1466,29 +1473,10 @@
     $("#ppAntigo").value = item.precoAntigo ? paraCampo(item.precoAntigo) : "";
     $("#ppNovo").value = item.precoNovo ? paraCampo(item.precoNovo) : "";
     $("#ppCupom").value = item.cupom || "";
-    ppModelo.marcar(item.modelo || "achadinho");
-    $("#ppModeloNome").textContent = $(`#ppModelo [data-v="${ppModelo.valor()}"]`).textContent;
-    mostrarTexto();
-    trocarCanal("whatsapp");
+    $("#ppLinkItem").value = item.link || "";
+    ppCategoria.marcar(item.categoria || "outros");
     window.scrollTo({ top: 0 });
   }
-  function mostrarFotoPp() {
-    const tem = !!(ppAtual && ppAtual.imagem);
-    $("#ppFotoMini").hidden = !tem; $("#ppSemFoto").hidden = tem;
-    if (tem) { $("#ppFotoMini").dataset.original = ppAtual.imagem; colocarImagem($("#ppFotoMini"), ppAtual.imagem); }
-  }
-  // Trocar a foto (vale para o WhatsApp e para o Instagram)
-  async function trocarFotoPp(arquivo) {
-    if (!arquivo || !ppAtual) return;
-    try {
-      ppAtual.imagem = await compactarArquivo(arquivo);
-      ppFotos[ppAtual.id] = await createImageBitmap(arquivo);
-    } catch (e) { toast("Não consegui abrir essa foto"); return; }
-    mostrarFotoPp(); salvarFila(true);
-    if (ppCanal.valor() === "instagram") desenharPp();
-    toast("Foto trocada");
-  }
-  $("#ppArquivoTopo").addEventListener("change", (e) => { trocarFotoPp(e.target.files && e.target.files[0]); e.target.value = ""; });
   function fecharItemFila() {
     ppAtual = null;
     $("#ppItem").hidden = true; $("#ppListaBloco").hidden = false;
@@ -1496,122 +1484,280 @@
   }
   $("#ppVoltar").addEventListener("click", fecharItemFila);
   $("#ppRemover").addEventListener("click", async () => {
-    if (!ppAtual || !(await confirmar({ titulo: "Tirar da lista?", texto: `“${ppAtual.nome || "Produto"}” sai da lista de postagens.`, ok: "Tirar" }))) return;
+    if (!ppAtual || !(await confirmar({ titulo: "Tirar da lista?", texto: `“${ppAtual.nome || "Produto"}” sai da sua lista.`, ok: "Tirar" }))) return;
     config.fila = fila().filter((i) => i !== ppAtual);
     salvarFila(true); fecharItemFila();
   });
-  // Campos editáveis
-  [["#ppNome", (v) => { ppAtual.nome = v.trim(); }], ["#ppAntigo", (v) => { ppAtual.precoAntigo = lerPreco(v); }], ["#ppNovo", (v) => { ppAtual.precoNovo = lerPreco(v); }], ["#ppCupom", (v) => { ppAtual.cupom = v.trim(); }]]
-    .forEach(([id, f]) => $(id).addEventListener("input", () => { if (!ppAtual) return; f($(id).value); salvarFila(); if (ppCanal.valor() === "instagram") desenharPp(); }));
-  $("#ppTexto").addEventListener("input", () => { if (!ppAtual) return; ppAtual.texto = $("#ppTexto").value; $("#ppBalao").innerHTML = formatarWhats(ppAtual.texto); salvarFila(); });
-
-  function trocarCanal(c) {
-    ppCanal.marcar(c);
-    $("#ppWhats").hidden = c !== "whatsapp"; $("#ppInsta").hidden = c !== "instagram";
-    if (c === "instagram") prepararInsta();
+  [["#ppNome", (v) => { ppAtual.nome = v.trim(); ppAtual.texto = ""; }], ["#ppAntigo", (v) => { ppAtual.precoAntigo = lerPreco(v); ppAtual.texto = ""; }], ["#ppNovo", (v) => { ppAtual.precoNovo = lerPreco(v); ppAtual.texto = ""; }],
+    ["#ppCupom", (v) => { ppAtual.cupom = v.trim(); ppAtual.texto = ""; }], ["#ppLinkItem", (v) => { if (urlOk(v)) { ppAtual.link = v.trim(); ppAtual.texto = ""; } }]]
+    .forEach(([id, f]) => $(id).addEventListener("input", () => { if (!ppAtual) return; f($(id).value); salvarFila(); }));
+  $("#ppCategoria").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && ppAtual) { ppAtual.categoria = b.dataset.v; ppAtual.texto = ""; salvarFila(); } });
+  async function trocarFotoPp(arquivo) {
+    if (!arquivo || !ppAtual) return;
+    try { ppAtual.imagem = await compactarArquivo(arquivo); ppFotos[ppAtual.id] = await createImageBitmap(arquivo); }
+    catch (e) { toast("Não consegui abrir essa foto"); return; }
+    mostrarFotoPp(); salvarFila(true); toast("Foto trocada");
   }
-  $("#ppCanal").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) trocarCanal(b.dataset.v); });
-
-  // ---------- WhatsApp: a mensagem de sempre ----------
-  function mostrarTexto() {
-    const t = ppAtual.texto || "";
-    $("#ppTexto").value = t;
-    $("#ppBalao").innerHTML = formatarWhats(t);
-    $("#ppBalao").hidden = !t; $("#ppCampoTexto").hidden = !t; $("#ppAcoesWhats").hidden = !t;
-    $("#ppGerar").querySelector(".rotulo").textContent = t ? "Gerar outra mensagem" : "Gerar mensagem";
-  }
-  const produtoDaFila = (i) => ({ nome: limparNome(i.nome), precoAntigo: i.precoAntigo, precoNovo: i.precoNovo, link: i.link, categoria: i.categoria || "outros", loja: i.loja, cupom: i.cupom || "" });
-  $("#ppGerar").addEventListener("click", async () => {
+  $("#ppArquivoTopo").addEventListener("change", (e) => { trocarFotoPp(e.target.files && e.target.files[0]); e.target.value = ""; });
+  $("#ppCompartilhar").addEventListener("click", () => {
     if (!ppAtual) return;
-    const p = produtoDaFila(ppAtual);
-    if (!p.nome) { toast("Escreva o nome do produto"); $("#ppNome").focus(); return; }
-    if (!p.precoNovo) { toast("Digite o preço novo"); $("#ppNovo").focus(); return; }
-    const b = $("#ppGerar"); b.disabled = true; b.classList.add("ocupado");
+    if (!ppAtual.nome) { toast("Escreva o nome do produto"); $("#ppNome").focus(); return; }
+    const id = ppAtual.id;
+    fecharItemFila();
+    iniciarCriar({ itemId: id });
+    irPara("criar");
+  });
+
+  /* =========================== Criar (passo a passo, uma pergunta por tela) =========================== */
+  const CANAIS = {
+    whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem pronta para os grupos" },
+    instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post" },
+    telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável" }
+  };
+  const MONTAGENS = ["achadinho", "relampago", "baixou", "ultimas", "novidade", "enquete"];
+  const NOME_MONTAGEM = { achadinho: "Achadinho do dia", relampago: "Oferta relâmpago", baixou: "Baixou o preço", ultimas: "Últimas horas", novidade: "Chegou novidade", enquete: "Você usaria?" };
+  const CORES_NOME = { creme: "Creme", rosa: "Rosa", branco: "Branco" };
+  let wz = {};
+  const wzItem = () => fila().find((i) => i.id === wz.itemId);
+  function passosDe(canal) {
+    const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
+    if (canal === "instagram") return [...base, "formato", "montagem", "cor", "postar"];
+    if (canal === "telegram") return [...base, "mensagem", "telegram"];
+    return [...base, "mensagem", "enviar"];
+  }
+  function iniciarCriar(op = {}) {
+    wz = { passo: "canal", canal: null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: "auto" };
+    mostrarPasso();
+  }
+  function irPasso(dir) {
+    const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
+    const prox = l[i + dir];
+    if (!prox) return;
+    wz.passo = prox; mostrarPasso();
+  }
+  $("#wzVoltar").addEventListener("click", () => irPasso(-1));
+  const opcaoCard = (attr, v, titulo, desc, on, extra = "") => `<button type="button" class="wz-op${on ? " on" : ""}" ${attr}="${esc(v)}">${extra}<span><b>${esc(titulo)}</b>${desc ? `<small>${esc(desc)}</small>` : ""}</span></button>`;
+  const botaoContinuar = (ok, rot = "Continuar") => `<button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button>`;
+
+  function mostrarPasso() {
+    const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
+    $("#wzBarra").style.width = Math.round(((i + 1) / l.length) * 100) + "%";
+    $("#wzPasso").textContent = (wz.canal ? CANAIS[wz.canal].nome + " · " : "") + `Passo ${i + 1} de ${l.length}`;
+    $("#wzVoltar").hidden = i === 0;
+    const c = $("#wzCorpo"), item = wzItem();
+    window.scrollTo({ top: 0 });
+
+    if (wz.passo === "canal") {
+      c.innerHTML = `<h2 class="wz-titulo">Onde você quer postar?</h2>
+        ${item ? `<p class="nota">Produto: <b>${esc(item.nome)}</b></p>` : ""}
+        <div class="wz-ops">${Object.entries(CANAIS).map(([k, v]) => opcaoCard("data-canal", k, v.nome, v.desc, wz.canal === k, `<i class="wz-bolinha" style="background:${v.cor}">${v.nome[0]}</i>`)).join("")}</div>
+        ${botaoContinuar(!!wz.canal)}`;
+      return;
+    }
+    if (wz.passo === "produto") {
+      const l2 = fila().filter((x) => !x.carregando);
+      c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2><p class="nota">Escolha da sua lista ou cole um link novo.</p>
+        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"} · ${esc(NOME_LOJA[x.loja] || "")}</small></span></button>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
+        <div class="colar"><input id="wzLink" type="url" inputmode="url" placeholder="Ou cole um link novo" autocomplete="off"><button type="button" class="colar__btn" id="wzColar">Colar</button></div>
+        ${botaoContinuar(!!item)}`;
+      return;
+    }
+    if (!item) { wz.passo = "produto"; mostrarPasso(); return; }
+
+    if (wz.passo === "formato") {
+      c.innerHTML = `<h2 class="wz-titulo">Story ou post?</h2>
+        <div class="wz-duas">${opcaoCard("data-formato", "story", "Story", "1080 × 1920", wz.formato === "story", '<i class="wz-forma wz-forma--story"></i>')}${opcaoCard("data-formato", "post", "Post", "1080 × 1350", wz.formato === "post", '<i class="wz-forma wz-forma--post"></i>')}</div>
+        <p class="nota">No story o link fica clicável pelo adesivo de Link. No post, use “link na bio”.</p>
+        ${botaoContinuar(true)}`;
+      return;
+    }
+    if (wz.passo === "montagem" || wz.passo === "cor") {
+      const porCor = wz.passo === "cor";
+      const lista = porCor ? ["auto", "creme", "rosa", "branco"] : MONTAGENS;
+      c.innerHTML = `<h2 class="wz-titulo">${porCor ? "Escolha a cor" : "Escolha a montagem"}</h2>
+        <div class="wz-miniaturas">${lista.map((v) => `<button type="button" class="wz-mini${(porCor ? wz.cor : wz.modelo) === v ? " on" : ""}" data-${porCor ? "cor" : "modelo"}="${v}"><canvas></canvas><span>${porCor ? (v === "auto" ? "Do modelo" : CORES_NOME[v]) : NOME_MONTAGEM[v]}</span></button>`).join("")}</div>
+        ${botaoContinuar(true)}`;
+      desenharMiniaturas(porCor);
+      return;
+    }
+    if (wz.passo === "postar") {
+      c.innerHTML = `<h2 class="wz-titulo">Pronto para postar</h2>
+        <div class="wz-previa"><canvas id="wzTela"></canvas></div>
+        <label class="link link--foto wz-centro">Trocar a foto<input type="file" id="wzArquivo" accept="image/*" hidden></label>
+        <button type="button" class="btn btn--rosa" id="wzPostar">Postar no Instagram</button>
+        <button type="button" class="btn btn--branco" id="wzBaixar">Baixar imagem</button>
+        <p class="nota wz-centro">${wz.formato === "story" ? "O link do produto já vai copiado: no story, toque no adesivo de Link e cole." : "A legenda já vai copiada, com “link na bio”."}</p>`;
+      prepararFoto(item).then(() => desenharMontagem($("#wzTela"), true));
+      desenharMontagem($("#wzTela"), true);
+      return;
+    }
+    if (wz.passo === "mensagem") {
+      c.innerHTML = `<h2 class="wz-titulo">Sua mensagem</h2>
+        <div class="balao wz-balao" id="wzBalao">${item.texto ? formatarWhats(textoCanal(item.texto)) : '<span class="esq" style="width:90%"></span><span class="esq" style="width:70%"></span><span class="esq" style="width:80%"></span>'}</div>
+        <div class="wz-chips" id="wzAjustes">
+          <button type="button" data-ajuste="curto">Mais curta</button><button type="button" data-ajuste="emojis">Mais emojis</button>
+          <button type="button" data-ajuste="preco">Focar no preço</button><button type="button" data-ajuste="animada">Mais animada</button>
+          <button type="button" data-ajuste="nova">Outra mensagem</button>
+        </div>
+        <p class="aviso" id="wzAviso" hidden></p>
+        <details class="mais"><summary>Editar o texto</summary><textarea id="wzTexto" rows="8">${esc(item.texto || "")}</textarea></details>
+        ${botaoContinuar(!!item.texto)}`;
+      if (!item.texto) gerarTexto();
+      return;
+    }
+    if (wz.passo === "enviar") {
+      const g = config.grupos || [];
+      c.innerHTML = `<h2 class="wz-titulo">Como enviar?</h2>
+        <div class="wz-ops">
+          ${opcaoCard("data-enviar-op", "foto", "Com foto", "Abre o WhatsApp com a foto e o texto", false)}
+          ${opcaoCard("data-enviar-op", "texto", "Só o texto", "Abre o WhatsApp só com a mensagem", false)}
+          ${opcaoCard("data-enviar-op", "copiar", "Copiar o texto", "Para colar onde quiser", false)}
+        </div>
+        <h3 class="wz-sub">Nos meus grupos</h3>
+        <div class="wz-grupos">${g.length ? g.map((x) => `<button type="button" class="btn btn--branco" data-grupo="${esc(x.id)}">${esc(x.nome)}${(item.enviadoGrupos || []).includes(x.id) ? " ✓" : ""}</button>`).join("") : '<p class="nota">Cadastre seus grupos na aba <b>Grupos</b> para enviar com um toque.</p>'}</div>
+        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+      return;
+    }
+    if (wz.passo === "telegram") {
+      c.innerHTML = `<h2 class="wz-titulo">Enviar no Telegram</h2>
+        <div class="balao wz-balao wz-balao--tg">${formatarWhats(textoCanal(item.texto))}</div>
+        <p class="nota">No Telegram o link fica clicável no texto.</p>
+        <button type="button" class="btn btn--rosa wz-tg" id="wzTelegram">Abrir no Telegram</button>
+        <button type="button" class="btn btn--branco" id="wzCopiarTg">Copiar o texto</button>
+        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+    }
+  }
+  // Telegram não usa *negrito* do WhatsApp do mesmo jeito: vai o texto limpo
+  const textoCanal = (t) => wz.canal === "telegram" ? String(t || "").replace(/[*~_]/g, "") : t;
+
+  // Cliques dentro do passo
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    const t = e.target;
+    const op = t.closest("[data-canal]"); if (op) { wz.canal = op.dataset.canal; mostrarPasso(); return; }
+    const pr = t.closest("[data-item]"); if (pr) { wz.itemId = pr.dataset.item; mostrarPasso(); return; }
+    const fo = t.closest("[data-formato]"); if (fo) { wz.formato = fo.dataset.formato; mostrarPasso(); return; }
+    const mo = t.closest("[data-modelo]"); if (mo) { wz.modelo = mo.dataset.modelo; document.querySelectorAll(".wz-mini").forEach((b) => b.classList.toggle("on", b === mo)); return; }
+    const co = t.closest("[data-cor]"); if (co) { wz.cor = co.dataset.cor; document.querySelectorAll(".wz-mini").forEach((b) => b.classList.toggle("on", b === co)); return; }
+    if (t.closest("#wzContinuar")) { irPasso(1); return; }
+    if (t.closest("#wzColar")) {
+      try { const v = (await navigator.clipboard.readText()).trim(); const it = await adicionarNaFila(v); if (it) { wz.itemId = it.id; mostrarPasso(); } }
+      catch (err) { $("#wzLink").focus(); toast("Toque e segure no campo para colar"); }
+      return;
+    }
+    const aj = t.closest("[data-ajuste]"); if (aj) { gerarTexto(aj.dataset.ajuste === "nova" ? null : aj.dataset.ajuste); return; }
+    const ev = t.closest("[data-enviar-op]"); if (ev) { enviarWhats(ev.dataset.enviarOp); return; }
+    const gr = t.closest("[data-grupo]"); if (gr) { enviarGrupo(gr.dataset.grupo); return; }
+    if (t.closest("#wzPostar")) { postarInstagram(); return; }
+    if (t.closest("#wzBaixar")) { const tela = document.createElement("canvas"); desenharMontagem(tela, false); tela.toBlob((b) => { if (b) { baixarBlob(b, nomeArquivo(wzItem().nome) ); toast("Imagem salva"); } }, "image/jpeg", 0.92); return; }
+    if (t.closest("#wzTelegram")) { abrirTelegram(); return; }
+    if (t.closest("#wzCopiarTg")) { if (await copiarTexto(textoCanal(wzItem().texto))) { toast("Texto copiado"); registrarCompartilhado("telegram", "Telegram"); } return; }
+    if (t.closest("#wzNovo")) { iniciarCriar(); return; }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "wzTexto") { const it = wzItem(); it.texto = e.target.value; $("#wzBalao").innerHTML = formatarWhats(textoCanal(it.texto)); salvarFila(); } });
+  $("#wzCorpo").addEventListener("change", async (e) => {
+    if (e.target.id !== "wzArquivo") return;
+    const f = e.target.files && e.target.files[0], it = wzItem();
+    if (!f || !it) return;
+    try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); salvarFila(true); } catch (err) { toast("Não consegui abrir essa foto"); }
+    desenharMontagem($("#wzTela"), true);
+  });
+  $("#wzCorpo").addEventListener("keydown", (e) => { if (e.target.id === "wzLink" && e.key === "Enter") { e.preventDefault(); adicionarNaFila(e.target.value).then((it) => { if (it) { wz.itemId = it.id; mostrarPasso(); } }); } });
+
+  // ---------- Mensagem (WhatsApp e Telegram) ----------
+  async function gerarTexto(ajuste) {
+    const it = wzItem(); if (!it) return;
+    const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
+    if (!p.precoNovo) { aviso($("#wzAviso"), "Falta o preço novo: edite o produto na Lista."); return; }
+    document.querySelectorAll("#wzAjustes button").forEach((b) => { b.disabled = true; });
+    $("#wzBalao").classList.add("gerando");
     let texto;
-    try { texto = (await api("gerar", p)).texto; }
-    catch (e) {
+    try {
+      texto = (await api("gerar", ajuste && it.texto ? { ...p, ajuste, textoAtual: it.texto } : p)).texto;
+      aviso($("#wzAviso"), "");
+    } catch (e) {
       if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
-      texto = mensagemReserva(p); toast("Usei uma mensagem pronta: " + e.message);
-    } finally { b.disabled = false; b.classList.remove("ocupado"); }
-    ppAtual.texto = comConvite(texto);
-    // Guarda no histórico também
-    const hist = { id: ppAtual.histId || novoId(), criadoEm: Date.now(), produto: p, texto: ppAtual.texto, imagem: ppAtual.imagem || "", enviadoPara: [] };
-    ppAtual.histId = hist.id;
-    try { await dados.salvar(hist); atualizarContadores(); } catch (e) { /* segue */ }
-    mostrarTexto(); salvarFila(true);
-  });
-  async function marcarEnvio(canal, onde) {
-    ppAtual.feito = { ...(ppAtual.feito || {}), [canal]: true };
-    salvarFila(true);
-    if (ppAtual.histId) {
-      try { const h = await dados.pegar(ppAtual.histId); if (h) { if (!h.enviadoPara.includes(onde)) h.enviadoPara.push(onde); await dados.salvar(h); } } catch (e) { /* segue */ }
+      if (ajuste) aviso($("#wzAviso"), `Não consegui ajustar: ${e.message}.`);
+      else { texto = mensagemReserva(p); aviso($("#wzAviso"), `A IA não respondeu (${e.message}). Usei uma mensagem pronta.`); }
     }
+    if (texto) { it.texto = comConvite(texto); salvarFila(true); }
+    if (wz.passo === "mensagem") mostrarPasso();
   }
-  $("#ppEnviar").addEventListener("click", async () => {
-    const texto = ppAtual.texto;
-    const arq = ppAtual.imagem ? await arquivoDaImagem(ppAtual.imagem) : null;
-    if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
-      try { await navigator.share({ files: [arq], text: texto }); marcarEnvio("whatsapp", "WhatsApp (com foto)"); return; }
-      catch (e) { if (e.name === "AbortError") return; }
-    }
-    if (await copiarTexto(texto)) toast("Texto copiado — cole no WhatsApp junto com a foto");
-    marcarEnvio("whatsapp", "WhatsApp");
-  });
-  $("#ppCopiar").addEventListener("click", async () => { if (await copiarTexto(ppAtual.texto)) { toast("Texto copiado"); marcarEnvio("whatsapp", "Copiado"); } });
-  $("#ppSoTexto").addEventListener("click", () => { abrirWhatsApp(ppAtual.texto); marcarEnvio("whatsapp", "WhatsApp"); });
+  async function registrarCompartilhado(canal, onde) {
+    const it = wzItem(); if (!it) return;
+    it.feito = { ...(it.feito || {}), [canal]: true }; salvarFila(true);
+    const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
+    try {
+      let h = it.histId ? await dados.pegar(it.histId) : null;
+      if (!h) { h = { id: novoId(), criadoEm: Date.now(), produto: p, texto: it.texto || "", imagem: it.imagem || "", enviadoPara: [] }; it.histId = h.id; salvarFila(true); }
+      h.produto = p; if (it.texto) h.texto = it.texto; if (it.imagem) h.imagem = it.imagem;
+      if (!h.enviadoPara.includes(onde)) h.enviadoPara.push(onde);
+      h.ultimoEnvio = Date.now();
+      await dados.salvar(h); atualizarContadores();
+    } catch (e) { /* segue */ }
+  }
+  async function enviarWhats(modo) {
+    const it = wzItem(), texto = it.texto;
+    if (modo === "foto") {
+      const arq = it.imagem ? await arquivoDaImagem(it.imagem) : null;
+      if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
+        try { await navigator.share({ files: [arq], text: texto }); registrarCompartilhado("whatsapp", "WhatsApp (com foto)"); return; }
+        catch (e) { if (e.name === "AbortError") return; }
+      }
+      if (await copiarTexto(texto)) toast("Texto copiado — no WhatsApp, envie a foto e cole o texto");
+      registrarCompartilhado("whatsapp", "WhatsApp");
+    } else if (modo === "texto") { abrirWhatsApp(texto); registrarCompartilhado("whatsapp", "WhatsApp"); }
+    else if (await copiarTexto(texto)) { toast("Texto copiado"); registrarCompartilhado("whatsapp", "Copiado"); }
+  }
+  async function enviarGrupo(id) {
+    const it = wzItem(), g = (config.grupos || []).find((x) => x.id === id);
+    if (!g) return;
+    const ok = await copiarTexto(it.texto);
+    it.enviadoGrupos = [...new Set([...(it.enviadoGrupos || []), id])];
+    registrarCompartilhado("whatsapp", g.nome);
+    if (g.link) { window.open(g.link, "_blank", "noopener"); toast(ok ? `Mensagem copiada — cole no grupo ${g.nome}` : "Não consegui copiar"); }
+    else toast(ok ? "Mensagem copiada: abra o grupo no WhatsApp e cole" : "Não consegui copiar");
+    mostrarPasso();
+  }
+  function abrirTelegram() {
+    const it = wzItem();
+    const texto = textoCanal(it.texto).split(it.link).join("").trim();
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(it.link)}&text=${encodeURIComponent(texto)}`, "_blank", "noopener");
+    registrarCompartilhado("telegram", "Telegram");
+  }
 
-  // ---------- Instagram: a montagem pronta (sem @, com espaço do link) ----------
-  async function prepararInsta() {
-    desenharPp();
+  // ---------- Instagram (montagem pronta, sem @) ----------
+  async function prepararFoto(it) {
     await carregarMarca();
-    if (ppAtual && !(ppAtual.id in ppFotos) && ppAtual.imagem) {
-      try { const arq = await arquivoDaImagem(ppAtual.imagem); ppFotos[ppAtual.id] = arq ? await createImageBitmap(arq) : null; } catch (e) { ppFotos[ppAtual.id] = null; }
-      if (!ppFotos[ppAtual.id]) toast("A foto não veio — toque na montagem para escolher da galeria");
+    if (it && !(it.id in ppFotos) && it.imagem) {
+      try { const arq = await arquivoDaImagem(it.imagem); ppFotos[it.id] = arq ? await createImageBitmap(arq) : null; } catch (e) { ppFotos[it.id] = null; }
     }
-    desenharPp();
   }
-  function dadosPp(previa) {
-    const M = MODELOS[ppModelo.valor()], i = ppAtual;
-    return {
-      previa, insta: "", titulo: linhasTitulo(M.padrao.titulo), texto: M.padrao.texto, botao: "", logo: false, espaco: true,
-      cupom: i.cupom || "", foto: ppFotos[i.id] || null,
-      produto: { nome: limparNome(i.nome), antigo: i.precoAntigo, novo: i.precoNovo }
-    };
+  function dadosMontagem(it, modelo, previa) {
+    const M = MODELOS[modelo];
+    return { previa, insta: "", titulo: linhasTitulo(M.padrao.titulo), texto: M.padrao.texto, botao: "", logo: false, espaco: wz.formato === "story", cupom: it.cupom || "", foto: ppFotos[it.id] || null, produto: { nome: limparNome(it.nome), antigo: it.precoAntigo, novo: it.precoNovo } };
   }
-  function desenharPp(tela) {
-    if (!ppAtual) return;
-    desenharBanner(tela || $("#ppTela"), ppModelo.valor(), ppFormato.valor(), ppFundo.valor(), dadosPp(!tela));
+  function desenharMontagem(tela, previa, modelo, cor) {
+    const it = wzItem(); if (!it || !tela) return;
+    desenharBanner(tela, modelo || wz.modelo, wz.formato, cor || wz.cor, dadosMontagem(it, modelo || wz.modelo, previa));
   }
-  $("#ppFormato").addEventListener("click", () => setTimeout(desenharPp, 0));
-  $("#ppAbrirModelo").addEventListener("click", () => $("#ppModelos").showModal());
-  $("#ppModelo").addEventListener("click", (e) => {
-    const b = e.target.closest("button");
-    if (!b || !ppAtual) return;
-    ppAtual.modelo = b.dataset.v; salvarFila();
-    $("#ppModeloNome").textContent = b.textContent;
-    setTimeout(desenharPp, 0);
-  });
-  $("#ppFundo").addEventListener("click", () => setTimeout(desenharPp, 0));
-  $("#ppTela").addEventListener("click", () => $("#ppArquivo").click());
-  $("#ppArquivo").addEventListener("change", (e) => { trocarFotoPp(e.target.files && e.target.files[0]); e.target.value = ""; });
-  const nomePp = () => `miga-promo-${String(ppAtual.nome || "achadinho").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30)}-${ppFormato.valor()}.jpg`;
-  $("#ppBaixar").addEventListener("click", () => {
-    const tela = document.createElement("canvas"); desenharPp(tela);
-    tela.toBlob((b) => { if (b) { baixarBlob(b, nomePp()); toast("Imagem salva"); } }, "image/jpeg", 0.92);
-  });
-  $("#ppPostar").addEventListener("click", async () => {
-    if (!ppAtual) return;
-    if (ppFormato.valor() === "story") {
-      if (await copiarTexto(ppAtual.link)) toast("Link copiado: no story, toque no adesivo de Link e cole");
-    } else {
-      const base = ppAtual.texto || `${limparNome(ppAtual.nome)}\n\n${ppAtual.precoNovo ? "Por " + brl(ppAtual.precoNovo) : ""}`;
-      const legenda = base.split(ppAtual.link).join("🔗 link na bio").replace(/[*~_]/g, "").trim();
-      if (await copiarTexto(legenda)) toast("Legenda copiada: cole na legenda do post");
+  async function desenharMiniaturas(porCor) {
+    const it = wzItem();
+    const pintar = () => document.querySelectorAll(".wz-mini").forEach((b) => desenharMontagem(b.querySelector("canvas"), false, porCor ? wz.modelo : b.dataset.modelo, porCor ? b.dataset.cor : "auto"));
+    pintar();
+    await prepararFoto(it);
+    if (wz.passo === (porCor ? "cor" : "montagem")) pintar();
+  }
+  async function postarInstagram() {
+    const it = wzItem();
+    if (wz.formato === "story") { if (await copiarTexto(it.link)) toast("Link copiado: no story, toque no adesivo de Link e cole"); }
+    else {
+      const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`;
+      if (await copiarTexto(base.split(it.link).join("🔗 link na bio").replace(/[*~_]/g, "").trim())) toast("Legenda copiada: cole na legenda do post");
     }
-    const tela = document.createElement("canvas"); desenharPp(tela);
-    compartilharTela(tela, nomePp());
-    marcarEnvio("instagram", "Instagram");
-  });
+    const tela = document.createElement("canvas"); desenharMontagem(tela, false);
+    compartilharTela(tela, nomeArquivo(it.nome));
+    registrarCompartilhado("instagram", "Instagram");
+  }
 
   /* =========================== Enviar =========================== */
   function abrirWhatsApp(texto) { window.open("https://api.whatsapp.com/send?text=" + encodeURIComponent(texto), "_blank", "noopener"); }
@@ -1806,15 +1952,13 @@
   });
   function abrirDoHistorico(item) {
     const p = item.produto;
-    c.link.value = p.link; c.nome.value = p.nome;
-    c.precoNovo.value = paraCampo(p.precoNovo); c.precoAntigo.value = paraCampo(p.precoAntigo);
-    c.cupom.value = p.cupom || "";
-    loja.marcar(p.loja); categoria.marcar(p.categoria);
-    definirFoto(item.imagem || "");
-    atualizarSelo();
-    atual = item; atual.enviadoPara = atual.enviadoPara || []; ultimoLink = p.link;
+    let it = fila().find((x) => x.link === p.link);
+    if (!it) {
+      it = { id: novoId(), link: p.link, loja: p.loja, nome: p.nome, precoNovo: p.precoNovo, precoAntigo: p.precoAntigo, imagem: item.imagem || "", cupom: p.cupom || "", categoria: p.categoria || "outros", texto: item.texto || "", feito: {}, criadoEm: Date.now(), histId: item.id };
+      fila().unshift(it); salvarFila(true);
+    }
+    iniciarCriar({ itemId: it.id });
     irPara("criar");
-    mostrarResultado("");
   }
 
   async function atualizarContadores() {
@@ -1870,12 +2014,7 @@
 
   /* =========================== Início =========================== */
   const q = new URLSearchParams(location.search);
-  const recebido = [q.get("url"), q.get("text"), q.get("title")].filter(Boolean).join(" ").match(/https?:\/\/\S+/);
-  if (recebido) {
-    c.link.value = recebido[0];
-    c.link.dispatchEvent(new Event("input"));
-    history.replaceState(null, "", location.pathname);
-    buscar();
-  }
+  const textoRecebido = [q.get("title"), q.get("text"), q.get("url")].filter(Boolean).join(" ");
+  if (/https?:\/\//.test(textoRecebido)) { recebidoPendente = textoRecebido; history.replaceState(null, "", location.pathname); }
   iniciarConta();
 })();

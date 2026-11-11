@@ -441,8 +441,21 @@ async function rotaImagem(request) {
   return new Response(r.body, { headers: { "content-type": tipo, "cache-control": "public, max-age=86400" } });
 }
 
-function rotaStatus(env) {
-  return json({ ia: !!env.GEMINI_API_KEY, codigo: !!env.APP_SENHA, catalogo: { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) } });
+/** Teste rápido da IA (só diz se respondeu e o motivo do erro; guardado 10 min para não gastar cota) */
+async function testarIA(env) {
+  if (!env.GEMINI_API_KEY) return "sem chave";
+  const guardado = await lerCache("teste-ia", "1");
+  if (guardado) return guardado.r;
+  let r;
+  try { const x = await chamarGemini([{ role: "user", parts: [{ text: "Responda só: ok" }] }], env); r = "ok (" + x.modelo + ")"; }
+  catch (e) { r = motivoIA(e); }
+  await gravarCache("teste-ia", "1", { r }, 600);
+  return r;
+}
+
+async function rotaStatus(request, env) {
+  const testar = new URL(request.url).searchParams.get("testar") === "ia";
+  return json({ ...(testar ? { testeIA: await testarIA(env) } : {}), ia: !!env.GEMINI_API_KEY, codigo: !!env.APP_SENHA, catalogo: { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) } });
 }
 
 /** Confere o código de acesso digitado na tela de entrada (é o valor de APP_SENHA). */
@@ -676,7 +689,7 @@ export default {
       if (m && m[1] === "produto" && metodo === "POST") return await rotaProduto(request, env);
       if (m && m[1] === "gerar" && metodo === "POST") return await rotaGerar(request, env);
       if (m && m[1] === "imagem" && metodo === "GET") return await rotaImagem(request);
-      if (m && m[1] === "status" && metodo === "GET") return rotaStatus(env);
+      if (m && m[1] === "status" && metodo === "GET") return rotaStatus(request, env);
       if (m && m[1] === "entrar" && metodo === "POST") return await rotaEntrar(request, env);
       if (m && m[1] === "catalogo" && metodo === "GET") return await rotaCatalogo(request, env);
       if (m) return json({ erro: "Rota não encontrada." }, 404);

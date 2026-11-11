@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=30">
+  <link rel="manifest" href="manifest.json?v=31">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=31">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -50,7 +50,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=30" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=31" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -79,13 +79,13 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=30" alt="">
+    <img src="logo.png?v=31" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
 
   <main class="conteudo">
-  <div class="aba" id="aba-criar">
+  <div class="aba" id="aba-antigo" hidden>
 
     <!-- Passo 1: link -->
     <section class="bloco">
@@ -202,10 +202,20 @@
   </div>
 
   <!-- ===== Aba Achados ===== -->
+  <div class="aba" id="aba-criar">
+    <section class="bloco wz">
+      <div class="wz__topo">
+        <div class="wz__barra"><i id="wzBarra"></i></div>
+        <div class="wz__info"><button type="button" class="link" id="wzVoltar" hidden>‹ Voltar</button><span id="wzPasso"></span></div>
+      </div>
+      <div class="wz__corpo" id="wzCorpo"></div>
+    </section>
+  </div>
+
   <div class="aba" id="aba-postar" hidden>
     <section class="bloco" id="ppListaBloco">
       <div class="cabecalho-aba">
-        <h2 class="passo">Lista de postagens</h2>
+        <h2 class="passo">Minha lista</h2>
         <button type="button" class="link" id="ppLimpar">Tirar os prontos</button>
       </div>
       <div class="colar">
@@ -214,7 +224,7 @@
       </div>
       <button type="button" class="btn btn--rosa" id="ppAdicionar">Adicionar à lista</button>
       <div class="pp-lista" id="ppLista"></div>
-      <p class="nota">Toque num produto para criar a postagem do WhatsApp e do Instagram.</p>
+      <p class="nota">Toque num produto para editar foto, nome e preço, e depois compartilhar.</p>
     </section>
 
     <section class="bloco" id="ppItem" hidden>
@@ -233,39 +243,17 @@
         <label class="campo"><span>Preço novo</span><input id="ppNovo" inputmode="decimal"></label>
       </div>
       <label class="campo"><span>Cupom (opcional)</span><input id="ppCupom" maxlength="30"></label>
-      <div class="alternar" id="ppCanal" role="radiogroup" aria-label="Onde postar">
-        <button type="button" role="radio" data-v="whatsapp" aria-checked="true">WhatsApp</button>
-        <button type="button" role="radio" data-v="instagram" aria-checked="false">Instagram</button>
-      </div>
-
-      <div class="pp-canal" id="ppWhats">
-        <button type="button" class="btn btn--rosa" id="ppGerar"><span class="rotulo">Gerar mensagem</span><i class="giro"></i></button>
-        <div class="balao pp-balao" id="ppBalao" hidden></div>
-        <label class="campo" id="ppCampoTexto" hidden><span>Mensagem (pode editar)</span><textarea id="ppTexto" rows="8"></textarea></label>
-        <div class="pp-acoes" id="ppAcoesWhats" hidden>
-          <button type="button" class="btn btn--rosa" id="ppEnviar">Enviar com foto</button>
-          <div class="duas">
-            <button type="button" class="btn btn--branco" id="ppCopiar">Copiar</button>
-            <button type="button" class="btn btn--branco" id="ppSoTexto">Só o texto</button>
-          </div>
+      <div class="campo"><span>Categoria (ajuda a IA a escrever)</span>
+        <div class="alternar alternar--tres" id="ppCategoria" role="radiogroup">
+          <button type="button" role="radio" data-v="moda" aria-checked="false">Moda</button>
+          <button type="button" role="radio" data-v="beleza" aria-checked="false">Beleza</button>
+          <button type="button" role="radio" data-v="casa" aria-checked="false">Casa</button>
+          <button type="button" role="radio" data-v="saude" aria-checked="false">Saúde e fitness</button>
+          <button type="button" role="radio" data-v="outros" aria-checked="true">Outros</button>
         </div>
       </div>
-
-      <div class="pp-canal" id="ppInsta" hidden>
-        <button type="button" class="chip-filtro chip-filtro--largo" id="ppAbrirModelo"><small>Modelo</small><b id="ppModeloNome">Achadinho do dia</b><span class="seta">▾</span></button>
-        <div class="alternar" id="ppFormato" role="radiogroup" aria-label="Formato">
-          <button type="button" role="radio" data-v="story" aria-checked="true">Story</button>
-          <button type="button" role="radio" data-v="post" aria-checked="false">Post 4:5</button>
-          <button type="button" role="radio" data-v="quadrado" aria-checked="false">Quadrado</button>
-        </div>
-        <div class="editor__tela"><canvas id="ppTela" width="1080" height="1920" aria-label="Montagem para o Instagram"></canvas></div>
-        <label class="link link--foto">Trocar a foto<input type="file" id="ppArquivo" accept="image/*" hidden></label>
-        <p class="nota">A linha tracejada mostra onde colar o adesivo de link no story: ela não sai na imagem. Ao postar, o link do produto já vai copiado.</p>
-        <div class="duas">
-          <button type="button" class="btn btn--branco" id="ppBaixar">Baixar</button>
-          <button type="button" class="btn btn--rosa" id="ppPostar">Postar no Instagram</button>
-        </div>
-      </div>
+      <label class="campo"><span>Link do produto</span><input id="ppLinkItem" type="url" inputmode="url"></label>
+      <button type="button" class="btn btn--rosa" id="ppCompartilhar">Compartilhar este produto</button>
     </section>
   </div>
 
@@ -364,13 +352,12 @@
 
   <!-- Botão principal + abas -->
   <div class="barra">
-    <div class="barra__gerar" id="barraGerar">
+    <div class="barra__gerar" id="barraGerar" hidden>
       <button type="button" class="btn btn--rosa btn--gerar" id="gerar"><span class="rotulo">Gerar Miga Promo</span><i class="giro"></i></button>
     </div>
     <nav class="abas" aria-label="Seções">
+      <button type="button" data-aba="postar"><svg><use href="#i-lista"/></svg>Lista <b id="contPostar" hidden></b></button>
       <button type="button" data-aba="criar" aria-current="page"><svg><use href="#i-criar"/></svg>Criar</button>
-      <button type="button" data-aba="postar"><svg><use href="#i-lista"/></svg>Postar <b id="contPostar" hidden></b></button>
-      <button type="button" data-aba="achados"><svg><use href="#i-etiqueta"/></svg>Achados</button>
       <button type="button" data-aba="historico"><svg><use href="#i-historico"/></svg>Histórico <b id="contHistorico" hidden></b></button>
       <button type="button" data-aba="grupos"><svg><use href="#i-grupo"/></svg>Grupos <b id="contGrupos" hidden></b></button>
     </nav>
@@ -570,7 +557,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=30"></script>
-  <script src="app.js?v=30"></script>
+  <script src="firebase-config.js?v=31"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>
