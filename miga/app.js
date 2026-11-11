@@ -784,6 +784,7 @@
   const PALETAS = {
     creme: { fundo: "#fff3c4", tituloFundo: "#e8336d", tituloTexto: "#ffffff", nome: "#1d1d1f", preco: "#e8336d", antigo: "#8a817b", rodape: "#1d1d1f", cartao: "#ffffff" },
     rosa: { fundo: "#e8336d", tituloFundo: "#fff3c4", tituloTexto: "#e8336d", nome: "#ffffff", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", rodape: "#ffffff", cartao: "#ffffff" },
+    preto: { fundo: "#1d1d1f", tituloFundo: "#ffd23f", tituloTexto: "#1d1d1f", nome: "#ffffff", preco: "#ffd23f", antigo: "rgba(255,255,255,.7)", rodape: "#ffffff", cartao: "#ffffff" },
     branco: { fundo: "#ffffff", tituloFundo: "#e8336d", tituloTexto: "#ffffff", nome: "#1d1d1f", preco: "#e8336d", antigo: "#8a817b", rodape: "#1d1d1f", cartao: "#fff8e4" }
   };
   let edFoto = null, edMarca = null;
@@ -944,7 +945,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=33"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=34"; });
     }
     edFoto = null;
     try {
@@ -1023,6 +1024,7 @@
   const CORES_BN = {
     creme: { tipo: "creme", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.35)", bola2: "rgba(255,255,255,.75)", guia: "#d8c99a" },
     rosa: { tipo: "rosa", texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", bola1: "rgba(255,255,255,.9)", bola2: "rgba(255,255,255,.95)", guia: "rgba(255,255,255,.7)" },
+    preto: { tipo: "preto", fundoCor: "#1d1d1f", texto: "#ffffff", destaque: "#ffd23f", sub: "#d6d0c6", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.7)", bola1: "rgba(232,51,109,.85)", bola2: "#e9e4d8", guia: "rgba(255,255,255,.6)" },
     branco: { tipo: "branco", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#fff8e4", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.3)", bola2: "#efeae0", guia: "#d8c99a" }
   };
   const arroba = (v) => { const t = String(v || "").trim().replace(/^@+/, "").replace(/\s+/g, ""); return t ? "@" + t : ""; };
@@ -1095,7 +1097,7 @@
       const g = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, H * 0.85);
       g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6");
       ctx.fillStyle = g;
-    } else ctx.fillStyle = C.tipo === "rosa" ? "#e8336d" : "#ffffff";
+    } else ctx.fillStyle = C.fundoCor || (C.tipo === "rosa" ? "#e8336d" : "#ffffff");
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
@@ -1284,7 +1286,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=33"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=34"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1518,12 +1520,12 @@
   };
   const MONTAGENS = ["achadinho", "relampago", "baixou", "ultimas", "novidade", "enquete"];
   const NOME_MONTAGEM = { achadinho: "Achadinho do dia", relampago: "Oferta relâmpago", baixou: "Baixou o preço", ultimas: "Últimas horas", novidade: "Chegou novidade", enquete: "Você usaria?" };
-  const CORES_NOME = { creme: "Creme", rosa: "Rosa", branco: "Branco" };
+  const CORES_NOME = { creme: "Creme", rosa: "Rosa", branco: "Branco", preto: "Preto" };
   let wz = {};
   const wzItem = () => fila().find((i) => i.id === wz.itemId);
   function passosDe(canal) {
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
-    if (canal === "video") return ["canal", "vArquivo", "vTema", "vPronto"];
+    if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "formato", "montagem", "cor", "postar"];
     if (canal === "telegram") return [...base, "mensagem", "telegram"];
@@ -1592,7 +1594,7 @@
     }
     if (wz.passo === "montagem" || wz.passo === "cor") {
       const porCor = wz.passo === "cor";
-      const lista = porCor ? ["auto", "creme", "rosa", "branco"] : MONTAGENS;
+      const lista = porCor ? ["auto", "creme", "rosa", "branco", "preto"] : MONTAGENS;
       c.innerHTML = `<h2 class="wz-titulo">${porCor ? "Escolha a cor" : "Escolha a montagem"}</h2>
         <div class="wz-miniaturas">${lista.map((v) => `<button type="button" class="wz-mini${(porCor ? wz.cor : wz.modelo) === v ? " on" : ""}" data-${porCor ? "cor" : "modelo"}="${v}"><canvas></canvas><span>${porCor ? (v === "auto" ? "Do modelo" : CORES_NOME[v]) : NOME_MONTAGEM[v]}</span></button>`).join("")}</div>
         ${botaoContinuar(true)}`;
@@ -1824,7 +1826,7 @@
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d"), C = CORES_BN[cor] || CORES_BN.creme;
     if (C.tipo === "creme") { const g = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, H * 0.85); g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6"); ctx.fillStyle = g; }
-    else ctx.fillStyle = C.tipo === "rosa" ? "#e8336d" : "#ffffff";
+    else ctx.fillStyle = C.fundoCor || (C.tipo === "rosa" ? "#e8336d" : "#ffffff");
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
@@ -1918,7 +1920,7 @@
       c.innerHTML = `<h2 class="wz-titulo">Tema e cor</h2>
         <div class="wz-chips" id="lvTemas">${Object.entries(TEMAS_LIVRE).map(([k, v]) => `<button type="button" data-lv-tema="${k}"${L.tema === k ? ' class="on"' : ""}>${v.nome}</button>`).join("")}</div>
         <label class="campo"><span>Título (use *asteriscos* para destacar)</span><textarea id="lvTitulo" rows="2">${esc(L.titulo)}</textarea></label>
-        <div class="wz-miniaturas">${["creme", "rosa", "branco"].map((cr) => `<button type="button" class="wz-mini${L.cor === cr ? " on" : ""}" data-lv-cor="${cr}"><canvas></canvas><span>${CORES_NOME[cr]}</span></button>`).join("")}</div>
+        <div class="wz-miniaturas">${["creme", "rosa", "branco", "preto"].map((cr) => `<button type="button" class="wz-mini${L.cor === cr ? " on" : ""}" data-lv-cor="${cr}"><canvas></canvas><span>${CORES_NOME[cr]}</span></button>`).join("")}</div>
         ${botaoContinuar(true)}`;
       const pintar = () => document.querySelectorAll("[data-lv-cor]").forEach((b) => desenharGrade(b.querySelector("canvas"), { cor: b.dataset.lvCor }));
       pintar(); fotosDaLista().then(() => { if (wz.passo === "tema") pintar(); });
@@ -1992,97 +1994,189 @@
 
   /* ---------- Vídeo com o tema do Miga ---------- */
   const TEMAS_VIDEO = {
-    moldura: { nome: "Moldura", desc: "Vídeo num cartão, título em cima e preço embaixo" },
-    faixa: { nome: "Faixa", desc: "Vídeo em tela cheia com faixa de texto embaixo" },
-    selo: { nome: "Selo", desc: "Vídeo em tela cheia com etiqueta no topo" }
+    cheia: "Tela cheia", moldura: "Moldura", faixa: "Faixa", dividido: "Dividido", selo: "Etiqueta", minimal: "Mínimo"
   };
   const CORES_VIDEO = {
-    creme: { nome: "Creme", fundo: "#fff3c4", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff" },
-    rosa: { nome: "Rosa", fundo: "#e8336d", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f" },
-    branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff" },
-    preto: { nome: "Preto", fundo: "#1d1d1f", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f" }
+    creme: { nome: "Creme", fundo: "#fff3c4", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff", bola: "rgba(255,210,63,.45)" },
+    rosa: { nome: "Rosa", fundo: "#e8336d", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f", bola: "rgba(255,255,255,.9)" },
+    branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff", bola: "rgba(255,210,63,.35)" },
+    preto: { nome: "Preto", fundo: "#1d1d1f", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f", bola: "rgba(232,51,109,.85)" }
   };
+  /** Prompts prontos para pedir o vídeo a uma IA (Veo/Gemini, Sora, Kling, Runway...) levando a foto do produto */
+  const PROMPTS_VIDEO = [
+    ["Produto em destaque", (n) => `Crie um vídeo vertical 9:16 de 8 segundos mostrando o produto da imagem anexada (${n}) girando devagar sobre um fundo creme claro, com luz suave de estúdio e closes nos detalhes. Estilo propaganda elegante e delicada. Mantenha o produto igual ao da foto. Sem textos na tela e deixe espaço livre em cima e embaixo.`],
+    ["Abrindo a encomenda", (n) => `Vídeo vertical 9:16, 8 segundos: mãos femininas com unhas feitas abrindo uma caixa de encomenda sobre uma mesa clara e tirando o produto da imagem anexada (${n}). Luz natural, câmera próxima, clima de surpresa boa. Produto idêntico ao da foto. Sem textos.`],
+    ["No dia a dia", (n) => `Vídeo vertical 9:16 de 8 segundos: uma mulher brasileira de uns 30 anos usando o produto da imagem anexada (${n}) em casa, luz natural da manhã, câmera na mão estilo celular, clima leve e feliz. O produto deve aparecer bem e igual ao da foto. Sem textos na tela.`],
+    ["Problema e solução", (n) => `Vídeo vertical 9:16, duas cenas de 4 segundos. Cena 1: uma situação comum do dia a dia em que falta o produto. Cena 2: a mesma pessoa usando o produto da imagem anexada (${n}) e resolvendo, sorrindo. Luz natural, estilo vídeo de celular. Produto igual ao da foto. Sem textos.`],
+    ["Mesa decorada", (n) => `Vídeo vertical 9:16 de 6 segundos, vista de cima: o produto da imagem anexada (${n}) sobre uma mesa clara com flores e objetos em tons de rosa e amarelo; a câmera se aproxima devagar até o produto. Estética delicada de loja. Produto igual ao da foto. Sem textos.`]
+  ];
   function vd() {
-    if (!wz.video) wz.video = { arquivo: null, url: "", tema: "moldura", cor: "creme", titulo: "Achadinho\n*do dia* ✨", rodape: "Link na bio", resultado: null };
+    if (!wz.video) wz.video = { arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
     return wz.video;
   }
-  /** Formato do arquivo: MP4 quando o celular grava MP4 (Chrome novo), senão WebM */
   function formatoGravacao() {
     if (typeof MediaRecorder === "undefined") return null;
     return ['video/mp4;codecs="avc1.42E01E,mp4a.40.2"', "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) || null;
   }
-  /** Desenha um quadro: o vídeo + o tema por cima. Medidas pensadas em 1080 × 1920. */
+  /** Desenha um quadro: o vídeo + o tema por cima. Medidas em 1080 × 1920. */
   function quadroVideo(ctx, W, H, fonte, V) {
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
-    const w = 1080, h = 1920, C = CORES_VIDEO[V.cor];
+    const w = 1080, h = 1920, C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme;
     const vw = fonte ? (fonte.videoWidth || fonte.width) : 0, vh = fonte ? (fonte.videoHeight || fonte.height) : 0;
-    const pintar = (x, y, ww, hh, cobrir) => {
-      if (!vw) { ctx.fillStyle = "#d9d2c3"; ctx.fillRect(x, y, ww, hh); return; }
-      const s = cobrir ? Math.max(ww / vw, hh / vh) : Math.min(ww / vw, hh / vh);
-      const iw = vw * s, ih = vh * s;
-      ctx.save(); ctx.beginPath(); ctx.rect(x, y, ww, hh); ctx.clip();
-      ctx.drawImage(fonte, x + (ww - iw) / 2, y + (hh - ih) / 2, iw, ih); ctx.restore();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const pintar = (x, y, ww, hh) => {
+      if (!vw) { const g = ctx.createLinearGradient(0, y, 0, y + hh); g.addColorStop(0, "#cfc6b4"); g.addColorStop(1, "#a99f8c"); ctx.fillStyle = g; ctx.fillRect(x, y, ww, hh); return; }
+      const s = Math.max(ww / vw, hh / vh), iw = vw * s, ih = vh * s;
+      ctx.save(); ctx.beginPath(); ctx.rect(x, y, ww, hh); ctx.clip(); ctx.drawImage(fonte, x + (ww - iw) / 2, y + (hh - ih) / 2, iw, ih); ctx.restore();
     };
-    const titulo = (y, cor, dest, tam = 92) => {
-      ctx.font = `800 ${tam}px Poppins`; ctx.textBaseline = "middle";
-      linhasTitulo(V.titulo).forEach((partes, j) => {
+    const sombraTexto = (on) => { ctx.shadowColor = on ? "rgba(0,0,0,.55)" : "transparent"; ctx.shadowBlur = on ? 18 : 0; ctx.shadowOffsetY = on ? 3 : 0; };
+    const linhas = linhasTitulo(V.titulo);
+    const titulo = (y, cor, dest, tam = 92, sombra = false) => {
+      ctx.font = `800 ${tam}px Poppins`; sombraTexto(sombra);
+      linhas.forEach((partes, j) => {
         const larg = partes.reduce((s, [t]) => s + ctx.measureText(t).width, 0); let x = (w - larg) / 2; ctx.textAlign = "left";
         partes.forEach(([t, d]) => { ctx.fillStyle = d ? dest : cor; ctx.fillText(t, x, y + j * tam * 1.08); x += ctx.measureText(t).width; });
       });
-      ctx.textAlign = "center";
+      ctx.textAlign = "center"; sombraTexto(false);
+      return y + linhas.length * tam * 1.08;
     };
     const pilula = (texto, cx, cy, fundo, cor, tam = 44) => {
-      if (!texto) return;
-      ctx.font = `700 ${tam}px Poppins`; const pw = ctx.measureText(texto).width + 90, ph = tam * 2.3;
+      texto = String(texto || "").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
+      if (!texto) return 0;
+      ctx.font = `700 ${tam}px Poppins`; const pw = Math.min(w - 100, ctx.measureText(texto).width + 90), ph = tam * 2.3;
       retArredondado(ctx, cx - pw / 2, cy - ph / 2, pw, ph, ph / 2); ctx.fillStyle = fundo; ctx.fill();
-      ctx.fillStyle = cor; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(texto, cx, cy + 2);
+      ctx.fillStyle = cor; ctx.fillText(texto, cx, cy + 2); return ph;
     };
-    const marca = (x, y, s) => { if (edMarca) ctx.drawImage(edMarca, x, y, s, s); };
-    const nl = linhasTitulo(V.titulo).length;
-    if (V.tema === "moldura") {
+    // Nome + de/por + cupom; devolve a altura usada
+    const infos = (y, corTexto, corPreco, corAntigo, sombra = false, tamPreco = 96) => {
+      let yy = y; sombraTexto(sombra);
+      if (V.nome) { ctx.font = "700 46px Poppins"; ctx.fillStyle = corTexto; quebrarTexto(ctx, V.nome, w - 160, 2).forEach((l) => { ctx.fillText(l, w / 2, yy + 26); yy += 58; }); yy += 8; }
+      if (V.novo) {
+        if (V.antigo && V.antigo > V.novo) {
+          ctx.font = "500 40px Poppins"; ctx.fillStyle = corAntigo; const t = "de " + brl(V.antigo); ctx.fillText(t, w / 2, yy + 22);
+          const lw = ctx.measureText(t).width, ld = ctx.measureText("de ").width; ctx.fillRect(w / 2 - lw / 2 + ld, yy + 24, lw - ld, 4); yy += 56;
+        }
+        ctx.font = `800 ${tamPreco}px Poppins`; ctx.fillStyle = corPreco; ctx.fillText((V.antigo && V.antigo > V.novo ? "por " : "") + brl(V.novo), w / 2, yy + tamPreco * 0.55); yy += tamPreco * 1.15;
+      }
+      sombraTexto(false);
+      if (V.cupom) {
+        ctx.font = "800 40px Poppins"; const t = "CUPOM " + V.cupom.toUpperCase(), cw = ctx.measureText(t).width + 70;
+        retArredondado(ctx, (w - cw) / 2, yy + 6, cw, 80, 40); ctx.fillStyle = "#ffffff"; ctx.fill();
+        ctx.setLineDash([14, 9]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, w / 2, yy + 48); yy += 104;
+      }
+      return yy - y;
+    };
+    const altInfos = () => (V.nome ? 66 * Math.min(2, Math.ceil((V.nome.length || 1) / 32)) : 0) + (V.novo ? (V.antigo > V.novo ? 56 : 0) + 110 : 0) + (V.cupom ? 104 : 0);
+    const marca = (x, y, s, fundo) => {
+      if (!edMarca) return;
+      if (fundo) { ctx.beginPath(); ctx.arc(x + s / 2, y + s / 2, s * 0.62, 0, Math.PI * 2); ctx.fillStyle = fundo; ctx.fill(); }
+      ctx.drawImage(edMarca, x, y, s, s);
+    };
+    const nl = linhas.length;
+
+    if (V.tema === "cheia") { // tela cheia, textos direto no vídeo (sem cartão)
+      pintar(0, 0, w, h);
+      let g = ctx.createLinearGradient(0, 0, 0, 560); g.addColorStop(0, "rgba(0,0,0,.55)"); g.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, w, 560);
+      g = ctx.createLinearGradient(0, h - 820, 0, h); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.7)"); ctx.fillStyle = g; ctx.fillRect(0, h - 820, w, 820);
+      titulo(190, "#ffffff", C.destaque === "#e8336d" ? "#ffd23f" : C.destaque, 96, true);
+      const ai = altInfos(), base = h - 200 - ai - (V.botao ? 110 : 0);
+      infos(base, "#ffffff", "#ffd23f", "rgba(255,255,255,.85)", true);
+      if (V.botao) pilula(V.botao, w / 2, h - 230, C.pill, C.pillTexto);
+      marca(w - 180, h - 175, 140);
+    } else if (V.tema === "moldura") {
       ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = V.cor === "rosa" || V.cor === "preto" ? "rgba(255,255,255,.12)" : "rgba(255,210,63,.35)"; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
-      titulo(150, C.texto, C.destaque);
-      const top = 150 + nl * 100 + 30, alt = h - top - 330;
-      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; retArredondado(ctx, 70, top, w - 140, alt, 44); ctx.fillStyle = "#000"; ctx.fill(); ctx.restore();
-      ctx.save(); retArredondado(ctx, 70, top, w - 140, alt, 44); ctx.clip(); pintar(70, top, w - 140, alt, true); ctx.restore();
-      pilula(V.rodape, w / 2, h - 210, C.pill, C.pillTexto);
-      marca(w - 190, h - 190, 160);
+      ctx.fillStyle = C.bola; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
+      const fimTitulo = titulo(150, C.texto, C.destaque);
+      const ai = altInfos(), top = fimTitulo + 10, alt = h - top - ai - (V.botao ? 140 : 40) - 150;
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; retArredondado(ctx, 90, top, w - 180, alt, 44); ctx.fillStyle = "#000"; ctx.fill(); ctx.restore();
+      ctx.save(); retArredondado(ctx, 90, top, w - 180, alt, 44); ctx.clip(); pintar(90, top, w - 180, alt); ctx.restore();
+      const y2 = top + alt + 30 + infos(top + alt + 30, C.texto, C.destaque === "#e8336d" ? "#e8336d" : C.destaque, C.cor === "creme" ? "#8a817b" : "rgba(128,128,128,.9)");
+      if (V.botao) pilula(V.botao, w / 2, y2 + 60, C.pill, C.pillTexto);
+      marca(w - 185, h - 180, 150, C.cor === "preto" || V.cor === "preto" ? "#e9e4d8" : null);
     } else if (V.tema === "faixa") {
-      pintar(0, 0, w, h, true);
-      const fh = 140 + nl * 100 + (V.rodape ? 130 : 0), fy = h - fh - 60;
-      retArredondado(ctx, 50, fy, w - 100, fh, 48); ctx.fillStyle = C.fundo; ctx.globalAlpha = .94; ctx.fill(); ctx.globalAlpha = 1;
-      titulo(fy + 110, C.texto, C.destaque, 84);
-      pilula(V.rodape, w / 2, fy + fh - 90, C.pill, C.pillTexto, 40);
-      marca(w - 210, 60, 160);
-    } else {
-      pintar(0, 0, w, h, true);
+      pintar(0, 0, w, h);
+      const ai = altInfos(), fh = 90 + nl * 92 + ai + (V.botao ? 130 : 30), fy = h - fh - 60;
+      ctx.globalAlpha = .95; retArredondado(ctx, 50, fy, w - 100, fh, 48); ctx.fillStyle = C.fundo; ctx.fill(); ctx.globalAlpha = 1;
+      const y1 = titulo(fy + 90, C.texto, C.destaque, 84);
+      const y2 = y1 + infos(y1, C.texto, C.destaque, "rgba(128,128,128,.9)");
+      if (V.botao) pilula(V.botao, w / 2, y2 + 55, C.pill, C.pillTexto, 40);
+      marca(w - 200, 60, 150, "#ffffff");
+    } else if (V.tema === "dividido") {
+      const vh2 = Math.round(h * 0.58); pintar(0, 0, w, vh2);
+      ctx.fillStyle = C.fundo; ctx.fillRect(0, vh2, w, h - vh2);
+      ctx.fillStyle = C.bola; ctx.beginPath(); ctx.arc(w - 40, h - 40, 200, 0, Math.PI * 2); ctx.fill();
+      const y1 = titulo(vh2 + 110, C.texto, C.destaque, 84);
+      const y2 = y1 + infos(y1 + 10, C.texto, C.destaque, "rgba(128,128,128,.9)");
+      if (V.botao) pilula(V.botao, w / 2, Math.min(y2 + 80, h - 120), C.pill, C.pillTexto, 40);
+      marca(w - 190, vh2 - 80, 150, "#ffffff");
+    } else if (V.tema === "selo") {
+      pintar(0, 0, w, h);
       ctx.save(); ctx.translate(w / 2, 230); ctx.rotate(-0.04);
       const tt = V.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " ");
       ctx.font = "800 64px Poppins"; const tw = Math.min(w - 120, ctx.measureText(tt).width + 110);
       retArredondado(ctx, -tw / 2, -70, tw, 140, 70); ctx.fillStyle = C.fundo; ctx.fill();
-      ctx.fillStyle = C.texto; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(quebrarTexto(ctx, tt, tw - 80, 1)[0], 0, 4); ctx.restore();
-      pilula(V.rodape, w / 2, h - 230, C.pill, C.pillTexto);
-      marca(w - 200, h - 200, 160);
+      ctx.fillStyle = C.texto; ctx.fillText(quebrarTexto(ctx, tt, tw - 80, 1)[0], 0, 4); ctx.restore();
+      if (V.novo) {
+        ctx.save(); ctx.translate(w / 2, h - 420); ctx.rotate(0.03);
+        ctx.font = "800 84px Poppins"; const t = brl(V.novo), pw = ctx.measureText(t).width + 100;
+        retArredondado(ctx, -pw / 2, -75, pw, 150, 40); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
+        ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore();
+      }
+      if (V.botao) pilula(V.botao, w / 2, h - 230, C.pill, C.pillTexto);
+      marca(w - 200, h - 200, 160, "#ffffff");
+    } else { // mínimo: só o selo de preço e a marca
+      pintar(0, 0, w, h);
+      if (V.novo) {
+        const r = 150; ctx.save(); ctx.translate(w - 210, 330); ctx.rotate(-0.15);
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
+        ctx.fillStyle = "#1d1d1f"; ctx.font = "600 34px Poppins"; ctx.fillText("por", 0, -46);
+        ctx.font = "800 62px Poppins"; ctx.fillText(brl(V.novo).replace("R$ ", "R$"), 0, 14); ctx.restore();
+      }
+      if (V.botao) pilula(V.botao, w / 2, h - 200, C.pill, C.pillTexto, 40);
+      marca(50, 60, 150, "#ffffff");
     }
     ctx.restore();
   }
+  const vdItem = () => fila().find((i) => i.id === vd().itemId);
+  function usarProdutoNoVideo(it) {
+    const V = vd(); V.itemId = it ? it.id : null;
+    if (it) { V.nome = limparNome(it.nome || ""); V.antigo = it.precoAntigo || null; V.novo = it.precoNovo || null; V.cupom = it.cupom || ""; }
+  }
   function telaVideo(c) {
     const V = vd();
+    if (wz.passo === "vDados") {
+      if (!V.iniciado) { V.iniciado = true; if (wz.itemId) usarProdutoNoVideo(wzItem()); }
+      const l2 = fila().filter((x) => !x.carregando);
+      c.innerHTML = `<h2 class="wz-titulo">O que vai aparecer no vídeo?</h2>
+        <p class="nota">Escolha um produto da lista para preencher, ou digite.</p>
+        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>
+        <label class="campo"><span>Título (use *asteriscos* para destacar)</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>
+        <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
+        <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
+        <label class="campo"><span>Cupom (opcional)</span><input id="vdCupom" value="${esc(V.cupom)}" maxlength="20"></label>
+        <label class="campo"><span>Texto do botão</span><input id="vdBotao" value="${esc(V.botao)}" maxlength="40" placeholder="Ex.: Link na bio"></label>
+        ${botaoContinuar(true)}`;
+      return;
+    }
     if (wz.passo === "vArquivo") {
+      const nome = V.nome || "o produto";
       c.innerHTML = `<h2 class="wz-titulo">Escolha o vídeo</h2>
-        <p class="nota">Pode ser um vídeo feito na IA ou gravado no celular. Ele vira um vídeo em pé (formato de story e reels) com o tema do Miga. Recomendo até 60 segundos.</p>
+        <p class="nota">Pode ser feito na IA ou gravado no celular. Ele vira um vídeo em pé (story e reels) com o tema do Miga. Recomendo até 60 segundos.</p>
         ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
         <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
-        ${botaoContinuar(!!V.url)}`;
+        ${botaoContinuar(!!V.url)}
+        <details class="mais"${V.url ? "" : " open"}><summary>Ainda não tem o vídeo? Prompts prontos para a IA</summary>
+          <p class="nota">Use numa IA de vídeo (Veo no Gemini, Sora, Kling, Runway…): anexe a <b>foto do produto</b> e cole o prompt. Depois volte aqui e escolha o vídeo.</p>
+          ${vdItem() && vdItem().imagem ? '<button type="button" class="btn btn--branco" id="vdFoto">Salvar a foto do produto</button>' : ""}
+          ${PROMPTS_VIDEO.map(([t, f], i) => `<div class="vd-prompt"><b>${esc(t)}</b><p>${esc(f(nome))}</p><button type="button" class="btn btn--branco" data-vd-prompt="${i}">Copiar prompt</button></div>`).join("")}
+        </details>`;
       return;
     }
     if (wz.passo === "vTema") {
       c.innerHTML = `<h2 class="wz-titulo">Tema do vídeo</h2>
-        <div class="wz-miniaturas">${Object.entries(TEMAS_VIDEO).map(([k, t]) => `<button type="button" class="wz-mini${V.tema === k ? " on" : ""}" data-vd-tema="${k}"><canvas width="270" height="480"></canvas><span>${t.nome}</span></button>`).join("")}</div>
+        <div class="wz-miniaturas">${Object.entries(TEMAS_VIDEO).map(([k, t]) => `<button type="button" class="wz-mini${V.tema === k ? " on" : ""}" data-vd-tema="${k}"><canvas width="270" height="480"></canvas><span>${t}</span></button>`).join("")}</div>
         <div class="campo"><span>Cor</span><div class="alternar" id="vdCor">${Object.entries(CORES_VIDEO).map(([k, x]) => `<button type="button" role="radio" data-vd-cor="${k}" aria-checked="${V.cor === k}">${x.nome}</button>`).join("")}</div></div>
-        <label class="campo"><span>Título (use *asteriscos* para destacar)</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>
-        <label class="campo"><span>Texto do botão (preço, “link na bio”…)</span><input id="vdRodape" maxlength="40" value="${esc(V.rodape)}"></label>
         ${botaoContinuar(true)}`;
       pintarTemasVideo();
       return;
@@ -2100,12 +2194,13 @@
           <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo</button>`}
         <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
-      if (!r) primeiroQuadro().then((v) => quadroVideo($("#vdQuadro").getContext("2d"), 540, 960, v, V));
+      if (!r) carregarMarca().then(primeiroQuadro).then((v) => quadroVideo($("#vdQuadro").getContext("2d"), 540, 960, v, V));
     }
   }
   function primeiroQuadro() {
     const V = vd();
     if (V.quadro) return Promise.resolve(V.quadro);
+    if (!V.url) return Promise.resolve(null);
     return new Promise((ok) => {
       const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.src = V.url;
       v.addEventListener("loadeddata", () => { v.currentTime = Math.min(1, (v.duration || 2) / 3); }, { once: true });
@@ -2126,11 +2221,11 @@
     const barra = $("#vdProgresso"); barra.hidden = false;
     const W = 1080, H = 1920, tela = document.createElement("canvas"); tela.width = W; tela.height = H;
     const ctx = tela.getContext("2d"), previa = $("#vdQuadro").getContext("2d");
-    const v = document.createElement("video"); v.src = V.url; v.playsInline = true; v.crossOrigin = "anonymous";
+    const v = document.createElement("video"); v.src = V.url; v.playsInline = true;
     await new Promise((ok) => v.addEventListener("loadedmetadata", ok, { once: true }));
     const fluxo = tela.captureStream(30);
     let ac = null;
-    try { // som do vídeo
+    try {
       ac = new (window.AudioContext || window.webkitAudioContext)();
       const dest = ac.createMediaStreamDestination(); ac.createMediaElementSource(v).connect(dest);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
@@ -2161,8 +2256,11 @@
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "video") return;
     const t = e.target, V = vd();
+    const vi = t.closest("[data-vd-item]"); if (vi) { const it = fila().find((x) => x.id === vi.dataset.vdItem); usarProdutoNoVideo(V.itemId === it.id ? null : it); mostrarPasso(); return; }
     const te = t.closest("[data-vd-tema]"); if (te) { V.tema = te.dataset.vdTema; document.querySelectorAll("[data-vd-tema]").forEach((b) => b.classList.toggle("on", b === te)); return; }
     const co = t.closest("[data-vd-cor]"); if (co) { V.cor = co.dataset.vdCor; document.querySelectorAll("[data-vd-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarTemasVideo(); return; }
+    const pr = t.closest("[data-vd-prompt]"); if (pr) { if (await copiarTexto(PROMPTS_VIDEO[+pr.dataset.vdPrompt][1](V.nome || "o produto"))) toast("Prompt copiado: cole na IA de vídeo junto com a foto"); return; }
+    if (t.closest("#vdFoto")) { const arq = await arquivoDaImagem(vdItem().imagem); if (arq) { baixarBlob(arq, nomeArquivo(V.nome || "produto")); toast("Foto salva: anexe na IA de vídeo"); } else toast("Não consegui pegar a foto"); return; }
     if (t.closest("#vdGerar")) { gravarVideo(); return; }
     if (t.closest("#vdRefazer")) { V.resultado = null; mostrarPasso(); return; }
     if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); toast("Vídeo salvo"); return; }
@@ -2174,9 +2272,13 @@
   });
   $("#wzCorpo").addEventListener("input", (e) => {
     if (wz.canal !== "video") return;
-    const V = vd();
-    if (e.target.id === "vdTitulo") { V.titulo = e.target.value; pintarTemasVideo(); }
-    if (e.target.id === "vdRodape") { V.rodape = e.target.value.trim(); pintarTemasVideo(); }
+    const V = vd(), id = e.target.id, v = e.target.value;
+    if (id === "vdTitulo") V.titulo = v;
+    if (id === "vdNome") V.nome = v.trim();
+    if (id === "vdAntigo") V.antigo = lerPreco(v);
+    if (id === "vdNovo") V.novo = lerPreco(v);
+    if (id === "vdCupom") V.cupom = v.trim();
+    if (id === "vdBotao") V.botao = v.trim();
   });
   $("#wzCorpo").addEventListener("change", (e) => {
     if (e.target.id !== "vdArquivo") return;
