@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=53"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=54"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=53"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=54"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1593,7 +1593,9 @@
     d.showModal();
     return new Promise((ok) => d.addEventListener("close", () => ok(d.returnValue || null), { once: true }));
   }
-  let catNova = "auto", filtroLista = "todas";
+  let catNova = "auto", filtroLista = "todas", ocultarComp = false;
+  try { ocultarComp = localStorage.getItem("miga_ocultar_comp") === "1"; } catch (e) { /* segue */ }
+  const foiCompartilhado = (i) => Object.values(i.feito || {}).some(Boolean);
   function adivinharCategoria(nome) {
     const n = String(nome || "").toLowerCase();
     if (/perfume|batom|base |maquiag|skincare|s[eé]rum|hidratante|shampoo|condicionador|cabelo|unha|esmalte|protetor solar|creme|rímel|rimel|sombra|pincel|beleza|facial/.test(n)) return "beleza";
@@ -1606,10 +1608,18 @@
   function renderCatsLista() {
     $("#ppCatNova").querySelector("b").textContent = catNova === "auto" ? "Automático (pelo nome)" : CATS_LISTA[catNova];
     $("#ppFiltroLista").querySelector("b").textContent = (filtroLista === "todas" ? "Todas" : CATS_LISTA[filtroLista]) + ` (${contarCat(filtroLista)})`;
+    $("#ppFiltroComp").querySelector("b").textContent = ocultarComp ? `Ocultar (${fila().filter(foiCompartilhado).length})` : "Mostrar";
   }
   $("#ppCatNova").addEventListener("click", async () => {
     const v = await escolherOpcao("Categoria do produto colado", [["auto", "Automático (pelo nome)"], ...Object.entries(CATS_LISTA)], catNova);
     if (v) { catNova = v; renderCatsLista(); }
+  });
+  $("#ppFiltroComp").addEventListener("click", async () => {
+    const v = await escolherOpcao("Produtos já compartilhados", [["mostrar", "Mostrar"], ["ocultar", "Ocultar"]], ocultarComp ? "ocultar" : "mostrar");
+    if (!v) return;
+    ocultarComp = v === "ocultar";
+    try { localStorage.setItem("miga_ocultar_comp", ocultarComp ? "1" : "0"); } catch (e) { /* segue */ }
+    renderFila();
   });
   $("#ppFiltroLista").addEventListener("click", async () => {
     const v = await escolherOpcao("Mostrar", [["todas", `Todas (${contarCat("todas")})`], ...Object.entries(CATS_LISTA).map(([k, n]) => [k, `${n} (${contarCat(k)})`])], filtroLista);
@@ -1617,7 +1627,7 @@
   });
   function renderFila() {
     renderCatsLista();
-    const l = fila().filter((i) => filtroLista === "todas" || (i.carregando && true) || (i.categoria || "outros") === filtroLista);
+    const l = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i)));
     $("#ppLista").innerHTML = l.length ? l.map((i) => `<div class="pp-linha"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${fotoMini(i)}
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
@@ -1625,7 +1635,7 @@
           <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button></div>`).join("") : `<p class="vazio-lista">${fila().length ? "Nenhum produto nessa categoria." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
+      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button></div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
   function chaveLink(u) {

@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=53">
+  <link rel="manifest" href="manifest.json?v=54">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=53">
+  <link rel="stylesheet" href="style.css?v=54">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -55,7 +55,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=53" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=54" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem para o WhatsApp, o Instagram e o Telegram.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -89,7 +89,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=53" alt="">
+    <img src="logo.png?v=54" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -234,7 +234,10 @@
       </div>
       <button type="button" class="chip-filtro chip-filtro--largo" id="ppCatNova"><small>Categoria do produto colado</small><b>Automático</b><span class="seta">▾</span></button>
       <button type="button" class="btn btn--rosa" id="ppAdicionar">Adicionar à lista</button>
-      <button type="button" class="chip-filtro chip-filtro--largo" id="ppFiltroLista"><small>Mostrar</small><b>Todas</b><span class="seta">▾</span></button>
+      <div class="filtros">
+        <button type="button" class="chip-filtro" id="ppFiltroLista"><small>Categoria</small><b>Todas</b><span class="seta">▾</span></button>
+        <button type="button" class="chip-filtro" id="ppFiltroComp"><small>Compartilhados</small><b>Mostrar</b><span class="seta">▾</span></button>
+      </div>
       <div class="pp-lista" id="ppLista"></div>
       <p class="nota">Toque num produto para editar foto, nome e preço, e depois compartilhar.</p>
     </section>
@@ -585,7 +588,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=53"></script>
-  <script src="app.js?v=53"></script>
+  <script src="firebase-config.js?v=54"></script>
+  <script src="app.js?v=54"></script>
 </body>
 </html>
