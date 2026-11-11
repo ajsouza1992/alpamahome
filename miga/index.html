@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=29">
+  <link rel="manifest" href="manifest.json?v=30">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -50,7 +50,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=29" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=30" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -79,7 +79,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=29" alt="">
+    <img src="logo.png?v=30" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -222,6 +222,11 @@
         <button type="button" class="link" id="ppVoltar">‹ Voltar para a lista</button>
         <button type="button" class="link link--perigo" id="ppRemover">Tirar da lista</button>
       </div>
+      <div class="pp-foto">
+        <img id="ppFotoMini" alt="Foto do produto" hidden>
+        <span class="sem-foto" id="ppSemFoto">sem foto</span>
+        <label class="btn btn--branco">Trocar foto<input type="file" id="ppArquivoTopo" accept="image/*" hidden></label>
+      </div>
       <label class="campo"><span>Nome do produto</span><input id="ppNome" maxlength="120"></label>
       <div class="duas">
         <label class="campo"><span>Preço antigo</span><input id="ppAntigo" inputmode="decimal" placeholder="opcional"></label>
@@ -291,13 +296,7 @@
 
     <section class="bloco">
       <h2 class="passo">Procurar achados</h2>
-      <p class="nota">Digite o que procura ou toque numa categoria e escolha a loja. Na Shopee a busca já abre ordenada pelos <b>mais vendidos</b>.</p>
-      <label class="campo"><span>O que você procura?</span><input id="achadoTermo" type="search" placeholder="Ex.: vestido midi, sérum, organizador"></label>
-      <div class="sugestoes" id="achadoSugestoes">
-        <button type="button">vestido feminino</button><button type="button">conjunto feminino</button><button type="button">skincare</button>
-        <button type="button">maquiagem</button><button type="button">decoração casa</button><button type="button">organizador</button>
-        <button type="button">roupa fitness feminina</button><button type="button">bolsa feminina</button>
-      </div>
+            <label class="campo"><span>O que você procura?</span><input id="achadoTermo" type="search" placeholder="Ex.: vestido midi, sérum, organizador"></label>
       <div class="lojas-busca" id="achadoLojas">
         <button type="button" class="btn btn--branco" data-busca="mercadolivre">Mercado Livre</button>
         <button type="button" class="btn btn--branco" data-busca="shopee">Shopee</button>
@@ -352,8 +351,9 @@
 
     <section class="bloco">
       <h2 class="passo">Convite no fim da mensagem</h2>
-      <p class="nota">Coloca o link de um grupo no final de toda mensagem, para mais gente entrar.</p>
-      <div class="campo"><span>Grupo</span>
+      <p class="nota">Opcional. Escolha um grupo e o link de convite dele vai no final de toda mensagem, para mais gente entrar. “Não incluir” deixa a mensagem sem convite.</p>
+      <p class="nota" id="conviteVazio"><b>Você ainda não tem grupos.</b> Depois de criar o grupo no WhatsApp, cadastre aqui em cima com o link de convite: ele aparece para escolher.</p>
+      <div class="campo" id="conviteCampo"><span>Grupo</span>
         <div class="alternar alternar--tres" id="grupoConvite" role="radiogroup" aria-label="Grupo do convite"></div>
       </div>
     </section>
@@ -570,7 +570,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=29"></script>
-  <script src="app.js?v=29"></script>
+  <script src="firebase-config.js?v=30"></script>
+  <script src="app.js?v=30"></script>
 </body>
 </html>

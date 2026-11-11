@@ -719,10 +719,6 @@
     amazon: (t) => "https://www.amazon.com.br/s?k=" + encodeURIComponent(t.trim()),
     magalu: (t) => "https://www.magazineluiza.com.br/busca/" + encodeURIComponent(t.trim()) + "/"
   };
-  $("#achadoSugestoes").addEventListener("click", (e) => {
-    const b = e.target.closest("button");
-    if (b) { $("#achadoTermo").value = b.textContent; toast("Agora escolha a loja"); }
-  });
   $("#achadoLojas").addEventListener("click", (e) => {
     const b = e.target.closest("[data-busca]");
     if (!b) return;
@@ -943,7 +939,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=29"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=30"; });
     }
     edFoto = null;
     try {
@@ -1114,7 +1110,7 @@
       if (tipo === "nome") { ctx.font = `700 ${Math.round(46 * escala)}px Poppins`; return p.nome ? quebrarTexto(ctx, p.nome, LARG, 2).length * 58 * escala : 0; }
       if (tipo === "preco") return p.novo ? (p.antigo ? 150 : 100) * escala : 0;
       if (tipo === "precoGrande") return p.novo ? (p.antigo ? 230 : 180) * escala : 0;
-      if (tipo === "link") return 130 * escala;
+      if (tipo === "link") return 84 * escala;
       if (tipo === "lista") return Math.min(5, String(v || "").split("\n").filter((x) => x.trim()).length) * 118 * escala;
       return 0;
     };
@@ -1239,11 +1235,11 @@
       }
       if (tipo === "link" && d.previa) {
         // Só na prévia: onde colocar o adesivo de link (ou de enquete) do Instagram
-        const lw = 520 * escala;
+        const lw = 320 * escala;
         retArredondado(ctx, (W - lw) / 2, y, lw, h, h / 2);
         ctx.setLineDash([16, 12]); ctx.lineWidth = 4; ctx.strokeStyle = C.guia; ctx.stroke(); ctx.setLineDash([]);
-        ctx.font = `600 ${Math.round(30 * escala)}px Poppins`; ctx.fillStyle = C.guia;
-        ctx.fillText(M.rotuloLink === "enquete" ? "adesivo de enquete aqui" : "adesivo de link aqui", W / 2, y + h / 2 + 2);
+        ctx.font = `600 ${Math.round(24 * escala)}px Poppins`; ctx.fillStyle = C.guia;
+        ctx.fillText(M.rotuloLink === "enquete" ? "enquete aqui" : "link aqui", W / 2, y + h / 2 + 2);
       }
       y += h;
     });
@@ -1283,7 +1279,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=29"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=30"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1405,7 +1401,7 @@
       const foto = i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
       return `<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${foto}
-        <span><strong>${esc(i.nome || "Buscando o produto…")}</strong>
+        <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}</span>
           <span class="pp-tags"><span class="${f.whatsapp ? "ok" : ""}">WhatsApp${f.whatsapp ? " ✓" : ""}</span><span class="${f.instagram ? "ok" : ""}">Instagram${f.instagram ? " ✓" : ""}</span></span>
         </span>
@@ -1428,7 +1424,7 @@
       if (d.preco) item.precoNovo = d.preco;
       if (d.precoAntigo) item.precoAntigo = d.precoAntigo;
       if (d.imagem) item.imagem = d.imagem;
-      if (!d.nome && !item.nome) toast("Não achei o nome: toque no produto e complete");
+      if (!d.nome && !item.nome) toast(item.loja === "shopee" ? "A Shopee não mostrou o produto: toque nele e complete (ou cole o texto inteiro do Compartilhar)" : "Não achei o nome: toque no produto e complete");
     } catch (e) {
       if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
       toast("Não consegui ler o produto: toque nele e complete à mão");
@@ -1465,6 +1461,7 @@
   function abrirItemFila(item) {
     ppAtual = item;
     $("#ppListaBloco").hidden = true; $("#ppItem").hidden = false;
+    mostrarFotoPp();
     $("#ppNome").value = item.nome || "";
     $("#ppAntigo").value = item.precoAntigo ? paraCampo(item.precoAntigo) : "";
     $("#ppNovo").value = item.precoNovo ? paraCampo(item.precoNovo) : "";
@@ -1475,6 +1472,23 @@
     trocarCanal("whatsapp");
     window.scrollTo({ top: 0 });
   }
+  function mostrarFotoPp() {
+    const tem = !!(ppAtual && ppAtual.imagem);
+    $("#ppFotoMini").hidden = !tem; $("#ppSemFoto").hidden = tem;
+    if (tem) { $("#ppFotoMini").dataset.original = ppAtual.imagem; colocarImagem($("#ppFotoMini"), ppAtual.imagem); }
+  }
+  // Trocar a foto (vale para o WhatsApp e para o Instagram)
+  async function trocarFotoPp(arquivo) {
+    if (!arquivo || !ppAtual) return;
+    try {
+      ppAtual.imagem = await compactarArquivo(arquivo);
+      ppFotos[ppAtual.id] = await createImageBitmap(arquivo);
+    } catch (e) { toast("Não consegui abrir essa foto"); return; }
+    mostrarFotoPp(); salvarFila(true);
+    if (ppCanal.valor() === "instagram") desenharPp();
+    toast("Foto trocada");
+  }
+  $("#ppArquivoTopo").addEventListener("change", (e) => { trocarFotoPp(e.target.files && e.target.files[0]); e.target.value = ""; });
   function fecharItemFila() {
     ppAtual = null;
     $("#ppItem").hidden = true; $("#ppListaBloco").hidden = false;
@@ -1579,13 +1593,7 @@
   });
   $("#ppFundo").addEventListener("click", () => setTimeout(desenharPp, 0));
   $("#ppTela").addEventListener("click", () => $("#ppArquivo").click());
-  $("#ppArquivo").addEventListener("change", async (e) => {
-    const f = e.target.files && e.target.files[0];
-    if (!f || !ppAtual) return;
-    try { ppFotos[ppAtual.id] = await createImageBitmap(f); } catch (err) { toast("Não consegui abrir essa foto"); }
-    e.target.value = "";
-    desenharPp();
-  });
+  $("#ppArquivo").addEventListener("change", (e) => { trocarFotoPp(e.target.files && e.target.files[0]); e.target.value = ""; });
   const nomePp = () => `miga-promo-${String(ppAtual.nome || "achadinho").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30)}-${ppFormato.valor()}.jpg`;
   $("#ppBaixar").addEventListener("click", () => {
     const tela = document.createElement("canvas"); desenharPp(tela);
@@ -1677,6 +1685,8 @@
     // Escolha do convite em pílulas (no visual do app, sem a lista do sistema)
     const escolhido = l.some((g) => g.id === config.convite && g.link) ? config.convite : "";
     const opcoes = [{ id: "", nome: "Não incluir" }].concat(l.filter((g) => g.link));
+    $("#conviteVazio").hidden = opcoes.length > 1;
+    $("#conviteCampo").hidden = opcoes.length < 2;
     $("#grupoConvite").innerHTML = opcoes.map((g) =>
       `<button type="button" role="radio" data-id="${esc(g.id)}" aria-checked="${g.id === escolhido}">${esc(g.nome)}</button>`).join("");
   }
