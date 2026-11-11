@@ -602,3 +602,5 @@ body.travado { overflow: hidden; }
   #aba-criar .wz { padding-bottom: 96px; }
 }
 @media (min-width: 960px) { .wz-rodape { display: grid; } .wz-rodape .wz-continuar { max-width: 460px; justify-self: center; width: 100%; } }
+.pp-lixo { font-size: 24px; font-weight: 800; line-height: 1; color: var(--preto); }
+.pp-tags .selo-comp { background: #1e7d43; color: #fff; }

@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=48"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=49"; });
     }
     edFoto = null;
     try {
@@ -1412,7 +1412,7 @@
         ctx.setLineDash([22, 14]); ctx.lineWidth = 7; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore();
       }
-      if (tipo === "link" && d.previa) {
+      if (tipo === "link" && d.previa && false) {
         // Só na prévia: onde colocar o adesivo de link (ou de enquete) do Instagram
         const lw = 320 * escala;
         retArredondado(ctx, (W - lw) / 2, y, lw, h, h / 2);
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=48"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=49"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1577,6 +1577,8 @@
   }
   const tagsFeito = (i) => {
     const f = i.feito || {};
+    if (!Object.values(f).some(Boolean)) return "";
+    return `<span class="selo-comp">Compartilhado</span>` + ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span>${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]}</span>`).join("");
     return ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span class="ok">${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]} ✓</span>`).join("");
   };
   const fotoMini = (i) => i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
@@ -1623,7 +1625,7 @@
           <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button><button type="button" class="pp-lixo" data-tirar-item="${esc(i.id)}" aria-label="Tirar ${esc(i.nome || "produto")} da lista"><svg><use href="#i-lixo"/></svg></button></div>`).join("") : `<p class="vazio-lista">${fila().length ? "Nenhum produto nessa categoria." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
+      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button></div>`).join("") : `<p class="vazio-lista">${fila().length ? "Nenhum produto nessa categoria." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
   function chaveLink(u) {
@@ -1688,12 +1690,18 @@
     renderFila(); salvarFila(true);
   });
   $("#ppLista").addEventListener("click", async (e) => {
-    const lixo = e.target.closest("[data-tirar-item]");
-    if (lixo) {
-      const it = fila().find((i) => i.id === lixo.dataset.tirarItem);
-      if (!it || !(await confirmar({ titulo: "Tirar da lista?", texto: `“${it.nome || "Produto"}” sai da sua lista.`, ok: "Tirar" }))) return;
-      config.fila = fila().filter((i) => i !== it);
-      renderFila(); salvarFila(true); toast("Produto tirado da lista");
+    const menu = e.target.closest("[data-menu-item]");
+    if (menu) {
+      const it = fila().find((i) => i.id === menu.dataset.menuItem);
+      if (!it) return;
+      const op = await escolherOpcao(it.nome || "Produto", [["editar", "Editar"], ["compartilhar", "Compartilhar"], ["excluir", "Excluir"]], "");
+      if (op === "editar") abrirItemFila(it);
+      if (op === "compartilhar") { iniciarCriar({ itemId: it.id }); irPara("criar"); }
+      if (op === "excluir") {
+        if (!(await confirmar({ titulo: "Excluir da lista?", texto: `“${it.nome || "Produto"}” sai da sua lista (continua no Histórico se já foi compartilhado).`, ok: "Excluir" }))) return;
+        config.fila = fila().filter((i) => i !== it);
+        renderFila(); salvarFila(true); toast("Produto excluído da lista");
+      }
       return;
     }
     const b = e.target.closest("[data-pp]");
