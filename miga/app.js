@@ -133,7 +133,7 @@
   }
   /** Arquivo da foto para compartilhar junto com o texto */
   /* Títulos prontos para tocar (o que está entre *asteriscos* sai em destaque) */
-  const TITULOS_PRONTOS = ["Achadinho\n*do dia* ✨", "Oferta\n*relâmpago* ⚡", "*Baixou*\no preço! 📉", "*Últimas*\nhoras ⏰", "Chegou\n*novidade* 💖", "Achados\n*da semana* 🛍️", "Cupom\n*do dia* 🎟️", "Só\n*hoje* 🔥", "Achados de\n*beleza* 💄", "Casa\n*arrumadinha* 🏡", "Looks com\n*desconto* 👗", "Treino\n*em dia* 💪"];
+  const TITULOS_PRONTOS = ["Achadinho\n*do dia* ✨", "Oferta\n*relâmpago* ⚡", "*Baixou*\no preço! *↓*", "*Últimas*\nhoras ⏰", "Chegou\n*novidade* 💖", "Achados\n*da semana* 🛍️", "Cupom\n*do dia* 🎟️", "Só\n*hoje* 🔥", "Achados de\n*beleza* 💄", "Casa\n*arrumadinha* 🏡", "Looks com\n*desconto* 👗", "Treino\n*em dia* 💪"];
   const chipsTitulos = (alvo) => `<div class="wz-chips titulos-prontos" data-alvo="${alvo}">${TITULOS_PRONTOS.map((t, i) => `<button type="button" data-titulo-pronto="${i}">${esc(t.replace(/\*/g, "").replace(/\n/g, " "))}</button>`).join("")}</div>`;
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-titulo-pronto]");
@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=46"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=47"; });
     }
     edFoto = null;
     try {
@@ -1202,7 +1202,7 @@
       padrao: { titulo: "Oferta\n*relâmpago* ⚡", texto: "Corre que é por pouco tempo!", botao: "" },
       blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 1], ["gap", 30], ["preco", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
     baixou: { nome: "baixou-o-preco", fundo: "creme", produto: true, logo: false,
-      padrao: { titulo: "*Baixou*\no preço! 📉", texto: "", botao: "" },
+      padrao: { titulo: "*Baixou*\no preço! *↓*", texto: "", botao: "" },
       blocos: (d) => [["titulo", d.titulo], ["gap", 30], ["precoGrande", 0], ["gap", 30], ["foto", 1], ["gap", 26], ["nome", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
     ultimas: { nome: "ultimas-horas", fundo: "rosa", produto: true, logo: false,
       padrao: { titulo: "*Últimas*\nhoras ⏰", texto: "Esse preço termina hoje!", botao: "" },
@@ -1242,6 +1242,15 @@
   let bnFoto = null; // foto do produto (ImageBitmap)
 
   /** Desenha o post/story. d.previa = true mostra as guias (espaço do adesivo), que não saem na imagem final. */
+  /** Seta para baixo grossa (desenhada, para não depender da fonte) */
+  function setaBaixo(ctx, x, yMeio, h, cor) {
+    const w = h * 0.78, haste = w * 0.34, cab = h * 0.5, top = yMeio - h / 2;
+    ctx.save(); ctx.fillStyle = cor; ctx.beginPath();
+    ctx.moveTo(x + (w - haste) / 2, top); ctx.lineTo(x + (w + haste) / 2, top);
+    ctx.lineTo(x + (w + haste) / 2, top + h - cab); ctx.lineTo(x + w, top + h - cab);
+    ctx.lineTo(x + w / 2, top + h); ctx.lineTo(x, top + h - cab); ctx.lineTo(x + (w - haste) / 2, top + h - cab);
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
   function desenharBanner(canvas, modelo, formato, fundoEscolhido, d) {
     const M = MODELOS[modelo];
     const W = 1080, H = formato === "story" ? 1920 : formato === "quadrado" ? 1080 : 1350;
@@ -1295,10 +1304,15 @@
       if (tipo === "titulo") {
         ctx.font = `800 ${FT}px Poppins`;
         v.forEach((partes, j) => {
-          const larg = partes.reduce((s, [t]) => s + ctx.measureText(t).width, 0);
+          const larg = partes.reduce((s, [t]) => s + (t === "↓" ? FT * 0.9 : ctx.measureText(t).width), 0);
           let x = (W - Math.min(larg, W - 80)) / 2;
           ctx.textAlign = "left";
-          partes.forEach(([t, dest]) => { ctx.fillStyle = dest ? C.destaque : C.texto; ctx.fillText(t, x, y + FT * 1.08 * j + FT * 0.56); x += ctx.measureText(t).width; });
+          partes.forEach(([t, dest]) => {
+            ctx.fillStyle = dest ? C.destaque : C.texto;
+            const yb = y + FT * 1.08 * j + FT * 0.56;
+            if (t === "↓") { setaBaixo(ctx, x + FT * 0.1, yb, FT * 0.7, ctx.fillStyle); x += FT * 0.9; return; }
+            ctx.fillText(t, x, yb); x += ctx.measureText(t).width;
+          });
           ctx.textAlign = "center";
         });
       }
@@ -1445,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=46"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=47"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
