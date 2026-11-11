@@ -306,14 +306,55 @@
   async function abrirSessao() {
     if (conta.nuvem) {
       if (!conta.fb) await iniciarFirebase();
-      let u = await usuarioAtual();
-      if (!u) u = (await conta.fb.auth.signInAnonymously(conta.fb.a)).user;
+      const u = await usuarioAtual();
+      // Só contas Google (as autorizadas nas regras do Firestore) entram
+      if (!u || u.isAnonymous) { pedirGoogle(); return; }
       conta.uid = u.uid;
       dados = criarNuvem();
     }
     mostrarEntrada(false);
     await carregarDados();
   }
+  function pedirGoogle(msg) {
+    mostrarEntrada(true);
+    $("#formEntrar").hidden = true; $("#notaEntrada").hidden = true; $("#passoGoogle").hidden = false;
+    aviso($("#avisoEntrada"), msg || "");
+  }
+  $("#entrarGoogleEntrada").addEventListener("click", async () => {
+    const { auth, a } = conta.fb, prov = new auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: "select_account" });
+    // A lista que estava na conta anônima deste aparelho (versões anteriores) vem junto
+    let listaAnonima = [];
+    try {
+      if (a.currentUser && a.currentUser.isAnonymous) { conta.uid = a.currentUser.uid; listaAnonima = await criarNuvem().lerFila(); }
+    } catch (e) { listaAnonima = []; }
+    try {
+      if (a.currentUser && a.currentUser.isAnonymous) {
+        try { await auth.linkWithPopup(a.currentUser, prov); }
+        catch (e) {
+          if (e.code !== "auth/credential-already-in-use" && e.code !== "auth/email-already-in-use") throw e;
+          await auth.signInWithCredential(a, auth.GoogleAuthProvider.credentialFromError(e));
+        }
+      } else await auth.signInWithPopup(a, prov);
+    } catch (e) {
+      aviso($("#avisoEntrada"), e.code === "auth/operation-not-allowed" ? "Ative o login com Google no Firebase (Authentication → Método de login → Google)."
+        : e.code === "auth/unauthorized-domain" ? "Autorize este endereço no Firebase (Authentication → Configurações → Domínios autorizados)."
+        : e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request" ? "Login cancelado." : "Não consegui entrar: " + (e.code || e.message));
+      return;
+    }
+    conta.uid = a.currentUser.uid; dados = criarNuvem();
+    // Confere se essa conta tem permissão (regras do Firestore)
+    try { await dados.lerConfig(); }
+    catch (e) {
+      const email = (a.currentUser && a.currentUser.email) || "escolhida";
+      await auth.signOut(a);
+      pedirGoogle(e.code === "permission-denied" ? `A conta ${email} não tem acesso ao Miga. Entre com uma conta autorizada.` : "Não consegui abrir os seus dados: " + (e.code || e.message));
+      return;
+    }
+    $("#formEntrar").hidden = false; $("#notaEntrada").hidden = false; $("#passoGoogle").hidden = true; aviso($("#avisoEntrada"), "");
+    mostrarEntrada(false);
+    await carregarDados(listaAnonima);
+  });
   async function carregarDados(listaDoAparelho) {
     try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "", cupons: [] }; toast("Não consegui carregar seus grupos"); }
     config.cupons = config.cupons || [];
@@ -381,6 +422,7 @@
       c.includes("network") ? "Sem internet. Tente de novo." : "Não consegui conectar à sua conta agora. Tente de novo.";
   }
   function bloquear(msg) {
+    $("#formEntrar").hidden = false; $("#notaEntrada").hidden = false; $("#passoGoogle").hidden = true;
     ls.remover(CH.senha);
     atual = null;
     $("#resultado").hidden = true;
@@ -1061,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=39"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=40"; });
     }
     edFoto = null;
     try {
@@ -1403,7 +1445,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=39"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=40"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2637,10 +2679,10 @@
     dialogo.close();
     const ok = await confirmar({
       titulo: "Sair do app?",
-      texto: "Na próxima vez, o app vai pedir o código de acesso. Seu histórico e seus grupos continuam salvos.",
+      texto: "Na próxima vez, o app vai pedir o código de acesso e o login com Google. Seus dados continuam salvos na nuvem.",
       ok: "Sair"
     });
-    if (ok) bloquear("");
+    if (ok) { if (conta.fb) { try { await conta.fb.auth.signOut(conta.fb.a); } catch (e) { /* segue */ } } bloquear(""); }
   });
 
   /* =========================== Instalar (PWA) =========================== */
