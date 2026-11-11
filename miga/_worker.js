@@ -369,7 +369,7 @@ function motivoIA(e) {
 
 async function rotaGerar(request, env) {
   // Senha opcional para ninguém usar sua cota (variável APP_SENHA)
-  if (!senhaOk(request, env)) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
   if (!env.GEMINI_API_KEY) return json({ erro: "Chave do Gemini não configurada no servidor.", codigo: "sem-chave" }, 503);
 
   let b;
@@ -423,7 +423,37 @@ async function rotaGerar(request, env) {
 }
 
 /* ======================= Demais rotas ======================= */
-const senhaOk = (request, env) => !env.APP_SENHA || request.headers.get("x-app-senha") === env.APP_SENHA;
+/* Acesso: só contas Google autorizadas (token do Firebase). O código antigo (APP_SENHA) ainda vale, se enviado. */
+const b64url = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+let chavesGoogle = { lista: null, ate: 0 };
+async function chavesFirebase() {
+  if (chavesGoogle.lista && Date.now() < chavesGoogle.ate) return chavesGoogle.lista;
+  const r = await fetch("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com");
+  const d = await r.json();
+  chavesGoogle = { lista: d.keys || [], ate: Date.now() + 3600e3 };
+  return chavesGoogle.lista;
+}
+async function contaGoogleOk(request, env) {
+  const m = /^Bearer\s+(.+)$/i.exec(request.headers.get("authorization") || "");
+  if (!m) return false;
+  try {
+    const [h, p, s] = m[1].split(".");
+    const cab = JSON.parse(new TextDecoder().decode(b64url(h)));
+    const dados = JSON.parse(new TextDecoder().decode(b64url(p)));
+    const projeto = env.FIREBASE_PROJECT_ID || "miga-372d3";
+    const agora = Date.now() / 1000;
+    if (cab.alg !== "RS256" || dados.aud !== projeto || dados.iss !== "https://securetoken.google.com/" + projeto) return false;
+    if (!(dados.exp > agora) || dados.iat > agora + 300 || !dados.email_verified) return false;
+    const permitidos = String(env.MIGA_EMAILS || "alpama.app@gmail.com").toLowerCase().split(/[\s,;]+/).filter(Boolean);
+    if (!permitidos.includes(String(dados.email || "").toLowerCase())) return false;
+    const jwk = (await chavesFirebase()).find((k) => k.kid === cab.kid);
+    if (!jwk) return false;
+    const chave = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    return await crypto.subtle.verify("RSASSA-PKCS1-v1_5", chave, b64url(s), new TextEncoder().encode(h + "." + p));
+  } catch (e) { return false; }
+}
+const senhaOk = async (request, env) =>
+  (await contaGoogleOk(request, env)) || (!!env.APP_SENHA && request.headers.get("x-app-senha") === env.APP_SENHA);
 
 /* Cache do Cloudflare (Cache API): guarda leituras e contadores por um tempo, sem banco de dados */
 const temCache = () => typeof caches !== "undefined" && caches.default;
@@ -444,7 +474,7 @@ async function apagarCache(tipo, valor) {
 }
 
 async function rotaProduto(request, env) {
-  if (!senhaOk(request, env)) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
   let b;
   try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
   const url = String(b.url || "").trim();
@@ -676,7 +706,7 @@ async function catalogoShopee(filtro, env) {
 }
 
 async function rotaCatalogo(request, env) {
-  if (!senhaOk(request, env)) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
   const q = new URL(request.url).searchParams;
   const nomeFiltro = FILTROS_CATALOGO[q.get("filtro")] ? q.get("filtro") : "moda";
   const loja = ["mercadolivre", "shopee"].includes(q.get("loja")) ? q.get("loja") : "todas";

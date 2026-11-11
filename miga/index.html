@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=60">
+  <link rel="manifest" href="manifest.json?v=61">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=61">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -52,24 +52,16 @@
     <symbol id="i-compartilhar-ios" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></symbol>
   </svg>
 
-  <!-- ===== Tela de entrada (login anônimo) ===== -->
+  <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=60" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=61" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem para o WhatsApp, o Instagram e o Telegram.</p>
-      <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
-        <label class="campo"><span>Código de acesso</span>
-          <input id="codigoAcesso" type="password" autocomplete="current-password" placeholder="Digite o seu código" autocapitalize="off" spellcheck="false">
-        </label>
-        <button type="submit" class="btn btn--rosa btn--gerar" id="entrar"><span class="rotulo">Entrar</span><i class="giro"></i></button>
-      </form>
-      <div class="entrada__form" id="passoGoogle" hidden>
-        <strong>Entre com a sua conta Google</strong>
-        <span class="entrada__nota">Só as contas autorizadas acessam. A lista, o histórico e os grupos ficam iguais no celular e no computador.</span>
-        <button type="button" class="btn btn--rosa" id="entrarGoogleEntrada">Entrar com Google</button>
+      <div class="entrada__form" id="passoGoogle">
+        <button type="button" class="btn btn--rosa btn--gerar" id="entrarGoogleEntrada">Entrar com Google</button>
+        <span class="entrada__nota">Só as contas autorizadas acessam. A lista e o histórico ficam iguais no celular e no computador.</span>
       </div>
-      <p class="entrada__nota" id="notaEntrada">O app só abre com o código de acesso e uma conta Google autorizada.</p>
       <p class="aviso" id="avisoEntrada" hidden></p>
     </div>
     <p class="assinatura">Desenvolvido por <b>Alpama Soluções</b></p>
@@ -89,7 +81,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=60" alt="">
+    <img src="logo.png?v=61" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -627,7 +619,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=60"></script>
-  <script src="app.js?v=60"></script>
+  <script src="firebase-config.js?v=61"></script>
+  <script src="app.js?v=61"></script>
 </body>
 </html>

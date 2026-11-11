@@ -54,10 +54,15 @@
     el.hidden = !msg;
     el.classList.toggle("ok", !!ok);
   }
+  async function cabecalhoConta() {
+    const h = { "content-type": "application/json" };
+    try { const u = conta.fb && conta.fb.a.currentUser; if (u) h.authorization = "Bearer " + await u.getIdToken(); } catch (e) { /* segue */ }
+    return h;
+  }
   async function api(caminho, corpo) {
     const r = await fetch("api/" + caminho, {
       method: corpo ? "POST" : "GET",
-      headers: { "content-type": "application/json", "x-app-senha": ls.ler(CH.senha) },
+      headers: await cabecalhoConta(),
       body: corpo ? JSON.stringify(corpo) : undefined
     });
     const d = await r.json().catch(() => ({}));
@@ -269,30 +274,16 @@
   }
   let dados = local;
 
-  /* =========================== Entrada (código de acesso) =========================== */
-  // O código é conferido NO SERVIDOR (variável APP_SENHA do Cloudflare); ele não fica escrito no app.
+  /* =========================== Entrada (só com Google) =========================== */
+  // Só contas Google autorizadas (regras do Firestore e lista do servidor) abrem o app.
   function mostrarEntrada(sim) {
     $("#telaEntrada").hidden = !sim;
     document.body.classList.toggle("travado", sim);
-    if (sim) setTimeout(() => $("#codigoAcesso").focus(), 50);
   }
   function carregandoEntrada(sim) {
-    const b = $("#entrar");
+    const b = $("#entrarGoogleEntrada");
     b.disabled = sim;
-    b.classList.toggle("ocupado", sim);
-    b.querySelector(".rotulo").textContent = sim ? "Entrando..." : "Entrar";
-  }
-  /** "ok" | "errado" | "bloqueado" | "sem-codigo" | "sem-servidor" (prévia) | "rede" */
-  async function conferirCodigo(codigo) {
-    try {
-      const r = await fetch("api/entrar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ codigo }) });
-      if (r.status === 404 || r.status === 405) return "sem-servidor";
-      const d = await r.json().catch(() => ({}));
-      if (r.ok && d.ok) return "ok";
-      return d.codigo === "sem-codigo" || d.codigo === "bloqueado" ? d.codigo : "errado";
-    } catch (e) {
-      return "rede";
-    }
+    b.textContent = sim ? "Entrando..." : "Entrar com Google";
   }
   async function iniciarFirebase() {
     const [app, auth, fs] = await Promise.all([import(FB + "firebase-app.js"), import(FB + "firebase-auth.js"), import(FB + "firebase-firestore.js")]);
@@ -302,48 +293,14 @@
   function usuarioAtual() {
     return new Promise((ok) => { const parar = conta.fb.auth.onAuthStateChanged(conta.fb.a, (u) => { parar(); ok(u); }); });
   }
-  /** Depois do código certo: conecta a conta anônima do Firebase e abre o app */
-  async function abrirSessao() {
-    if (conta.nuvem) {
-      if (!conta.fb) await iniciarFirebase();
-      const u = await usuarioAtual();
-      // Só contas Google (as autorizadas nas regras do Firestore) entram
-      if (!u || u.isAnonymous) { pedirGoogle(); return; }
-      conta.uid = u.uid;
-      dados = criarNuvem();
-    }
-    mostrarEntrada(false);
-    await carregarDados();
-  }
   function pedirGoogle(msg) {
     mostrarEntrada(true);
-    $("#formEntrar").hidden = true; $("#notaEntrada").hidden = true; $("#passoGoogle").hidden = false;
     aviso($("#avisoEntrada"), msg || "");
   }
-  $("#entrarGoogleEntrada").addEventListener("click", async () => {
-    const { auth, a } = conta.fb, prov = new auth.GoogleAuthProvider();
-    prov.setCustomParameters({ prompt: "select_account" });
-    // A lista que estava na conta anônima deste aparelho (versões anteriores) vem junto
-    let listaAnonima = [];
-    try {
-      if (a.currentUser && a.currentUser.isAnonymous) { conta.uid = a.currentUser.uid; listaAnonima = await criarNuvem().lerFila(); }
-    } catch (e) { listaAnonima = []; }
-    try {
-      if (a.currentUser && a.currentUser.isAnonymous) {
-        try { await auth.linkWithPopup(a.currentUser, prov); }
-        catch (e) {
-          if (e.code !== "auth/credential-already-in-use" && e.code !== "auth/email-already-in-use") throw e;
-          await auth.signInWithCredential(a, auth.GoogleAuthProvider.credentialFromError(e));
-        }
-      } else await auth.signInWithPopup(a, prov);
-    } catch (e) {
-      aviso($("#avisoEntrada"), e.code === "auth/operation-not-allowed" ? "Ative o login com Google no Firebase (Authentication → Método de login → Google)."
-        : e.code === "auth/unauthorized-domain" ? "Autorize este endereço no Firebase (Authentication → Configurações → Domínios autorizados)."
-        : e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request" ? "Login cancelado." : "Não consegui entrar: " + (e.code || e.message));
-      return;
-    }
+  /** Confere se a conta tem acesso e abre o app */
+  async function abrirComConta() {
+    const { auth, a } = conta.fb;
     conta.uid = a.currentUser.uid; dados = criarNuvem();
-    // Confere se essa conta tem permissão (regras do Firestore)
     try { await dados.lerConfig(); }
     catch (e) {
       const email = (a.currentUser && a.currentUser.email) || "escolhida";
@@ -351,9 +308,25 @@
       pedirGoogle(e.code === "permission-denied" ? `A conta ${email} não tem acesso ao Miga. Entre com uma conta autorizada.` : "Não consegui abrir os seus dados: " + (e.code || e.message));
       return;
     }
-    $("#formEntrar").hidden = false; $("#notaEntrada").hidden = false; $("#passoGoogle").hidden = true; aviso($("#avisoEntrada"), "");
+    aviso($("#avisoEntrada"), "");
     mostrarEntrada(false);
-    await carregarDados(listaAnonima);
+    await carregarDados();
+  }
+  $("#entrarGoogleEntrada").addEventListener("click", async () => {
+    if (!conta.fb) { toast("A nuvem (Firebase) não está configurada"); return; }
+    const { auth, a } = conta.fb, prov = new auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: "select_account" });
+    carregandoEntrada(true);
+    try {
+      if (a.currentUser && a.currentUser.isAnonymous) await auth.signOut(a);
+      await auth.signInWithPopup(a, prov);
+      await abrirComConta();
+    } catch (e) {
+      aviso($("#avisoEntrada"), e.code === "auth/operation-not-allowed" ? "Ative o login com Google no Firebase (Authentication → Método de login → Google)."
+        : e.code === "auth/unauthorized-domain" ? "Autorize este endereço no Firebase (Authentication → Configurações → Domínios autorizados)."
+        : e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request" ? "Login cancelado." : "Não consegui entrar: " + (e.code || e.message));
+    }
+    carregandoEntrada(false);
   });
   async function carregarDados(listaDoAparelho) {
     try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "", cupons: [] }; toast("Não consegui carregar seus grupos"); }
@@ -386,8 +359,7 @@
     prov.setCustomParameters({ prompt: "select_account" });
     const listaAqui = fila().filter((i) => !i.carregando).map(({ carregando, ...i }) => i);
     try {
-      if (a.currentUser && a.currentUser.isAnonymous) await auth.linkWithPopup(a.currentUser, prov);
-      else await auth.signInWithPopup(a, prov);
+      await auth.signInWithPopup(a, prov);
     } catch (e) {
       if (e.code === "auth/credential-already-in-use" || e.code === "auth/email-already-in-use") {
         const cred = auth.GoogleAuthProvider.credentialFromError(e);
@@ -417,52 +389,27 @@
   $("#entrarGoogle").addEventListener("click", entrarComGoogle);
   function erroFirebase(e) {
     const c = (e && e.code) || "";
-    return c.includes("operation-not-allowed") ? "O login anônimo não está ativado no Firebase (Authentication → Método de login → Anônimo)." :
+    return c.includes("operation-not-allowed") ? "O login com Google não está ativado no Firebase (Authentication → Método de login → Google)." :
       c.includes("unauthorized-domain") ? "Este endereço não está autorizado no Firebase (Authentication → Configurações → Domínios autorizados)." :
       c.includes("network") ? "Sem internet. Tente de novo." : "Não consegui conectar à sua conta agora. Tente de novo.";
   }
-  function bloquear(msg) {
-    $("#formEntrar").hidden = false; $("#notaEntrada").hidden = false; $("#passoGoogle").hidden = true;
-    ls.remover(CH.senha);
+  async function bloquear(msg) {
     atual = null;
     $("#resultado").hidden = true;
-    $("#codigoAcesso").value = "";
-    aviso($("#avisoEntrada"), msg || "");
-    mostrarEntrada(true);
+    if (conta.fb) { try { await conta.fb.auth.signOut(conta.fb.a); } catch (e) { /* segue */ } }
+    pedirGoogle(msg || "");
   }
 
-  $("#formEntrar").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const codigo = $("#codigoAcesso").value.trim();
-    aviso($("#avisoEntrada"), "");
-    if (!codigo) { toast("Digite o código de acesso"); $("#codigoAcesso").focus(); return; }
-    carregandoEntrada(true);
-    const r = await conferirCodigo(codigo);
-    if (r === "ok" || r === "sem-servidor") {
-      ls.gravar(CH.senha, codigo);
-      try { await abrirSessao(); } catch (err) { aviso($("#avisoEntrada"), erroFirebase(err)); }
-    } else {
-      aviso($("#avisoEntrada"),
-        r === "errado" ? "Código incorreto. Confira e tente de novo." :
-        r === "bloqueado" ? "Muitas tentativas erradas. Aguarde 15 minutos e tente de novo." :
-        r === "sem-codigo" ? "O código de acesso ainda não foi criado no Cloudflare (variável APP_SENHA)." :
-        "Sem internet. Tente de novo.");
-      $("#codigoAcesso").select();
-    }
-    carregandoEntrada(false);
-  });
-
   async function iniciarConta() {
-    const salvo = ls.ler(CH.senha);
-    if (!salvo) { mostrarEntrada(true); return; }
+    ls.remover(CH.senha); // código de acesso antigo: não é mais usado
+    if (!conta.nuvem) { mostrarEntrada(false); await carregarDados(); return; }
     mostrarEntrada(true);
     carregandoEntrada(true);
-    const r = await conferirCodigo(salvo);
-    if (r === "ok" || r === "sem-servidor" || r === "rede") {
-      try { await abrirSessao(); } catch (err) { aviso($("#avisoEntrada"), erroFirebase(err)); }
-    } else {
-      bloquear(r === "sem-codigo" ? "O código de acesso ainda não foi criado no Cloudflare (variável APP_SENHA)." : "O código de acesso mudou. Digite o novo código.");
-    }
+    try {
+      await iniciarFirebase();
+      const u = await usuarioAtual();
+      if (u && !u.isAnonymous) await abrirComConta(); else pedirGoogle();
+    } catch (e) { pedirGoogle(erroFirebase(e)); }
     carregandoEntrada(false);
   }
 
@@ -598,7 +545,7 @@
         if (!d.preco) pedirPreco();
       }
     } catch (e) {
-      if (e.codigo === "senha") bloquear("O código de acesso mudou. Digite o novo código.");
+      if (e.codigo === "senha") bloquear("Entre de novo com a sua conta Google.");
       else aviso($("#avisoBusca"), e.codigo === "offline" ? "Busca automática indisponível aqui. Preenche os dados e use “Trocar foto”." : `Não consegui ler o produto (${e.message}). Preenche à mão.`);
     } finally {
       carregando.forEach((el) => el.classList.remove("carregando"));
@@ -742,7 +689,7 @@
       texto = (await api("gerar", pedido)).texto;
     } catch (e) {
       esqueletoResultado(false);
-      if (e.codigo === "senha") { ocupado(false); bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      if (e.codigo === "senha") { ocupado(false); bloquear("Entre de novo com a sua conta Google."); return; }
       if (ajustando) { ocupado(false); mostrarResultado(`Não consegui ajustar: ${e.message}.`); return; }
       const motivo = e.codigo === "sem-chave" ? "a chave da IA ainda não foi configurada" : e.codigo === "offline" ? "o servidor não está disponível aqui" : e.message;
       texto = mensagemReserva(p);
@@ -788,7 +735,7 @@
     try {
       d = await api(`catalogo?filtro=${catFiltro.valor()}&loja=${catLoja.valor()}`);
     } catch (e) {
-      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; }
       $("#catalogo").innerHTML = `<p class="vazio-lista">${e.codigo === "offline" ? "O catálogo só funciona no app publicado." : "Não consegui carregar o catálogo agora."}</p>`;
       return;
     }
@@ -1103,7 +1050,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=60"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=61"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1406,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=60"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=61"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1697,7 +1644,7 @@
         return naLista ? null : repetido;
       }
     } catch (e) {
-      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return null; }
+      if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return null; }
       toast("Não consegui ler o produto: toque nele e complete à mão");
     }
     item.categoria = catNova === "auto" ? adivinharCategoria(item.nome) : catNova;
@@ -2345,7 +2292,7 @@
       const r = await api("gerar", { produtos: L.itens.slice(0, L.n).map((x) => ({ nome: x.nome, preco: x.preco, link: x.link })), tema: TEMAS_LIVRE[L.tema].nome });
       L.legenda = comConvite(r.texto); toast("Legenda escrita pela IA");
     } catch (e) {
-      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; }
       toast("A IA não respondeu: " + e.message);
     }
     if (wz.passo === "livre") mostrarPasso();
@@ -3058,10 +3005,10 @@
     dialogo.close();
     const ok = await confirmar({
       titulo: "Sair do app?",
-      texto: "Na próxima vez, o app vai pedir o código de acesso e o login com Google. Seus dados continuam salvos na nuvem.",
+      texto: "Na próxima vez, o app vai pedir o login com Google. Seus dados continuam salvos na nuvem.",
       ok: "Sair"
     });
-    if (ok) { if (conta.fb) { try { await conta.fb.auth.signOut(conta.fb.a); } catch (e) { /* segue */ } } bloquear(""); }
+    if (ok) bloquear("");
   });
 
   /* =========================== Instalar (PWA) =========================== */
