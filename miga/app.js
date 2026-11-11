@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=52"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=53"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=52"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=53"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2443,6 +2443,24 @@
     const V = vd(); V.itemId = it ? it.id : null;
     if (it) { V.nome = limparNome(it.nome || ""); V.antigo = it.precoAntigo || null; V.novo = it.precoNovo || null; V.cupom = it.cupom || ""; }
   }
+  /** Foto do produto pronta para mandar à IA de vídeo (JPEG), com opção de trocar */
+  function blocoFotoIA() {
+    const it = vdItem(), img = it && it.imagem;
+    return `<div class="vd-foto">
+      <span>1. Foto do produto para a IA</span>
+      ${img ? `<img src="${esc(img)}" data-original="${esc(img)}" alt="Foto do produto" referrerpolicy="no-referrer">` : '<p class="nota">Este produto está sem foto. Escolha uma da galeria.</p>'}
+      <div class="duas">
+        ${img ? '<button type="button" class="btn btn--rosa" id="vdFotoEnviar">Enviar à IA</button><button type="button" class="btn btn--branco" id="vdFoto">Salvar foto</button>' : ""}
+      </div>
+      <label class="link link--foto">${img ? "Usar outra foto" : "Escolher foto"}<input type="file" id="vdFotoNova" accept="image/*" hidden></label>
+      <span>2. Copie um prompt e cole na IA junto com a foto</span>
+    </div>`;
+  }
+  async function fotoParaIA() {
+    const it = vdItem(); if (!it || !it.imagem) return null;
+    const arq = await converterImagem(await arquivoDaImagem(it.imagem));
+    return arq ? new File([arq], nomeArquivo(it.nome || "produto"), { type: "image/jpeg" }) : null;
+  }
   function telaVideo(c) {
     const V = vd();
     if (wz.passo === "vDados") {
@@ -2470,7 +2488,7 @@
         ${botaoContinuar(!!V.url)}
         <details class="mais"${V.url ? "" : " open"}><summary>Ainda não tem o vídeo? Prompts prontos para a IA</summary>
           <p class="nota">Use numa IA de vídeo (Veo no Gemini, Sora, Kling, Runway…): anexe a <b>foto do produto</b> e cole o prompt. Depois volte aqui e escolha o vídeo.</p>
-          ${vdItem() && vdItem().imagem ? '<button type="button" class="btn btn--branco" id="vdFoto">Salvar a foto do produto</button>' : ""}
+          ${blocoFotoIA()}
           ${PROMPTS_VIDEO.map(([t, f], i) => `<div class="vd-prompt"><b>${esc(t)}</b><p>${esc(f(nome))}</p><button type="button" class="btn btn--branco" data-vd-prompt="${i}">Copiar prompt</button></div>`).join("")}
         </details>`;
       return;
@@ -2570,7 +2588,18 @@
     const te = t.closest("[data-vd-tema]"); if (te) { V.tema = te.dataset.vdTema; document.querySelectorAll("[data-vd-tema]").forEach((b) => b.classList.toggle("on", b === te)); return; }
     const co = t.closest("[data-vd-cor]"); if (co) { V.cor = co.dataset.vdCor; document.querySelectorAll("[data-vd-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarTemasVideo(); return; }
     const pr = t.closest("[data-vd-prompt]"); if (pr) { if (await copiarTexto(PROMPTS_VIDEO[+pr.dataset.vdPrompt][1](V.nome || "o produto"))) toast("Prompt copiado: cole na IA de vídeo junto com a foto"); return; }
-    if (t.closest("#vdFoto")) { const arq = await arquivoDaImagem(vdItem().imagem); if (arq) { baixarBlob(arq, nomeArquivo(V.nome || "produto")); toast("Foto salva: anexe na IA de vídeo"); } else toast("Não consegui pegar a foto"); return; }
+    if (t.closest("#vdFoto")) { const arq = await fotoParaIA(); if (arq) { baixarBlob(arq, arq.name); toast("Foto salva na galeria: anexe na IA de vídeo"); } else toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
+    if (t.closest("#vdFotoEnviar")) {
+      const arq = await fotoParaIA();
+      if (!arq) { toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
+      const prompt = PROMPTS_VIDEO[0][1](V.nome || "o produto");
+      if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+        await copiarTexto(prompt);
+        try { await navigator.share({ files: [arq], text: prompt }); toast("Escolha o app da IA (Gemini, ChatGPT…). O prompt também ficou copiado"); return; } catch (err) { if (err.name === "AbortError") return; }
+      }
+      baixarBlob(arq, arq.name); toast("Foto salva: abra a IA e anexe a foto");
+      return;
+    }
     if (t.closest("#vdGerar")) { gravarVideo(); return; }
     if (t.closest("#vdRefazer")) { V.resultado = null; mostrarPasso(); return; }
     if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); toast("Vídeo salvo"); return; }
@@ -2590,7 +2619,14 @@
     if (id === "vdCupom") V.cupom = v.trim();
     if (id === "vdBotao") V.botao = v.trim();
   });
-  $("#wzCorpo").addEventListener("change", (e) => {
+  $("#wzCorpo").addEventListener("change", async (e) => {
+    if (e.target.id === "vdFotoNova") {
+      const f = e.target.files && e.target.files[0]; const it = vdItem();
+      if (!f) return;
+      if (!it) { baixarBlob(f, f.name); toast("Escolha primeiro um produto da lista"); return; }
+      try { it.imagem = await compactarArquivo(f); delete ppFotos[it.id]; salvarFila(true); toast("Foto do produto atualizada"); } catch (err) { toast("Não consegui abrir essa foto"); }
+      mostrarPasso(); return;
+    }
     if (e.target.id !== "vdArquivo") return;
     const f = e.target.files && e.target.files[0]; if (!f) return;
     const V = vd(); if (V.url) URL.revokeObjectURL(V.url);
