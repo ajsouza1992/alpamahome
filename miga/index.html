@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=27">
+  <link rel="manifest" href="manifest.json?v=28">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=27">
+  <link rel="stylesheet" href="style.css?v=28">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -49,7 +49,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=27" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=28" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -78,7 +78,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=27" alt="">
+    <img src="logo.png?v=28" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -316,6 +316,29 @@
   </dialog>
 
   <!-- Confirmação no padrão do app -->
+  <dialog id="escolherModelo" class="dialogo folha">
+    <form method="dialog">
+      <h2>Escolha o modelo</h2>
+      <div class="alternar alternar--tres opcoes-folha" id="bnModelo" role="radiogroup">
+            <button type="button" role="radio" data-v="achadinho" aria-checked="true">Achadinho do dia</button>
+            <button type="button" role="radio" data-v="relampago" aria-checked="false">Oferta relâmpago</button>
+            <button type="button" role="radio" data-v="baixou" aria-checked="false">Baixou o preço</button>
+            <button type="button" role="radio" data-v="ultimas" aria-checked="false">Últimas horas</button>
+            <button type="button" role="radio" data-v="novidade" aria-checked="false">Chegou novidade</button>
+            <button type="button" role="radio" data-v="enquete" aria-checked="false">Você usaria?</button>
+            <button type="button" role="radio" data-v="cupom" aria-checked="false">Cupom do dia</button>
+            <button type="button" role="radio" data-v="lista" aria-checked="false">Lista de achados</button>
+            <button type="button" role="radio" data-v="meutexto" aria-checked="false">Meu texto</button>
+            <button type="button" role="radio" data-v="boasvindas" aria-checked="false">Boas-vindas</button>
+            <button type="button" role="radio" data-v="comofunciona" aria-checked="false">Como funciona</button>
+            <button type="button" role="radio" data-v="categorias" aria-checked="false">Categorias</button>
+            <button type="button" role="radio" data-v="stories" aria-checked="false">Ofertas nos stories</button>
+            <button type="button" role="radio" data-v="siga" aria-checked="false">Siga a Miga</button>
+      </div>
+      <button class="btn btn--branco" value="nao" type="submit">Fechar</button>
+    </form>
+  </dialog>
+
   <dialog id="filtroLoja" class="dialogo folha">
     <form method="dialog">
       <h2>Escolha a loja</h2>
@@ -431,24 +454,7 @@
     <div class="editor__corpo">
       <div class="editor__tela"><canvas id="telaBanner" width="1080" height="1350" aria-label="Pré-visualização do post"></canvas></div>
       <div class="editor__campos">
-        <div class="campo"><span>Modelo</span>
-          <div class="alternar alternar--tres" id="bnModelo" role="radiogroup">
-            <button type="button" role="radio" data-v="achadinho" aria-checked="true">Achadinho do dia</button>
-            <button type="button" role="radio" data-v="relampago" aria-checked="false">Oferta relâmpago</button>
-            <button type="button" role="radio" data-v="baixou" aria-checked="false">Baixou o preço</button>
-            <button type="button" role="radio" data-v="ultimas" aria-checked="false">Últimas horas</button>
-            <button type="button" role="radio" data-v="novidade" aria-checked="false">Chegou novidade</button>
-            <button type="button" role="radio" data-v="enquete" aria-checked="false">Você usaria?</button>
-            <button type="button" role="radio" data-v="cupom" aria-checked="false">Cupom do dia</button>
-            <button type="button" role="radio" data-v="lista" aria-checked="false">Lista de achados</button>
-            <button type="button" role="radio" data-v="meutexto" aria-checked="false">Meu texto</button>
-            <button type="button" role="radio" data-v="boasvindas" aria-checked="false">Boas-vindas</button>
-            <button type="button" role="radio" data-v="comofunciona" aria-checked="false">Como funciona</button>
-            <button type="button" role="radio" data-v="categorias" aria-checked="false">Categorias</button>
-            <button type="button" role="radio" data-v="stories" aria-checked="false">Ofertas nos stories</button>
-            <button type="button" role="radio" data-v="siga" aria-checked="false">Siga a Miga</button>
-          </div>
-        </div>
+        <button type="button" class="chip-filtro chip-filtro--largo" id="abrirModelo" aria-haspopup="dialog"><small>Modelo</small><b id="modeloNome">Achadinho do dia</b><span class="seta">▾</span></button>
         <div class="campo"><span>Formato</span>
           <div class="alternar" id="bnFormato" role="radiogroup">
             <button type="button" role="radio" data-v="story" aria-checked="true">Story</button>
@@ -465,12 +471,7 @@
           </div>
         </div>
         <div class="bn-texto" id="bnCamposProduto">
-          <div class="campo"><span>Foto do produto</span>
-            <div class="duas">
-              <button type="button" class="btn btn--branco" id="bnUsarAtual">Do produto criado</button>
-              <label class="btn btn--branco">Da galeria<input type="file" id="bnArquivo" accept="image/*" hidden></label>
-            </div>
-          </div>
+          <label class="link link--foto">Trocar a foto do produto<input type="file" id="bnArquivo" accept="image/*" hidden></label>
           <label class="campo"><span>Nome do produto</span><input id="bnNome" maxlength="90"></label>
           <div class="duas">
             <label class="campo"><span>Preço antigo</span><input id="bnAntigo" inputmode="decimal" placeholder="opcional"></label>
@@ -487,7 +488,7 @@
           <label class="opcao"><input type="checkbox" id="bnLogo"> Logo grande no topo</label>
           <label class="opcao"><input type="checkbox" id="bnEspaco" checked> Espaço para o adesivo de link</label>
         </div>
-        <p class="nota">A linha tracejada só aparece aqui para você ver onde colocar o adesivo de link do Instagram: ela não sai na imagem.</p>
+        <p class="nota">A foto do produto já vem junto. A linha tracejada só aparece aqui, para mostrar onde colar o adesivo de link do Instagram: ela não sai na imagem.</p>
       </div>
     </div>
     <div class="editor__acoes">
@@ -500,7 +501,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=27"></script>
-  <script src="app.js?v=27"></script>
+  <script src="firebase-config.js?v=28"></script>
+  <script src="app.js?v=28"></script>
 </body>
 </html>

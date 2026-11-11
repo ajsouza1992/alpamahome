@@ -950,7 +950,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=27"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=28"; });
     }
     edFoto = null;
     try {
@@ -1289,7 +1289,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=27"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=28"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1309,6 +1309,7 @@
   async function abrirPosts(modelo) {
     $("#bnInsta").value = config.instagram || "";
     if (modelo) bnModelo.marcar(modelo);
+    $("#modeloNome").textContent = $(`#bnModelo [data-v="${bnModelo.valor()}"]`).textContent;
     if (!$("#bnTitulo").value || modelo) aplicarModelo();
     if (atual && (modelo || !$("#bnNome").value)) preencherDoProduto();
     $("#banners").showModal();
@@ -1322,16 +1323,18 @@
   $("#postProduto").addEventListener("click", () => abrirPosts("achadinho"));
   $("#banners").addEventListener("close", () => document.body.classList.remove("travado"));
   $("#fecharBanners").addEventListener("click", () => $("#banners").close());
-  $("#bnModelo").addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(aplicarModelo, 0); });
+  $("#abrirModelo").addEventListener("click", () => $("#escolherModelo").showModal());
+  $("#bnModelo").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    $("#modeloNome").textContent = b.textContent;
+    $("#escolherModelo").close();
+    setTimeout(aplicarModelo, 0);
+  });
   ["#bnFormato", "#bnFundo"].forEach((id) => $(id).addEventListener("click", () => setTimeout(redesenharBanner, 0)));
   ["#bnCupom", "#bnTitulo", "#bnTexto", "#bnBotao", "#bnNome", "#bnAntigo", "#bnNovo"].forEach((id) => $(id).addEventListener("input", redesenharBanner));
   ["#bnLogo", "#bnEspaco"].forEach((id) => $(id).addEventListener("change", redesenharBanner));
-  $("#bnUsarAtual").addEventListener("click", async () => {
-    if (!atual) { toast("Crie um produto na aba Criar primeiro"); return; }
-    preencherDoProduto();
-    if (!(await fotoDoProdutoAtual())) toast("Não consegui usar a foto — escolha da galeria");
-    redesenharBanner();
-  });
+  $("#telaBanner").addEventListener("click", () => { if (MODELOS[bnModelo.valor()].produto) $("#bnArquivo").click(); });
   $("#bnArquivo").addEventListener("change", async (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
@@ -1358,9 +1361,13 @@
   $("#compartilharBanner").addEventListener("click", async () => {
     const link = $("#bnLink").value.trim();
     const M = MODELOS[bnModelo.valor()];
-    if (M.produto && urlOk(link)) {
-      const ok = await copiarTexto(link);
-      if (ok) toast("Link copiado: no Instagram, toque no adesivo de Link e cole");
+    if (bnFormato.valor() === "story") {
+      if (M.produto && urlOk(link) && await copiarTexto(link)) toast("Link copiado: no story, toque no adesivo de Link e cole");
+    } else {
+      // Post do feed: link não é clicável na legenda, então vai a legenda pronta com "link na bio"
+      const base = atual && atual.texto ? atual.texto : [$("#bnNome").value.trim(), $("#bnTexto").value.trim()].filter(Boolean).join("\n\n");
+      const legenda = (urlOk(link) ? base.split(link).join("🔗 link na bio") : base).replace(/[*~_]/g, "").trim(); // Instagram não usa a formatação do WhatsApp
+      if (legenda && await copiarTexto(legenda)) toast("Legenda copiada: no Instagram, cole na legenda do post");
     }
     compartilharTela(telaFinal(), nomeBanner(bnModelo.valor(), bnFormato.valor()));
   });

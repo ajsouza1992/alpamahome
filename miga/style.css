@@ -362,3 +362,8 @@ body.travado { overflow: hidden; }
 .bn-texto[hidden] { display: none; }
 .campo textarea { resize: vertical; }
 .campo[hidden] { display: none; }
+.chip-filtro--largo { width: 100%; }
+#escolherModelo .opcoes-folha { max-height: 56dvh; overflow-y: auto; }
+.opcoes-folha { border-radius: 0 !important; overflow: visible; }
+#escolherModelo .opcoes-folha { overflow-y: auto; padding: 4px 2px 8px; }
+.link--foto { justify-self: start; cursor: pointer; }
