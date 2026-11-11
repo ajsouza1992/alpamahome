@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=55"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=56"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=55"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=56"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1821,6 +1821,7 @@
 
   /* =========================== Criar (passo a passo, uma pergunta por tela) =========================== */
   const CANAIS = {
+    roteiro: { nome: "Postar um produto", cor: "#e8336d", desc: "Story, Status, grupos, canal e Telegram, um depois do outro", icone: "i-lista" },
     whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem para os grupos ou imagem para o Status", icone: "i-rede-whats" },
     instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
@@ -1835,6 +1836,7 @@
   function passosDe(canal) {
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
+    if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "formato", "montagem", "cor", "postar"];
     if (canal === "telegram") return [...base, "mensagem", "telegram"];
@@ -1844,12 +1846,15 @@
   }
   const filtroCatWz = () => `<button type="button" class="chip-filtro chip-filtro--largo" data-wz-cat><small>Categoria</small><b>${(wz.filtroCat && wz.filtroCat !== "todas") ? CATS_LISTA[wz.filtroCat] : "Todas"}</b><span class="seta">▾</span></button>`;
   function iniciarCriar(op = {}) {
-    wz = { passo: "canal", canal: null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: "auto" };
+    wz = { passo: op.itemId ? "lugares" : "canal", canal: op.itemId ? "roteiro" : null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: "auto", idx: 0, res: {}, lugares: lugaresSalvos() };
     mostrarPasso();
   }
   function irPasso(dir) {
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
-    const prox = l[i + dir];
+    let prox = l[i + dir];
+    if (wz.canal === "roteiro" && dir < 0 && wz.passo === "rodar" && wz.idx > 0) { wz.idx--; delete wz.res[wz.lugares[wz.idx]]; mostrarPasso(); return; }
+    if (wz.canal === "roteiro" && prox === "rodar") { wz.idx = 0; wz.res = {}; }
+    if (wz.canal === "roteiro" && dir < 0 && prox === "rodar") prox = l[i + dir - 1];
     if (!prox) return;
     wz.passo = prox; mostrarPasso();
   }
@@ -1868,11 +1873,12 @@
     if (wz.passo === "canal") {
       c.innerHTML = `<h2 class="wz-titulo">O que você quer criar?</h2>
         ${item ? `<p class="nota">Produto: <b>${esc(item.nome)}</b></p>` : ""}
-        <div class="wz-ops">${Object.entries(CANAIS).map(([k, v]) => opcaoCard("data-canal", k, v.nome, v.desc, wz.canal === k, `<i class="wz-bolinha" style="background:${v.cor}"><svg><use href="#${v.icone}"/></svg></i>`)).join("")}</div>
+        <div class="wz-ops">${Object.entries(CANAIS).filter(([k]) => ["roteiro", "livre", "video"].includes(k)).map(([k, v]) => opcaoCard("data-canal", k, v.nome, v.desc, wz.canal === k, `<i class="wz-bolinha" style="background:${v.cor}"><svg><use href="#${v.icone}"/></svg></i>`)).join("")}</div>
         ${botaoContinuar(!!wz.canal)}`;
       return;
     }
     if (wz.canal === "livre") { telaLivre(c); return; }
+    if (wz.canal === "roteiro" && item && telaRoteiro(c, item)) return;
     if (wz.canal === "video") { telaVideo(c); return; }
     if (wz.passo === "produto") {
       const l2 = fila().filter((x) => !x.carregando && (wz.filtroCat === undefined || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
@@ -2122,6 +2128,135 @@
     compartilharTela(tela, nomeArquivo(it.nome));
     registrarCompartilhado("instagram", "Instagram");
   }
+
+  /* ---------- Roteiro de postagem: marca os lugares e o app leva um por um ---------- */
+  const LUGARES = {
+    story: { nome: "Story do Instagram", desc: "arte em pé + link", arte: "story", canal: "instagram" },
+    status: { nome: "Status do WhatsApp", desc: "arte em pé + texto", arte: "story", canal: "whatsapp" },
+    grupo: { nome: "Grupos do WhatsApp", desc: "foto + mensagem", texto: true, canal: "whatsapp" },
+    canal: { nome: "Canal do WhatsApp", desc: "foto + mensagem", texto: true, canal: "whatsapp" },
+    telegram: { nome: "Telegram", desc: "mensagem com link", texto: true, canal: "telegram" },
+    feed: { nome: "Post do feed", desc: "arte + legenda", arte: "post", canal: "instagram" }
+  };
+  function lugaresSalvos() {
+    try { const l = JSON.parse(localStorage.getItem("miga_lugares") || "null"); if (Array.isArray(l) && l.length) return l.filter((k) => LUGARES[k]); } catch (e) { /* segue */ }
+    return ["story", "status", "grupo", "canal"];
+  }
+  const precisaArte = () => (wz.lugares || []).some((k) => LUGARES[k].arte);
+  const precisaTexto = () => (wz.lugares || []).some((k) => LUGARES[k].texto);
+  function passosRoteiro() {
+    return ["canal", ...(wz.veioDaLista ? [] : ["produto"]), "lugares", ...(precisaArte() ? ["montagem", "cor"] : []), ...(precisaTexto() ? ["mensagem"] : []), "rodar", "resumo"];
+  }
+  function telaRoteiro(c, item) {
+    if (wz.passo === "lugares") {
+      if (!wz.lugares) wz.lugares = lugaresSalvos();
+      c.innerHTML = `<h2 class="wz-titulo">Onde vai postar?</h2>
+        <div class="wz-prod on" style="cursor:default">${fotoMini(item)}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small></span></div>
+        <p class="nota">Marque tudo de uma vez. O app guarda sua escolha para a próxima.</p>
+        <div class="wz-ops">${Object.entries(LUGARES).map(([k, v]) => `<button type="button" class="rt-lugar${wz.lugares.includes(k) ? " on" : ""}" data-lugar="${k}"><i></i><span><b>${v.nome}</b><small>${v.desc}</small></span></button>`).join("")}</div>
+        ${botaoContinuar(wz.lugares.length > 0, `Começar (${wz.lugares.length} ${wz.lugares.length === 1 ? "lugar" : "lugares"})`)}`;
+      return true;
+    }
+    if (wz.passo === "rodar") {
+      const k = wz.lugares[wz.idx], L = LUGARES[k], n = wz.lugares.length;
+      if (L.texto && !item.texto) usarModeloTexto(item.estiloTexto || "amiga");
+      const barra = `<div class="rt-prog">${wz.lugares.map((x, i) => `<i class="${wz.res[x] === "feito" ? "ok" : wz.res[x] === "pulado" ? "pulo" : i === wz.idx ? "at" : ""}"></i>`).join("")}</div>
+        <div class="rt-etapa">${wz.idx + 1} de ${n} · ${L.nome}</div>`;
+      const pular = `<button type="button" class="btn btn--branco" id="rtPular">${wz.idx === n - 1 ? "Pular e ver o resumo" : "Pular este"}</button>`;
+      let meio = "", botao = "", dica = "";
+      if (L.arte) {
+        meio = `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`;
+        if (k === "story") { botao = "Postar no Instagram"; dica = "O link já vai copiado: no story, toque no adesivo de Link e cole."; }
+        if (k === "status") { botao = "Postar no Status"; dica = "Escolha o WhatsApp com “B” e depois Meu status. O texto com o link vai junto."; }
+        if (k === "feed") { botao = "Postar no feed"; dica = "A legenda já vai copiada, com “link na bio”."; }
+        meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
+      } else {
+        const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
+        meio = `<div class="balao wz-balao${k === "telegram" ? " wz-balao--tg" : ""}">${formatarWhats(txt)}</div>`;
+        if (k === "grupo") { botao = "Enviar com foto"; dica = "Escolha o WhatsApp e o grupo. A foto e a mensagem vão juntas."; }
+        if (k === "canal") { botao = "Enviar no canal"; dica = "Escolha o WhatsApp com “B” e o seu canal. Se o canal não aparecer, use “Copiar o texto” e cole no canal."; }
+        if (k === "telegram") { botao = "Abrir no Telegram"; dica = "No Telegram o link fica clicável."; }
+        meio += `<button type="button" class="btn btn--branco" id="rtCopiarTexto">Copiar o texto</button>`;
+      }
+      c.innerHTML = `${barra}${meio}<p class="nota wz-centro">${dica}</p>
+        <div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar${k === "status" || k === "grupo" || k === "canal" ? " wz-zap" : k === "telegram" ? " wz-tg" : ""}" id="rtPostar">${botao}</button></div>
+        ${pular}`;
+      if (L.arte) { const desenhar = () => desenharMontagem($("#rtTela"), true, null, null, L.arte); desenhar(); prepararFoto(item).then(() => { if (wz.passo === "rodar") desenhar(); }); }
+      return true;
+    }
+    if (wz.passo === "resumo") {
+      const prox = fila().find((x) => x.id !== item.id && !x.carregando && !Object.values(x.feito || {}).some(Boolean));
+      c.innerHTML = `<div class="rt-fim"><div class="rt-big">✓</div><h2 class="wz-titulo">${wz.lugares.every((k) => wz.res[k] === "feito") ? "Tudo postado!" : "Roteiro concluído"}</h2>
+        <div class="rt-lista">${wz.lugares.map((k) => `<div><span>${LUGARES[k].nome}</span><b class="${wz.res[k] === "feito" ? "ok" : ""}">${wz.res[k] === "feito" ? "✓ postado" : "pulado"}</b></div>`).join("")}</div></div>
+        ${prox ? `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="rtProximo">Próximo produto da lista</button></div><p class="nota wz-centro">Próximo: <b>${esc(prox.nome || "produto")}</b></p>` : '<p class="nota wz-centro">Não há mais produtos para postar na lista.</p>'}
+        <button type="button" class="btn btn--branco" id="rtLista">Voltar para a lista</button>`;
+      return true;
+    }
+    return false;
+  }
+  function avancarRoteiro() {
+    wz.aguardando = false;
+    if (wz.idx < wz.lugares.length - 1) { wz.idx++; mostrarPasso(); }
+    else { wz.passo = "resumo"; mostrarPasso(); }
+  }
+  async function compartilharArquivo(arq, texto) {
+    if (arq && navigator.canShare && navigator.canShare(texto ? { files: [arq], text: texto } : { files: [arq] })) {
+      try { await navigator.share(texto ? { files: [arq], text: texto } : { files: [arq] }); return "ok"; }
+      catch (e) { if (e.name === "AbortError") return "cancelado"; }
+    }
+    return "sem";
+  }
+  const telaParaArquivo = (tela, nome) => new Promise((ok) => tela.toBlob((b) => ok(b ? new File([b], nome, { type: "image/jpeg" }) : null), "image/jpeg", 0.92));
+  async function postarLugar() {
+    const it = wzItem(), k = wz.lugares[wz.idx], L = LUGARES[k];
+    let r = "sem";
+    if (L.arte) {
+      const tela = document.createElement("canvas"); desenharMontagem(tela, false, null, null, L.arte);
+      const arq = await telaParaArquivo(tela, nomeArquivo(it.nome));
+      let texto = "";
+      if (k === "story") await copiarTexto(it.link);
+      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""} 👉 ${it.link}`;
+      if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(base.split(it.link).join("🔗 link na bio").replace(/[*~_]/g, "").trim()); }
+      r = await compartilharArquivo(arq, texto);
+      if (r === "sem") { if (arq) baixarBlob(arq, arq.name); if (texto) await copiarTexto(texto); toast("Imagem salva: abra o app e escolha da galeria"); }
+    } else if (k === "telegram") {
+      abrirTelegram(); r = "aberto";
+    } else {
+      const foto = it.imagem ? await converterImagem(await arquivoDaImagem(it.imagem)) : null;
+      r = await compartilharArquivo(foto, it.texto);
+      if (r === "sem") { await copiarTexto(it.texto); abrirWhatsApp(it.texto); r = "aberto"; }
+    }
+    if (r === "cancelado") return;
+    wz.res[k] = "feito";
+    registrarCompartilhado(L.canal, L.nome);
+    if (r === "ok") avancarRoteiro();
+    else { wz.aguardando = true; toast("Quando voltar para o Miga, o roteiro segue para o próximo"); }
+  }
+  // Voltou do outro app: segue o roteiro
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && wz.aguardando && wz.passo === "rodar") setTimeout(avancarRoteiro, 400); });
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "roteiro") return;
+    const t = e.target;
+    const lg = t.closest("[data-lugar]");
+    if (lg) {
+      const k = lg.dataset.lugar;
+      wz.lugares = wz.lugares.includes(k) ? wz.lugares.filter((x) => x !== k) : Object.keys(LUGARES).filter((x) => x === k || wz.lugares.includes(x));
+      try { localStorage.setItem("miga_lugares", JSON.stringify(wz.lugares)); } catch (err) { /* segue */ }
+      mostrarPasso(); return;
+    }
+    if (t.closest("#rtPostar")) { postarLugar(); return; }
+    if (t.closest("#rtPular")) { wz.res[wz.lugares[wz.idx]] = "pulado"; avancarRoteiro(); return; }
+    if (t.closest("#rtCopiarTexto")) { const it = wzItem(); const k = wz.lugares[wz.idx]; if (await copiarTexto(k === "telegram" ? it.texto.replace(/[*~_]/g, "") : it.texto)) toast("Texto copiado"); return; }
+    if (t.closest("#rtLista")) { irPara("postar"); iniciarCriar(); return; }
+    if (t.closest("#rtProximo")) {
+      const atualId = wz.itemId;
+      const prox = fila().find((x) => x.id !== atualId && !x.carregando && !Object.values(x.feito || {}).some(Boolean));
+      if (!prox) return;
+      wz = { ...wz, itemId: prox.id, veioDaLista: true, idx: 0, res: {}, aguardando: false };
+      wz.passo = precisaTexto() && !prox.precoNovo ? "mensagem" : "rodar";
+      mostrarPasso();
+    }
+  });
 
   /* ---------- Criação livre: imagem com vários produtos (grade) ---------- */
   const TEMAS_LIVRE = {
