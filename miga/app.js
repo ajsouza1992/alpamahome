@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=42"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=43"; });
     }
     edFoto = null;
     try {
@@ -1223,11 +1223,11 @@
       padrao: { titulo: "Promoção\n*relâmpago* ⚡", texto: "Corre que esse preço não dura muito!", botao: "Link na bio" },
       blocos: (d) => [["titulo", d.titulo], ...comTexto(d, 26), ...comBotao(d), ...comLink(d)] },
     boasvindas: { nome: "boas-vindas", fundo: "creme", logo: true,
-      padrao: { titulo: "Bem-vinda,\n*miga!* 💖", texto: "Aqui eu garimpo os melhores achadinhos com desconto, todo dia.", botao: "Ative as notificações" },
+      padrao: { titulo: "Bem-vinda,\n*miga!* 💖", texto: "Achadinhos com desconto e cupons, todos os dias.", botao: "Ative as notificações" },
       blocos: (d) => [["titulo", d.titulo], ...comTexto(d, 26), ...comBotao(d)] },
     comofunciona: { nome: "como-funciona", fundo: "creme", logo: false, rodape: "Links de afiliada · sem custo extra",
       padrao: { titulo: "Como *funciona?*", texto: "", botao: "" },
-      blocos: (d) => [["titulo", d.titulo], ["gap", 46], ["passos", [["Eu garimpo as ofertas", "Shopee, Mercado Livre e Amazon"], ["Você toca no link", "no post, no story ou na bio"], ["Compra pelo mesmo preço", "e ainda ajuda a miga aqui 💕"]]], ...comTexto(d, 30), ...comBotao(d)] },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 46], ["passos", [["As ofertas chegam aqui", "Shopee, Mercado Livre e Amazon"], ["Você toca no link", "no post, no story ou na bio"], ["Compra pelo mesmo preço", "e ainda ajuda a miga aqui 💕"]]], ...comTexto(d, 30), ...comBotao(d)] },
     categorias: { nome: "categorias", fundo: "creme", logo: false,
       padrao: { titulo: "O que você\nvai *encontrar* 👀", texto: "+ fitness, saúde e cupons exclusivos", botao: "" },
       blocos: (d) => [["titulo", d.titulo], ["gap", 46], ["cats", [["👗", "Moda"], ["💄", "Beleza"], ["🌸", "Perfumes"], ["🏡", "Casa"]]], ...comTexto(d, 36), ...comBotao(d)] },
@@ -1445,7 +1445,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=42"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=43"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
