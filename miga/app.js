@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=45"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=46"; });
     }
     edFoto = null;
     try {
@@ -1445,7 +1445,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=45"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=46"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1847,7 +1847,12 @@
         <label class="link link--foto wz-centro">Trocar a foto<input type="file" id="wzArquivo" accept="image/*" hidden></label>
         <button type="button" class="btn btn--rosa${status ? " wz-zap" : ""}" id="wzPostar">${status ? "Postar no Status" : "Postar no Instagram"}</button>
         <button type="button" class="btn btn--branco" id="wzBaixar">Baixar imagem</button>
-        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "O link do produto já vai copiado: no story, toque no adesivo de Link e cole." : "A legenda já vai copiada, com “link na bio”."}</p>`;
+        <div class="link-copiar">
+          <span>Link do produto${status ? "" : " (para o adesivo de Link)"}</span>
+          <input id="wzLinkCopiar" readonly value="${esc(item.link)}" aria-label="Link do produto">
+          <button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button>
+        </div>
+        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "No story, toque no adesivo de Link e cole. Se o link sumir da memória, volte aqui e toque em “Copiar link”." : "A legenda já vai copiada, com “link na bio”. Use “Copiar link” para colocar o produto na bio."}</p>`;
       prepararFoto(item).then(() => desenharMontagem($("#wzTela"), true));
       desenharMontagem($("#wzTela"), true);
       return;
@@ -1910,6 +1915,12 @@
     const ev = t.closest("[data-enviar-op]"); if (ev) { enviarWhats(ev.dataset.enviarOp); return; }
     const gr = t.closest("[data-grupo]"); if (gr) { enviarGrupo(gr.dataset.grupo); return; }
     if (t.closest("#wzPostar")) { postarInstagram(); return; }
+    if (t.closest("#wzCopiarLink")) {
+      const inp = $("#wzLinkCopiar");
+      if (await copiarTexto(inp.value)) toast("Link copiado: cole no adesivo de Link");
+      else { inp.focus(); inp.select(); toast("Toque e segure no link para copiar"); }
+      return;
+    }
     if (t.closest("#wzBaixar")) { const tela = document.createElement("canvas"); desenharMontagem(tela, false); tela.toBlob((b) => { if (b) { baixarBlob(b, nomeArquivo(wzItem().nome) ); toast("Imagem salva"); } }, "image/jpeg", 0.92); return; }
     if (t.closest("#wzTelegram")) { abrirTelegram(); return; }
     if (t.closest("#wzCopiarTg")) { if (await copiarTexto(textoCanal(wzItem().texto))) { toast("Texto copiado"); registrarCompartilhado("telegram", "Telegram"); } return; }
