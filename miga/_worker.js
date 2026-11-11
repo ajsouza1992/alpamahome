@@ -328,18 +328,25 @@ async function chamarGemini(contents, env) {
   });
   // Chaves "AIza..." = Google AI Studio. Chaves "AQ...." podem ser do AI Studio (ligadas a uma conta de serviço)
   // ou do Vertex AI: tenta os dois endereços.
-  const caminhos = [
-    { url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`, headers: { "content-type": "application/json", "x-goog-api-key": chave } },
-    ...(chave.startsWith("AQ.") ? [{ url: `https://aiplatform.googleapis.com/v1/publishers/google/models/${encodeURIComponent(modelo)}:generateContent?key=${encodeURIComponent(chave)}`, headers: { "content-type": "application/json" } }] : [])
-  ];
+  const gl = (v) => `https://generativelanguage.googleapis.com/${v}/models/${encodeURIComponent(modelo)}:generateContent`;
+  const json = { "content-type": "application/json" };
+  // As chaves novas do Google ("AQ....") ainda não funcionam do mesmo jeito em todo lugar: tenta cada forma de enviar
+  const caminhos = chave.startsWith("AQ.") ? [
+    { url: gl("v1beta"), headers: { ...json, "x-goog-api-key": chave } },
+    { url: gl("v1beta") + "?key=" + encodeURIComponent(chave), headers: json },
+    { url: gl("v1beta"), headers: { ...json, authorization: "Bearer " + chave } },
+    { url: `https://aiplatform.googleapis.com/v1/publishers/google/models/${encodeURIComponent(modelo)}:generateContent?key=${encodeURIComponent(chave)}`, headers: json }
+  ] : [{ url: gl("v1beta"), headers: { ...json, "x-goog-api-key": chave } }];
   let ultimoErro;
   for (const c of caminhos) {
     const r = await fetch(c.url, { method: "POST", headers: c.headers, body: corpo });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) {
-      ultimoErro = Object.assign(new Error((d.error && d.error.message) || "Erro " + r.status), { status: r.status });
-      if (r.status === 401 || r.status === 403 || r.status === 404) continue; // tenta o outro endereço
-      throw ultimoErro;
+      const nova = Object.assign(new Error(((d.error && (d.error.status ? d.error.status + ": " : "") + d.error.message) || "Erro " + r.status)), { status: r.status });
+      // guarda o erro mais útil (o que não é só "chave inválida")
+      if (!ultimoErro || (r.status !== 400 && r.status !== 401)) ultimoErro = nova;
+      if (r.status === 400 || r.status === 401 || r.status === 403 || r.status === 404) continue; // tenta o outro endereço
+      throw nova;
     }
     const partes = d.candidates?.[0]?.content?.parts || [];
     const texto = partes.map((x) => x.text || "").join("").replace(/^```[a-z]*\s*|```$/gi, "").trim();
@@ -352,7 +359,7 @@ async function chamarGemini(contents, env) {
 /** Traduz os erros mais comuns do Gemini para algo que dá para resolver */
 function motivoIA(e) {
   const m = String(e.message || "");
-  if (/api key not valid|API_KEY_INVALID|invalid api key/i.test(m)) return "a chave da IA (GEMINI_API_KEY) é inválida — crie uma nova no Google AI Studio e troque no Cloudflare";
+  if (/api key not valid|API_KEY_INVALID|invalid api key|UNAUTHENTICATED|ACCESS_TOKEN_TYPE_UNSUPPORTED/i.test(m)) return "o Google recusou a chave da IA. Google disse: " + m.slice(0, 240);
   if (/permission|PERMISSION_DENIED|not been used|disabled/i.test(m)) return "a chave da IA não tem permissão para o Gemini. Google disse: " + m.slice(0, 220);
   if (/not found|is not supported/i.test(m)) return "o modelo da IA não existe mais (" + m.slice(0, 80) + ")";
   if (e.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(m)) return "o limite gratuito da IA acabou por agora — espere um pouco";
@@ -470,7 +477,7 @@ async function testarIA(env) {
   let r;
   try { const x = await chamarGemini([{ role: "user", parts: [{ text: "Responda só: ok" }] }], env); r = "ok (" + x.modelo + ")"; }
   catch (e) { r = motivoIA(e); }
-  await gravarCache("teste-ia", "1", { r }, 600);
+  await gravarCache("teste-ia", "1", { r }, 120);
   return r;
 }
 
