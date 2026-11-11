@@ -944,7 +944,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=31"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=32"; });
     }
     edFoto = null;
     try {
@@ -1022,7 +1022,7 @@
   const bnFundo = grupoBotoes("#bnFundo", "v");
   const CORES_BN = {
     creme: { tipo: "creme", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.35)", bola2: "rgba(232,51,109,.12)", guia: "#d8c99a" },
-    rosa: { tipo: "rosa", texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", bola1: "rgba(255,255,255,.08)", bola2: "rgba(255,210,63,.25)", guia: "rgba(255,255,255,.7)" },
+    rosa: { tipo: "rosa", texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", bola1: "rgba(255,255,255,.14)", bola2: "rgba(255,255,255,.22)", guia: "rgba(255,255,255,.7)" },
     branco: { tipo: "branco", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#fff8e4", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.25)", bola2: "rgba(232,51,109,.08)", guia: "#d8c99a" }
   };
   const arroba = (v) => { const t = String(v || "").trim().replace(/^@+/, "").replace(/\s+/g, ""); return t ? "@" + t : ""; };
@@ -1284,7 +1284,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=31"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=32"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1510,9 +1510,10 @@
 
   /* =========================== Criar (passo a passo, uma pergunta por tela) =========================== */
   const CANAIS = {
-    whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem pronta para os grupos" },
-    instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post" },
-    telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável" }
+    whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem para os grupos ou imagem para o Status", icone: "i-rede-whats" },
+    instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post", icone: "i-rede-insta" },
+    telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
+    livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" }
   };
   const MONTAGENS = ["achadinho", "relampago", "baixou", "ultimas", "novidade", "enquete"];
   const NOME_MONTAGEM = { achadinho: "Achadinho do dia", relampago: "Oferta relâmpago", baixou: "Baixou o preço", ultimas: "Últimas horas", novidade: "Chegou novidade", enquete: "Você usaria?" };
@@ -1520,10 +1521,13 @@
   let wz = {};
   const wzItem = () => fila().find((i) => i.id === wz.itemId);
   function passosDe(canal) {
+    if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "formato", "montagem", "cor", "postar"];
     if (canal === "telegram") return [...base, "mensagem", "telegram"];
-    return [...base, "mensagem", "enviar"];
+    // WhatsApp: mensagem para os grupos ou imagem para o Status
+    if (wz.tipoWhats === "status") return [...base, "tipoWhats", "montagem", "cor", "postar"];
+    return [...base, "tipoWhats", "mensagem", "enviar"];
   }
   function iniciarCriar(op = {}) {
     wz = { passo: "canal", canal: null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: "auto" };
@@ -1548,12 +1552,13 @@
     window.scrollTo({ top: 0 });
 
     if (wz.passo === "canal") {
-      c.innerHTML = `<h2 class="wz-titulo">Onde você quer postar?</h2>
+      c.innerHTML = `<h2 class="wz-titulo">O que você quer criar?</h2>
         ${item ? `<p class="nota">Produto: <b>${esc(item.nome)}</b></p>` : ""}
-        <div class="wz-ops">${Object.entries(CANAIS).map(([k, v]) => opcaoCard("data-canal", k, v.nome, v.desc, wz.canal === k, `<i class="wz-bolinha" style="background:${v.cor}">${v.nome[0]}</i>`)).join("")}</div>
+        <div class="wz-ops">${Object.entries(CANAIS).map(([k, v]) => opcaoCard("data-canal", k, v.nome, v.desc, wz.canal === k, `<i class="wz-bolinha" style="background:${v.cor}"><svg><use href="#${v.icone}"/></svg></i>`)).join("")}</div>
         ${botaoContinuar(!!wz.canal)}`;
       return;
     }
+    if (wz.canal === "livre") { telaLivre(c); return; }
     if (wz.passo === "produto") {
       const l2 = fila().filter((x) => !x.carregando);
       c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2><p class="nota">Escolha da sua lista ou cole um link novo.</p>
@@ -1566,8 +1571,19 @@
 
     if (wz.passo === "formato") {
       c.innerHTML = `<h2 class="wz-titulo">Story ou post?</h2>
-        <div class="wz-duas">${opcaoCard("data-formato", "story", "Story", "1080 × 1920", wz.formato === "story", '<i class="wz-forma wz-forma--story"></i>')}${opcaoCard("data-formato", "post", "Post", "1080 × 1350", wz.formato === "post", '<i class="wz-forma wz-forma--post"></i>')}</div>
+        <div class="wz-duas wz-formatos">${opcaoCard("data-formato", "story", "Story", "Tela cheia, em pé", wz.formato === "story", '<canvas data-forma="story"></canvas>')}${opcaoCard("data-formato", "post", "Post", "No feed, 4:5", wz.formato === "post", '<canvas data-forma="post"></canvas>')}</div>
         <p class="nota">No story o link fica clicável pelo adesivo de Link. No post, use “link na bio”.</p>
+        ${botaoContinuar(true)}`;
+      const pintar = () => document.querySelectorAll("[data-forma]").forEach((cv) => desenharMontagem(cv, false, wz.modelo, wz.cor, cv.dataset.forma));
+      pintar(); prepararFoto(item).then(() => { if (wz.passo === "formato") pintar(); });
+      return;
+    }
+    if (wz.passo === "tipoWhats") {
+      c.innerHTML = `<h2 class="wz-titulo">O que você quer enviar?</h2>
+        <div class="wz-ops">
+          ${opcaoCard("data-tipo-whats", "mensagem", "Mensagem", "Texto da IA com o link, para os grupos e conversas", wz.tipoWhats !== "status", '<i class="wz-bolinha" style="background:#25d366"><svg><use href="#i-rede-whats"/></svg></i>')}
+          ${opcaoCard("data-tipo-whats", "status", "Status", "Imagem pronta, no formato do Status (igual ao story)", wz.tipoWhats === "status", '<i class="wz-bolinha" style="background:#128c7e"><svg><use href="#i-foto"/></svg></i>')}
+        </div>
         ${botaoContinuar(true)}`;
       return;
     }
@@ -1581,17 +1597,24 @@
       return;
     }
     if (wz.passo === "postar") {
-      c.innerHTML = `<h2 class="wz-titulo">Pronto para postar</h2>
+      const status = wz.canal === "whatsapp";
+      c.innerHTML = `<h2 class="wz-titulo">${status ? "Pronto para o Status" : "Pronto para postar"}</h2>
         <div class="wz-previa"><canvas id="wzTela"></canvas></div>
         <label class="link link--foto wz-centro">Trocar a foto<input type="file" id="wzArquivo" accept="image/*" hidden></label>
-        <button type="button" class="btn btn--rosa" id="wzPostar">Postar no Instagram</button>
+        <button type="button" class="btn btn--rosa${status ? " wz-zap" : ""}" id="wzPostar">${status ? "Postar no Status" : "Postar no Instagram"}</button>
         <button type="button" class="btn btn--branco" id="wzBaixar">Baixar imagem</button>
-        <p class="nota wz-centro">${wz.formato === "story" ? "O link do produto já vai copiado: no story, toque no adesivo de Link e cole." : "A legenda já vai copiada, com “link na bio”."}</p>`;
+        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "O link do produto já vai copiado: no story, toque no adesivo de Link e cole." : "A legenda já vai copiada, com “link na bio”."}</p>`;
       prepararFoto(item).then(() => desenharMontagem($("#wzTela"), true));
       desenharMontagem($("#wzTela"), true);
       return;
     }
     if (wz.passo === "mensagem") {
+      if (!item.precoNovo) {
+        c.innerHTML = `<h2 class="wz-titulo">Qual o preço?</h2><p class="nota">Não achei o preço de <b>${esc(item.nome || "este produto")}</b>. Digite para a IA escrever a mensagem.</p>
+          <div class="duas"><label class="campo"><span>Preço antigo</span><input id="wzAntigo" inputmode="decimal" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="wzNovoPreco" inputmode="decimal"></label></div>
+          <button type="button" class="btn btn--rosa" id="wzSalvarPreco">Escrever a mensagem</button>`;
+        return;
+      }
       c.innerHTML = `<h2 class="wz-titulo">Sua mensagem</h2>
         <div class="balao wz-balao" id="wzBalao">${item.texto ? formatarWhats(textoCanal(item.texto)) : '<span class="esq" style="width:90%"></span><span class="esq" style="width:70%"></span><span class="esq" style="width:80%"></span>'}</div>
         <div class="wz-chips" id="wzAjustes">
@@ -1607,12 +1630,12 @@
     }
     if (wz.passo === "enviar") {
       const g = config.grupos || [];
-      c.innerHTML = `<h2 class="wz-titulo">Como enviar?</h2>
-        <div class="wz-ops">
-          ${opcaoCard("data-enviar-op", "foto", "Com foto", "Abre o WhatsApp com a foto e o texto", false)}
-          ${opcaoCard("data-enviar-op", "texto", "Só o texto", "Abre o WhatsApp só com a mensagem", false)}
-          ${opcaoCard("data-enviar-op", "copiar", "Copiar o texto", "Para colar onde quiser", false)}
-        </div>
+      c.innerHTML = `<h2 class="wz-titulo">Enviar no WhatsApp</h2>
+        <div class="balao wz-balao">${formatarWhats(item.texto)}</div>
+        <p class="nota">Com foto, o WhatsApp abre com a imagem do produto e o texto juntos.</p>
+        <button type="button" class="btn btn--rosa wz-zap" data-enviar-op="foto">Enviar com foto</button>
+        <button type="button" class="btn btn--branco" data-enviar-op="texto">Enviar só o texto</button>
+        <button type="button" class="btn btn--branco" data-enviar-op="copiar">Copiar o texto</button>
         <h3 class="wz-sub">Nos meus grupos</h3>
         <div class="wz-grupos">${g.length ? g.map((x) => `<button type="button" class="btn btn--branco" data-grupo="${esc(x.id)}">${esc(x.nome)}${(item.enviadoGrupos || []).includes(x.id) ? " ✓" : ""}</button>`).join("") : '<p class="nota">Cadastre seus grupos na aba <b>Grupos</b> para enviar com um toque.</p>'}</div>
         <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
@@ -1633,8 +1656,9 @@
   // Cliques dentro do passo
   $("#wzCorpo").addEventListener("click", async (e) => {
     const t = e.target;
-    const op = t.closest("[data-canal]"); if (op) { wz.canal = op.dataset.canal; mostrarPasso(); return; }
+    const op = t.closest("[data-canal]"); if (op) { wz.canal = op.dataset.canal; wz.formato = "story"; wz.tipoWhats = "mensagem"; mostrarPasso(); return; }
     const pr = t.closest("[data-item]"); if (pr) { wz.itemId = pr.dataset.item; mostrarPasso(); return; }
+    const tw = t.closest("[data-tipo-whats]"); if (tw) { wz.tipoWhats = tw.dataset.tipoWhats; if (wz.tipoWhats === "status") wz.formato = "story"; mostrarPasso(); return; }
     const fo = t.closest("[data-formato]"); if (fo) { wz.formato = fo.dataset.formato; mostrarPasso(); return; }
     const mo = t.closest("[data-modelo]"); if (mo) { wz.modelo = mo.dataset.modelo; document.querySelectorAll(".wz-mini").forEach((b) => b.classList.toggle("on", b === mo)); return; }
     const co = t.closest("[data-cor]"); if (co) { wz.cor = co.dataset.cor; document.querySelectorAll(".wz-mini").forEach((b) => b.classList.toggle("on", b === co)); return; }
@@ -1652,6 +1676,11 @@
     if (t.closest("#wzTelegram")) { abrirTelegram(); return; }
     if (t.closest("#wzCopiarTg")) { if (await copiarTexto(textoCanal(wzItem().texto))) { toast("Texto copiado"); registrarCompartilhado("telegram", "Telegram"); } return; }
     if (t.closest("#wzNovo")) { iniciarCriar(); return; }
+    if (t.closest("#wzSalvarPreco")) {
+      const it = wzItem(), novo = lerPreco($("#wzNovoPreco").value);
+      if (!novo) { toast("Digite o preço novo"); $("#wzNovoPreco").focus(); return; }
+      it.precoNovo = novo; it.precoAntigo = lerPreco($("#wzAntigo").value) || null; it.texto = ""; salvarFila(true); mostrarPasso(); return;
+    }
   });
   $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "wzTexto") { const it = wzItem(); it.texto = e.target.value; $("#wzBalao").innerHTML = formatarWhats(textoCanal(it.texto)); salvarFila(); } });
   $("#wzCorpo").addEventListener("change", async (e) => {
@@ -1736,9 +1765,10 @@
     const M = MODELOS[modelo];
     return { previa, insta: "", titulo: linhasTitulo(M.padrao.titulo), texto: M.padrao.texto, botao: "", logo: false, espaco: wz.formato === "story", cupom: it.cupom || "", foto: ppFotos[it.id] || null, produto: { nome: limparNome(it.nome), antigo: it.precoAntigo, novo: it.precoNovo } };
   }
-  function desenharMontagem(tela, previa, modelo, cor) {
+  function desenharMontagem(tela, previa, modelo, cor, formato) {
     const it = wzItem(); if (!it || !tela) return;
-    desenharBanner(tela, modelo || wz.modelo, wz.formato, cor || wz.cor, dadosMontagem(it, modelo || wz.modelo, previa));
+    const f = formato || wz.formato;
+    desenharBanner(tela, modelo || wz.modelo, f, cor || wz.cor, { ...dadosMontagem(it, modelo || wz.modelo, previa), espaco: f === "story" });
   }
   async function desenharMiniaturas(porCor) {
     const it = wzItem();
@@ -1749,6 +1779,21 @@
   }
   async function postarInstagram() {
     const it = wzItem();
+    if (wz.canal === "whatsapp") {
+      // Status do WhatsApp: imagem + texto com o link (no Status o link fica clicável)
+      const tela = document.createElement("canvas"); desenharMontagem(tela, false);
+      const texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""} 👉 ${it.link}`;
+      tela.toBlob(async (blob) => {
+        const arq = blob && new File([blob], nomeArquivo(it.nome), { type: "image/jpeg" });
+        if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
+          try { await navigator.share({ files: [arq], text: texto }); registrarCompartilhado("whatsapp", "Status do WhatsApp"); return; } catch (e) { if (e.name === "AbortError") return; }
+        }
+        if (blob) baixarBlob(blob, nomeArquivo(it.nome));
+        if (await copiarTexto(texto)) toast("Imagem salva e texto copiado: no Status, escolha a imagem e cole o texto");
+        registrarCompartilhado("whatsapp", "Status do WhatsApp");
+      }, "image/jpeg", 0.92);
+      return;
+    }
     if (wz.formato === "story") { if (await copiarTexto(it.link)) toast("Link copiado: no story, toque no adesivo de Link e cole"); }
     else {
       const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`;
@@ -1758,6 +1803,171 @@
     compartilharTela(tela, nomeArquivo(it.nome));
     registrarCompartilhado("instagram", "Instagram");
   }
+
+  /* ---------- Criação livre: imagem com vários produtos (grade) ---------- */
+  const TEMAS_LIVRE = {
+    mix: { nome: "Mix de achados", titulo: "Achadinhos\n*da semana* 🛍️" },
+    beleza: { nome: "Beleza", titulo: "Achados de\n*beleza* 💄" },
+    cozinha: { nome: "Cozinha", titulo: "Achados para\na *cozinha* 🍳" },
+    casa: { nome: "Casa", titulo: "Casa\n*arrumadinha* 🏡" },
+    moda: { nome: "Moda", titulo: "Looks com\n*desconto* 👗" },
+    fitness: { nome: "Fitness", titulo: "Treino\n*em dia* 💪" }
+  };
+  function livre() {
+    if (!wz.livre) wz.livre = { n: 4, formato: "post", itens: [], tema: "mix", titulo: TEMAS_LIVRE.mix.titulo, cor: "creme" };
+    return wz.livre;
+  }
+  /** Desenha a grade de produtos com a cara do Miga */
+  function desenharGrade(canvas, op = {}) {
+    const L = livre(), n = op.n || L.n, formato = op.formato || L.formato, cor = op.cor || L.cor;
+    const W = 1080, H = formato === "story" ? 1920 : formato === "quadrado" ? 1080 : 1350;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d"), C = CORES_BN[cor] || CORES_BN.creme;
+    if (C.tipo === "creme") { const g = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, H * 0.85); g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6"); ctx.fillStyle = g; }
+    else ctx.fillStyle = C.tipo === "rosa" ? "#e8336d" : "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(60, 60, 260, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
+    // Título
+    const linhas = linhasTitulo(op.titulo != null ? op.titulo : L.titulo);
+    const FT = formato === "quadrado" ? 70 : 84;
+    let y = formato === "story" ? 120 : 70;
+    ctx.textBaseline = "middle"; ctx.font = `800 ${FT}px Poppins`;
+    linhas.forEach((partes) => {
+      const larg = partes.reduce((s, [t]) => s + ctx.measureText(t).width, 0);
+      let x = (W - Math.min(larg, W - 80)) / 2; ctx.textAlign = "left";
+      partes.forEach(([t, d]) => { ctx.fillStyle = d ? C.destaque : C.texto; ctx.fillText(t, x, y + FT * 0.55); x += ctx.measureText(t).width; });
+      y += FT * 1.08;
+    });
+    ctx.textAlign = "center";
+    // Grade
+    const itens = op.vazio ? [] : L.itens.slice(0, n);
+    const cols = formato === "story" ? (n <= 1 ? 1 : 2) : (n <= 4 ? 2 : 3), rows = Math.ceil(n / cols);
+    const gap = 26, mx = 70, topo = y + 34, base = H - (formato === "story" ? 200 : 130);
+    const cw = (W - mx * 2 - gap * (cols - 1)) / cols, ch = Math.min((base - topo - gap * (rows - 1)) / rows, cw + 150);
+    const alturaGrade = rows * ch + (rows - 1) * gap, y0 = topo + Math.max(0, (base - topo - alturaGrade) / 2);
+    for (let k = 0; k < n; k++) {
+      const r = Math.floor(k / cols), naLinha = Math.min(cols, n - r * cols), c = k - r * cols;
+      const x0 = (W - (naLinha * cw + (naLinha - 1) * gap)) / 2 + c * (cw + gap), yy = y0 + r * (ch + gap);
+      ctx.save(); ctx.shadowColor = "rgba(29,29,31,.16)"; ctx.shadowBlur = 26; ctx.shadowOffsetY = 10;
+      retArredondado(ctx, x0, yy, cw, ch, 34); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
+      const it = itens[k], textoH = it && (it.nome || it.preco) ? 96 : 0;
+      const fs = Math.min(cw - 28, ch - textoH - 28), fx = x0 + (cw - fs) / 2, fy = yy + 14;
+      const foto = it && (it.foto || (it.itemId && ppFotos[it.itemId]));
+      if (foto) {
+        const kk = Math.min(fs / foto.width, fs / foto.height), iw = foto.width * kk, ih = foto.height * kk;
+        ctx.save(); retArredondado(ctx, fx, fy, fs, fs, 24); ctx.clip(); ctx.drawImage(foto, fx + (fs - iw) / 2, fy + (fs - ih) / 2, iw, ih); ctx.restore();
+      } else { retArredondado(ctx, fx, fy, fs, fs, 24); ctx.fillStyle = "#f7f2e6"; ctx.fill(); if (op.previa !== false) { ctx.fillStyle = "#b3a782"; ctx.font = "600 30px Poppins"; ctx.fillText("produto " + (k + 1), x0 + cw / 2, fy + fs / 2); } }
+      // número
+      ctx.beginPath(); ctx.arc(x0 + 34, yy + 34, 26, 0, Math.PI * 2); ctx.fillStyle = "#e8336d"; ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = "800 28px Poppins"; ctx.fillText(String(k + 1), x0 + 34, yy + 36);
+      if (textoH) {
+        ctx.fillStyle = "#1d1d1f"; ctx.font = `600 ${cols > 2 ? 24 : 28}px Poppins`;
+        ctx.fillText(quebrarTexto(ctx, it.nome || "", cw - 30, 1)[0] || "", x0 + cw / 2, yy + ch - 66);
+        if (it.preco) { ctx.fillStyle = "#e8336d"; ctx.font = `800 ${cols > 2 ? 32 : 38}px Poppins`; ctx.fillText(brl(it.preco), x0 + cw / 2, yy + ch - 28); }
+      }
+    }
+    if (edMarca) { const s = 140; ctx.drawImage(edMarca, W - s - 24, H - s - 18, s, s); }
+  }
+  function legendaLivre() {
+    const L = livre();
+    const titulo = L.titulo.replace(/[*]/g, "").replace(/\n/g, " ").trim();
+    const linhas = L.itens.slice(0, L.n).map((it, k) => `${k + 1}. ${it.nome || "Produto " + (k + 1)}${it.preco ? " — " + brl(it.preco) : ""}${it.link ? "\n👉 " + it.link : ""}`);
+    return `${titulo}\n\n${linhas.join("\n\n")}`;
+  }
+  async function fotosDaLista() {
+    await carregarMarca();
+    for (const it of livre().itens) if (it.itemId) { const x = fila().find((f) => f.id === it.itemId); if (x) await prepararFoto(x); }
+  }
+  function telaLivre(c) {
+    const L = livre();
+    if (wz.passo === "grade") {
+      c.innerHTML = `<h2 class="wz-titulo">Quantos produtos?</h2>
+        <div class="wz-miniaturas">${[2, 3, 4, 6].map((n) => `<button type="button" class="wz-mini${L.n === n ? " on" : ""}" data-grade="${n}"><canvas></canvas><span>${n} produtos</span></button>`).join("")}</div>
+        <div class="campo"><span>Formato</span><div class="alternar" id="lvFormato">${["story", "post", "quadrado"].map((f) => `<button type="button" role="radio" data-lv-formato="${f}" aria-checked="${L.formato === f}">${{ story: "Story", post: "Post 4:5", quadrado: "Quadrado" }[f]}</button>`).join("")}</div></div>
+        ${botaoContinuar(true)}`;
+      document.querySelectorAll("[data-grade]").forEach((b) => desenharGrade(b.querySelector("canvas"), { n: +b.dataset.grade, vazio: true, titulo: "" }));
+      return;
+    }
+    if (wz.passo === "itens") {
+      const escolhidos = L.itens;
+      c.innerHTML = `<h2 class="wz-titulo">Escolha os produtos</h2><p class="nota">${escolhidos.length} de ${L.n}. Toque para marcar da sua lista, ou adicione uma foto da galeria.</p>
+        <div class="wz-ops">${fila().filter((x) => !x.carregando).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}${on ? " · nº " + (escolhidos.findIndex((e) => e.itemId === x.id) + 1) : ""}</small></span></button>`; }).join("")}</div>
+        ${escolhidos.filter((e) => !e.itemId).map((e) => `<div class="lv-galeria" data-lv-gal="${e.id}"><img src="${e.url}" alt=""><div class="lv-campos"><input data-lv-campo="nome" value="${esc(e.nome)}" placeholder="Nome (opcional)"><input data-lv-campo="preco" value="${e.preco ? paraCampo(e.preco) : ""}" inputmode="decimal" placeholder="Preço (opcional)"><input data-lv-campo="link" value="${esc(e.link)}" inputmode="url" placeholder="Link (vai na legenda)"></div><button type="button" class="icone-btn" data-lv-tirar="${e.id}" aria-label="Tirar"><svg><use href="#i-x"/></svg></button></div>`).join("")}
+        <label class="btn btn--branco">Adicionar foto da galeria<input type="file" id="lvArquivo" accept="image/*" multiple hidden></label>
+        ${botaoContinuar(escolhidos.length > 0)}`;
+      return;
+    }
+    if (wz.passo === "tema") {
+      c.innerHTML = `<h2 class="wz-titulo">Tema e cor</h2>
+        <div class="wz-chips" id="lvTemas">${Object.entries(TEMAS_LIVRE).map(([k, v]) => `<button type="button" data-lv-tema="${k}"${L.tema === k ? ' class="on"' : ""}>${v.nome}</button>`).join("")}</div>
+        <label class="campo"><span>Título (use *asteriscos* para destacar)</span><textarea id="lvTitulo" rows="2">${esc(L.titulo)}</textarea></label>
+        <div class="wz-miniaturas">${["creme", "rosa", "branco"].map((cr) => `<button type="button" class="wz-mini${L.cor === cr ? " on" : ""}" data-lv-cor="${cr}"><canvas></canvas><span>${CORES_NOME[cr]}</span></button>`).join("")}</div>
+        ${botaoContinuar(true)}`;
+      const pintar = () => document.querySelectorAll("[data-lv-cor]").forEach((b) => desenharGrade(b.querySelector("canvas"), { cor: b.dataset.lvCor }));
+      pintar(); fotosDaLista().then(() => { if (wz.passo === "tema") pintar(); });
+      return;
+    }
+    if (wz.passo === "livre") {
+      c.innerHTML = `<h2 class="wz-titulo">Pronto para postar</h2>
+        <div class="wz-previa"><canvas id="lvTela"></canvas></div>
+        <button type="button" class="btn btn--rosa" id="lvPostar">Postar</button>
+        <button type="button" class="btn btn--branco" id="lvLegenda">Copiar a legenda com os links</button>
+        <button type="button" class="btn btn--branco" id="lvBaixar">Baixar imagem</button>
+        <p class="nota">A legenda vai com os produtos numerados e os links. No WhatsApp e no Telegram os links ficam clicáveis; no Instagram, link na legenda não abre (use o adesivo no story ou a bio).</p>
+        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+      desenharGrade($("#lvTela")); fotosDaLista().then(() => desenharGrade($("#lvTela")));
+    }
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "livre") return;
+    const t = e.target, L = livre();
+    const g = t.closest("[data-grade]"); if (g) { L.n = +g.dataset.grade; L.itens = L.itens.slice(0, L.n); mostrarPasso(); return; }
+    const f = t.closest("[data-lv-formato]"); if (f) { L.formato = f.dataset.lvFormato; mostrarPasso(); return; }
+    const li = t.closest("[data-lv-item]");
+    if (li) {
+      const i = L.itens.findIndex((x) => x.itemId === li.dataset.lvItem);
+      if (i >= 0) L.itens.splice(i, 1);
+      else if (L.itens.length >= L.n) toast(`Já escolheu ${L.n} produtos (mude a grade para mais)`);
+      else { const x = fila().find((y) => y.id === li.dataset.lvItem); L.itens.push({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }); }
+      mostrarPasso(); return;
+    }
+    const tr = t.closest("[data-lv-tirar]"); if (tr) { L.itens = L.itens.filter((x) => x.id !== tr.dataset.lvTirar); mostrarPasso(); return; }
+    const te = t.closest("[data-lv-tema]"); if (te) { L.tema = te.dataset.lvTema; L.titulo = TEMAS_LIVRE[L.tema].titulo; mostrarPasso(); return; }
+    const co = t.closest("[data-lv-cor]"); if (co) { L.cor = co.dataset.lvCor; document.querySelectorAll("[data-lv-cor]").forEach((b) => b.classList.toggle("on", b === co)); return; }
+    if (t.closest("#lvPostar")) {
+      const leg = legendaLivre();
+      if (await copiarTexto(leg)) toast("Legenda com os links copiada");
+      const tela = document.createElement("canvas"); desenharGrade(tela, { previa: false });
+      tela.toBlob(async (blob) => {
+        const arq = blob && new File([blob], "miga-promo-achados.jpg", { type: "image/jpeg" });
+        if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: leg })) { try { await navigator.share({ files: [arq], text: leg }); return; } catch (err) { if (err.name === "AbortError") return; } }
+        if (blob) { baixarBlob(blob, "miga-promo-achados.jpg"); toast("Imagem salva e legenda copiada"); }
+      }, "image/jpeg", 0.92);
+      return;
+    }
+    if (t.closest("#lvLegenda")) { if (await copiarTexto(legendaLivre())) toast("Legenda copiada"); return; }
+    if (t.closest("#lvBaixar")) { const tela = document.createElement("canvas"); desenharGrade(tela, { previa: false }); tela.toBlob((b) => { if (b) { baixarBlob(b, "miga-promo-achados.jpg"); toast("Imagem salva"); } }, "image/jpeg", 0.92); }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal !== "livre") return;
+    const L = livre();
+    if (e.target.id === "lvTitulo") { L.titulo = e.target.value; document.querySelectorAll("[data-lv-cor]").forEach((b) => desenharGrade(b.querySelector("canvas"), { cor: b.dataset.lvCor })); return; }
+    const campo = e.target.dataset.lvCampo;
+    if (campo) {
+      const it = L.itens.find((x) => x.id === e.target.closest("[data-lv-gal]").dataset.lvGal);
+      if (it) it[campo] = campo === "preco" ? lerPreco(e.target.value) : e.target.value.trim();
+    }
+  });
+  $("#wzCorpo").addEventListener("change", async (e) => {
+    if (e.target.id !== "lvArquivo") return;
+    const L = livre();
+    for (const f of [...(e.target.files || [])]) {
+      if (L.itens.length >= L.n) { toast(`A grade tem ${L.n} lugares`); break; }
+      try { L.itens.push({ id: novoId(), foto: await createImageBitmap(f), url: await compactarArquivo(f), nome: "", preco: null, link: "" }); } catch (err) { toast("Não consegui abrir uma das fotos"); }
+    }
+    mostrarPasso();
+  });
 
   /* =========================== Enviar =========================== */
   function abrirWhatsApp(texto) { window.open("https://api.whatsapp.com/send?text=" + encodeURIComponent(texto), "_blank", "noopener"); }
