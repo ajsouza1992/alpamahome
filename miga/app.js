@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=40"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=41"; });
     }
     edFoto = null;
     try {
@@ -1445,7 +1445,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=40"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=41"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1566,8 +1566,27 @@
     return ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span class="ok">${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]} ✓</span>`).join("");
   };
   const fotoMini = (i) => i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
+  /* Categorias na Lista: filtro e categoria do produto colado ("auto" adivinha pelo nome) */
+  const CATS_LISTA = { moda: "👗 Moda", beleza: "💄 Beleza", casa: "🏡 Casa", saude: "💪 Saúde e fitness", outros: "✨ Outros" };
+  let catNova = "auto", filtroLista = "todas";
+  function adivinharCategoria(nome) {
+    const n = String(nome || "").toLowerCase();
+    if (/perfume|batom|base |maquiag|skincare|s[eé]rum|hidratante|shampoo|condicionador|cabelo|unha|esmalte|protetor solar|creme|rímel|rimel|sombra|pincel|beleza|facial/.test(n)) return "beleza";
+    if (/vestido|blusa|cal[cç]a|saia|conjunto|short|camisa|camiseta|jaqueta|casaco|bolsa|sand[aá]lia|t[eê]nis|sapato|biqu[ií]ni|lingerie|suti[aã]|moda|look|cropped|body|jeans|rel[oó]gio|brinco|colar|anel|pulseira|[oó]culos/.test(n)) return "moda";
+    if (/creatina|whey|suplement|vitamina|academia|fitness|legging|top fitness|garrafa|squeeze|halter|yoga|colágeno|colageno|treino|bicicleta/.test(n)) return "saude";
+    if (/cozinha|panela|organizador|decora|almofada|cortina|tapete|lumin|lâmpada|lampada|cadeira|mesa|sof[aá]|cama|len[cç]ol|toalha|pote|airfryer|liquidificador|cafeteira|prateleira|vaso|lixeira|casa/.test(n)) return "casa";
+    return "outros";
+  }
+  function renderCatsLista() {
+    $("#ppCatNova").innerHTML = [["auto", "🔮 Automático"], ...Object.entries(CATS_LISTA)].map(([k, n]) => `<button type="button" data-cat-nova="${k}"${catNova === k ? ' class="on"' : ""}>${n}</button>`).join("");
+    const cont = (k) => fila().filter((i) => k === "todas" || (i.categoria || "outros") === k).length;
+    $("#ppFiltroLista").innerHTML = [["todas", "Todas"], ...Object.entries(CATS_LISTA)].map(([k, n]) => `<button type="button" data-filtro-lista="${k}"${filtroLista === k ? ' class="on"' : ""}>${n} (${cont(k)})</button>`).join("");
+  }
+  $("#ppCatNova").addEventListener("click", (e) => { const b = e.target.closest("[data-cat-nova]"); if (b) { catNova = b.dataset.catNova; renderCatsLista(); } });
+  $("#ppFiltroLista").addEventListener("click", (e) => { const b = e.target.closest("[data-filtro-lista]"); if (b) { filtroLista = b.dataset.filtroLista; renderFila(); } });
   function renderFila() {
-    const l = fila();
+    renderCatsLista();
+    const l = fila().filter((i) => filtroLista === "todas" || (i.carregando && true) || (i.categoria || "outros") === filtroLista);
     $("#ppLista").innerHTML = l.length ? l.map((i) => `<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${fotoMini(i)}
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
@@ -1575,7 +1594,7 @@
           <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button>`).join("") : '<p class="vazio-lista">Cole aqui os links dos produtos que você vai divulgar.</p>';
+      </button>`).join("") : `<p class="vazio-lista">${fila().length ? "Nenhum produto nessa categoria." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
   }
   async function adicionarNaFila(texto) {
     const lido = lerTextoCompartilhado(texto) || { link: String(texto || "").trim(), nome: "", preco: null };
@@ -1598,6 +1617,7 @@
       if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return null; }
       toast("Não consegui ler o produto: toque nele e complete à mão");
     }
+    item.categoria = catNova === "auto" ? adivinharCategoria(item.nome) : catNova;
     delete item.carregando;
     renderFila(); salvarFila(true);
     return item;
@@ -1696,6 +1716,7 @@
     if (wz.tipoWhats === "status") return [...base, "tipoWhats", "montagem", "cor", "postar"];
     return [...base, "tipoWhats", "mensagem", "enviar"];
   }
+  const filtroCatWz = () => `<div class="wz-chips">${[["todas", "Todas"], ...Object.entries(CATS_LISTA)].map(([k, n]) => `<button type="button" data-wz-cat="${k}"${(wz.filtroCat || "todas") === k ? ' class="on"' : ""}>${n}</button>`).join("")}</div>`;
   function iniciarCriar(op = {}) {
     wz = { passo: "canal", canal: null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: "auto" };
     mostrarPasso();
@@ -1728,8 +1749,9 @@
     if (wz.canal === "livre") { telaLivre(c); return; }
     if (wz.canal === "video") { telaVideo(c); return; }
     if (wz.passo === "produto") {
-      const l2 = fila().filter((x) => !x.carregando);
+      const l2 = fila().filter((x) => !x.carregando && (wz.filtroCat === undefined || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
       c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2><p class="nota">Escolha da sua lista ou cole um link novo.</p>
+        ${filtroCatWz()}
         <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"} · ${esc(NOME_LOJA[x.loja] || "")}</small></span></button>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
         <div class="colar"><input id="wzLink" type="url" inputmode="url" placeholder="Ou cole um link novo" autocomplete="off"><button type="button" class="colar__btn" id="wzColar">Colar</button></div>
         ${botaoContinuar(!!item)}`;
@@ -1817,6 +1839,7 @@
   // Cliques dentro do passo
   $("#wzCorpo").addEventListener("click", async (e) => {
     const t = e.target;
+    const wc = t.closest("[data-wz-cat]"); if (wc) { wz.filtroCat = wc.dataset.wzCat; mostrarPasso(); return; }
     const op = t.closest("[data-canal]"); if (op) { wz.canal = op.dataset.canal; wz.formato = "story"; wz.tipoWhats = "mensagem"; mostrarPasso(); return; }
     const pr = t.closest("[data-item]"); if (pr) { wz.itemId = pr.dataset.item; mostrarPasso(); return; }
     const tw = t.closest("[data-tipo-whats]"); if (tw) { wz.tipoWhats = tw.dataset.tipoWhats; if (wz.tipoWhats === "status") wz.formato = "story"; mostrarPasso(); return; }
@@ -2066,7 +2089,8 @@
     if (wz.passo === "itens") {
       const escolhidos = L.itens;
       c.innerHTML = `<h2 class="wz-titulo">Escolha os produtos</h2><p class="nota">${escolhidos.length} de ${L.n}. Toque para marcar da sua lista, ou adicione uma foto da galeria.</p>
-        <div class="wz-ops">${fila().filter((x) => !x.carregando).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}${on ? " · nº " + (escolhidos.findIndex((e) => e.itemId === x.id) + 1) : ""}</small></span></button>`; }).join("")}</div>
+        ${filtroCatWz()}
+        <div class="wz-ops">${fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat)).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}${on ? " · nº " + (escolhidos.findIndex((e) => e.itemId === x.id) + 1) : ""}</small></span></button>`; }).join("")}</div>
         ${escolhidos.filter((e) => !e.itemId).map((e) => `<div class="lv-galeria" data-lv-gal="${e.id}"><img src="${e.url}" alt=""><div class="lv-campos"><input data-lv-campo="nome" value="${esc(e.nome)}" placeholder="Nome (opcional)"><input data-lv-campo="preco" value="${e.preco ? paraCampo(e.preco) : ""}" inputmode="decimal" placeholder="Preço (opcional)"><input data-lv-campo="link" value="${esc(e.link)}" inputmode="url" placeholder="Link (vai na legenda)"></div><button type="button" class="icone-btn" data-lv-tirar="${e.id}" aria-label="Tirar"><svg><use href="#i-x"/></svg></button></div>`).join("")}
         <label class="btn btn--branco">Adicionar foto da galeria<input type="file" id="lvArquivo" accept="image/*" multiple hidden></label>
         ${botaoContinuar(escolhidos.length > 0)}`;
