@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=28">
+  <link rel="manifest" href="manifest.json?v=29">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="stylesheet" href="style.css?v=29">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -37,6 +37,7 @@
     <symbol id="i-lixo" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
     <symbol id="i-historico" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
     <symbol id="i-grupo" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></symbol>
+    <symbol id="i-lista" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></symbol>
     <symbol id="i-criar" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol>
     <symbol id="i-abrir" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
@@ -49,7 +50,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=28" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=29" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -78,7 +79,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=28" alt="">
+    <img src="logo.png?v=29" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -201,15 +202,88 @@
   </div>
 
   <!-- ===== Aba Achados ===== -->
+  <div class="aba" id="aba-postar" hidden>
+    <section class="bloco" id="ppListaBloco">
+      <div class="cabecalho-aba">
+        <h2 class="passo">Lista de postagens</h2>
+        <button type="button" class="link" id="ppLimpar">Tirar os prontos</button>
+      </div>
+      <div class="colar">
+        <input id="ppLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off" aria-label="Link do produto">
+        <button type="button" id="ppColar" class="colar__btn">Colar</button>
+      </div>
+      <button type="button" class="btn btn--rosa" id="ppAdicionar">Adicionar à lista</button>
+      <div class="pp-lista" id="ppLista"></div>
+      <p class="nota">Toque num produto para criar a postagem do WhatsApp e do Instagram.</p>
+    </section>
+
+    <section class="bloco" id="ppItem" hidden>
+      <div class="cabecalho-aba">
+        <button type="button" class="link" id="ppVoltar">‹ Voltar para a lista</button>
+        <button type="button" class="link link--perigo" id="ppRemover">Tirar da lista</button>
+      </div>
+      <label class="campo"><span>Nome do produto</span><input id="ppNome" maxlength="120"></label>
+      <div class="duas">
+        <label class="campo"><span>Preço antigo</span><input id="ppAntigo" inputmode="decimal" placeholder="opcional"></label>
+        <label class="campo"><span>Preço novo</span><input id="ppNovo" inputmode="decimal"></label>
+      </div>
+      <label class="campo"><span>Cupom (opcional)</span><input id="ppCupom" maxlength="30"></label>
+      <div class="alternar" id="ppCanal" role="radiogroup" aria-label="Onde postar">
+        <button type="button" role="radio" data-v="whatsapp" aria-checked="true">WhatsApp</button>
+        <button type="button" role="radio" data-v="instagram" aria-checked="false">Instagram</button>
+      </div>
+
+      <div class="pp-canal" id="ppWhats">
+        <button type="button" class="btn btn--rosa" id="ppGerar"><span class="rotulo">Gerar mensagem</span><i class="giro"></i></button>
+        <div class="balao pp-balao" id="ppBalao" hidden></div>
+        <label class="campo" id="ppCampoTexto" hidden><span>Mensagem (pode editar)</span><textarea id="ppTexto" rows="8"></textarea></label>
+        <div class="pp-acoes" id="ppAcoesWhats" hidden>
+          <button type="button" class="btn btn--rosa" id="ppEnviar">Enviar com foto</button>
+          <div class="duas">
+            <button type="button" class="btn btn--branco" id="ppCopiar">Copiar</button>
+            <button type="button" class="btn btn--branco" id="ppSoTexto">Só o texto</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pp-canal" id="ppInsta" hidden>
+        <button type="button" class="chip-filtro chip-filtro--largo" id="ppAbrirModelo"><small>Modelo</small><b id="ppModeloNome">Achadinho do dia</b><span class="seta">▾</span></button>
+        <div class="alternar" id="ppFormato" role="radiogroup" aria-label="Formato">
+          <button type="button" role="radio" data-v="story" aria-checked="true">Story</button>
+          <button type="button" role="radio" data-v="post" aria-checked="false">Post 4:5</button>
+          <button type="button" role="radio" data-v="quadrado" aria-checked="false">Quadrado</button>
+        </div>
+        <div class="editor__tela"><canvas id="ppTela" width="1080" height="1920" aria-label="Montagem para o Instagram"></canvas></div>
+        <label class="link link--foto">Trocar a foto<input type="file" id="ppArquivo" accept="image/*" hidden></label>
+        <p class="nota">A linha tracejada mostra onde colar o adesivo de link no story: ela não sai na imagem. Ao postar, o link do produto já vai copiado.</p>
+        <div class="duas">
+          <button type="button" class="btn btn--branco" id="ppBaixar">Baixar</button>
+          <button type="button" class="btn btn--rosa" id="ppPostar">Postar no Instagram</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <div class="aba" id="aba-achados" hidden>
     <section class="bloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Mais vendidos</h2>
         <button type="button" class="link" id="atualizarCatalogo">Atualizar</button>
       </div>
-      <div class="filtros">
-        <button type="button" class="chip-filtro" id="abrirFiltro" aria-haspopup="dialog"><small>Categoria</small><b id="filtroNome">Moda</b><span class="seta">▾</span></button>
-        <button type="button" class="chip-filtro" id="abrirLoja" aria-haspopup="dialog"><small>Loja</small><b id="lojaNome">Todas</b><span class="seta">▾</span></button>
+      <div class="abas-cat" id="catFiltro" role="tablist" aria-label="Categoria">
+          <button type="button" role="radio" data-v="moda" aria-checked="true">Moda</button>
+          <button type="button" role="radio" data-v="beleza" aria-checked="false">Beleza</button>
+          <button type="button" role="radio" data-v="perfumes" aria-checked="false">Perfumes</button>
+          <button type="button" role="radio" data-v="acessorios" aria-checked="false">Joias e relógios</button>
+          <button type="button" role="radio" data-v="casa" aria-checked="false">Casa</button>
+          <button type="button" role="radio" data-v="fitness" aria-checked="false">Fitness</button>
+          <button type="button" role="radio" data-v="saude" aria-checked="false">Saúde</button>
+          <button type="button" role="radio" data-v="bebes" aria-checked="false">Bebês</button>
+      </div>
+      <div class="alternar alternar--loja" id="catLoja" role="radiogroup" aria-label="Loja do catálogo">
+        <button type="button" role="radio" data-v="todas" aria-checked="true">Todas</button>
+        <button type="button" role="radio" data-v="mercadolivre" aria-checked="false">Mercado Livre</button>
+        <button type="button" role="radio" data-v="shopee" aria-checked="false">Shopee</button>
       </div>
       <p class="aviso" id="avisoCatalogo" hidden></p>
       <div class="catalogo" id="catalogo"></div>
@@ -295,6 +369,7 @@
     </div>
     <nav class="abas" aria-label="Seções">
       <button type="button" data-aba="criar" aria-current="page"><svg><use href="#i-criar"/></svg>Criar</button>
+      <button type="button" data-aba="postar"><svg><use href="#i-lista"/></svg>Postar <b id="contPostar" hidden></b></button>
       <button type="button" data-aba="achados"><svg><use href="#i-etiqueta"/></svg>Achados</button>
       <button type="button" data-aba="historico"><svg><use href="#i-historico"/></svg>Histórico <b id="contHistorico" hidden></b></button>
       <button type="button" data-aba="grupos"><svg><use href="#i-grupo"/></svg>Grupos <b id="contGrupos" hidden></b></button>
@@ -316,6 +391,29 @@
   </dialog>
 
   <!-- Confirmação no padrão do app -->
+  <dialog id="ppModelos" class="dialogo folha">
+    <form method="dialog">
+      <h2>Escolha a montagem</h2>
+      <div class="alternar alternar--tres opcoes-folha" id="ppModelo" role="radiogroup">
+        <button type="button" role="radio" data-v="achadinho" aria-checked="true">Achadinho do dia</button>
+        <button type="button" role="radio" data-v="relampago" aria-checked="false">Oferta relâmpago</button>
+        <button type="button" role="radio" data-v="baixou" aria-checked="false">Baixou o preço</button>
+        <button type="button" role="radio" data-v="ultimas" aria-checked="false">Últimas horas</button>
+        <button type="button" role="radio" data-v="novidade" aria-checked="false">Chegou novidade</button>
+        <button type="button" role="radio" data-v="enquete" aria-checked="false">Você usaria?</button>
+      </div>
+      <div class="campo"><span>Fundo</span>
+        <div class="alternar" id="ppFundo" role="radiogroup">
+          <button type="button" role="radio" data-v="auto" aria-checked="true">Do modelo</button>
+          <button type="button" role="radio" data-v="creme" aria-checked="false">Creme</button>
+          <button type="button" role="radio" data-v="rosa" aria-checked="false">Rosa</button>
+          <button type="button" role="radio" data-v="branco" aria-checked="false">Branco</button>
+        </div>
+      </div>
+      <button class="btn btn--branco" value="nao" type="submit">Pronto</button>
+    </form>
+  </dialog>
+
   <dialog id="escolherModelo" class="dialogo folha">
     <form method="dialog">
       <h2>Escolha o modelo</h2>
@@ -334,35 +432,6 @@
             <button type="button" role="radio" data-v="categorias" aria-checked="false">Categorias</button>
             <button type="button" role="radio" data-v="stories" aria-checked="false">Ofertas nos stories</button>
             <button type="button" role="radio" data-v="siga" aria-checked="false">Siga a Miga</button>
-      </div>
-      <button class="btn btn--branco" value="nao" type="submit">Fechar</button>
-    </form>
-  </dialog>
-
-  <dialog id="filtroLoja" class="dialogo folha">
-    <form method="dialog">
-      <h2>Escolha a loja</h2>
-      <div class="alternar alternar--tres opcoes-folha" id="catLoja" role="radiogroup" aria-label="Loja do catálogo">
-        <button type="button" role="radio" data-v="todas" aria-checked="true">Todas</button>
-        <button type="button" role="radio" data-v="mercadolivre" aria-checked="false">Mercado Livre</button>
-        <button type="button" role="radio" data-v="shopee" aria-checked="false">Shopee</button>
-      </div>
-      <button class="btn btn--branco" value="nao" type="submit">Fechar</button>
-    </form>
-  </dialog>
-
-  <dialog id="filtroCat" class="dialogo folha">
-    <form method="dialog">
-      <h2>Escolha a categoria</h2>
-      <div class="alternar alternar--tres opcoes-folha" id="catFiltro" role="radiogroup" aria-label="Categoria do catálogo">
-        <button type="button" role="radio" data-v="moda" aria-checked="true">Moda</button>
-        <button type="button" role="radio" data-v="beleza" aria-checked="false">Beleza</button>
-        <button type="button" role="radio" data-v="perfumes" aria-checked="false">Perfumes</button>
-        <button type="button" role="radio" data-v="acessorios" aria-checked="false">Joias e relógios</button>
-        <button type="button" role="radio" data-v="casa" aria-checked="false">Casa</button>
-        <button type="button" role="radio" data-v="fitness" aria-checked="false">Fitness</button>
-        <button type="button" role="radio" data-v="saude" aria-checked="false">Saúde</button>
-        <button type="button" role="radio" data-v="bebes" aria-checked="false">Bebês</button>
       </div>
       <button class="btn btn--branco" value="nao" type="submit">Fechar</button>
     </form>
@@ -501,7 +570,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=28"></script>
-  <script src="app.js?v=28"></script>
+  <script src="firebase-config.js?v=29"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>

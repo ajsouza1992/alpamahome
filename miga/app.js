@@ -188,8 +188,8 @@
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
       limpar: () => tx("readwrite", (s) => s.clear()),
-      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), instagram: ls.ler("miga_instagram") || "" }),
-      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_instagram", c.instagram || ""); }
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), instagram: ls.ler("miga_instagram") || "", fila: ls.lerJson("miga_fila", []) }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_instagram", c.instagram || ""); ls.gravar("miga_fila", JSON.stringify(c.fila || [])); }
     };
   })();
 
@@ -217,9 +217,9 @@
       lerConfig: async () => {
         const d = await fs.getDoc(docConfig());
         const x = d.exists() ? d.data() : {};
-        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], instagram: x.instagram || "" };
+        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], instagram: x.instagram || "", fila: x.fila || [] };
       },
-      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], instagram: c.instagram || "", atualizadoEm: Date.now() })
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], instagram: c.instagram || "", fila: JSON.parse(JSON.stringify((c.fila || []).map(({ carregando, ...i }) => i))), atualizadoEm: Date.now() })
     };
   }
   let dados = local;
@@ -272,6 +272,7 @@
     atualizarContadores();
     renderGruposEnvio();
     renderCupons();
+    contarFila();
   }
   function erroFirebase(e) {
     const c = (e && e.code) || "";
@@ -332,6 +333,7 @@
     $("#barraGerar").hidden = aba !== "criar";
     if (aba === "historico") renderHistorico();
     if (aba === "grupos") renderGrupos();
+    if (aba === "postar" && !ppAtual) renderFila();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
     window.scrollTo({ top: 0 });
   }
@@ -653,19 +655,10 @@
       </article>`).join("");
   }
   [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
-  $("#abrirFiltro").addEventListener("click", () => $("#filtroCat").showModal());
-  $("#abrirLoja").addEventListener("click", () => $("#filtroLoja").showModal());
-  $("#catLoja").addEventListener("click", (e) => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    $("#lojaNome").textContent = b.textContent;
-    $("#filtroLoja").close();
-  });
+  // Aba de categoria escolhida sempre visível (desliza até ela)
   $("#catFiltro").addEventListener("click", (e) => {
     const b = e.target.closest("button");
-    if (!b) return;
-    $("#filtroNome").textContent = b.textContent;
-    $("#filtroCat").close();
+    if (b) b.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   });
   $("#atualizarCatalogo").addEventListener("click", carregarCatalogo);
   // Pede o link de afiliado antes de ir para a aba Criar
@@ -950,7 +943,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=28"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=29"; });
     }
     edFoto = null;
     try {
@@ -1162,11 +1155,12 @@
       if (tipo === "foto") {
         const s = h, fx = (W - s) / 2;
         sombra(() => { retArredondado(ctx, fx, y, s, s, 48 * escala); ctx.fillStyle = "#ffffff"; ctx.fill(); });
-        if (bnFoto) {
+        const foto = d.foto !== undefined ? d.foto : bnFoto;
+        if (foto) {
           ctx.save(); retArredondado(ctx, fx, y, s, s, 48 * escala); ctx.clip();
-          const pad = 26 * escala, k = Math.min((s - pad * 2) / bnFoto.width, (s - pad * 2) / bnFoto.height);
-          const iw = bnFoto.width * k, ih = bnFoto.height * k;
-          ctx.drawImage(bnFoto, fx + (s - iw) / 2, y + (s - ih) / 2, iw, ih); ctx.restore();
+          const pad = 26 * escala, k = Math.min((s - pad * 2) / foto.width, (s - pad * 2) / foto.height);
+          const iw = foto.width * k, ih = foto.height * k;
+          ctx.drawImage(foto, fx + (s - iw) / 2, y + (s - ih) / 2, iw, ih); ctx.restore();
         } else if (d.previa) {
           ctx.font = `600 ${Math.round(34 * escala)}px Poppins`; ctx.fillStyle = "#b3a782";
           ctx.fillText("escolha a foto", W / 2, y + s / 2 - 22 * escala); ctx.fillText("do produto", W / 2, y + s / 2 + 22 * escala);
@@ -1289,7 +1283,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=28"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=29"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1384,6 +1378,231 @@
       await new Promise((ok) => setTimeout(ok, 500));
     }
     toast("5 imagens salvas — poste na ordem 1, 2, 3, 4, 5");
+  });
+
+  /* =========================== Aba Postar (lista de produtos → WhatsApp e Instagram) =========================== */
+  const ppCanal = grupoBotoes("#ppCanal", "v");
+  const ppFormato = grupoBotoes("#ppFormato", "v");
+  const ppModelo = grupoBotoes("#ppModelo", "v");
+  const ppFundo = grupoBotoes("#ppFundo", "v");
+  let ppAtual = null;          // item aberto
+  const ppFotos = {};          // fotos já carregadas (por item)
+  const fila = () => (config.fila = config.fila || []);
+  let ppSalvarTimer;
+  function salvarFila(logo) {
+    clearTimeout(ppSalvarTimer);
+    const ir = () => { gravarConfig(); contarFila(); };
+    if (logo) ir(); else ppSalvarTimer = setTimeout(ir, 600);
+  }
+  function contarFila() {
+    const n = fila().filter((i) => !(i.feito && i.feito.whatsapp && i.feito.instagram)).length;
+    $("#contPostar").hidden = !n; $("#contPostar").textContent = n;
+  }
+  function renderFila() {
+    const l = fila();
+    $("#ppLista").innerHTML = l.length ? l.map((i) => {
+      const f = i.feito || {};
+      const foto = i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
+      return `<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
+        ${foto}
+        <span><strong>${esc(i.nome || "Buscando o produto…")}</strong>
+          <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}</span>
+          <span class="pp-tags"><span class="${f.whatsapp ? "ok" : ""}">WhatsApp${f.whatsapp ? " ✓" : ""}</span><span class="${f.instagram ? "ok" : ""}">Instagram${f.instagram ? " ✓" : ""}</span></span>
+        </span>
+        <span class="seta">›</span>
+      </button>`;
+    }).join("") : '<p class="vazio-lista">Cole os links dos produtos que você vai divulgar hoje.</p>';
+  }
+  async function adicionarNaFila(texto) {
+    const lido = lerTextoCompartilhado(texto) || { link: String(texto || "").trim(), nome: "", preco: null };
+    if (!urlOk(lido.link)) { toast("Cola um link começando com https://"); return; }
+    if (fila().some((i) => i.link === lido.link)) { toast("Esse produto já está na lista"); return; }
+    const item = { id: novoId(), link: lido.link, loja: detectarLoja(lido.link) || "mercadolivre", nome: lido.nome || "", precoNovo: lido.preco || null, precoAntigo: null, imagem: "", cupom: "", categoria: "outros", texto: "", modelo: "achadinho", feito: {}, criadoEm: Date.now(), carregando: true };
+    fila().unshift(item);
+    $("#ppLink").value = "";
+    renderFila();
+    try {
+      const d = await api("produto", { url: item.link });
+      if (d.loja) item.loja = d.loja;
+      if (d.nome && !item.nome) item.nome = limparNome(d.nome);
+      if (d.preco) item.precoNovo = d.preco;
+      if (d.precoAntigo) item.precoAntigo = d.precoAntigo;
+      if (d.imagem) item.imagem = d.imagem;
+      if (!d.nome && !item.nome) toast("Não achei o nome: toque no produto e complete");
+    } catch (e) {
+      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      toast("Não consegui ler o produto: toque nele e complete à mão");
+    }
+    delete item.carregando;
+    renderFila();
+    salvarFila(true);
+  }
+  $("#ppAdicionar").addEventListener("click", () => adicionarNaFila($("#ppLink").value));
+  $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); adicionarNaFila($("#ppLink").value); } });
+  $("#ppLink").addEventListener("paste", (e) => {
+    const t = (e.clipboardData && e.clipboardData.getData("text")) || "";
+    if (/https?:\/\//.test(t)) { e.preventDefault(); adicionarNaFila(t); }
+  });
+  $("#ppColar").addEventListener("click", async () => {
+    try { adicionarNaFila((await navigator.clipboard.readText()).trim()); }
+    catch (e) { $("#ppLink").focus(); toast("Toque e segure no campo para colar"); }
+  });
+  $("#ppLimpar").addEventListener("click", async () => {
+    const prontos = fila().filter((i) => i.feito && i.feito.whatsapp && i.feito.instagram);
+    if (!prontos.length) { toast("Nenhum produto com WhatsApp e Instagram prontos"); return; }
+    if (!(await confirmar({ titulo: "Tirar os prontos?", texto: `${prontos.length} produto(s) já postados no WhatsApp e no Instagram saem da lista.`, ok: "Tirar" }))) return;
+    config.fila = fila().filter((i) => !prontos.includes(i));
+    renderFila(); salvarFila(true);
+  });
+
+  // Abrir um produto da lista
+  $("#ppLista").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-pp]");
+    if (!b) return;
+    const item = fila().find((i) => i.id === b.dataset.pp);
+    if (item && !item.carregando) abrirItemFila(item);
+  });
+  function abrirItemFila(item) {
+    ppAtual = item;
+    $("#ppListaBloco").hidden = true; $("#ppItem").hidden = false;
+    $("#ppNome").value = item.nome || "";
+    $("#ppAntigo").value = item.precoAntigo ? paraCampo(item.precoAntigo) : "";
+    $("#ppNovo").value = item.precoNovo ? paraCampo(item.precoNovo) : "";
+    $("#ppCupom").value = item.cupom || "";
+    ppModelo.marcar(item.modelo || "achadinho");
+    $("#ppModeloNome").textContent = $(`#ppModelo [data-v="${ppModelo.valor()}"]`).textContent;
+    mostrarTexto();
+    trocarCanal("whatsapp");
+    window.scrollTo({ top: 0 });
+  }
+  function fecharItemFila() {
+    ppAtual = null;
+    $("#ppItem").hidden = true; $("#ppListaBloco").hidden = false;
+    renderFila();
+  }
+  $("#ppVoltar").addEventListener("click", fecharItemFila);
+  $("#ppRemover").addEventListener("click", async () => {
+    if (!ppAtual || !(await confirmar({ titulo: "Tirar da lista?", texto: `“${ppAtual.nome || "Produto"}” sai da lista de postagens.`, ok: "Tirar" }))) return;
+    config.fila = fila().filter((i) => i !== ppAtual);
+    salvarFila(true); fecharItemFila();
+  });
+  // Campos editáveis
+  [["#ppNome", (v) => { ppAtual.nome = v.trim(); }], ["#ppAntigo", (v) => { ppAtual.precoAntigo = lerPreco(v); }], ["#ppNovo", (v) => { ppAtual.precoNovo = lerPreco(v); }], ["#ppCupom", (v) => { ppAtual.cupom = v.trim(); }]]
+    .forEach(([id, f]) => $(id).addEventListener("input", () => { if (!ppAtual) return; f($(id).value); salvarFila(); if (ppCanal.valor() === "instagram") desenharPp(); }));
+  $("#ppTexto").addEventListener("input", () => { if (!ppAtual) return; ppAtual.texto = $("#ppTexto").value; $("#ppBalao").innerHTML = formatarWhats(ppAtual.texto); salvarFila(); });
+
+  function trocarCanal(c) {
+    ppCanal.marcar(c);
+    $("#ppWhats").hidden = c !== "whatsapp"; $("#ppInsta").hidden = c !== "instagram";
+    if (c === "instagram") prepararInsta();
+  }
+  $("#ppCanal").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) trocarCanal(b.dataset.v); });
+
+  // ---------- WhatsApp: a mensagem de sempre ----------
+  function mostrarTexto() {
+    const t = ppAtual.texto || "";
+    $("#ppTexto").value = t;
+    $("#ppBalao").innerHTML = formatarWhats(t);
+    $("#ppBalao").hidden = !t; $("#ppCampoTexto").hidden = !t; $("#ppAcoesWhats").hidden = !t;
+    $("#ppGerar").querySelector(".rotulo").textContent = t ? "Gerar outra mensagem" : "Gerar mensagem";
+  }
+  const produtoDaFila = (i) => ({ nome: limparNome(i.nome), precoAntigo: i.precoAntigo, precoNovo: i.precoNovo, link: i.link, categoria: i.categoria || "outros", loja: i.loja, cupom: i.cupom || "" });
+  $("#ppGerar").addEventListener("click", async () => {
+    if (!ppAtual) return;
+    const p = produtoDaFila(ppAtual);
+    if (!p.nome) { toast("Escreva o nome do produto"); $("#ppNome").focus(); return; }
+    if (!p.precoNovo) { toast("Digite o preço novo"); $("#ppNovo").focus(); return; }
+    const b = $("#ppGerar"); b.disabled = true; b.classList.add("ocupado");
+    let texto;
+    try { texto = (await api("gerar", p)).texto; }
+    catch (e) {
+      if (e.codigo === "senha") { bloquear("O código de acesso mudou. Digite o novo código."); return; }
+      texto = mensagemReserva(p); toast("Usei uma mensagem pronta: " + e.message);
+    } finally { b.disabled = false; b.classList.remove("ocupado"); }
+    ppAtual.texto = comConvite(texto);
+    // Guarda no histórico também
+    const hist = { id: ppAtual.histId || novoId(), criadoEm: Date.now(), produto: p, texto: ppAtual.texto, imagem: ppAtual.imagem || "", enviadoPara: [] };
+    ppAtual.histId = hist.id;
+    try { await dados.salvar(hist); atualizarContadores(); } catch (e) { /* segue */ }
+    mostrarTexto(); salvarFila(true);
+  });
+  async function marcarEnvio(canal, onde) {
+    ppAtual.feito = { ...(ppAtual.feito || {}), [canal]: true };
+    salvarFila(true);
+    if (ppAtual.histId) {
+      try { const h = await dados.pegar(ppAtual.histId); if (h) { if (!h.enviadoPara.includes(onde)) h.enviadoPara.push(onde); await dados.salvar(h); } } catch (e) { /* segue */ }
+    }
+  }
+  $("#ppEnviar").addEventListener("click", async () => {
+    const texto = ppAtual.texto;
+    const arq = ppAtual.imagem ? await arquivoDaImagem(ppAtual.imagem) : null;
+    if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
+      try { await navigator.share({ files: [arq], text: texto }); marcarEnvio("whatsapp", "WhatsApp (com foto)"); return; }
+      catch (e) { if (e.name === "AbortError") return; }
+    }
+    if (await copiarTexto(texto)) toast("Texto copiado — cole no WhatsApp junto com a foto");
+    marcarEnvio("whatsapp", "WhatsApp");
+  });
+  $("#ppCopiar").addEventListener("click", async () => { if (await copiarTexto(ppAtual.texto)) { toast("Texto copiado"); marcarEnvio("whatsapp", "Copiado"); } });
+  $("#ppSoTexto").addEventListener("click", () => { abrirWhatsApp(ppAtual.texto); marcarEnvio("whatsapp", "WhatsApp"); });
+
+  // ---------- Instagram: a montagem pronta (sem @, com espaço do link) ----------
+  async function prepararInsta() {
+    desenharPp();
+    await carregarMarca();
+    if (ppAtual && !(ppAtual.id in ppFotos) && ppAtual.imagem) {
+      try { const arq = await arquivoDaImagem(ppAtual.imagem); ppFotos[ppAtual.id] = arq ? await createImageBitmap(arq) : null; } catch (e) { ppFotos[ppAtual.id] = null; }
+      if (!ppFotos[ppAtual.id]) toast("A foto não veio — toque na montagem para escolher da galeria");
+    }
+    desenharPp();
+  }
+  function dadosPp(previa) {
+    const M = MODELOS[ppModelo.valor()], i = ppAtual;
+    return {
+      previa, insta: "", titulo: linhasTitulo(M.padrao.titulo), texto: M.padrao.texto, botao: "", logo: false, espaco: true,
+      cupom: i.cupom || "", foto: ppFotos[i.id] || null,
+      produto: { nome: limparNome(i.nome), antigo: i.precoAntigo, novo: i.precoNovo }
+    };
+  }
+  function desenharPp(tela) {
+    if (!ppAtual) return;
+    desenharBanner(tela || $("#ppTela"), ppModelo.valor(), ppFormato.valor(), ppFundo.valor(), dadosPp(!tela));
+  }
+  $("#ppFormato").addEventListener("click", () => setTimeout(desenharPp, 0));
+  $("#ppAbrirModelo").addEventListener("click", () => $("#ppModelos").showModal());
+  $("#ppModelo").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b || !ppAtual) return;
+    ppAtual.modelo = b.dataset.v; salvarFila();
+    $("#ppModeloNome").textContent = b.textContent;
+    setTimeout(desenharPp, 0);
+  });
+  $("#ppFundo").addEventListener("click", () => setTimeout(desenharPp, 0));
+  $("#ppTela").addEventListener("click", () => $("#ppArquivo").click());
+  $("#ppArquivo").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f || !ppAtual) return;
+    try { ppFotos[ppAtual.id] = await createImageBitmap(f); } catch (err) { toast("Não consegui abrir essa foto"); }
+    e.target.value = "";
+    desenharPp();
+  });
+  const nomePp = () => `miga-promo-${String(ppAtual.nome || "achadinho").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30)}-${ppFormato.valor()}.jpg`;
+  $("#ppBaixar").addEventListener("click", () => {
+    const tela = document.createElement("canvas"); desenharPp(tela);
+    tela.toBlob((b) => { if (b) { baixarBlob(b, nomePp()); toast("Imagem salva"); } }, "image/jpeg", 0.92);
+  });
+  $("#ppPostar").addEventListener("click", async () => {
+    if (!ppAtual) return;
+    if (ppFormato.valor() === "story") {
+      if (await copiarTexto(ppAtual.link)) toast("Link copiado: no story, toque no adesivo de Link e cole");
+    } else {
+      const base = ppAtual.texto || `${limparNome(ppAtual.nome)}\n\n${ppAtual.precoNovo ? "Por " + brl(ppAtual.precoNovo) : ""}`;
+      const legenda = base.split(ppAtual.link).join("🔗 link na bio").replace(/[*~_]/g, "").trim();
+      if (await copiarTexto(legenda)) toast("Legenda copiada: cole na legenda do post");
+    }
+    const tela = document.createElement("canvas"); desenharPp(tela);
+    compartilharTela(tela, nomePp());
+    marcarEnvio("instagram", "Instagram");
   });
 
   /* =========================== Enviar =========================== */

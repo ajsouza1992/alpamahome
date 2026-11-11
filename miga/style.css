@@ -157,7 +157,7 @@ textarea { height: auto; padding: 14px 16px; line-height: 1.55; resize: vertical
   background: linear-gradient(to top, var(--fundo) 55%, rgba(255, 248, 228, 0)); }
 .barra > * { pointer-events: auto; }
 .barra__gerar { max-width: 496px; margin: 0 auto; padding: 16px 0 10px; }
-.abas { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 496px; margin: 0 auto; padding: 6px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
+.abas { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 496px; margin: 0 auto; padding: 6px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
 .abas button { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; height: 46px; border: 0; border-radius: 999px; background: none; font-size: 13.5px; font-weight: 600; color: var(--cinza); cursor: pointer; transition: background .2s, color .2s; }
 .abas button svg { width: 21px; height: 21px; }
 .abas button[aria-current="page"] { background: var(--rosa-claro); color: var(--rosa); }
@@ -305,7 +305,7 @@ body.travado { overflow: hidden; }
 #abrirEditor { width: 100%; }
 
 /* Abas: 4 itens (ícone em cima do nome) */
-.abas button { flex-direction: column; gap: 1px; height: 54px; font-size: 11.5px; border-radius: 22px; }
+.abas button { flex-direction: column; gap: 1px; height: 54px; font-size: 11px; border-radius: 22px; padding: 0 2px; }
 .abas b { position: absolute; top: 4px; left: calc(50% + 6px); }
 
 /* ---------- Aba Achados ---------- */
@@ -367,3 +367,32 @@ body.travado { overflow: hidden; }
 .opcoes-folha { border-radius: 0 !important; overflow: visible; }
 #escolherModelo .opcoes-folha { overflow-y: auto; padding: 4px 2px 8px; }
 .link--foto { justify-self: start; cursor: pointer; }
+
+/* Categorias em abas sublinhadas (deslizam para o lado) */
+.abas-cat { position: relative; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; border-bottom: 1.5px solid var(--linha); -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 28px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 28px), transparent 100%); }
+.abas-cat::-webkit-scrollbar { display: none; }
+.abas-cat button { position: relative; flex: none; min-height: 46px; padding: 0 12px; border: 0; background: none; font-size: 15px; font-weight: 600; color: var(--cinza); white-space: nowrap; cursor: pointer; }
+.abas-cat button[aria-checked="true"] { color: var(--rosa); font-weight: 700; }
+.abas-cat button[aria-checked="true"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1.5px; height: 4px; border-radius: 4px 4px 0 0; background: var(--rosa); }
+.alternar--loja button { font-size: 13px; }
+
+/* Aba Postar */
+.pp-lista { display: grid; gap: 10px; }
+.pp-item { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; border: 0; border-radius: 20px; background: var(--campo); text-align: left; color: var(--preto); cursor: pointer; width: 100%; }
+.pp-item img, .pp-item .sem-foto { width: 72px; height: 72px; border-radius: 14px; object-fit: contain; background: #fff; padding: 3px; box-sizing: border-box; }
+.pp-item .sem-foto { display: grid; place-items: center; font-size: 11px; color: var(--placeholder); }
+.pp-item strong { display: -webkit-box; font-size: 14px; font-weight: 600; line-height: 1.3; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pp-item .meta { font-size: 12.5px; color: var(--cinza); margin-top: 2px; }
+.pp-item .meta b { color: var(--rosa); }
+.pp-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.pp-tags span { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #fff; color: var(--cinza); }
+.pp-tags span.ok { background: #e3f4e8; color: #1e7d43; }
+.pp-item .seta { font-size: 22px; color: var(--cinza); padding-right: 4px; }
+.pp-item.carregando { opacity: .7; }
+.pp-canal { display: grid; gap: 12px; }
+.pp-canal[hidden], .pp-acoes[hidden] { display: none; }
+.pp-acoes { display: grid; gap: 10px; }
+.pp-balao { white-space: pre-wrap; }
+#ppTela { cursor: pointer; }
+#ppItem { display: grid; gap: 12px; }
+#ppItem[hidden] { display: none; }
