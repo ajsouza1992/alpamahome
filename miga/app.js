@@ -950,7 +950,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=26"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=27"; });
     }
     edFoto = null;
     try {
@@ -1022,100 +1022,127 @@
   });
 
 
-  /* =========================== Banners do Instagram =========================== */
+  /* =========================== Posts e stories do Instagram =========================== */
   const bnModelo = grupoBotoes("#bnModelo", "v");
   const bnFormato = grupoBotoes("#bnFormato", "v");
   const bnFundo = grupoBotoes("#bnFundo", "v");
   const CORES_BN = {
-    creme: { claro: true, texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", bola1: "rgba(255,210,63,.35)", bola2: "rgba(232,51,109,.12)" },
-    rosa: { claro: false, texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", bola1: "rgba(255,255,255,.08)", bola2: "rgba(255,210,63,.25)" }
+    creme: { tipo: "creme", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.35)", bola2: "rgba(232,51,109,.12)", guia: "#d8c99a" },
+    rosa: { tipo: "rosa", texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", bola1: "rgba(255,255,255,.08)", bola2: "rgba(255,210,63,.25)", guia: "rgba(255,255,255,.7)" },
+    branco: { tipo: "branco", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#fff8e4", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.25)", bola2: "rgba(232,51,109,.08)", guia: "#d8c99a" }
   };
   const arroba = (v) => { const t = String(v || "").trim().replace(/^@+/, "").replace(/\s+/g, ""); return t ? "@" + t : ""; };
-  // Linhas de título: texto simples ou [["parte", destaque?], ...]
   // Título digitado: uma linha por linha; *trecho* fica em destaque
   const linhasTitulo = (t) => String(t || "").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 4)
     .map((l) => l.split(/(\*[^*]+\*)/).filter(Boolean).map((p) => /^\*.+\*$/.test(p) ? [p.slice(1, -1), 1] : [p, 0]));
+  const comBotao = (d) => d.botao ? [["gap", 44], ["pill", d.botao]] : [];
+  const comTexto = (d, gap = 26) => d.texto ? [["gap", gap], ["sub", d.texto]] : [];
+  const comLink = (d) => d.espaco ? [["gap", 30], ["link", 0]] : [];
+  /* Cada modelo: valores iniciais dos campos (todos editáveis) + blocos de cima para baixo.
+     "produto" = usa foto/nome/preço; "cupom" = usa o campo cupom; "lista" = o texto vira lista. */
   const MODELOS = {
-    meutexto: { fundo: "creme", nome: "meu-texto", blocos: (d) => [
-      ...(d.logo ? [["logo", 300], ["gap", 50]] : []),
-      ...(d.titulo.length ? [["titulo", d.titulo]] : []),
-      ...(d.texto ? [["gap", 30], ["sub", d.texto]] : []),
-      ...(d.botao ? [["gap", 50], ["pill", d.botao]] : [])] },
-    boasvindas: { fundo: "creme", nome: "boas-vindas", blocos: (d) => [
-      ["logo", 340], ["gap", 50], ["titulo", ["Bem-vinda,", [["miga! 💖", 1]]]], ["gap", 30],
-      ["sub", "Aqui eu garimpo os melhores achadinhos com desconto, todo dia."], ["gap", 50], ["pill", "Ative as notificações"]] },
-    comofunciona: { fundo: "creme", nome: "como-funciona", rodape: "Links de afiliada · sem custo a mais pra você", blocos: () => [
-      ["logo", 150], ["gap", 40], ["titulo", [[["Como ", 0], ["funciona?", 1]]]], ["gap", 50],
-      ["passos", [["Eu garimpo as ofertas", "Shopee, Mercado Livre e Amazon"], ["Você toca no link", "no post, no story ou na bio"], ["Compra pelo mesmo preço", "e ainda ajuda a miga aqui 💕"]]]] },
-    categorias: { fundo: "creme", nome: "categorias", blocos: () => [
-      ["titulo", ["O que você", [["vai ", 0], ["encontrar 👀", 1]]]], ["gap", 50],
-      ["cats", [["👗", "Moda"], ["💄", "Beleza"], ["🌸", "Perfumes"], ["🏡", "Casa"]]], ["gap", 40],
-      ["sub", "+ fitness, saúde e cupons exclusivos"]] },
-    stories: { fundo: "rosa", nome: "ofertas-nos-stories", blocos: () => [
-      ["logo", 300], ["gap", 50], ["titulo", ["Ofertas", [["relâmpago", 1]], "nos stories ⚡"]], ["gap", 30],
-      ["sub", "As promoções que acabam rápido aparecem primeiro nos stories."], ["gap", 50], ["pill", "Siga e ative as notificações"]] },
-    cupons: { fundo: "creme", nome: "cupons", blocos: (d) => [
-      ["titulo", ["Cupons", [["todo dia 🎟️", 1]]]], ["gap", 60], ["cupom", d.cupom || "MIGA10"], ["gap", 60],
-      ["sub", "Fique de olho nos stories: os melhores cupons acabam rapidinho!"]] },
-    siga: { fundo: "rosa", nome: "siga", blocos: (d) => [
-      ["logo", 300], ["gap", 50], ["titulo", ["Não perca", "nenhum", [["achadinho 💖", 1]]]], ["gap", 30],
-      ["sub", "Siga a Miga Promo e ative as notificações dos stories."], ["gap", 50], ["pill", d.insta ? "Siga " + d.insta : "Siga a Miga"]] },
-    achadinho: { fundo: "creme", nome: "achadinho-do-dia", blocos: () => [
-      ["logo", 150], ["gap", 30], ["titulo", ["Achadinho", [["do dia ✨", 1]]]], ["gap", 40],
-      ["moldura", 0], ["gap", 40], ["pill", "Toque no link"]] }
+    achadinho: { nome: "achadinho-do-dia", fundo: "creme", produto: true, logo: false,
+      padrao: { titulo: "Achadinho\n*do dia* ✨", texto: "", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comTexto(d, 18), ...comBotao(d), ...comLink(d)] },
+    relampago: { nome: "oferta-relampago", fundo: "rosa", produto: true, logo: false,
+      padrao: { titulo: "Oferta\n*relâmpago* ⚡", texto: "Corre que é por pouco tempo!", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 1], ["gap", 30], ["preco", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
+    baixou: { nome: "baixou-o-preco", fundo: "creme", produto: true, logo: false,
+      padrao: { titulo: "*Baixou*\no preço! 📉", texto: "", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 30], ["precoGrande", 0], ["gap", 30], ["foto", 1], ["gap", 26], ["nome", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
+    ultimas: { nome: "ultimas-horas", fundo: "rosa", produto: true, logo: false,
+      padrao: { titulo: "*Últimas*\nhoras ⏰", texto: "Esse preço termina hoje!", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
+    novidade: { nome: "chegou-novidade", fundo: "branco", produto: true, logo: false,
+      padrao: { titulo: "Chegou\n*novidade* 💖", texto: "", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
+    enquete: { nome: "voce-usaria", fundo: "creme", produto: true, logo: false, rotuloLink: "enquete",
+      padrao: { titulo: "Você *usaria*? 🤔", texto: "Responde aqui embaixo 👇", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 26], ["nome", 0], ...comTexto(d, 18), ...comBotao(d), ...comLink(d)] },
+    cupom: { nome: "cupom-do-dia", fundo: "creme", cupom: true, logo: true,
+      padrao: { titulo: "Cupom\n*do dia* 🎟️", texto: "Copia o código e usa na finalização da compra.", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 56], ["cupom", d.cupom || "MIGA10"], ...comTexto(d, 50), ...comBotao(d), ...comLink(d)] },
+    lista: { nome: "lista-de-achados", fundo: "creme", lista: true, logo: false,
+      padrao: { titulo: "Achados\n*da semana* 🛍️", texto: "Vestido midi canelado\nSérum de vitamina C\nOrganizador de gavetas\nGarrafa térmica 1 litro\nKit de pincéis", botao: "Links nos stories" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 40], ["lista", d.texto], ...comBotao(d)] },
+    meutexto: { nome: "meu-texto", fundo: "creme", logo: true,
+      padrao: { titulo: "Promoção\n*relâmpago* ⚡", texto: "Corre que esse preço não dura muito!", botao: "Link na bio" },
+      blocos: (d) => [["titulo", d.titulo], ...comTexto(d, 26), ...comBotao(d), ...comLink(d)] },
+    boasvindas: { nome: "boas-vindas", fundo: "creme", logo: true,
+      padrao: { titulo: "Bem-vinda,\n*miga!* 💖", texto: "Aqui eu garimpo os melhores achadinhos com desconto, todo dia.", botao: "Ative as notificações" },
+      blocos: (d) => [["titulo", d.titulo], ...comTexto(d, 26), ...comBotao(d)] },
+    comofunciona: { nome: "como-funciona", fundo: "creme", logo: false, rodape: "Links de afiliada · sem custo extra",
+      padrao: { titulo: "Como *funciona?*", texto: "", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 46], ["passos", [["Eu garimpo as ofertas", "Shopee, Mercado Livre e Amazon"], ["Você toca no link", "no post, no story ou na bio"], ["Compra pelo mesmo preço", "e ainda ajuda a miga aqui 💕"]]], ...comTexto(d, 30), ...comBotao(d)] },
+    categorias: { nome: "categorias", fundo: "creme", logo: false,
+      padrao: { titulo: "O que você\nvai *encontrar* 👀", texto: "+ fitness, saúde e cupons exclusivos", botao: "" },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 46], ["cats", [["👗", "Moda"], ["💄", "Beleza"], ["🌸", "Perfumes"], ["🏡", "Casa"]]], ...comTexto(d, 36), ...comBotao(d)] },
+    stories: { nome: "ofertas-nos-stories", fundo: "rosa", logo: true,
+      padrao: { titulo: "Ofertas\n*relâmpago*\nnos stories ⚡", texto: "As promoções que acabam rápido aparecem primeiro nos stories.", botao: "Siga e ative as notificações" },
+      blocos: (d) => [["titulo", d.titulo], ...comTexto(d, 26), ...comBotao(d)] },
+    siga: { nome: "siga", fundo: "rosa", logo: true,
+      padrao: { titulo: "Não perca\nnenhum\n*achadinho* 💖", texto: "Siga a Miga Promo e ative as notificações dos stories.", botao: "Siga a Miga" },
+      blocos: (d) => [["titulo", d.titulo], ...comTexto(d, 26), ...comBotao(d)] }
   };
-  const BOAS_VINDAS = ["boasvindas", "comofunciona", "categorias", "stories", "cupons"];
+  const BOAS_VINDAS = ["boasvindas", "comofunciona", "categorias", "stories", "cupom"];
+  let bnFoto = null; // foto do produto (ImageBitmap)
 
+  /** Desenha o post/story. d.previa = true mostra as guias (espaço do adesivo), que não saem na imagem final. */
   function desenharBanner(canvas, modelo, formato, fundoEscolhido, d) {
     const M = MODELOS[modelo];
     const W = 1080, H = formato === "story" ? 1920 : formato === "quadrado" ? 1080 : 1350;
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d");
-    const nomeFundo = fundoEscolhido === "auto" ? M.fundo : fundoEscolhido;
-    const C = CORES_BN[nomeFundo] || CORES_BN.creme;
-    const escala = formato === "quadrado" ? 0.82 : formato === "story" ? 1.12 : 1;
+    const C = CORES_BN[fundoEscolhido === "auto" ? M.fundo : fundoEscolhido] || CORES_BN.creme;
+    const escala = formato === "quadrado" ? 0.8 : formato === "story" ? 1.08 : 0.94;
 
     // Fundo
-    if (C.claro) {
+    if (C.tipo === "creme") {
       const g = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, H * 0.85);
       g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6");
       ctx.fillStyle = g;
-    } else ctx.fillStyle = "#e8336d";
+    } else ctx.fillStyle = C.tipo === "rosa" ? "#e8336d" : "#ffffff";
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(60, 60, 260, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
 
-    const blocos = M.blocos(d);
+    const blocos = [...(d.logo ? [["logo", 260], ["gap", 40]] : []), ...M.blocos(d)].filter(([t, v]) => t !== "titulo" || (v && v.length));
     const FT = Math.round(96 * escala), FS = Math.round(40 * escala), LARG = W - 180;
-    // Mede cada bloco
-    const alturas = blocos.map(([tipo, v]) => {
+    const p = d.produto || {};
+    const altura = ([tipo, v]) => {
       if (tipo === "gap") return v * escala;
       if (tipo === "logo") return v * escala;
       if (tipo === "titulo") return v.length * FT * 1.08;
       if (tipo === "sub") { ctx.font = `500 ${FS}px Poppins`; return quebrarTexto(ctx, v, LARG, 3).length * FS * 1.38; }
-      if (tipo === "pill") return 116 * escala;
+      if (tipo === "pill") return 112 * escala;
       if (tipo === "passos") return v.length * 160 * escala + (v.length - 1) * 26 * escala;
       if (tipo === "cats") return 2 * 220 * escala + 26 * escala;
       if (tipo === "cupom") return 170 * escala;
-      if (tipo === "moldura") return Math.min(700, formato === "quadrado" ? H - 600 : H - 820);
+      if (tipo === "nome") { ctx.font = `700 ${Math.round(46 * escala)}px Poppins`; return p.nome ? quebrarTexto(ctx, p.nome, LARG, 2).length * 58 * escala : 0; }
+      if (tipo === "preco") return p.novo ? (p.antigo ? 150 : 100) * escala : 0;
+      if (tipo === "precoGrande") return p.novo ? (p.antigo ? 230 : 180) * escala : 0;
+      if (tipo === "link") return 130 * escala;
+      if (tipo === "lista") return Math.min(5, String(v || "").split("\n").filter((x) => x.trim()).length) * 118 * escala;
       return 0;
-    });
+    };
+    const alturas = blocos.map((b) => b[0] === "foto" ? 0 : altura(b));
+    const temRodape = !!(M.rodape || d.insta);
+    const util = H - 140 - (temRodape ? 90 : 0);
+    const resto = util - alturas.reduce((s, x) => s + x, 0);
+    blocos.forEach((b, i) => { if (b[0] === "foto") alturas[i] = Math.max(220, Math.min((b[1] ? 640 : 760) * escala, resto)); });
     const total = alturas.reduce((s, x) => s + x, 0);
-    let y = Math.max(60, (H - total) / 2 - (M.rodape ? 20 : 0));
+    let y = Math.max(50, 70 + (util - total) / 2);
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const sombra = (fn) => { ctx.save(); ctx.shadowColor = "rgba(29,29,31,.18)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12; fn(); ctx.restore(); };
 
     blocos.forEach(([tipo, v], i) => {
       const h = alturas[i];
-      if (tipo === "logo" && edMarca) {
-        const s = h * 1.25; // a imagem tem margem transparente
-        ctx.drawImage(edMarca, (W - s) / 2, y + (h - s) / 2, s, s);
-      }
+      if (tipo === "logo" && edMarca) { const s = h * 1.25; ctx.drawImage(edMarca, (W - s) / 2, y + (h - s) / 2, s, s); }
       if (tipo === "titulo") {
         ctx.font = `800 ${FT}px Poppins`;
-        v.forEach((linha, j) => {
-          const partes = typeof linha === "string" ? [[linha, 0]] : linha;
+        v.forEach((partes, j) => {
           const larg = partes.reduce((s, [t]) => s + ctx.measureText(t).width, 0);
-          let x = (W - larg) / 2;
+          let x = (W - Math.min(larg, W - 80)) / 2;
           ctx.textAlign = "left";
           partes.forEach(([t, dest]) => { ctx.fillStyle = dest ? C.destaque : C.texto; ctx.fillText(t, x, y + FT * 1.08 * j + FT * 0.56); x += ctx.measureText(t).width; });
           ctx.textAlign = "center";
@@ -1126,18 +1153,54 @@
         quebrarTexto(ctx, v, LARG, 3).forEach((l, j) => ctx.fillText(l, W / 2, y + FS * 1.38 * j + FS * 0.7));
       }
       if (tipo === "pill") {
-        v = String(v).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").replace(/\s{2,}/g, " ").trim();
+        const t = String(v).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").replace(/\s{2,}/g, " ").trim();
         ctx.font = `700 ${Math.round(38 * escala)}px Poppins`;
-        const pw = Math.min(W - 120, ctx.measureText(v).width + 110 * escala);
+        const pw = Math.min(W - 120, ctx.measureText(t).width + 110 * escala);
         retArredondado(ctx, (W - pw) / 2, y, pw, h, h / 2); ctx.fillStyle = C.pill; ctx.fill();
-        ctx.fillStyle = C.pillTexto; ctx.fillText(v, W / 2, y + h / 2 + 2);
+        ctx.fillStyle = C.pillTexto; ctx.fillText(t, W / 2, y + h / 2 + 2);
+      }
+      if (tipo === "foto") {
+        const s = h, fx = (W - s) / 2;
+        sombra(() => { retArredondado(ctx, fx, y, s, s, 48 * escala); ctx.fillStyle = "#ffffff"; ctx.fill(); });
+        if (bnFoto) {
+          ctx.save(); retArredondado(ctx, fx, y, s, s, 48 * escala); ctx.clip();
+          const pad = 26 * escala, k = Math.min((s - pad * 2) / bnFoto.width, (s - pad * 2) / bnFoto.height);
+          const iw = bnFoto.width * k, ih = bnFoto.height * k;
+          ctx.drawImage(bnFoto, fx + (s - iw) / 2, y + (s - ih) / 2, iw, ih); ctx.restore();
+        } else if (d.previa) {
+          ctx.font = `600 ${Math.round(34 * escala)}px Poppins`; ctx.fillStyle = "#b3a782";
+          ctx.fillText("escolha a foto", W / 2, y + s / 2 - 22 * escala); ctx.fillText("do produto", W / 2, y + s / 2 + 22 * escala);
+        }
+        const off = p.antigo && p.novo && p.antigo > p.novo ? Math.round((1 - p.novo / p.antigo) * 100) : 0;
+        if (off && v) {
+          const r = 92 * escala; ctx.save(); ctx.translate(fx + s - r * 0.5, y + r * 0.5); ctx.rotate(-0.17);
+          ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#ffd23f"; ctx.fill();
+          ctx.lineWidth = 7; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
+          ctx.fillStyle = "#1d1d1f"; ctx.font = `800 ${Math.round(r * 0.56)}px Poppins`; ctx.fillText(`-${off}%`, 0, 4); ctx.restore();
+        }
+      }
+      if (tipo === "nome" && p.nome) {
+        ctx.font = `700 ${Math.round(46 * escala)}px Poppins`; ctx.fillStyle = C.texto;
+        quebrarTexto(ctx, p.nome, LARG, 2).forEach((l, j) => ctx.fillText(l, W / 2, y + 58 * escala * j + 29 * escala));
+      }
+      if ((tipo === "preco" || tipo === "precoGrande") && p.novo) {
+        const grande = tipo === "precoGrande";
+        let yy = y;
+        if (p.antigo) {
+          ctx.font = `500 ${Math.round((grande ? 48 : 38) * escala)}px Poppins`; ctx.fillStyle = C.antigo;
+          const t = "de " + brl(p.antigo), w = ctx.measureText(t).width, hh = (grande ? 48 : 38) * escala;
+          ctx.fillText(t, W / 2, yy + hh * 0.7);
+          const x0 = W / 2 - w / 2 + ctx.measureText("de ").width; ctx.fillRect(x0, yy + hh * 0.72, w - ctx.measureText("de ").width, Math.max(3, hh / 11));
+          yy += hh * 1.45;
+        }
+        ctx.font = `800 ${Math.round((grande ? 140 : 76) * escala)}px Poppins`; ctx.fillStyle = C.preco;
+        ctx.fillText((p.antigo ? "por " : "") + brl(p.novo), W / 2, yy + (grande ? 140 : 76) * escala * 0.6);
       }
       if (tipo === "passos") {
         const ph = 160 * escala, gap = 26 * escala, x0 = 90, pw = W - 180;
         v.forEach(([t, s], j) => {
           const py = y + j * (ph + gap);
-          ctx.save(); ctx.shadowColor = "rgba(29,29,31,.18)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
-          retArredondado(ctx, x0, py, pw, ph, 40 * escala); ctx.fillStyle = C.cartao; ctx.fill(); ctx.restore();
+          sombra(() => { retArredondado(ctx, x0, py, pw, ph, 40 * escala); ctx.fillStyle = C.cartao; ctx.fill(); });
           const r = 45 * escala, cx = x0 + 40 * escala + r, cy = py + ph / 2;
           ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = "#ffd23f"; ctx.fill();
           ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
@@ -1153,10 +1216,23 @@
         const gap = 26 * escala, cw = (W - 180 - gap) / 2, ch = 220 * escala;
         v.forEach(([em, t], j) => {
           const cx = 90 + (j % 2) * (cw + gap), cy = y + Math.floor(j / 2) * (ch + gap);
-          ctx.save(); ctx.shadowColor = "rgba(29,29,31,.18)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
-          retArredondado(ctx, cx, cy, cw, ch, 40 * escala); ctx.fillStyle = C.cartao; ctx.fill(); ctx.restore();
+          sombra(() => { retArredondado(ctx, cx, cy, cw, ch, 40 * escala); ctx.fillStyle = C.cartao; ctx.fill(); });
           ctx.font = `${Math.round(78 * escala)}px Poppins`; ctx.fillStyle = C.cartaoTexto; ctx.fillText(em, cx + cw / 2, cy + ch * 0.38);
           ctx.font = `700 ${Math.round(50 * escala)}px Poppins`; ctx.fillText(t, cx + cw / 2, cy + ch * 0.75);
+        });
+      }
+      if (tipo === "lista") {
+        const itens = String(v || "").split("\n").map((x) => x.trim()).filter(Boolean).slice(0, 5);
+        const ih = 100 * escala, gap = 18 * escala;
+        itens.forEach((t, j) => {
+          const iy = y + j * (ih + gap);
+          sombra(() => { retArredondado(ctx, 90, iy, W - 180, ih, 30 * escala); ctx.fillStyle = C.cartao; ctx.fill(); });
+          const r = 32 * escala, cx = 90 + 30 * escala + r;
+          ctx.beginPath(); ctx.arc(cx, iy + ih / 2, r, 0, Math.PI * 2); ctx.fillStyle = "#e8336d"; ctx.fill();
+          ctx.fillStyle = "#ffffff"; ctx.font = `800 ${Math.round(34 * escala)}px Poppins`; ctx.fillText(String(j + 1), cx, iy + ih / 2 + 2);
+          ctx.textAlign = "left"; ctx.fillStyle = C.cartaoTexto; ctx.font = `600 ${Math.round(38 * escala)}px Poppins`;
+          ctx.fillText(quebrarTexto(ctx, t, W - 180 - (cx - 90) - r - 60 * escala, 1)[0], cx + r + 26 * escala, iy + ih / 2 + 2);
+          ctx.textAlign = "center";
         });
       }
       if (tipo === "cupom") {
@@ -1167,24 +1243,20 @@
         ctx.setLineDash([22, 14]); ctx.lineWidth = 7; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore();
       }
-      if (tipo === "moldura") {
-        const s = h;
-        retArredondado(ctx, (W - s) / 2, y, s, s, 60 * escala); ctx.fillStyle = "#ffffff"; ctx.fill();
-        ctx.setLineDash([18, 12]); ctx.lineWidth = 6; ctx.strokeStyle = C.claro ? "#e6d9b0" : "rgba(255,255,255,.6)"; ctx.stroke(); ctx.setLineDash([]);
-        ctx.font = `600 ${Math.round(34 * escala)}px Poppins`; ctx.fillStyle = "#b3a782";
-        ctx.fillText("cole aqui a foto", W / 2, y + s / 2 - 22 * escala);
-        ctx.fillText("do produto", W / 2, y + s / 2 + 22 * escala);
+      if (tipo === "link" && d.previa) {
+        // Só na prévia: onde colocar o adesivo de link (ou de enquete) do Instagram
+        const lw = 520 * escala;
+        retArredondado(ctx, (W - lw) / 2, y, lw, h, h / 2);
+        ctx.setLineDash([16, 12]); ctx.lineWidth = 4; ctx.strokeStyle = C.guia; ctx.stroke(); ctx.setLineDash([]);
+        ctx.font = `600 ${Math.round(30 * escala)}px Poppins`; ctx.fillStyle = C.guia;
+        ctx.fillText(M.rotuloLink === "enquete" ? "adesivo de enquete aqui" : "adesivo de link aqui", W / 2, y + h / 2 + 2);
       }
       y += h;
     });
 
-    // Marca d'água Miga no cantinho (quando não tem o logo grande)
-    const comMarca = edMarca && !blocos.some(([t, v]) => t === "logo" && v >= 250);
-    if (comMarca) {
-      const s = 150 * escala;
-      ctx.drawImage(edMarca, W - s - 24, H - s - 18, s, s);
-    }
-    // Rodapé: aviso do modelo + @
+    // Marca d'água no cantinho só quando não tem o logo grande (o Miga não aparece duas vezes)
+    const comMarca = !!edMarca && !d.logo;
+    if (comMarca) { const s = 150 * escala; ctx.drawImage(edMarca, W - s - 24, H - s - 18, s, s); }
     const rods = [M.rodape, d.insta].filter(Boolean);
     ctx.font = `600 ${Math.round(30 * escala)}px Poppins`; ctx.fillStyle = C.sub;
     rods.forEach((t, k) => {
@@ -1192,33 +1264,81 @@
       ctx.fillText(quebrarTexto(ctx, t, comMarca ? W - 400 : W - 120, 1)[0] || "", comMarca ? (W - 180) / 2 : W / 2, yy);
     });
   }
-  function dadosBanner() {
+
+  function dadosBanner(previa) {
     return {
-      insta: arroba($("#bnInsta").value), cupom: $("#bnCupom").value.trim().toUpperCase() || (config.cupons || [])[0] || "",
-      titulo: linhasTitulo($("#bnTitulo").value), texto: $("#bnTexto").value.trim(), botao: $("#bnBotao").value.trim(), logo: $("#bnLogo").checked
+      previa, insta: arroba($("#bnInsta").value), cupom: $("#bnCupom").value.trim().toUpperCase() || (config.cupons || [])[0] || "",
+      titulo: linhasTitulo($("#bnTitulo").value), texto: $("#bnTexto").value.trim(), botao: $("#bnBotao").value.trim(),
+      logo: $("#bnLogo").checked, espaco: $("#bnEspaco").checked,
+      produto: { nome: $("#bnNome").value.trim(), antigo: lerPreco($("#bnAntigo").value), novo: lerPreco($("#bnNovo").value) }
     };
   }
   function redesenharBanner() {
-    $("#bnCamposTexto").hidden = bnModelo.valor() !== "meutexto";
-    desenharBanner($("#telaBanner"), bnModelo.valor(), bnFormato.valor(), bnFundo.valor(), dadosBanner());
+    const M = MODELOS[bnModelo.valor()];
+    $("#bnCamposProduto").hidden = !M.produto;
+    $("#bnCampoCupom").hidden = !M.cupom;
+    $("#bnRotuloTexto").textContent = M.lista ? "Itens da lista (um por linha, até 5)" : "Texto";
+    $("#bnTexto").rows = M.lista ? 5 : 2;
+    desenharBanner($("#telaBanner"), bnModelo.valor(), bnFormato.valor(), bnFundo.valor(), dadosBanner(true));
+  }
+  /** Ao trocar de modelo, os campos de texto recebem as sugestões do modelo (tudo continua editável) */
+  function aplicarModelo() {
+    const M = MODELOS[bnModelo.valor()];
+    $("#bnTitulo").value = M.padrao.titulo; $("#bnTexto").value = M.padrao.texto; $("#bnBotao").value = M.padrao.botao;
+    $("#bnLogo").checked = !!M.logo;
+    redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=26"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=27"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
-  $("#abrirBanners").addEventListener("click", async () => {
+  async function fotoDoProdutoAtual() {
+    if (!atual) return false;
+    try { const arq = await arquivoDaImagem(atual.card ? atual.imagem : atual.imagem); if (arq) { bnFoto = await createImageBitmap(arq); return true; } } catch (e) { /* sem foto */ }
+    return false;
+  }
+  function preencherDoProduto() {
+    if (!atual) return;
+    const p = atual.produto;
+    $("#bnNome").value = limparNome(p.nome || "");
+    $("#bnAntigo").value = p.precoAntigo ? paraCampo(p.precoAntigo) : "";
+    $("#bnNovo").value = p.precoNovo ? paraCampo(p.precoNovo) : "";
+    $("#bnLink").value = p.link || "";
+    if (p.cupom) $("#bnCupom").value = p.cupom;
+  }
+  async function abrirPosts(modelo) {
     $("#bnInsta").value = config.instagram || "";
+    if (modelo) bnModelo.marcar(modelo);
+    if (!$("#bnTitulo").value || modelo) aplicarModelo();
+    if (atual && (modelo || !$("#bnNome").value)) preencherDoProduto();
     $("#banners").showModal();
     document.body.classList.add("travado");
     redesenharBanner();
     await carregarMarca();
+    if (atual && (modelo || !bnFoto)) await fotoDoProdutoAtual();
     redesenharBanner();
-  });
+  }
+  $("#abrirBanners").addEventListener("click", () => abrirPosts());
+  $("#postProduto").addEventListener("click", () => abrirPosts("achadinho"));
   $("#banners").addEventListener("close", () => document.body.classList.remove("travado"));
   $("#fecharBanners").addEventListener("click", () => $("#banners").close());
-  ["#bnModelo", "#bnFormato", "#bnFundo"].forEach((id) => $(id).addEventListener("click", () => setTimeout(redesenharBanner, 0)));
-  ["#bnCupom", "#bnTitulo", "#bnTexto", "#bnBotao"].forEach((id) => $(id).addEventListener("input", redesenharBanner));
-  $("#bnLogo").addEventListener("change", redesenharBanner);
+  $("#bnModelo").addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(aplicarModelo, 0); });
+  ["#bnFormato", "#bnFundo"].forEach((id) => $(id).addEventListener("click", () => setTimeout(redesenharBanner, 0)));
+  ["#bnCupom", "#bnTitulo", "#bnTexto", "#bnBotao", "#bnNome", "#bnAntigo", "#bnNovo"].forEach((id) => $(id).addEventListener("input", redesenharBanner));
+  ["#bnLogo", "#bnEspaco"].forEach((id) => $(id).addEventListener("change", redesenharBanner));
+  $("#bnUsarAtual").addEventListener("click", async () => {
+    if (!atual) { toast("Crie um produto na aba Criar primeiro"); return; }
+    preencherDoProduto();
+    if (!(await fotoDoProdutoAtual())) toast("Não consegui usar a foto — escolha da galeria");
+    redesenharBanner();
+  });
+  $("#bnArquivo").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    try { bnFoto = await createImageBitmap(f); } catch (err) { toast("Não consegui abrir essa foto"); }
+    e.target.value = "";
+    redesenharBanner();
+  });
   let instaTimer;
   $("#bnInsta").addEventListener("input", () => {
     redesenharBanner();
@@ -1226,22 +1346,37 @@
     instaTimer = setTimeout(() => { config.instagram = arroba($("#bnInsta").value); gravarConfig(); }, 800);
   });
   const nomeBanner = (modelo, formato) => `miga-promo-${MODELOS[modelo].nome}-${formato}.jpg`;
+  /** Imagem final (sem as guias da prévia) */
+  function telaFinal(modelo, formato, fundo) {
+    const tela = document.createElement("canvas");
+    desenharBanner(tela, modelo || bnModelo.valor(), formato || bnFormato.valor(), fundo || bnFundo.valor(), dadosBanner(false));
+    return tela;
+  }
   $("#baixarBanner").addEventListener("click", () => {
-    $("#telaBanner").toBlob((b) => { if (b) { baixarBlob(b, nomeBanner(bnModelo.valor(), bnFormato.valor())); toast("Banner salvo"); } }, "image/jpeg", 0.92);
+    telaFinal().toBlob((b) => { if (b) { baixarBlob(b, nomeBanner(bnModelo.valor(), bnFormato.valor())); toast("Imagem salva"); } }, "image/jpeg", 0.92);
   });
-  $("#compartilharBanner").addEventListener("click", () => compartilharTela($("#telaBanner"), nomeBanner(bnModelo.valor(), bnFormato.valor())));
+  $("#compartilharBanner").addEventListener("click", async () => {
+    const link = $("#bnLink").value.trim();
+    const M = MODELOS[bnModelo.valor()];
+    if (M.produto && urlOk(link)) {
+      const ok = await copiarTexto(link);
+      if (ok) toast("Link copiado: no Instagram, toque no adesivo de Link e cole");
+    }
+    compartilharTela(telaFinal(), nomeBanner(bnModelo.valor(), bnFormato.valor()));
+  });
   $("#baixarBoasVindas").addEventListener("click", async () => {
     await carregarMarca();
-    const tela = document.createElement("canvas"), d = dadosBanner();
-    // Do último para o primeiro: no Instagram o último postado aparece primeiro
-    const ordem = [...BOAS_VINDAS].reverse();
+    const tela = document.createElement("canvas");
+    const ordem = [...BOAS_VINDAS].reverse(); // no Instagram o último postado aparece primeiro
     for (let i = 0; i < ordem.length; i++) {
+      const M = MODELOS[ordem[i]];
+      const d = { ...dadosBanner(false), titulo: linhasTitulo(M.padrao.titulo), texto: M.padrao.texto, botao: M.padrao.botao, logo: !!M.logo, espaco: false };
       desenharBanner(tela, ordem[i], "post", "auto", d);
       const blob = await new Promise((ok) => tela.toBlob(ok, "image/jpeg", 0.92));
-      if (blob) baixarBlob(blob, `miga-promo-${i + 1}-${MODELOS[ordem[i]].nome}.jpg`);
+      if (blob) baixarBlob(blob, `miga-promo-${i + 1}-${M.nome}.jpg`);
       await new Promise((ok) => setTimeout(ok, 500));
     }
-    toast("5 banners salvos — poste na ordem 1, 2, 3, 4, 5");
+    toast("5 imagens salvas — poste na ordem 1, 2, 3, 4, 5");
   });
 
   /* =========================== Enviar =========================== */

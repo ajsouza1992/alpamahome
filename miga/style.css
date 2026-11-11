@@ -361,3 +361,4 @@ body.travado { overflow: hidden; }
 .bn-texto { display: grid; gap: 12px; }
 .bn-texto[hidden] { display: none; }
 .campo textarea { resize: vertical; }
+.campo[hidden] { display: none; }

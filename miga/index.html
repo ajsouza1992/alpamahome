@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=26">
+  <link rel="manifest" href="manifest.json?v=27">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=26">
+  <link rel="stylesheet" href="style.css?v=27">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -49,7 +49,7 @@
   <!-- ===== Tela de entrada (login anônimo) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=26" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=27" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do Mercado Livre ou da Shopee e a IA escreve a mensagem para o WhatsApp.</p>
       <form class="entrada__form" id="formEntrar" autocomplete="on" novalidate>
@@ -78,7 +78,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=26" alt="">
+    <img src="logo.png?v=27" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -181,6 +181,7 @@
         <button type="button" data-ajuste="animada">Mais animada</button>
       </div>
       <button type="button" class="btn btn--branco" id="abrirEditor"><span class="rotulo">Criar imagem com a cara do Miga</span></button>
+      <button type="button" class="btn btn--branco" id="postProduto">Post e story do Instagram</button>
       <details class="mais">
         <summary>Editar texto</summary>
         <textarea id="texto" rows="10"></textarea>
@@ -233,9 +234,9 @@
     </section>
 
     <section class="bloco">
-      <h2 class="passo">Banners do Instagram</h2>
-      <p class="nota">Posts e stories prontos com a cara do Miga: boas-vindas, como funciona, categorias, cupons e mais.</p>
-      <button type="button" class="btn btn--rosa" id="abrirBanners">Criar banners e stories</button>
+      <h2 class="passo">Posts e stories do Instagram</h2>
+      <p class="nota">14 modelos com a cara do Miga: achadinho com a foto do produto, oferta relâmpago, cupom, lista, boas-vindas e mais. Tudo editável.</p>
+      <button type="button" class="btn btn--rosa" id="abrirBanners">Criar post ou story</button>
     </section>
 
     <section class="bloco">
@@ -422,31 +423,37 @@
     </div>
   </dialog>
 
-  <dialog id="banners" class="editor" aria-label="Banners do Instagram">
+  <dialog id="banners" class="editor" aria-label="Posts e stories do Instagram">
     <div class="editor__topo">
-      <h2>Banners do Instagram</h2>
+      <h2>Posts e stories</h2>
       <button type="button" class="btn-quadrado" id="fecharBanners" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
     </div>
     <div class="editor__corpo">
-      <div class="editor__tela"><canvas id="telaBanner" width="1080" height="1350" aria-label="Pré-visualização do banner"></canvas></div>
+      <div class="editor__tela"><canvas id="telaBanner" width="1080" height="1350" aria-label="Pré-visualização do post"></canvas></div>
       <div class="editor__campos">
         <div class="campo"><span>Modelo</span>
           <div class="alternar alternar--tres" id="bnModelo" role="radiogroup">
-            <button type="button" role="radio" data-v="meutexto" aria-checked="true">Meu texto</button>
+            <button type="button" role="radio" data-v="achadinho" aria-checked="true">Achadinho do dia</button>
+            <button type="button" role="radio" data-v="relampago" aria-checked="false">Oferta relâmpago</button>
+            <button type="button" role="radio" data-v="baixou" aria-checked="false">Baixou o preço</button>
+            <button type="button" role="radio" data-v="ultimas" aria-checked="false">Últimas horas</button>
+            <button type="button" role="radio" data-v="novidade" aria-checked="false">Chegou novidade</button>
+            <button type="button" role="radio" data-v="enquete" aria-checked="false">Você usaria?</button>
+            <button type="button" role="radio" data-v="cupom" aria-checked="false">Cupom do dia</button>
+            <button type="button" role="radio" data-v="lista" aria-checked="false">Lista de achados</button>
+            <button type="button" role="radio" data-v="meutexto" aria-checked="false">Meu texto</button>
             <button type="button" role="radio" data-v="boasvindas" aria-checked="false">Boas-vindas</button>
             <button type="button" role="radio" data-v="comofunciona" aria-checked="false">Como funciona</button>
             <button type="button" role="radio" data-v="categorias" aria-checked="false">Categorias</button>
             <button type="button" role="radio" data-v="stories" aria-checked="false">Ofertas nos stories</button>
-            <button type="button" role="radio" data-v="cupons" aria-checked="false">Cupons</button>
             <button type="button" role="radio" data-v="siga" aria-checked="false">Siga a Miga</button>
-            <button type="button" role="radio" data-v="achadinho" aria-checked="false">Achadinho do dia</button>
           </div>
         </div>
         <div class="campo"><span>Formato</span>
           <div class="alternar" id="bnFormato" role="radiogroup">
-            <button type="button" role="radio" data-v="post" aria-checked="true">Post 4:5</button>
+            <button type="button" role="radio" data-v="story" aria-checked="true">Story</button>
+            <button type="button" role="radio" data-v="post" aria-checked="false">Post 4:5</button>
             <button type="button" role="radio" data-v="quadrado" aria-checked="false">Quadrado</button>
-            <button type="button" role="radio" data-v="story" aria-checked="false">Story</button>
           </div>
         </div>
         <div class="campo"><span>Fundo</span>
@@ -454,17 +461,33 @@
             <button type="button" role="radio" data-v="auto" aria-checked="true">Do modelo</button>
             <button type="button" role="radio" data-v="creme" aria-checked="false">Creme</button>
             <button type="button" role="radio" data-v="rosa" aria-checked="false">Rosa</button>
+            <button type="button" role="radio" data-v="branco" aria-checked="false">Branco</button>
           </div>
         </div>
-        <div class="bn-texto" id="bnCamposTexto">
-          <label class="campo"><span>Título</span><textarea id="bnTitulo" rows="3" maxlength="80" placeholder="Uma linha por vez. Use *asteriscos* para destacar em rosa">Achadinho
-*imperdível* ✨</textarea></label>
-          <label class="campo"><span>Texto</span><textarea id="bnTexto" rows="3" maxlength="160">Corre que esse preço não dura muito!</textarea></label>
-          <label class="campo"><span>Botão (opcional)</span><input id="bnBotao" maxlength="40" value="Link na bio"></label>
-          <label class="opcao"><input type="checkbox" id="bnLogo" checked> Logo grande no topo</label>
+        <div class="bn-texto" id="bnCamposProduto">
+          <div class="campo"><span>Foto do produto</span>
+            <div class="duas">
+              <button type="button" class="btn btn--branco" id="bnUsarAtual">Do produto criado</button>
+              <label class="btn btn--branco">Da galeria<input type="file" id="bnArquivo" accept="image/*" hidden></label>
+            </div>
+          </div>
+          <label class="campo"><span>Nome do produto</span><input id="bnNome" maxlength="90"></label>
+          <div class="duas">
+            <label class="campo"><span>Preço antigo</span><input id="bnAntigo" inputmode="decimal" placeholder="opcional"></label>
+            <label class="campo"><span>Preço novo</span><input id="bnNovo" inputmode="decimal"></label>
+          </div>
+          <label class="campo"><span>Link do produto (vai copiado quando postar)</span><input id="bnLink" type="url" inputmode="url" placeholder="https://..."></label>
         </div>
-        <label class="campo"><span>Seu @ do Instagram</span><input id="bnInsta" maxlength="30" placeholder="@migapromo" autocomplete="off"></label>
-        <label class="campo"><span>Cupom (modelo Cupons)</span><input id="bnCupom" maxlength="20" placeholder="MIGA10"></label>
+        <label class="campo"><span>Título</span><textarea id="bnTitulo" rows="2" maxlength="80" placeholder="Uma linha embaixo da outra. *Asteriscos* deixam em destaque"></textarea></label>
+        <label class="campo" id="bnCampoTexto"><span id="bnRotuloTexto">Texto</span><textarea id="bnTexto" rows="2" maxlength="220"></textarea></label>
+        <label class="campo"><span>Botão (opcional)</span><input id="bnBotao" maxlength="40"></label>
+        <label class="campo" id="bnCampoCupom"><span>Cupom</span><input id="bnCupom" maxlength="20" placeholder="MIGA10"></label>
+        <label class="campo"><span>Seu @ do Instagram</span><input id="bnInsta" maxlength="30" placeholder="@migapromo.oficial" autocomplete="off"></label>
+        <div class="opcoes">
+          <label class="opcao"><input type="checkbox" id="bnLogo"> Logo grande no topo</label>
+          <label class="opcao"><input type="checkbox" id="bnEspaco" checked> Espaço para o adesivo de link</label>
+        </div>
+        <p class="nota">A linha tracejada só aparece aqui para você ver onde colocar o adesivo de link do Instagram: ela não sai na imagem.</p>
       </div>
     </div>
     <div class="editor__acoes">
@@ -477,7 +500,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=26"></script>
-  <script src="app.js?v=26"></script>
+  <script src="firebase-config.js?v=27"></script>
+  <script src="app.js?v=27"></script>
 </body>
 </html>
