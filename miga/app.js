@@ -1103,7 +1103,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=49"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=50"; });
     }
     edFoto = null;
     try {
@@ -1459,7 +1459,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=49"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=50"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1760,6 +1760,22 @@
     mostrarFotoPp(); salvarFila(true); mostrarFalta(false); toast("Foto salva");
   }
   $("#ppArquivoTopo").addEventListener("change", (e) => { trocarFotoPp(e.target.files && e.target.files[0]); e.target.value = ""; });
+  $("#ppSalvar").addEventListener("click", async () => {
+    if (!ppAtual) return;
+    const it = ppAtual;
+    it.nome = $("#ppNome").value.trim();
+    it.precoNovo = lerPreco($("#ppNovo").value);
+    it.precoAntigo = lerPreco($("#ppAntigo").value) || null;
+    it.cupom = $("#ppCupom").value.trim();
+    if (urlOk($("#ppLinkItem").value)) it.link = $("#ppLinkItem").value.trim();
+    it.categoria = ppCategoria.valor();
+    it.texto = ""; // a mensagem é refeita com os dados novos
+    if (!it.nome) { toast("Escreva o nome do produto"); $("#ppNome").focus(); return; }
+    clearTimeout(ppSalvarTimer);
+    try { await dados.gravarFila(fila().filter((i) => !i.carregando).map(({ carregando, ...i }) => i)); toast("Produto salvo"); }
+    catch (e) { toast("Não consegui salvar na nuvem: " + (e.code || e.message)); return; }
+    contarFila(); fecharItemFila();
+  });
   $("#ppCompartilhar").addEventListener("click", () => {
     if (!ppAtual) return;
     if (!ppAtual.nome) { toast("Escreva o nome do produto"); $("#ppNome").focus(); return; }
