@@ -823,7 +823,6 @@ body.modo-selecao main { padding-bottom: 150px; }
 #ppItem > .pp-criar, #ppItem > #ppSalvar { grid-column: 1 / -1; }
 .barra-filtro .btn-filtrar, .barra-filtro .nota { white-space: nowrap; }
 .barra-filtro .btn-filtrar { padding: 0 14px; }
-@media (max-width: 430px) { .barra-filtro #ppTotal { display: none; } .barra-filtro { justify-content: flex-end; } .barra-filtro #ppSelecionar { margin-right: auto; } }
 
 /* Lápis (editar) e caixinha (selecionar) no mesmo lugar, centralizados */
 .pp-linha .pp-item { padding-right: 60px; }
@@ -862,3 +861,25 @@ body.modo-selecao main { padding-bottom: 200px; }
 .bs-excluir { color: var(--preto); }
 .bs-excluir svg { stroke: var(--rosa); }
 #excluirMarcados.bs-excluir { color: var(--preto); }
+
+/* Opção 1: Selecionar em texto + filtro redondo; "Todos" com caixinha ao selecionar */
+.barra-filtro { display: flex; align-items: center; gap: 10px; min-height: 46px; }
+.barra-filtro #ppTotal { display: inline !important; margin-right: auto; }
+.barra-filtro #ppTotal[hidden] { display: none !important; }
+.link-sel { border: 0; background: none; padding: 8px 4px; font: inherit; font-size: 15px; font-weight: 700; color: var(--rosa); cursor: pointer; margin-left: auto; }
+#ppTotal:not([hidden]) + .link-sel { margin-left: 0; }
+.btn-redondo { position: relative; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); display: grid; place-items: center; cursor: pointer; color: var(--preto); flex: none; }
+.btn-redondo[hidden] { display: none; }
+.btn-redondo svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.btn-redondo.ativo { box-shadow: inset 0 0 0 1.5px var(--rosa); color: var(--rosa-escuro); }
+.btn-redondo em { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--rosa); color: #fff; font-style: normal; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.btn-redondo em[hidden] { display: none; }
+.sel-todos { display: inline-flex; align-items: center; gap: 10px; border: 0; background: none; padding: 6px 0; font: inherit; font-size: 15px; font-weight: 600; color: var(--preto); cursor: pointer; margin-right: auto; }
+.sel-todos[hidden] { display: none; }
+.pp-caixa-mini { position: relative; width: 28px; height: 28px; border-radius: 9px; background: var(--branco); box-shadow: inset 0 0 0 2px #cfc5a8; }
+.pp-caixa-mini.on { background: var(--rosa); box-shadow: none; }
+.pp-caixa-mini.on::after { content: ""; position: absolute; left: 10px; top: 5px; width: 6px; height: 12px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+@media (max-width: 430px) { .barra-filtro #ppTotal { display: inline !important; } }
+.barra-filtro #ppTotal, .sel-todos { margin-right: 0 !important; }
+.barra-filtro .link-sel { margin-left: auto !important; }
+.barra-filtro { justify-content: flex-start !important; }

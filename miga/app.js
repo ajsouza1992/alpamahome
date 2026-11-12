@@ -1082,7 +1082,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=84"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=85"; });
     }
     edFoto = null;
     try {
@@ -1455,7 +1455,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=84"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=85"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1674,6 +1674,7 @@
         </span>
         <span class="seta">›</span>
       </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>` : `<button type="button" class="pp-lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`);
+    pintarMarcados();
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
   function chaveLink(u) {
@@ -1771,10 +1772,10 @@
     // Modo seleção: a barra de baixo vira os botões de criar
     document.body.classList.toggle("modo-selecao", !b.hidden);
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
-    $("#ppSelecionar").lastChild.textContent = modoVarios ? "Cancelar" : "Selecionar";
-    $("#ppSelecionar").querySelector("svg").innerHTML = modoVarios ? '<path d="M6 6l12 12M18 6L6 18"/>' : '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12l3 3 5-6"/>';
-    $("#ppSelecionar").classList.toggle("cancelar", modoVarios);
-    $("#ppMarcar").hidden = !modoVarios; $("#ppFiltrar").hidden = modoVarios;
+    $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
+    $("#ppTodos").hidden = !modoVarios; $("#ppTotal").hidden = modoVarios; $("#ppFiltrar").hidden = modoVarios;
+    const vis = [...document.querySelectorAll("#ppLista [data-marcar]")].map((x) => x.dataset.marcar);
+    $("#ppTodosCx").classList.toggle("on", !!vis.length && vis.every((id) => marcados.has(id)));
     pintarCampanhaBotoes();
     document.querySelectorAll("#bsAcoes [data-criar]").forEach((x) => { const o = OPCOES_CRIAR.find((q) => q[0] === x.dataset.criar); x.classList.toggle("off", !(o && o[3](n))); });
   }
@@ -1795,6 +1796,11 @@
     saude: ["Saúde e fitness", (l) => l.filter((i) => i.categoria === "saude")]
   };
   $("#ppSelecionar").addEventListener("click", () => { if (modoVarios) sairModoVarios(); else entrarModoVarios(); });
+  $("#ppTodos").addEventListener("click", () => {
+    const vis = [...document.querySelectorAll("#ppLista [data-marcar]")].map((x) => x.dataset.marcar);
+    const todos = vis.length && vis.every((id) => marcados.has(id));
+    vis.forEach((id) => (todos ? marcados.delete(id) : marcados.add(id))); renderFila();
+  });
   $("#ppMarcar").addEventListener("click", async () => {
     const base = fila().filter((i) => !i.carregando);
     const op = await escolherOpcao("Selecionar", Object.entries(SELECOES).map(([k, [n, f]]) => [k, `${n} (${f(base).length})`]), "");
