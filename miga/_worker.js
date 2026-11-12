@@ -155,10 +155,44 @@ async function extrairProduto(url) {
   // Página genérica da loja (sem o produto): não usa nome nem a logo da loja como se fossem do produto
   if (/^(shopee|mercado livre|amazon|magalu|magazine luiza)\b/i.test(d.nome || "") || /ofertas incr[ií]veis|compre online|melhores pre[cç]os/i.test(d.nome || "")) { d.nome = ""; d.imagem = ""; }
   const dados = { loja, ...d, urlFinal: pagina.atual };
+  if (loja === "shopee") dados.pista = (pagina.html.match(/-i\.\d{3,}\.\d{3,}/) || pagina.html.match(/shopid=\d+[^"'<]{0,60}itemid=\d+/i) || pagina.html.match(/itemid=\d+[^"'<]{0,60}shopid=\d+/i) || [])[0] || "";
   if (dados.imagem && dados.imagem.startsWith("//")) dados.imagem = "https:" + dados.imagem;
   if (dados.precoAntigo && dados.preco && dados.precoAntigo <= dados.preco) dados.precoAntigo = null;
   dados.completo = !!(dados.nome && dados.preco && dados.imagem);
   return dados;
+}
+
+/** Shopee: completa nome, preço e foto pela API de Afiliados (quando SHOPEE_APP_ID e SHOPEE_SECRET estão cadastrados) */
+function idsShopee(texto) {
+  const t = decodeURIComponent(String(texto || "").replace(/%25/g, "%"));
+  const m = t.match(/-i\.(\d{3,})\.(\d{3,})/) || t.match(/\/product\/(\d{3,})\/(\d{3,})/) || t.match(/shopid=(\d{3,})[^\d]+itemid=(\d{3,})/i);
+  if (m) return { loja: m[1], item: m[2] };
+  const m2 = t.match(/itemid=(\d{3,})[^\d]+shopid=(\d{3,})/i);
+  return m2 ? { loja: m2[2], item: m2[1] } : null;
+}
+async function completarPelaApiShopee(dados, env, html) {
+  if (dados.loja !== "shopee" || !(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) return dados;
+  const ids = idsShopee(dados.urlFinal) || idsShopee(html);
+  if (!ids) return dados;
+  try {
+    const consulta = `{ productOfferV2(shopId: ${Number(ids.loja)}, itemId: ${Number(ids.item)}, page: 1, limit: 1) { nodes { itemId productName priceMin priceMax imageUrl offerLink priceDiscountRate } } }`;
+    const corpo = JSON.stringify({ query: consulta });
+    const ts = Math.floor(Date.now() / 1000);
+    const assinatura = await sha256Hex(env.SHOPEE_APP_ID + ts + corpo + env.SHOPEE_SECRET);
+    const r = await fetch("https://open-api.affiliate.shopee.com.br/graphql", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `SHA256 Credential=${env.SHOPEE_APP_ID}, Timestamp=${ts}, Signature=${assinatura}` },
+      body: corpo
+    });
+    const d = await r.json().catch(() => ({}));
+    const n = d && d.data && d.data.productOfferV2 && d.data.productOfferV2.nodes && d.data.productOfferV2.nodes[0];
+    if (!n) return dados;
+    const preco = Number(n.priceMin) || null, desc = Number(n.priceDiscountRate) || 0;
+    const novo = { ...dados, nome: dados.nome || limparTitulo(n.productName || ""), preco: dados.preco || preco, imagem: dados.imagem || n.imageUrl || "" };
+    if (!novo.precoAntigo && preco && desc > 0 && desc < 95) novo.precoAntigo = Math.round(preco / (1 - desc / 100) * 100) / 100;
+    novo.completo = !!(novo.nome && novo.preco && novo.imagem);
+    return novo;
+  } catch (e) { return dados; }
 }
 
 /** Mercado Livre: completa preço e foto pela API oficial (quando as chaves estão cadastradas) */
@@ -483,6 +517,8 @@ async function rotaProduto(request, env) {
     if (guardado) return json({ ...guardado, doCache: true });
     let dados = await extrairProduto(url);
     if (dados.loja === "mercadolivre") dados = await completarPelaApiML(dados, env);
+    if (dados.loja === "shopee") dados = await completarPelaApiShopee(dados, env, dados.pista);
+    delete dados.pista;
     if (dados.nome) await gravarCache("produto", url, dados, 1800); // 30 minutos
     return json(dados);
   } catch (e) {
