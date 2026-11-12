@@ -1051,7 +1051,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=67"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=68"; });
     }
     edFoto = null;
     try {
@@ -1407,7 +1407,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=67"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=68"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2683,7 +2683,12 @@
     return telaZoom;
   }
   // Animações: aparece "pulando" ou "subindo"
-  const entrada = (t, ini, dur = 0.5) => Math.max(0, Math.min(1, (t - ini) / dur));
+  // Tudo aparece "no tempo" da música: os inícios são arredondados para a colcheia mais próxima
+  let gradeReels = 0;
+  const noTempo = (s) => gradeReels ? Math.round(s / gradeReels) * gradeReels : s;
+  const ajustarGrade = (bpm) => { gradeReels = 60 / bpm / 2; return 60 / bpm; };
+  const emTempos = (seg, batida) => Math.max(2, Math.round(seg / batida / 2) * 2) * batida; // duração com número par de tempos
+  const entrada = (t, ini, dur = 0.5) => Math.max(0, Math.min(1, (t - noTempo(ini)) / dur));
   const pulo = (p) => p <= 0 ? 0 : p < 0.6 ? 0.6 + (1.08 - 0.6) * (p / 0.6) : 1.08 - 0.08 * ((p - 0.6) / 0.4);
   const suave = (p) => 1 - Math.pow(1 - p, 3);
   function comPulo(ctx, t, ini, cx, cy, desenho, dur = 0.5) {
@@ -2841,7 +2846,9 @@
       await new Promise((ok) => v.addEventListener("loadedmetadata", ok, { once: true }));
       V.duracao = v.duration || 10;
     }
-    const tA = V.abertura ? T_ABERTURA : 0, tM = duracaoMeio(), tF = V.final ? T_FINAL : 0, total = tA + tM + tF;
+    const bt = ajustarGrade(MUSICAS.house.bpm);
+    const tA = V.abertura ? emTempos(T_ABERTURA, bt) : 0, tF = V.final ? emTempos(T_FINAL, bt) : 0;
+    const tM = Math.ceil((tA + duracaoMeio()) / bt) * bt - tA, total = tA + tM + tF; // o final começa num tempo da música
     const fluxo = tela.captureStream(30);
     let t0 = 0;
     try {
@@ -2850,12 +2857,12 @@
       const dest = ac.createMediaStreamDestination();
       if (v) ac.createMediaElementSource(v).connect(dest);
       const pops = [], whooshes = [];
-      if (V.abertura) { pops.push(0.1, 0.35, 0.9, 1.6); if (V.antigo > V.novo) pops.push(1.35); }
-      if (V.final) { const f = tA + tM; pops.push(f + 0.1, f + 0.55, f + 1.05, f + 1.6); whooshes.push(f - 0.3); }
+      if (V.abertura) { [0.1, 0.35, 0.9, 1.6].forEach((s) => pops.push(noTempo(s))); if (V.antigo > V.novo) pops.push(noTempo(1.35)); }
+      if (V.final) { const f = tA + tM; [0.1, 0.55, 1.6].forEach((s) => pops.push(f + noTempo(s))); whooshes.push(f - 0.3); }
       if (V.abertura) whooshes.push(tA - 0.3);
       // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
       const temTrilha = V.abertura || V.final || V.musica;
-      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS.house, V.final ? tA + tM + (arroba(config.instagram) ? 1.05 : 1.6) : null);
+      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS.house, V.final ? tA + tM + noTempo(arroba(config.instagram) ? 1.05 : 1.6) : null);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
     } catch (e) { if (v) v.muted = true; }
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
@@ -3200,10 +3207,15 @@
     vale: { nome: "Vale a pena", desc: "Boom bap", musica: "boombap", tag: "Vale muito a pena", titulo: "Vale\n*a pena?*", sub: () => "Olha só esse preço", icone: "check" },
     sohoje: { nome: "Só hoje", desc: "Phonk", musica: "phonk", tag: "Só hoje", titulo: "*Só hoje*\nnesse preço", sub: () => "Amanhã pode voltar", icone: "fogo" }
   };
-  const T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 3.4;
+  let T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 3.4;
+  /** As telas duram um número exato de tempos da batida do modelo */
+  function temposDoModelo(mk) {
+    const bt = ajustarGrade(MUSICAS[MODELOS_REELS[mk].musica].bpm);
+    T_INTRO = emTempos(2.6, bt); T_PROD = emTempos(3.6, bt); T_FIM = emTempos(3.4, bt);
+  }
   function rr() { if (!wz.reels) wz.reels = { itens: [], modelo: "achadinho", cor: "rosa", resultado: null }; return wz.reels; }
   const itensReels = () => rr().itens.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
-  const duracaoReelsProdutos = () => T_INTRO + T_PROD * Math.max(1, itensReels().length) + T_FIM;
+  const duracaoReelsProdutos = () => { temposDoModelo(rr().modelo); return T_INTRO + T_PROD * Math.max(1, itensReels().length) + T_FIM; };
   async function fotosReels() {
     const l = itensReels(), cache = rr().fotos || (rr().fotos = {});
     await Promise.all(l.map(async (it) => {
@@ -3358,6 +3370,7 @@
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) {
+    temposDoModelo(R.modelo);
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const M = MODELOS_REELS[R.modelo], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t;
     if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n);
@@ -3366,15 +3379,17 @@
     ctx.restore();
   }
   function efeitosReels(R, n) {
-    const pops = [0.1, 0.35, 0.85, 1.25], whooshes = [];
+    temposDoModelo(R.modelo);
+    const pops = [0.1, 0.35, 0.85, 1.25].map(noTempo), whooshes = [], q = noTempo;
     for (let i = 0; i < n; i++) {
       const b0 = T_INTRO + i * T_PROD; whooshes.push(b0 - 0.3);
-      pops.push(b0 + 0.05, b0 + 0.2, b0 + 0.6, b0 + (R.modelo === "baixou" ? 1.65 : 1.15));
-      if (R.modelo === "top") pops.push(b0 + 0.55);
-      if (R.modelo === "vale") pops.push(b0 + 1.4);
+      pops.push(b0 + q(0.05), b0 + q(0.2), b0 + q(0.6), b0 + q(R.modelo === "baixou" ? 1.65 : 1.15));
+      if (R.modelo === "top") pops.push(b0 + q(0.55));
+      if (R.modelo === "vale") pops.push(b0 + q(1.4));
+      if (R.modelo === "cupom") pops.push(b0 + q(1.7));
     }
-    const f = T_INTRO + T_PROD * n; whooshes.push(f - 0.3); pops.push(f + 0.1, f + 0.5, f + 1.5);
-    return { pops, whooshes };
+    const f = T_INTRO + T_PROD * n; whooshes.push(f - 0.3); pops.push(f + q(0.1), f + q(0.5), f + q(1.5));
+    return { pops: [...new Set(pops.map((p) => Math.round(p * 1000) / 1000))], whooshes };
   }
   /** Toca o Reels no quadro (prévia com som) ou grava o vídeo */
   async function rodarReels(gravar) {
@@ -3385,7 +3400,7 @@
     let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
     if (R.tocando) { R.tocando.parar(); }
     await carregarMarca(); const fotos = await fotosReels();
-    const total = duracaoReelsProdutos(), n = l.length;
+    temposDoModelo(R.modelo); const total = duracaoReelsProdutos(), n = l.length;
     const W = gravar ? 1080 : 540, tela = gravar ? document.createElement("canvas") : $("#rQuadro");
     if (!tela) return;
     if (gravar) { tela.width = 1080; tela.height = 1920; }
@@ -3399,7 +3414,7 @@
       dest = gravar ? ac.createMediaStreamDestination() : ac.destination;
       const { pops, whooshes } = efeitosReels(R, n);
       const f = T_INTRO + T_PROD * n;
-      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[MODELOS_REELS[R.modelo].musica], f + (arroba(config.instagram) ? 1.0 : 1.5));
+      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[MODELOS_REELS[R.modelo].musica], f + noTempo(arroba(config.instagram) ? 1.0 : 1.5));
     } catch (e) { t0 = 0; }
     if (gravar) {
       fluxo = tela.captureStream(30);
