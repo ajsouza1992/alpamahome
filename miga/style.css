@@ -772,3 +772,26 @@ body.com-marcados main { padding-bottom: 90px; }
 .cup-det input, .campo-cupom { width: 100%; min-height: 50px; padding: 0 14px; border: 1.5px solid var(--linha); border-radius: 14px; background: var(--branco); font: inherit; font-size: 15px; }
 .wz__corpo .aj-linha { display: flex; gap: 8px; }
 #cArte { width: 100%; height: auto; border-radius: 18px; }
+
+/* Painel "Hoje" na Lista */
+.painel-hoje { display: grid; gap: 10px; margin: 2px 0 10px; }
+.ph-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ph-chip { display: grid; gap: 2px; padding: 10px 8px; border: 0; border-radius: 16px; background: var(--campo); text-align: center; cursor: pointer; font: inherit; color: var(--preto); }
+.ph-chip b { font-size: 22px; font-weight: 800; color: var(--rosa); }
+.ph-chip span { font-size: 11.5px; color: var(--cinza); line-height: 1.2; }
+.ph-chip.alerta { background: #fff3c4; }
+.ph-continuar { display: grid; gap: 0; width: 100%; padding: 8px 16px; }
+.ph-continuar small { font-size: 12px; font-weight: 500; opacity: .9; }
+.barra-filtro { gap: 8px; }
+.barra-filtro .nota { margin-right: auto; }
+.btn-filtrar svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.bm-acoes { display: flex; gap: 14px; }
+.btn-variar { width: 100%; }
+.btn-variar svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+#folhaCampanhas { margin-bottom: 8px; }
+.barra-marcados > span { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.barra-marcados b { white-space: nowrap; }
+.barra-marcados .bm-acoes { display: flex; gap: 16px; }
+.barra-marcados .bm-acoes .link { min-height: 28px; }
+#excluirMarcados { color: #ff9ab8; }
+.barra-marcados #oQueCriar { flex: none; padding: 0 18px; }
