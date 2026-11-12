@@ -689,3 +689,9 @@ body.travado { overflow: hidden; }
 .btn.on-borda { box-shadow: inset 0 0 0 2px var(--rosa); color: var(--rosa-escuro); }
 
 .wz-mini span small { display: block; font-size: 11.5px; font-weight: 500; color: var(--cinza); }
+
+/* Tamanhos padrão dos botões: principais 52px; pílulas (voltar, filtrar, colar) 46px */
+.btn, .btn--mini, .btn--gerar, .aj-linha .btn { min-height: 52px; font-size: 15px; font-weight: 600; }
+.btn--gerar { font-weight: 700; }
+.btn-voltar, .btn-filtrar, .colar__btn { min-height: 46px; height: 46px; font-size: 15px; font-weight: 600; }
+.aj-bloco input:not([type=checkbox]) { min-height: 52px; }

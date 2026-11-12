@@ -1051,7 +1051,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=66"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=67"; });
     }
     edFoto = null;
     try {
@@ -1407,7 +1407,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=66"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=67"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2575,13 +2575,9 @@
   function blocoFotoIA() {
     const it = vdItem(), img = it && it.imagem;
     return `<div class="vd-foto">
-      <span>1. Foto do produto para a IA</span>
-      ${img ? `<img src="${esc(img)}" data-original="${esc(img)}" alt="Foto do produto" referrerpolicy="no-referrer">` : '<p class="nota">Este produto está sem foto. Escolha uma da galeria.</p>'}
-      <div class="duas">
-        ${img ? '<button type="button" class="btn btn--rosa" id="vdFotoEnviar">Enviar à IA</button><button type="button" class="btn btn--branco" id="vdFoto">Salvar foto</button>' : ""}
-      </div>
+      <span>Foto do produto</span>
+      ${img ? `<img src="${esc(img)}" data-original="${esc(img)}" alt="Foto do produto" referrerpolicy="no-referrer"><button type="button" class="btn btn--branco" id="vdFoto">Salvar foto</button>` : '<p class="nota">Este produto está sem foto. Escolha uma da galeria.</p>'}
       <label class="link link--foto">${img ? "Usar outra foto" : "Escolher foto"}<input type="file" id="vdFotoNova" accept="image/*" hidden></label>
-      <span>2. Copie um prompt e cole na IA junto com a foto</span>
     </div>`;
   }
   async function fotoParaIA() {
@@ -2610,16 +2606,12 @@
     if (wz.passo === "vArquivo") {
       const nome = V.nome || "o produto";
       c.innerHTML = `<h2 class="wz-titulo">Escolha o vídeo</h2>
-        <p class="nota">Pode ser feito na IA ou gravado no celular. Ele vira um Reels em pé com o tema do Miga. Recomendo até 60 segundos. Sem vídeo? O app usa a foto do produto.</p>
+        <p class="nota">Grave no celular ou use um vídeo da galeria. Ele vira um Reels em pé com o tema do Miga. Recomendo até 60 segundos. Sem vídeo? O app usa a foto do produto.</p>
         ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
         <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
         <button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "✓ Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>
         ${botaoContinuar(!!V.url || V.semVideo)}
-        <details class="mais"${V.url ? "" : " open"}><summary>Ainda não tem o vídeo? Prompts prontos para a IA</summary>
-          <p class="nota">Use numa IA de vídeo (Veo no Gemini, Sora, Kling, Runway…): anexe a <b>foto do produto</b> e cole o prompt. Depois volte aqui e escolha o vídeo.</p>
-          ${blocoFotoIA()}
-          ${PROMPTS_VIDEO.map(([t, f], i) => `<div class="vd-prompt"><b>${esc(t)}</b><p>${esc(f(nome))}</p><button type="button" class="btn btn--branco" data-vd-prompt="${i}">Copiar prompt</button></div>`).join("")}
-        </details>`;
+        ${blocoFotoIA()}`;
       return;
     }
     if (wz.passo === "vTema") {
@@ -2702,9 +2694,12 @@
     const p = entrada(t, ini, dur); if (p <= 0) return;
     ctx.save(); ctx.globalAlpha = p; ctx.translate(0, 80 * (1 - suave(p))); desenho(); ctx.restore();
   }
-  function bolinhas(ctx, cor1, cor2) {
-    ctx.fillStyle = cor1; ctx.beginPath(); ctx.arc(60, 60, 230, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = cor2; ctx.beginPath(); ctx.arc(1020, 1860, 190, 0, Math.PI * 2); ctx.fill();
+  function bolinhas(ctx, cor1, cor2, T = 0) {
+    const r1 = 230 * (1 + 0.16 * Math.sin(T * 2.2)), r2 = 190 * (1 + 0.18 * Math.sin(T * 2.2 + 1.6));
+    ctx.fillStyle = cor1; ctx.beginPath(); ctx.arc(60, 60, r1, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = cor2; ctx.beginPath(); ctx.arc(1020, 1860, r2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(1010, 300, 34 * (1 + 0.35 * Math.sin(T * 3 + 0.8)), 0, Math.PI * 2); ctx.fillStyle = cor1; ctx.globalAlpha *= 0.7; ctx.fill(); ctx.globalAlpha /= 0.7;
+    ctx.beginPath(); ctx.arc(70, 1560, 26 * (1 + 0.35 * Math.sin(T * 3 + 2.4)), 0, Math.PI * 2); ctx.fillStyle = cor2; ctx.fill();
   }
   function pilulaReels(ctx, texto, cx, cy, fundo, cor, tam, borda) {
     ctx.font = `800 ${tam}px Poppins`; const pw = Math.min(1000, ctx.measureText(texto).width + tam * 2), ph = tam * 2.1;
@@ -2717,7 +2712,7 @@
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme, foto = V.fotoBmp;
     ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920);
-    bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff");
+    bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t);
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     comPulo(ctx, t, 0.1, 540, 270, () => { if (edMarca) ctx.drawImage(edMarca, -140, -140, 280, 280); });
     const linhas = linhasTitulo(V.titulo || "Achadinho\n*do dia*"), tam = linhas.length > 2 ? 100 : 116;
@@ -2749,7 +2744,7 @@
   function quadroFinal(ctx, W, t, V) {
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const C = CORES_VIDEO[V.cor] || CORES_VIDEO.rosa;
-    ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff");
+    ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t + 30);
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     comPulo(ctx, t, 0.1, 540, 640, () => { if (edMarca) ctx.drawImage(edMarca, -220, -220, 440, 440); }, 0.55);
     comSubida(ctx, t, 0.55, () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 990); });
@@ -2823,7 +2818,8 @@
     }
     // "Plim" na hora que aparece o seu @
     if (plim != null) { const tp = t0 + plim; [84, 91, 96].forEach((m, q) => osc("sine", nota(m), tp, 1.1, [0.25, 0.12, 0.07][q], mestre)); osc("triangle", nota(96), tp, 0.4, 0.05, mestre); }
-    pops.forEach((p) => { const o = osc("sine", 1800, t0 + p, 0.1, 0.32, mestre); o.frequency.setValueAtTime(2200, t0 + p); o.frequency.exponentialRampToValueAtTime(520, t0 + p + 0.08); });
+    // "Toc" macio quando algo aparece (no lugar do assobio)
+    pops.forEach((p) => { const o = osc("triangle", 620, t0 + p, 0.07, 0.38, mestre); o.frequency.setValueAtTime(620, t0 + p); o.frequency.exponentialRampToValueAtTime(330, t0 + p + 0.06); barulho(t0 + p, 0.012, 0.18, "highpass", 3500, mestre); });
     whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.32, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
     return t0;
   }
@@ -2908,7 +2904,7 @@
     const te = t.closest("[data-vd-tema]"); if (te) { V.tema = te.dataset.vdTema; document.querySelectorAll("[data-vd-tema]").forEach((b) => b.classList.toggle("on", b === te)); return; }
     const co = t.closest("[data-vd-cor]"); if (co) { V.cor = co.dataset.vdCor; document.querySelectorAll("[data-vd-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarTemasVideo(); return; }
     const pr = t.closest("[data-vd-prompt]"); if (pr) { if (await copiarTexto(PROMPTS_VIDEO[+pr.dataset.vdPrompt][1](V.nome || "o produto"))) toast("Prompt copiado: cole na IA de vídeo junto com a foto"); return; }
-    if (t.closest("#vdFoto")) { const arq = await fotoParaIA(); if (arq) { baixarBlob(arq, arq.name); toast("Foto salva na galeria: anexe na IA de vídeo"); } else toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
+    if (t.closest("#vdFoto")) { const arq = await fotoParaIA(); if (arq) { baixarBlob(arq, arq.name); toast("Foto salva na galeria"); } else toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
     if (t.closest("#vdFotoEnviar")) {
       const arq = await fotoParaIA();
       if (!arq) { toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
@@ -3193,16 +3189,16 @@
       lider: "cowbell", entra: 0, melodia: [72, 0, 72, 75, 0, 72, 0, 70, 72, 0, 72, 75, 0, 79, 0, 77, 72, 0, 72, 75, 0, 72, 0, 70, 68, 0, 68, 70, 0, 72, 0, 0] }
   };
   const MODELOS_REELS = {
-    achadinho: { nome: "Achadinho do dia", desc: "Batida house", musica: "house", tag: "Achadinho do dia ✨", titulo: "Achadinho\n*do dia*", sub: (n) => n > 1 ? `${n} achadinhos pra você` : "Olha o que eu achei", emoji: "✨" },
-    relampago: { nome: "Oferta relâmpago", desc: "Eletrônica", musica: "eletronica", tag: "⚡ Oferta relâmpago", titulo: "Oferta\n*relâmpago*", sub: () => "Corre que acaba rápido!", emoji: "⚡" },
-    baixou: { nome: "Baixou o preço", desc: "Trap", musica: "trap", tag: "Baixou o preço", titulo: "*Baixou*\no preço!", sub: () => "Olha esse precinho", emoji: "💸" },
-    ultimas: { nome: "Últimas horas", desc: "Drill com relógio", musica: "drill", tag: "⏰ Últimas horas", titulo: "*Últimas*\nhoras!", sub: () => "Aproveita antes que acabe", emoji: "⏰" },
-    novidade: { nome: "Chegou novidade", desc: "Lo-fi delicado", musica: "lofi", tag: "Chegou novidade 🎁", titulo: "Chegou\n*novidade*", sub: () => "Fresquinho pra você", emoji: "🎁" },
-    top: { nome: "Top achadinhos", desc: "Funk", musica: "funk", tag: "Top achadinhos", titulo: "Top {n}\n*achadinhos*", sub: () => "da semana", emoji: "🏆" },
-    cupom: { nome: "Cupom liberado", desc: "Reggaeton", musica: "dembow", tag: "🎟️ Cupom liberado", titulo: "*Cupom*\nliberado!", sub: () => "Desconto na mão", emoji: "🎟️" },
-    amei: { nome: "Amei esse", desc: "Disco", musica: "disco", tag: "Amei esse 💖", titulo: "Amei\n*esse aqui*", sub: () => "Precisava te mostrar", emoji: "💖" },
-    vale: { nome: "Vale a pena", desc: "Boom bap", musica: "boombap", tag: "Vale muito a pena ✅", titulo: "Vale\n*a pena?*", sub: () => "Olha só esse preço", emoji: "🤔" },
-    sohoje: { nome: "Só hoje", desc: "Phonk", musica: "phonk", tag: "🔥 Só hoje", titulo: "*Só hoje*\nnesse preço", sub: () => "Amanhã pode voltar", emoji: "🔥" }
+    achadinho: { nome: "Achadinho do dia", desc: "Batida house", musica: "house", tag: "Achadinho do dia", titulo: "Achadinho\n*do dia*", sub: (n) => n > 1 ? `${n} achadinhos pra você` : "Olha o que eu achei", icone: "brilho" },
+    relampago: { nome: "Oferta relâmpago", desc: "Eletrônica", musica: "eletronica", tag: "Oferta relâmpago", titulo: "Oferta\n*relâmpago*", sub: () => "Corre que acaba rápido!", icone: "raio" },
+    baixou: { nome: "Baixou o preço", desc: "Trap", musica: "trap", tag: "Baixou o preço", titulo: "*Baixou*\no preço!", sub: () => "Olha esse precinho", icone: "etiqueta" },
+    ultimas: { nome: "Últimas horas", desc: "Drill com relógio", musica: "drill", tag: "Últimas horas", titulo: "*Últimas*\nhoras!", sub: () => "Aproveita antes que acabe", icone: "relogio" },
+    novidade: { nome: "Chegou novidade", desc: "Lo-fi delicado", musica: "lofi", tag: "Chegou novidade", titulo: "Chegou\n*novidade*", sub: () => "Fresquinho pra você", icone: "presente" },
+    top: { nome: "Top achadinhos", desc: "Funk", musica: "funk", tag: "Top achadinhos", titulo: "Top {n}\n*achadinhos*", sub: () => "da semana", icone: "trofeu" },
+    cupom: { nome: "Cupom liberado", desc: "Reggaeton", musica: "dembow", tag: "Cupom liberado", titulo: "*Cupom*\nliberado!", sub: () => "Desconto na mão", icone: "cupom" },
+    amei: { nome: "Amei esse", desc: "Disco", musica: "disco", tag: "Amei esse", titulo: "Amei\n*esse aqui*", sub: () => "Precisava te mostrar", icone: "coracao" },
+    vale: { nome: "Vale a pena", desc: "Boom bap", musica: "boombap", tag: "Vale muito a pena", titulo: "Vale\n*a pena?*", sub: () => "Olha só esse preço", icone: "check" },
+    sohoje: { nome: "Só hoje", desc: "Phonk", musica: "phonk", tag: "Só hoje", titulo: "*Só hoje*\nnesse preço", sub: () => "Amanhã pode voltar", icone: "fogo" }
   };
   const T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 3.4;
   function rr() { if (!wz.reels) wz.reels = { itens: [], modelo: "achadinho", cor: "rosa", resultado: null }; return wz.reels; }
@@ -3217,7 +3213,57 @@
     return cache;
   }
   const corAntiga = (C) => C.antigo || "#8a817b";
-  function fundoReels(ctx, C, cor) { ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, cor === "preto" ? "#e9e4d8" : "#ffffff"); }
+  let relogioReels = 0; // tempo total do Reels, para as bolinhas não "pularem" na troca de tela
+  function fundoReels(ctx, C, cor) { ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, cor === "preto" ? "#e9e4d8" : "#ffffff", relogioReels); }
+  /** Ícones desenhados com a cara do Miga (contorno preto, rosa e amarelo), no lugar de emojis */
+  function iconeReels(ctx, nome, tam) {
+    const ROSA = "#e8336d", AMAR = "#ffd23f", PRETO = "#1d1d1f", s = tam / 200;
+    ctx.save(); ctx.scale(s, s); ctx.lineWidth = 11; ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = PRETO;
+    const contorno = (cor) => { ctx.fillStyle = cor; ctx.fill(); ctx.stroke(); };
+    const estrela = (x, y, r, cor) => { ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 - Math.PI / 2, rr = i % 2 ? r * 0.3 : r; ctx[i ? "lineTo" : "moveTo"](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); contorno(cor); };
+    const coracao = (cor) => { ctx.beginPath(); ctx.moveTo(0, 80); ctx.bezierCurveTo(-110, 10, -95, -85, -45, -85); ctx.bezierCurveTo(-15, -85, 0, -60, 0, -42); ctx.bezierCurveTo(0, -60, 15, -85, 45, -85); ctx.bezierCurveTo(95, -85, 110, 10, 0, 80); ctx.closePath(); contorno(cor);
+      ctx.beginPath(); ctx.ellipse(-48, -42, 16, 10, -0.6, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fill(); };
+    if (nome === "brilho") { estrela(-15, 10, 85, AMAR); estrela(65, -65, 34, ROSA); }
+    else if (nome === "raio") { ctx.beginPath(); ctx.moveTo(25, -95); ctx.lineTo(-60, 15); ctx.lineTo(-5, 15); ctx.lineTo(-28, 95); ctx.lineTo(62, -20); ctx.lineTo(8, -20); ctx.closePath(); contorno(AMAR); }
+    else if (nome === "etiqueta") {
+      ctx.rotate(-0.25); ctx.beginPath(); ctx.moveTo(-85, -58); ctx.lineTo(35, -58); ctx.lineTo(92, 0); ctx.lineTo(35, 58); ctx.lineTo(-85, 58); ctx.closePath(); contorno(ROSA);
+      ctx.beginPath(); ctx.arc(42, 0, 13, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(-32, -30); ctx.lineTo(-32, 26); ctx.moveTo(-56, 4); ctx.lineTo(-32, 28); ctx.lineTo(-8, 4); ctx.stroke();
+    }
+    else if (nome === "relogio") {
+      [-62, 62].forEach((x) => { ctx.beginPath(); ctx.arc(x, -72, 28, 0, Math.PI * 2); contorno(AMAR); });
+      ctx.beginPath(); ctx.arc(0, 8, 84, 0, Math.PI * 2); contorno("#fff");
+      ctx.strokeStyle = ROSA; ctx.beginPath(); ctx.moveTo(0, 8); ctx.lineTo(42, 36); ctx.stroke(); ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(0, 8); ctx.lineTo(0, -44); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 8, 9, 0, Math.PI * 2); ctx.fillStyle = PRETO; ctx.fill();
+    }
+    else if (nome === "presente") {
+      ctx.beginPath(); ctx.ellipse(-34, -66, 34, 22, -0.5, 0, Math.PI * 2); contorno(AMAR); ctx.beginPath(); ctx.ellipse(34, -66, 34, 22, 0.5, 0, Math.PI * 2); contorno(AMAR);
+      retArredondado(ctx, -78, -20, 156, 110, 12); contorno(ROSA); retArredondado(ctx, -92, -52, 184, 40, 12); contorno(ROSA);
+      ctx.beginPath(); ctx.rect(-16, -52, 32, 142); contorno(AMAR);
+    }
+    else if (nome === "trofeu") {
+      ctx.beginPath(); ctx.arc(-70, -40, 30, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke(); ctx.beginPath(); ctx.arc(70, -40, 30, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+      retArredondado(ctx, -50, 60, 100, 34, 8); contorno(ROSA); ctx.beginPath(); ctx.rect(-14, 20, 28, 42); contorno(AMAR);
+      ctx.beginPath(); ctx.moveTo(-72, -85); ctx.lineTo(72, -85); ctx.lineTo(62, -10); ctx.quadraticCurveTo(0, 50, -62, -10); ctx.closePath(); contorno(AMAR);
+      estrela(0, -40, 26, "#fff");
+    }
+    else if (nome === "cupom") {
+      ctx.rotate(-0.12); ctx.beginPath(); ctx.moveTo(-98, -60); ctx.lineTo(98, -60); ctx.lineTo(98, -20); ctx.arc(98, 0, 20, -Math.PI / 2, Math.PI / 2, true); ctx.lineTo(98, 60); ctx.lineTo(-98, 60); ctx.lineTo(-98, 20); ctx.arc(-98, 0, 20, Math.PI / 2, -Math.PI / 2, true); ctx.closePath(); contorno(AMAR);
+      ctx.setLineDash([12, 10]); ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(45, -50); ctx.lineTo(45, 50); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = ROSA; ctx.font = "800 92px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("%", -25, 6);
+    }
+    else if (nome === "coracao") coracao(ROSA);
+    else if (nome === "check") { ctx.beginPath(); ctx.arc(0, 0, 88, 0, Math.PI * 2); contorno(ROSA); ctx.strokeStyle = "#fff"; ctx.lineWidth = 22; ctx.beginPath(); ctx.moveTo(-42, 2); ctx.lineTo(-10, 34); ctx.lineTo(46, -30); ctx.stroke(); }
+    else if (nome === "fogo") {
+      ctx.beginPath(); ctx.moveTo(0, 92); ctx.bezierCurveTo(-90, 92, -95, 10, -45, -35); ctx.bezierCurveTo(-40, -5, -25, 5, -15, 5); ctx.bezierCurveTo(-30, -45, 0, -80, 20, -98); ctx.bezierCurveTo(25, -50, 90, -30, 80, 30); ctx.bezierCurveTo(75, 75, 40, 92, 0, 92); ctx.closePath(); contorno("#ff7a00");
+      ctx.beginPath(); ctx.moveTo(0, 88); ctx.bezierCurveTo(-45, 88, -48, 40, -15, 15); ctx.bezierCurveTo(-5, 40, 15, 35, 15, 10); ctx.bezierCurveTo(45, 35, 48, 88, 0, 88); ctx.closePath(); ctx.fillStyle = AMAR; ctx.fill();
+    }
+    else if (nome === "bolsa") {
+      ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(0, -40, 42, Math.PI, 0); ctx.stroke(); ctx.lineWidth = 11;
+      retArredondado(ctx, -82, -45, 164, 140, 22); contorno(ROSA); estrela(0, 25, 38, AMAR);
+    }
+    ctx.restore();
+  }
   function tituloReels(ctx, texto, y, C, tam) {
     const linhas = linhasTitulo(texto); ctx.font = `800 ${tam}px Poppins`;
     linhas.forEach((partes, j) => {
@@ -3232,7 +3278,7 @@
     comPulo(ctx, t, 0.1, 540, 360, () => { if (edMarca) ctx.drawImage(edMarca, -130, -130, 260, 260); });
     comSubida(ctx, t, 0.35, () => tituloReels(ctx, M.titulo.replace("{n}", n > 1 ? n : ""), 760, C, 140));
     comSubida(ctx, t, 0.85, () => { ctx.font = "600 60px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.9; ctx.fillText(M.sub(n), 540, 1080); });
-    comPulo(ctx, t, 1.25, 540, 1380, () => { const s = 1 + 0.05 * Math.sin(t * 6); ctx.scale(s, s); ctx.font = "220px sans-serif"; ctx.fillText(M.emoji, 0, 0); });
+    comPulo(ctx, t, 1.25, 540, 1400, () => { const s = 1 + 0.06 * Math.sin(t * 6); ctx.scale(s, s); ctx.rotate(Math.sin(t * 3) * 0.06); iconeReels(ctx, M.icone, 330); });
   }
   function fimReels(ctx, t, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -3247,36 +3293,34 @@
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const tag = mk === "top" ? `Top ${n}` : M.tag;
     comPulo(ctx, t, 0.05, 540, 250, () => { if (mk === "relampago") ctx.rotate(Math.sin(t * 30) * 0.03 * Math.max(0, 1 - t)); etiquetaReels(ctx, tag, 0, 0, 46); });
-    if (n > 1 && mk !== "top") comPulo(ctx, t, 0.15, 960, 250, () => { ctx.font = "700 40px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.8; ctx.fillText(`${idx + 1}/${n}`, 0, 0); });
     // Foto
     const L = 760, fy = 820;
     const foto = () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
       if (bmp) { const s = Math.min((L - 80) / bmp.width, (L - 80) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.save(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.clip(); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); ctx.restore(); }
-      else { ctx.font = "260px sans-serif"; ctx.fillText("🛍️", 0, 10); }
+      else iconeReels(ctx, "bolsa", 300);
     };
     if (mk === "novidade") {
       const p = suave(entrada(t, 0.2, 0.8));
       if (p > 0) { ctx.save(); ctx.beginPath(); ctx.arc(540, fy, p * L * 0.75, 0, Math.PI * 2); ctx.clip(); ctx.translate(540, fy); foto(); ctx.restore(); }
-      for (let s = 0; s < 6; s++) { const ang = s * 1.05 + t * 0.6, r = L * 0.62, br = Math.max(0, Math.sin(t * 4 + s * 1.7)); if (t > 0.8) { ctx.save(); ctx.globalAlpha = br; ctx.translate(540 + Math.cos(ang) * r, fy + Math.sin(ang) * r); ctx.font = "70px sans-serif"; ctx.fillText("✨", 0, 0); ctx.restore(); } }
+      for (let s = 0; s < 6; s++) { const ang = s * 1.05 + t * 0.6, r = L * 0.62, br = Math.max(0, Math.sin(t * 4 + s * 1.7)); if (t > 0.8) { ctx.save(); ctx.globalAlpha = br; ctx.translate(540 + Math.cos(ang) * r, fy + Math.sin(ang) * r); iconeReels(ctx, "brilho", 80); ctx.restore(); } }
     } else comPulo(ctx, t, 0.2, 540, fy, foto, 0.55);
     if (mk === "top") comPulo(ctx, t, 0.55, 540 + L / 2 - 30, fy - L / 2 + 30, () => {
-      ctx.beginPath(); ctx.arc(0, 0, 105, 0, Math.PI * 2); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.lineWidth = 10; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
-      ctx.fillStyle = "#1d1d1f"; ctx.font = "800 100px Poppins"; ctx.fillText(String(idx + 1), 0, 6);
+      ctx.rotate(0.12); iconeReels(ctx, "trofeu", 200);
+      ctx.font = "800 54px Poppins"; const tx = `Top ${idx + 1}`, w = ctx.measureText(tx).width + 50; retArredondado(ctx, -w / 2, 95, w, 76, 38); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.lineWidth = 7; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.fillStyle = "#fff"; ctx.fillText(tx, 0, 136);
     });
-    if (mk === "ultimas") comPulo(ctx, t, 0.4, 150, fy - L / 2 + 10, () => {
+    if (mk === "ultimas") comPulo(ctx, t, 0.4, 160, fy - L / 2 + 20, () => {
       ctx.beginPath(); ctx.arc(0, 0, 85, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.lineWidth = 10; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
       ctx.lineCap = "round"; ctx.strokeStyle = "#e8336d"; ctx.lineWidth = 10; const ang = t * Math.PI * 2 - Math.PI / 2;
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ang) * 58, Math.sin(ang) * 58); ctx.stroke();
       ctx.strokeStyle = "#1d1d1f"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -38); ctx.stroke();
     });
-    if (mk === "amei") for (let s = 0; s < 7; s++) { const fase = (t * 0.55 + s / 7) % 1, x = 540 + (s % 2 ? 1 : -1) * (L / 2 + 20 + (s % 3) * 18) + Math.sin(t * 3 + s) * 20, yy = fy + L / 2 - fase * (L + 120); if (t > 0.7) { ctx.save(); ctx.globalAlpha = Math.sin(fase * Math.PI); ctx.font = `${50 + (s % 3) * 14}px sans-serif`; ctx.fillText("💖", x, yy); ctx.restore(); } }
+    if (mk === "amei") for (let s = 0; s < 7; s++) { const fase = (t * 0.55 + s / 7) % 1, x = 540 + (s % 2 ? 1 : -1) * (L / 2 + 20 + (s % 3) * 18) + Math.sin(t * 3 + s) * 20, yy = fy + L / 2 - fase * (L + 120); if (t > 0.7) { ctx.save(); ctx.globalAlpha = Math.sin(fase * Math.PI); ctx.translate(x, yy); iconeReels(ctx, "coracao", 60 + (s % 3) * 18); ctx.restore(); } }
     if (mk === "vale") comPulo(ctx, t, 1.4, 540 + L / 2 - 70, fy + L / 2 - 70, () => {
-      ctx.rotate(-0.2); ctx.beginPath(); ctx.arc(0, 0, 110, 0, Math.PI * 2); ctx.fillStyle = "#1fa463"; ctx.fill(); ctx.lineWidth = 10; ctx.strokeStyle = "#ffffff"; ctx.stroke();
-      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 18; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(-45, 0); ctx.lineTo(-10, 35); ctx.lineTo(50, -35); ctx.stroke();
+      ctx.rotate(-0.2); iconeReels(ctx, "check", 230);
     }, 0.35);
     if (mk === "sohoje" && t > 0.5) { ctx.save(); ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(t * 5)); retArredondado(ctx, 540 - L / 2 - 14, fy - L / 2 - 14, L + 28, L + 28, 74); ctx.lineWidth = 14; ctx.strokeStyle = "#ff7a00"; ctx.stroke(); ctx.restore();
-      comPulo(ctx, t, 0.5, 540 - L / 2 + 40, fy - L / 2 + 30, () => { const s = 1 + 0.08 * Math.sin(t * 9); ctx.scale(s, s); ctx.font = "150px sans-serif"; ctx.fillText("🔥", 0, 0); }); }
+      comPulo(ctx, t, 0.5, 540 - L / 2 + 40, fy - L / 2 + 30, () => { const s = 1 + 0.08 * Math.sin(t * 9); ctx.scale(s, s); iconeReels(ctx, "fogo", 170); }); }
     // Nome
     const nome = limparNome(it.nome || "");
     let y = fy + L / 2 + 110;
@@ -3315,7 +3359,7 @@
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) {
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
-    const M = MODELOS_REELS[R.modelo], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length;
+    const M = MODELOS_REELS[R.modelo], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t;
     if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n);
     else if (t < T_INTRO + T_PROD * n) { const i = Math.floor((t - T_INTRO) / T_PROD), it = l[i]; produtoReels(ctx, t - T_INTRO - i * T_PROD, it, fotos[it.id] && fotos[it.id].bmp, i, n, R.modelo, M, C, R.cor); }
     else fimReels(ctx, t - T_INTRO - T_PROD * n, C, R.cor);
