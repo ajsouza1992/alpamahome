@@ -1097,7 +1097,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=117"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=118"; });
     }
     edFoto = null;
     try {
@@ -1470,7 +1470,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=117"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=118"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3109,7 +3109,7 @@
   /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
   const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
   const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
-  const FIGURAS = ["brilho", "estrela", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis"];
+  const FIGURAS = ["brilho", "estrela", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis"];
   const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
   let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
@@ -4177,6 +4177,8 @@
     linda: { nome: "Fique linda", desc: "Lo-fi", musica: "lofi", tag: "Fique linda", titulo: "Fique\n*linda*", sub: () => "Beleza e skincare com preço de amiga", icone: "coracao", cat: true },
     casa: { nome: "Casa arrumadinha", desc: "Dembow", musica: "dembow", tag: "Casa arrumadinha", titulo: "Casa\n*arrumadinha*", sub: () => "Decoração e organização baratinhas", icone: "coracao", cat: true },
     look: { nome: "Look do dia", desc: "Funk", musica: "funk", tag: "Look do dia", titulo: "Look\n*do dia*", sub: () => "Moda e acessórios com desconto", icone: "brilho", cat: true },
+    suplementos: { nome: "Suplementos em conta", desc: "Eletrônica drop", musica: "eletrodrop", tag: "Suplementos em conta", titulo: "Suplementos\n*em conta*", sub: () => "Whey, creatina e vitaminas com desconto", icone: "pote", cat: true },
+    fitness: { nome: "Moda fitness", desc: "Eletrônica", musica: "eletronica", tag: "Moda fitness", titulo: "Moda\n*fitness*", sub: () => "Looks pra treinar com estilo", icone: "tenis", cat: true },
     treino: { nome: "Treino em dia", desc: "Trap", musica: "trap", tag: "Treino em dia", titulo: "Treino\n*em dia*", sub: () => "Fitness e saúde com desconto", icone: "fogo", cat: true },
     organiza: { nome: "Tudo organizado", desc: "Boombap", musica: "boombap", tag: "Tudo organizado", titulo: "Tudo\n*organizado*", sub: () => "Organizadores que salvam o dia", icone: "coracao", cat: true },
     autocuidado: { nome: "Momento autocuidado", desc: "Lo-fi", musica: "lofi", tag: "Momento autocuidado", titulo: "Momento\n*autocuidado*", sub: () => "Pra você se cuidar com carinho", icone: "coracao", cat: true },
@@ -4260,6 +4262,8 @@
     linda: { ic: ["batom", "coracao"], selo: "Beleza", frase: "Pra ficar linda gastando pouco", cor: "branco", lay: "revista" },
     casa: { ic: ["casa", "brilho"], selo: "Casa", frase: "Deixa a casa mais bonita", cor: "branco", lay: "circulo" },
     look: { ic: ["cabide", "brilho"], selo: "Look", frase: "Combina com tudo", cor: "rosa", lay: "revista" },
+    suplementos: { ic: ["pote", "haltere"], selo: "Suplementos", frase: "Pra treinar e cuidar da saúde", cor: "preto", lay: "revista" },
+    fitness: { ic: ["tenis", "haltere"], selo: "Fitness", frase: "Treino com estilo e preço bom", cor: "rosa", lay: "circulo" },
     treino: { ic: ["haltere", "fogo"], selo: "Treino", frase: "Pra treinar com estilo", cor: "preto", lay: "revista" },
     organiza: { ic: ["casa", "brilho"], selo: "Organiza", frase: "Tudo no lugar", cor: "branco", lay: "balao" },
     autocuidado: { ic: ["coracao", "brilho"], selo: "Autocuidado", frase: "Um mimo pra você", cor: "creme", lay: "polaroid" },
@@ -4293,6 +4297,16 @@
   let relogioReels = 0; // tempo total do Reels, para as bolinhas não "pularem" na troca de tela
   function fundoReels(ctx, C, cor) { if (semFundo) return; ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, cor === "preto" ? "#e9e4d8" : "#ffffff", relogioReels); desenharDecor(ctx, decorAtual); }
   /** Ícones desenhados com a cara do Miga (contorno preto, rosa e amarelo), no lugar de emojis */
+  let telaAdesivo = null, telaSilhueta = null;
+  function iconeAdesivo(ctx, nome, tam) {
+    const L = Math.ceil(tam * 1.5); telaAdesivo = telaAdesivo || document.createElement("canvas"); telaSilhueta = telaSilhueta || document.createElement("canvas");
+    [telaAdesivo, telaSilhueta].forEach((c) => { c.width = L; c.height = L; });
+    const a = telaAdesivo.getContext("2d"); a.translate(L / 2, L / 2); iconeReels(a, nome, tam);
+    const s = telaSilhueta.getContext("2d"); s.drawImage(telaAdesivo, 0, 0); s.globalCompositeOperation = "source-in"; s.fillStyle = "#ffffff"; s.fillRect(0, 0, L, L);
+    const r = Math.max(3, tam * 0.06);
+    for (let k = 0; k < 12; k++) { const ang = (k / 12) * Math.PI * 2; ctx.drawImage(telaSilhueta, -L / 2 + Math.cos(ang) * r, -L / 2 + Math.sin(ang) * r); }
+    ctx.drawImage(telaAdesivo, -L / 2, -L / 2);
+  }
   function iconeReels(ctx, nome, tam) {
     const ROSA = "#e8336d", AMAR = "#ffd23f", PRETO = "#1d1d1f", s = tam / 200;
     ctx.save(); ctx.scale(s, s); ctx.lineWidth = 11; ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = PRETO;
@@ -4381,9 +4395,23 @@
       ctx.beginPath(); ctx.moveTo(-22, -40); ctx.lineTo(-22, -96); ctx.lineTo(22, -70); ctx.lineTo(22, -40); ctx.closePath(); contorno(ROSA);
     }
     else if (nome === "cabide") {
-      ctx.beginPath(); ctx.arc(0, -70, 20, Math.PI, Math.PI * 2.3); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -50); ctx.lineTo(-100, 20); ctx.lineTo(100, 20); ctx.closePath(); ctx.stroke();
+      const linha2 = (desenho) => { ctx.save(); ctx.lineWidth = 24; ctx.strokeStyle = PRETO; desenho(); ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = AMAR; desenho(); ctx.stroke(); ctx.restore(); };
+      linha2(() => { ctx.beginPath(); ctx.arc(0, -72, 20, Math.PI, Math.PI * 2.3); });
+      linha2(() => { ctx.beginPath(); ctx.moveTo(0, -50); ctx.lineTo(-100, 20); ctx.lineTo(100, 20); ctx.closePath(); });
       ctx.beginPath(); ctx.moveTo(-70, 20); ctx.lineTo(-80, 100); ctx.lineTo(80, 100); ctx.lineTo(70, 20); ctx.closePath(); contorno(ROSA);
+    }
+    else if (nome === "pote") { // pote de suplemento
+      retArredondado(ctx, -62, -58, 124, 150, 22); contorno(ROSA);
+      retArredondado(ctx, -72, -88, 144, 40, 12); contorno(PRETO === "#1d1d1f" ? "#3a3a3d" : PRETO);
+      retArredondado(ctx, -48, -18, 96, 70, 10); contorno(AMAR);
+      ctx.fillStyle = PRETO; ctx.font = "900 34px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("PRO", 0, 18);
+    }
+    else if (nome === "tenis") {
+      ctx.rotate(-0.08);
+      ctx.beginPath(); ctx.moveTo(-100, 40); ctx.lineTo(-95, -10); ctx.quadraticCurveTo(-85, -55, -45, -60); ctx.lineTo(-20, -30); ctx.quadraticCurveTo(10, -10, 50, 0); ctx.quadraticCurveTo(100, 10, 100, 40); ctx.closePath(); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(-104, 40); ctx.lineTo(104, 40); ctx.quadraticCurveTo(104, 66, 80, 66); ctx.lineTo(-84, 66); ctx.quadraticCurveTo(-104, 66, -104, 40); ctx.closePath(); contorno("#ffffff");
+      ctx.save(); ctx.lineWidth = 8; [[-38, -38, -14, -22], [-26, -24, -2, -10], [-14, -10, 10, 2]].forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(10, 16); ctx.quadraticCurveTo(45, 24, 70, 12); ctx.lineWidth = 9; ctx.strokeStyle = AMAR; ctx.stroke();
     }
     else if (nome === "haltere") {
       ctx.beginPath(); ctx.rect(-60, -10, 120, 20); contorno("#c9c2b4");
@@ -4467,7 +4495,7 @@
         else { ctx.fillStyle = d ? C.destaque : C.texto; ctx.fillText(tx, px, yl); }
         px += ctx.measureText(tx).width;
       });
-      if (ICO(j)) { ctx.save(); ctx.translate(px + GAP + ICO(j) / 2, yl - ICO(j) * 0.04); ctx.rotate(0.1); const ps = 1 + 0.16 * pulsoTela; ctx.scale(ps, ps); iconeReels(ctx, icone, ICO(j)); ctx.restore(); }
+      if (ICO(j)) { ctx.save(); ctx.translate(px + GAP + ICO(j) / 2, yl - ICO(j) * 0.04); ctx.rotate(0.1); const ps = 1 + 0.16 * pulsoTela; ctx.scale(ps, ps); if (C.texto === "#ffffff") iconeAdesivo(ctx, icone, ICO(j)); else iconeReels(ctx, icone, ICO(j)); ctx.restore(); }
       y += h;
     });
     ctx.textAlign = "center"; return linhas.length;
@@ -4946,6 +4974,8 @@
     linda: { um: (p) => `💄 Fique linda com esses achadinhos! ${p}`, varios: () => "💄 Fique linda com esses achadinhos! Olha esses achadinhos:", tags: "#beleza #skincare #maquiagem #achadinhos" },
     casa: { um: (p) => `🏠 Casa arrumadinha gastando pouco! ${p}`, varios: () => "🏠 Casa arrumadinha gastando pouco! Olha esses achadinhos:", tags: "#casa #decoracao #organizacao #achadinhos" },
     look: { um: (p) => `👗 Look do dia com preço de amiga! ${p}`, varios: () => "👗 Look do dia com preço de amiga! Olha esses achadinhos:", tags: "#moda #lookdodia #modafeminina #achadinhos" },
+    suplementos: { um: (p) => `💪 Suplemento em conta, miga! ${p}`, varios: () => "💪 Suplementos em conta, miga! Olha esses achadinhos:", tags: "#suplementos #whey #creatina #fitness #achadinhos" },
+    fitness: { um: (p) => `🏃‍♀️ Moda fitness com preço de amiga! ${p}`, varios: () => "🏃‍♀️ Moda fitness com preço de amiga! Olha esses achadinhos:", tags: "#modafitness #fitness #roupafitness #treino #achadinhos" },
     treino: { um: (p) => `💪 Treino em dia sem pesar no bolso! ${p}`, varios: () => "💪 Treino em dia sem pesar no bolso! Olha esses achadinhos:", tags: "#fitness #treino #vidasaudavel #achadinhos" },
     organiza: { um: (p) => `📦 Tudo organizado e baratinho! ${p}`, varios: () => "📦 Tudo organizado e baratinho! Olha esses achadinhos:", tags: "#organizacao #organizadores #casaorganizada #achadinhos" },
     autocuidado: { um: (p) => `🛁 Momento autocuidado, miga! ${p}`, varios: () => "🛁 Momento autocuidado, miga! Olha esses achadinhos:", tags: "#autocuidado #selfcare #skincare #achadinhos" },
