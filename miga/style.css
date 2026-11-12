@@ -894,3 +894,11 @@ body.modo-selecao main { padding-bottom: 200px; }
 .selo-link { position: absolute; left: -9px; top: -9px; width: 40px; height: 40px; display: grid; place-items: center; z-index: 2; cursor: pointer; }
 .selo-link .selo-loja { position: static; transition: transform .15s; }
 .selo-link:active .selo-loja { transform: scale(.9); }
+
+.wz-prod .pp-mini, .r-ordem__item .pp-mini, .item .pp-mini { display: block; position: relative; line-height: 0; }
+.wz-prod .selo-link, .r-ordem__item .selo-link, .item .selo-link { left: -10px; top: -10px; width: 36px; height: 36px; }
+.wz-prod .selo-loja, .r-ordem__item .selo-loja, .item .selo-loja { width: 26px; height: 26px; }
+.wz-prod .selo-loja img, .r-ordem__item .selo-loja img, .item .selo-loja img { width: 72%; height: 72%; padding: 0 !important; border: 0; background: none; object-fit: contain; }
+.capa-bloco { display: grid; gap: 6px; justify-items: center; }
+.capa-bloco span { font-size: 13px; font-weight: 600; color: var(--cinza); }
+.capa-previa { width: 140px; border-radius: 14px; box-shadow: var(--sombra); }

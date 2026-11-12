@@ -444,6 +444,7 @@
     $("#passoGoogle").hidden = false;
   }
 
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-abrir-link]")) e.stopPropagation(); }, true);
   /* =========================== Abas =========================== */
   function irPara(aba) {
     document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-" + aba; });
@@ -1082,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=88"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=89"; });
     }
     edFoto = null;
     try {
@@ -1455,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=88"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=89"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1577,6 +1578,8 @@
     return `<span class="selo-comp">Compartilhado</span>` + ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span>${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]}</span>`).join("");
     return ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span class="ok">${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]} ✓</span>`).join("");
   };
+  /** Foto do produto com o ícone da loja no canto: tocar no ícone abre o link */
+  const miniLoja = (i, foto) => `<span class="pp-mini">${foto}${i.link && LOGO_LOJA[i.loja] ? `<a class="selo-link" href="${esc(i.link)}" target="_blank" rel="noopener" data-abrir-link title="Abrir na ${esc(NOME_LOJA[i.loja])}">${seloLojaHtml(i.loja)}</a>` : seloLojaHtml(i.loja)}</span>`;
   const fotoMini = (i) => i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
   /* Categorias na Lista: filtro e categoria do produto colado ("auto" adivinha pelo nome) */
   const CATS_LISTA = { moda: "Moda", beleza: "Beleza", casa: "Casa", saude: "Saúde e fitness", outros: "Outros" };
@@ -1667,7 +1670,7 @@
     renderCatsLista(); pintarMarcados();
     const l = ordenar(fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i))));
     $("#ppLista").innerHTML = painelHoje() + (l.length ? l.map((i) => `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
-        <span class="pp-mini">${fotoMini(i)}${i.link ? `<a class="selo-link" href="${esc(i.link)}" target="_blank" rel="noopener" data-abrir-link title="Abrir na ${esc(NOME_LOJA[i.loja] || "loja")}">${seloLojaHtml(i.loja)}</a>` : seloLojaHtml(i.loja)}</span>
+        ${miniLoja(i, fotoMini(i))}
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}${diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
           <span class="pp-tags">${tagsFeito(i)}</span>
@@ -2126,7 +2129,7 @@
         <div class="colar"><input id="wzLink" type="url" inputmode="url" placeholder="Cole um link novo" autocomplete="off"><button type="button" class="colar__btn" id="wzColar">Colar</button></div>
         <p class="nota">Ou escolha da sua lista:</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${l2.map((x) => `<div class="wz-linha"><button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"} · ${esc(NOME_LOJA[x.loja] || "")}</small></span></button><button type="button" class="pp-lixo" data-wz-menu="${esc(x.id)}" aria-label="Opções de ${esc(x.nome || "produto")}">⋯</button></div>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
+        <div class="wz-ops">${l2.map((x) => `<div class="wz-linha"><button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button><button type="button" class="pp-lixo" data-wz-menu="${esc(x.id)}" aria-label="Opções de ${esc(x.nome || "produto")}">⋯</button></div>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
         ${botaoContinuar(!!item)}`;
       return;
     }
@@ -2413,7 +2416,7 @@
     if (wz.passo === "lugares") {
       if (!wz.lugares) wz.lugares = lugaresSalvos();
       c.innerHTML = `<h2 class="wz-titulo">Onde vai postar?</h2>
-        <div class="wz-prod on" style="cursor:default">${fotoMini(item)}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small></span></div>
+        <div class="wz-prod on" style="cursor:default">${miniLoja(item, fotoMini(item))}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small></span></div>
         <p class="nota">Marque tudo de uma vez. O app guarda sua escolha para a próxima.</p>
         <div class="wz-ops">${Object.entries(LUGARES).map(([k, v]) => `<button type="button" class="rt-lugar${wz.lugares.includes(k) ? " on" : ""}" data-lugar="${k}"><i></i><span><b>${v.nome}</b><small>${v.desc}</small></span></button>`).join("")}</div>
         ${botaoContinuar(wz.lugares.length > 0, `Começar (${wz.lugares.length} ${wz.lugares.length === 1 ? "lugar" : "lugares"})`)}`;
@@ -2640,7 +2643,7 @@
       const escolhidos = L.itens;
       c.innerHTML = `<h2 class="wz-titulo">Escolha os produtos</h2><p class="nota">${escolhidos.length} de ${L.n}. Toque para marcar da sua lista, ou adicione uma foto da galeria.</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat)).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod wz-flag${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span><i class="flag" aria-hidden="true"></i></button>`; }).join("")}</div>
+        <div class="wz-ops">${fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat)).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod wz-flag${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span><i class="flag" aria-hidden="true"></i></button>`; }).join("")}</div>
         ${escolhidos.filter((e) => !e.itemId).map((e) => `<div class="lv-galeria" data-lv-gal="${e.id}"><img src="${e.url}" alt=""><div class="lv-campos"><input data-lv-campo="nome" value="${esc(e.nome)}" placeholder="Nome (opcional)"><input data-lv-campo="preco" value="${e.preco ? paraCampo(e.preco) : ""}" inputmode="decimal" placeholder="Preço (opcional)"><input data-lv-campo="link" value="${esc(e.link)}" inputmode="url" placeholder="Link (vai na legenda)"></div><button type="button" class="icone-btn" data-lv-tirar="${e.id}" aria-label="Tirar"><svg><use href="#i-x"/></svg></button></div>`).join("")}
         <label class="btn btn--branco">Adicionar foto da galeria<input type="file" id="lvArquivo" accept="image/*,.webp,image/webp" multiple hidden></label>
         ${botaoContinuar(escolhidos.length > 0)}`;
@@ -2749,6 +2752,33 @@
     if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
     return wz.video;
   }
+  /** O WebM gravado pelo celular vem sem a duração (a galeria mostra só uns segundos): grava a duração no arquivo */
+  async function comDuracao(blob, segundos) {
+    try {
+      if (!/webm/.test(blob.type)) return blob;
+      const b = new Uint8Array(await blob.arrayBuffer());
+      let p = -1; for (let i = 0; i < Math.min(b.length - 4, 4096); i++) if (b[i] === 0x15 && b[i + 1] === 0x49 && b[i + 2] === 0xa9 && b[i + 3] === 0x66) { p = i; break; }
+      if (p < 0) return blob;
+      const s0 = p + 4, f = b[s0]; let lenB = 1; while (lenB <= 8 && !(f & (0x80 >> (lenB - 1)))) lenB++;
+      let tam = f & (0xff >> lenB); for (let k = 1; k < lenB; k++) tam = tam * 256 + b[s0 + k];
+      const ini = s0 + lenB, conteudo = b.subarray(ini, ini + tam);
+      for (let i = 0; i < conteudo.length - 2; i++) if (conteudo[i] === 0x44 && conteudo[i + 1] === 0x89) {
+        // O Chrome escreve uma duração "de mentira" (1 ms): troca pela real
+        const n = conteudo[i + 2] === 0x84 ? 4 : conteudo[i + 2] === 0x88 ? 8 : 0; if (!n) return blob;
+        const c = new Uint8Array(b); const dv = new DataView(c.buffer, ini + i + 3, n);
+        if (n === 4) dv.setFloat32(0, segundos * 1000); else dv.setFloat64(0, segundos * 1000);
+        return new Blob([c], { type: blob.type });
+      }
+      const dur = new Uint8Array(11); dur.set([0x44, 0x89, 0x88]); new DataView(dur.buffer).setFloat64(3, segundos * 1000);
+      const novoTam = tam + 11, cab = new Uint8Array(8); cab[0] = 0x01; let v = novoTam; for (let k = 7; k >= 1; k--) { cab[k] = v & 0xff; v = Math.floor(v / 256); }
+      return new Blob([b.subarray(0, s0), cab, conteudo, dur, b.subarray(ini + tam)], { type: blob.type });
+    } catch (e) { return blob; }
+  }
+  let travaTela = null;
+  async function manterTelaAcesa(sim) {
+    try { if (sim && navigator.wakeLock) travaTela = await navigator.wakeLock.request("screen"); else if (!sim && travaTela) { await travaTela.release(); travaTela = null; } } catch (e) { /* segue */ }
+  }
+  const telaParaJpeg = (tela, nome) => new Promise((ok) => tela.toBlob((b) => ok(b ? new File([b], nome, { type: "image/jpeg" }) : null), "image/jpeg", 0.93));
   function formatoGravacao() {
     if (typeof MediaRecorder === "undefined") return null;
     return ['video/mp4;codecs="avc1.42E01E,mp4a.40.2"', "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) || null;
@@ -2901,7 +2931,7 @@
       c.innerHTML = `<h2 class="wz-titulo">O que vai aparecer no vídeo?</h2>
         ${wz.veioDaLista ? `<p class="nota">Confira os textos que vão aparecer no vídeo.</p>` : `<p class="nota">Toque num produto da lista ou cole o link: nome, foto e preço já vêm preenchidos.</p>
         <div class="colar"><input id="vdLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off"><button type="button" class="colar__btn" id="vdColar">Colar</button></div>
-        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>`}
+        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>`}
         <label class="campo"><span>Título</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>${chipsTitulos("vdTitulo")}
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
         <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
@@ -2940,7 +2970,8 @@
         ${r ? `<video class="vd-previa" src="${r.url}" controls playsinline></video>
           <p class="nota">Formato: <b>${r.mp4 ? "MP4" : "WebM"}</b>.${r.mp4 ? "" : " Este celular não grava MP4: o WhatsApp aceita, mas o Instagram pode recusar WebM."}</p>
           <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
-          <button type="button" class="btn btn--branco" id="vdBaixar">Baixar o vídeo</button>
+          <button type="button" class="btn btn--branco" id="vdBaixar">Baixar vídeo e capa</button>
+          ${r.capa ? `<img class="capa-previa" src="${URL.createObjectURL(r.capa)}" alt="Capa">` : ""}
           <button type="button" class="btn btn--branco" id="vdRefazer">Gravar de novo</button>`
         : `<div class="wz-previa"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
           <p class="nota">O app monta o Reels e grava em tempo real: leva o tempo do próprio Reels (${Math.round(duracaoReels())} segundos). Deixe o app aberto até terminar.</p>
@@ -3184,7 +3215,7 @@
     const inicio = ac && t0 ? null : performance.now();
     const agora = () => ac && t0 ? ac.currentTime - t0 : (performance.now() - inicio) / 1000;
     let videoTocando = false;
-    rec.start(500);
+    rec.start(); manterTelaAcesa(true);
     await new Promise((ok) => {
       const passo = async () => {
         const t = agora();
@@ -3201,12 +3232,16 @@
       };
       passo();
     });
-    rec.stop(); await fim;
+    rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false);
     if (v) v.pause();
     if (ac) ac.close().catch(() => {});
     const mp4 = tipo.startsWith("video/mp4");
-    const blob = new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" });
-    V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-reels.${mp4 ? "mp4" : "webm"}` };
+    const blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
+    // Capa: a abertura já montada (ou o primeiro quadro do tema)
+    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920;
+    if (V.abertura) quadroAbertura(tc.getContext("2d"), 1080, T_ABERTURA - 0.3, V); else quadroVideo(tc.getContext("2d"), 1080, 1920, v || (V.fotoBmp && fotoComZoom(V.fotoBmp, 0)), V);
+    const capa = await telaParaJpeg(tc, "miga-promo-capa.jpg");
+    V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-video.${mp4 ? "mp4" : "webm"}`, capa };
     mostrarPasso();
   }
   $("#wzCorpo").addEventListener("click", async (e) => {
@@ -3243,7 +3278,7 @@
     }
     if (t.closest("#vdGerar")) { gravarVideo(); return; }
     if (t.closest("#vdRefazer")) { V.resultado = null; mostrarPasso(); return; }
-    if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); toast("Vídeo salvo"); return; }
+    if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); if (V.resultado.capa) setTimeout(() => baixarBlob(V.resultado.capa, V.resultado.capa.name), 700); toast("Vídeo e capa salvos"); return; }
     if (t.closest("#vdPostar")) {
       const r = V.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
       if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
@@ -3428,10 +3463,10 @@
       const site = urlOk(p.link) ? esc(p.link) : "";
       const abreSite = (html) => site ? `<a class="item__link" href="${site}" target="_blank" rel="noopener" title="Abrir no site">${html}</a>` : html;
       return `<div class="item" data-id="${esc(i.id)}">
-        ${abreSite(mini)}
+        ${miniLoja({ link: p.link, loja: p.loja }, abreSite(mini))}
         <div>
           ${abreSite(`<strong>${esc(p.nome)}</strong>`)}
-          <div class="item__meta"><span class="preco">${brl(p.precoNovo)}</span><span>${esc(NOME_LOJA[p.loja] || "")}</span><span>${esc(NOME_CAT[p.categoria] || "")}</span><span>${dataCurta(i.criadoEm)}</span></div>
+          <div class="item__meta"><span class="preco">${brl(p.precoNovo)}</span><span>${esc(NOME_CAT[p.categoria] || "")}</span><span>${dataCurta(i.criadoEm)}</span></div>
           <div class="item__meta">${enviado}</div>
         </div>
         <div class="item__acoes">
@@ -3847,7 +3882,7 @@
       rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
       rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
       fim = new Promise((ok) => { rec.onstop = ok; });
-      rec.start(500);
+      rec.start(); manterTelaAcesa(true);
     }
     const inicio = performance.now();
     const agora = () => ac && t0 ? ac.currentTime - t0 : (performance.now() - inicio) / 1000;
@@ -3866,11 +3901,14 @@
       passo();
     });
     R.tocando = null;
-    if (rec) { rec.stop(); await fim; }
+    if (rec) { rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); }
     if (ac) ac.close().catch(() => {});
     if (!gravar) { if (btn) { btn.disabled = false; btn.textContent = "▶ Ver prévia com música"; } return; }
-    const mp4 = tipo.startsWith("video/mp4"), blob = new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" });
-    R.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-reels.${mp4 ? "mp4" : "webm"}` };
+    const mp4 = tipo.startsWith("video/mp4"), blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
+    // Capa: a abertura do Reels já montada
+    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; quadroReels(tc.getContext("2d"), 1080, Math.max(0.1, T_INTRO - 0.35), R, l, fotos);
+    const capa = await telaParaJpeg(tc, "miga-promo-reels-capa.jpg");
+    R.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-reels.${mp4 ? "mp4" : "webm"}`, capa };
     l.forEach((it) => { it.feito = { ...(it.feito || {}), reels: true }; }); salvarFila(true);
     mostrarPasso();
   }
@@ -3882,7 +3920,7 @@
       c.innerHTML = `<h2 class="wz-titulo">Quais produtos?</h2>
         <p class="nota">Marque de 1 a 5 produtos. Se marcar mais de um, depois você escolhe a ordem.</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${l.map((x) => { const i = R.itens.indexOf(x.id); return `<button type="button" class="wz-prod wz-flag${i >= 0 ? " on" : ""}" data-r-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span><i class="flag" aria-hidden="true"></i></button>`; }).join("") || '<p class="vazio-lista">Sua lista está vazia: adicione produtos na aba Lista.</p>'}</div>
+        <div class="wz-ops">${l.map((x) => { const i = R.itens.indexOf(x.id); return `<button type="button" class="wz-prod wz-flag${i >= 0 ? " on" : ""}" data-r-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span><i class="flag" aria-hidden="true"></i></button>`; }).join("") || '<p class="vazio-lista">Sua lista está vazia: adicione produtos na aba Lista.</p>'}</div>
         ${botaoContinuar(R.itens.length > 0, R.itens.length ? `Continuar (${R.itens.length} ${R.itens.length === 1 ? "produto" : "produtos"})` : "Continuar")}`;
       return;
     }
@@ -3898,7 +3936,7 @@
       const top = R.modelo === "top", l = itensReels();
       c.innerHTML = `<h2 class="wz-titulo">${top ? "Qual é o ranking?" : "Em que ordem?"}</h2>
         <p class="nota">${top ? "Use as setas. O primeiro da lista é o <b>Top 1</b>: no Reels ele aparece por último, como o grande final." : "Use as setas para arrumar. O primeiro da lista aparece primeiro no Reels."}</p>
-        <div class="r-ordem">${l.map((x, i) => `<div class="r-ordem__item"><b class="r-ordem__n">${top ? "Top " + (i + 1) : i + 1 + "º"}</b>${fotoMini(x)}<span>${esc(x.nome || "Sem nome")}</span>
+        <div class="r-ordem">${l.map((x, i) => `<div class="r-ordem__item"><b class="r-ordem__n">${top ? "Top " + (i + 1) : i + 1 + "º"}</b>${miniLoja(x, fotoMini(x))}<span>${esc(x.nome || "Sem nome")}</span>
           <div class="r-ordem__setas"><button type="button" class="btn-seta" data-r-sobe="${i}" aria-label="Subir"${i === 0 ? " disabled" : ""}><svg><use href="#i-seta-baixo"/></svg></button><button type="button" class="btn-seta" data-r-desce="${i}" aria-label="Descer"${i === l.length - 1 ? " disabled" : ""}><svg><use href="#i-seta-baixo"/></svg></button></div></div>`).join("")}</div>
         ${botaoContinuar(true)}`;
       return;
@@ -3910,7 +3948,8 @@
           <p class="nota">Formato: <b>${r.mp4 ? "MP4" : "WebM"}</b>.${r.mp4 ? "" : " Este celular não grava MP4: o WhatsApp aceita, mas o Instagram pode recusar WebM."}</p>
           <button type="button" class="btn btn--rosa" id="rPostar">Postar / compartilhar</button>
           ${blocoLegenda(R)}
-          <button type="button" class="btn btn--branco" id="rBaixar">Baixar o vídeo</button>
+          <button type="button" class="btn btn--branco" id="rBaixar">Baixar vídeo e capa</button>
+          ${r.capa ? `<div class="capa-bloco"><span>Capa</span><img class="capa-previa" src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"></div>` : ""}
           <button type="button" class="btn btn--branco" id="rRefazer">Gravar de novo</button>`
         : `<p class="nota"><b>${esc(M.nome)}</b> · ${esc(CORES_VIDEO[R.cor].nome)} · ${itensReels().length} produto(s) · ${Math.round(duracaoReelsProdutos())} segundos</p>
           <div class="wz-previa"><canvas id="rQuadro" width="540" height="960"></canvas></div>
@@ -3995,7 +4034,7 @@
     if (t.closest("#rPrevia")) { rodarReels(false); return; }
     if (t.closest("#rGerar")) { if (R.tocando) R.tocando.parar(); setTimeout(() => rodarReels(true), 50); return; }
     if (t.closest("#rRefazer")) { R.resultado = null; mostrarPasso(); return; }
-    if (t.closest("#rBaixar")) { baixarBlob(R.resultado.blob, R.resultado.nome); toast("Vídeo salvo"); return; }
+    if (t.closest("#rBaixar")) { baixarBlob(R.resultado.blob, R.resultado.nome); if (R.resultado.capa) setTimeout(() => baixarBlob(R.resultado.capa, R.resultado.capa.name), 700); toast("Vídeo e capa salvos: use a capa em Editar capa"); return; }
     if (t.closest("#rPostar")) {
       const r = R.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
       if (await copiarTexto(R.legenda || legendaReels())) toast("Legenda copiada: é só colar no Instagram");
