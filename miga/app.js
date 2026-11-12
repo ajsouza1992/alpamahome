@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=107"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=108"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=107"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=108"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2787,6 +2787,14 @@
   });
 
   /* ---------- Vídeo com o tema do Miga ---------- */
+  const DESC_TEMAS_VIDEO = {
+    cheia: "Vídeo na tela toda, título em cima e preço embaixo",
+    moldura: "Vídeo dentro de uma moldura com a cor escolhida",
+    faixa: "Vídeo inteiro com uma faixa de preço embaixo",
+    dividido: "Título em cima, vídeo no meio e preço embaixo",
+    selo: "Vídeo inteiro com uma etiqueta de preço no canto",
+    minimal: "Só o vídeo, com título pequeno e o link na bio"
+  };
   const TEMAS_VIDEO = {
     cheia: "Tela cheia", moldura: "Moldura", faixa: "Faixa", dividido: "Dividido", selo: "Etiqueta", minimal: "Mínimo"
   };
@@ -3010,9 +3018,10 @@
       const e = estLer(), nomeM = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
       c.innerHTML = `<div class="estudio">
         <div class="est-previa est-previa--img"><canvas id="vdEst" width="540" height="960"></canvas></div>
-        <div class="est-ctrl">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || TEMAS_VIDEO[V.tema])}</div>
+        <div class="est-ctrl est-ctrl--5">${botaoEst("estiloVideo", "Estilo", TEMAS_VIDEO[V.tema])}${botaoEst("modelo", "Título", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || "sem abertura")}</div>
       </div>${botaoContinuar(true)}`;
-      carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((q) => { const cv = $("#vdEst"); if (!cv) return; const cx = cv.getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 9, V); else quadroVideo(cx, 540, 960, q, V); });
+      // Prévia: o seu vídeo em tela cheia com os textos do estilo por cima
+      carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((q) => { const cv = $("#vdEst"); if (cv) quadroVideo(cv.getContext("2d"), 540, 960, q, V); });
       return;
     }
     if (wz.passo === "vPronto") {
@@ -3614,7 +3623,7 @@
   /** Vídeo gravado no celular, com tema, sem precisar escolher um produto */
   function abrirVideoLivre() {
     wz = { canal: "video", passo: "vArquivo", veioDaLista: true, semProduto: true };
-    const V = vd(); V.iniciado = true; V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.modelo = "achadinho"; V.titulo = MODELOS_REELS.achadinho.titulo;
+    const V = vd(); V.iniciado = true; V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.modelo = "achadinho"; V.titulo = MODELOS_REELS.achadinho.titulo; V.abertura = false; V.tema = "cheia";
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
   function abrirPostarCupons() {
@@ -4177,6 +4186,7 @@
     cor: '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.6-.9 1.6-1.6 0-1.4-1.2-1.6-1.2-2.8 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.5" cy="7" r="1"/>',
     musica: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     cupons: '<path d="M3 8a2 2 0 0 0 0 4v4h18v-4a2 2 0 0 1 0-4V4H3z" transform="translate(0 2)"/><path d="M14 6v12" stroke-dasharray="2 2"/>',
+    estiloVideo: '<rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8 6h8M8 17h5"/><path d="M10.5 10v4l3.5-2z"/>',
     ajustesVideo: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
     formato: '<rect x="7" y="3" width="10" height="18" rx="2"/><rect x="3" y="7" width="6" height="8" rx="1.5"/>',
     grade: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
@@ -4226,7 +4236,7 @@
     if (aba === "sugestoes") itens = Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => [k, m.nome, DECOR[k].frase, !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "temas") itens = Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => [k, m.nome, m.sub(), !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, R.camp === k && !R.titulo]);
-    folhaEst("Modelo", `<div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="Escrever meu título" value="${esc(R.titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>
+    folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="Escrever meu título" value="${esc(R.titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>
       <div class="tabs-mod">${tabs}</div>
       <div class="lista-mod lista-mod--mini">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
     pintarMinis(R);
@@ -4238,8 +4248,13 @@
     if (it.id && it.imagem) { await prepararFoto(it); bmp = ppFotos[it.id]; }
     else if (wz.canal === "video") { const V = vd(); bmp = V.quadroImg || null; it.nome = ""; it.precoNovo = V.novo; it.precoAntigo = V.antigo; }
     const tmp = document.createElement("canvas");
+    const quadro = wz.canal === "video" ? await primeiroQuadro() : null;
     for (const cv of document.querySelectorAll("[data-mini]")) {
       const [aba, k] = cv.dataset.mini.split(":");
+      if (wz.canal === "video") {
+        const V = vd(), e = aba === "campanhas" ? { modelo: V.modelo || "achadinho", camp: k, titulo: "" } : { modelo: k, camp: "", titulo: "" };
+        quadroVideo(cv.getContext("2d"), 108, 192, quadro, { ...V, titulo: tituloDoModelo(e, 1) }); await new Promise((ok) => setTimeout(ok, 0)); continue;
+      }
       const r = aba === "campanhas" ? { modelo: R.modelo, camp: k, titulo: "", cor: CAMPANHAS[k].cor } : { modelo: k, camp: "", titulo: "", cor: DECOR[k].cor };
       artePost(tmp, r, it, bmp, "story"); cv.getContext("2d").drawImage(tmp, 0, 0, 108, 192);
       await new Promise((ok) => setTimeout(ok, 0));
@@ -4258,10 +4273,16 @@
         <button type="button" class="pp-caixa" aria-pressed="true" data-lp-tira="${esc(x.id)}" aria-label="Tirar"></button></div>`).join("")}
       ${resto.map((x) => `<div class="lp-item">${miniLoja(x, fotoMini(x))}<span>${esc(x.nome || "Sem nome")}</span><button type="button" class="pp-caixa" aria-pressed="false" data-lp-poe="${esc(x.id)}" aria-label="Juntar"></button></div>`).join("")}</div>`);
   }
+  async function folhaEstiloVideo() {
+    const V = vd();
+    folhaEst("Estilo do vídeo", `<p class="nota">O seu vídeo em tela cheia, com os textos por cima:</p>
+      <div class="lista-mod lista-mod--mini">${Object.entries(TEMAS_VIDEO).map(([k, n]) => `<button type="button" class="${V.tema === k ? "on" : ""}" data-vd-estilo="${k}"><canvas class="mini-mod" width="108" height="192" data-mini-vd="${k}"></canvas><span><b>${esc(n)}</b><small>${esc(DESC_TEMAS_VIDEO[k])}</small></span></button>`).join("")}</div>`);
+    await carregarMarca(); const q = await primeiroQuadro();
+    for (const cv of document.querySelectorAll("[data-mini-vd]")) { quadroVideo(cv.getContext("2d"), 108, 192, q, { ...V, tema: cv.dataset.miniVd }); await new Promise((ok) => setTimeout(ok, 0)); }
+  }
   function folhaAjustesVideo() {
     const V = vd();
-    folhaEst("Ajustes do vídeo", `<p class="nota">Como o seu vídeo aparece:</p>
-      <div class="lista-mod">${Object.entries(TEMAS_VIDEO).map(([k, n]) => `<button type="button" class="${V.tema === k ? "on" : ""}" data-vd-enq="${k}"><b>${esc(n)}</b></button>`).join("")}</div>
+    folhaEst("Ajustes do vídeo", `<p class="nota">Abertura (antes do vídeo) e final com o seu @:</p>
       <div class="vd-chaves">
         <label class="aj-chave"><span><b>Abertura</b></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Final</b></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
@@ -4280,6 +4301,7 @@
       if (k === "cor") { const lista = Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome, x.fundo]); const e = estLer(); const v = await escolherOpcao("Cor", lista, e.cor); if (v) { e.cor = v; estGravar(e); aposMudarEstudio(); } }
       if (k === "musica" && wz.canal === "video") { folhaMusica(); return; }
       if (k === "ajustesVideo") { folhaAjustesVideo(); return; }
+      if (k === "estiloVideo") { folhaEstiloVideo(); return; }
       if (k === "enquadrar") { const V = vd(); const v = await escolherOpcao("Enquadramento do vídeo", Object.entries(TEMAS_VIDEO), V.tema); if (v) { V.tema = v; V.resultado = null; aposMudarEstudio(); } }
       if (k === "cupons") { wz.passo = "cEscolher"; mostrarPasso(); }
       if (k === "formato") { const v = await escolherOpcao("Story ou post?", [["story", "Story · tela cheia, em pé (link pelo adesivo)"], ["post", "Post · no feed, 4:5 (use “link na bio”)"]], wz.formato === "post" ? "post" : "story"); if (v) { wz.formato = v; aposMudarEstudio(); } }
@@ -4304,6 +4326,7 @@
       $("#folhaEst").close(); aposMudarEstudio(); return;
     }
     const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; }
+    const ve = t.closest("[data-vd-estilo]"); if (ve) { const V = vd(); V.tema = ve.dataset.vdEstilo; V.resultado = null; $("#folhaEst").close(); return; }
     const enq = t.closest("[data-vd-enq]"); if (enq) { const V = vd(); V.tema = enq.dataset.vdEnq; V.resultado = null; folhaAjustesVideo(); return; }
     const mu = t.closest("[data-escolhe-mus]"); if (mu) { if (wz.canal === "video") { const V = vd(); V.batida = mu.dataset.escolheMus; V.resultado = null; } else R.musica = mu.dataset.escolheMus; tocarAmostra(""); $("#folhaEst").close(); aposMudarEstudio(); return; }
     const sobe = t.closest("[data-lp-sobe]"), desce = t.closest("[data-lp-desce]");
