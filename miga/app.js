@@ -1097,7 +1097,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=118"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=119"; });
     }
     edFoto = null;
     try {
@@ -1470,7 +1470,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=118"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=119"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1861,7 +1861,7 @@
     pintarCampanhas();
   });
   const OPCOES_CRIAR = [
-    ["roteiro", "Postar um produto", "Story, Status, grupos, canal e feed, um depois do outro", (n) => n === 1, "Marque só 1 produto."],
+    ["roteiro", "Postar", "Story, Status, grupos, canal e feed. Com vários, um produto depois do outro", (n) => n >= 1, "Marque pelo menos 1 produto."],
     ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
     ["livre", "Imagem", "Arte com o produto, ou montagem com vários", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."],
     ["carrossel", "Carrossel de preços", "Capa no tema e um slide de preço para cada produto", (n) => n >= 1 && n <= 8, "Marque de 1 a 8 produtos."]
@@ -1905,7 +1905,7 @@
       if (C) L.titulo = C.titulo;
       L.n = [2, 3, 4, 6].find((q) => q >= L.itens.length) || 6; wz.passo = "grade";
     } else if (canal === "instagram") { wz.passo = "montagem"; }
-    else { wz.passo = "lugares"; if (C) l.forEach((it) => { if (!it.textoEditado) it.texto = ""; }); }
+    else { wz.passo = "lugares"; wz.filaRoteiro = ids.length > 1 ? ids : null; if (C) l.forEach((it) => { if (!it.textoEditado) it.texto = ""; }); }
     marcados.clear(); modoVarios = false;
     irPara("criar"); mostrarPasso();
   }
@@ -2040,7 +2040,7 @@
 
   /* =========================== Criar (passo a passo, uma pergunta por tela) =========================== */
   const CANAIS = {
-    roteiro: { nome: "Postar um produto", cor: "#e8336d", desc: "Story, Status, grupos, canal e feed, um depois do outro", icone: "i-lista" },
+    roteiro: { nome: "Postar", cor: "#e8336d", desc: "Story, Status, grupos, canal e feed, um depois do outro", icone: "i-lista" },
     whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem para os grupos ou imagem para o Status", icone: "i-rede-whats" },
     instagram: { nome: "Imagem do produto", cor: "#e8336d", desc: "Arte para story, Status ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
@@ -2487,10 +2487,11 @@
       const k = wz.lugares[wz.idx], L = LUGARES[k], n = wz.lugares.length;
       if (L.texto && !item.texto) usarModeloTexto();
       const barra = `<div class="rt-prog">${wz.lugares.map((x, i) => `<i class="${wz.res[x] === "feito" ? "ok" : wz.res[x] === "pulado" ? "pulo" : i === wz.idx ? "at" : ""}"></i>`).join("")}</div>
-        <div class="rt-etapa">${wz.idx + 1} de ${n} · ${L.nome}</div>`;
+        <div class="rt-etapa">${wz.filaRoteiro ? `Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ` : ""}${wz.idx + 1} de ${n} · ${L.nome}</div>`;
       // Só passa para o próximo quando você tocar em "Próximo"
       const feito = wz.res[k] === "feito";
-      const pular = `<button type="button" class="btn ${feito ? "btn--rosa" : "btn--branco"} rt-proximo" id="rtPular">${wz.idx === n - 1 ? "Ver o resumo" : "Próximo"}</button>`;
+      const proxProd = proximoDaFila();
+      const pular = `<button type="button" class="btn ${feito ? "btn--rosa" : "btn--branco"} rt-proximo" id="rtPular">${wz.idx === n - 1 ? (proxProd ? "Próximo produto" : "Ver o resumo") : "Próximo"}</button>`;
       let meio = "", botao = "", dica = "";
       if (L.arte) {
         meio = `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`;
@@ -2522,10 +2523,22 @@
     }
     return false;
   }
+  /** Próximo produto da sequência (quando você escolheu vários) */
+  const proximoDaFila = () => { if (!wz.filaRoteiro) return null; const i = wz.filaRoteiro.indexOf(wz.itemId); return fila().find((x) => x.id === wz.filaRoteiro[i + 1]) || null; };
   function avancarRoteiro() {
     wz.aguardando = false;
-    if (wz.idx < wz.lugares.length - 1) { wz.idx++; mostrarPasso(); }
-    else { wz.passo = "resumo"; mostrarPasso(); }
+    if (wz.idx < wz.lugares.length - 1) { wz.idx++; mostrarPasso(); return; }
+    const prox = proximoDaFila();
+    if (prox) { wz.itemId = prox.id; wz.idx = 0; wz.res = {}; wz.passo = "rodar"; toast(`Agora: ${limparNome(prox.nome || "próximo produto")}`); mostrarPasso(); scrollTo(0, 0); return; }
+    wz.passo = "resumo"; mostrarPasso();
+  }
+  /** Depois do Reels, Carrossel ou Vídeo: posta os mesmos produtos no WhatsApp (canal e grupos), um por um */
+  function postarProdutosNoWhats(ids, base = {}) {
+    ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
+    const lug = lugaresSalvos().filter((k) => LUGARES[k].texto);
+    wz = { canal: "roteiro", passo: "rodar", veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo", "canal"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
+    ids.forEach((id) => { const it = fila().find((x) => x.id === id); if (it && !it.textoEditado) it.texto = ""; });
+    mostrarPasso(); scrollTo(0, 0);
   }
   async function compartilharArquivo(arq, texto) {
     if (arq && navigator.canShare && navigator.canShare(texto ? { files: [arq], text: texto } : { files: [arq] })) {
@@ -3109,7 +3122,7 @@
   /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
   const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
   const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
-  const FIGURAS = ["brilho", "estrela", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis"];
+  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis"];
   const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
   let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
@@ -3208,6 +3221,11 @@
   // Tocar e arrastar as camadas na prévia
   let arrasto = null;
   const pontoNaPrevia = (e, cv) => { const r = cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * 1080, ((e.clientY - r.top) / r.height) * 1920]; };
+  $("#wzCorpo").addEventListener("click", (e) => {
+    if (!e.target.closest("#rpWhats")) return;
+    if (wz.canal === "reels") { const R = rr(); postarProdutosNoWhats([...R.itens], { modelo: R.modelo, camp: R.camp, titulo: R.titulo, cor: R.cor }); }
+    else if (wz.canal === "video") { const V = vd(); if (V.itemId) postarProdutosNoWhats([V.itemId], { modelo: V.modelo, camp: V.camp, titulo: V.tituloProp, cor: V.cor }); }
+  });
   $("#wzCorpo").addEventListener("pointerdown", (e) => {
     const cv = e.target.closest && e.target.closest("#vdQuadro"); if (!cv || wz.canal !== "video") return;
     const V = vd(), [x, y] = pontoNaPrevia(e, cv);
@@ -3330,8 +3348,9 @@
             <div class="est-ctrl est-ctrl--3 rp-tiles">
               <button type="button" class="est-btn" id="vdBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Baixar vídeo</b></button>
               ${r.capa ? '<button type="button" class="est-btn" id="vdBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
-              <button type="button" class="est-btn" id="vdRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Gravar de novo</b></button>
+              <button type="button" class="est-btn" id="vdRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Regravar</b></button>
             </div>
+            ${V.itemId ? `<button type="button" class="btn btn--branco rp-whats" id="rpWhats"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg>Postar no WhatsApp (o produto)</button>` : ""}
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
             <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
           </div>
@@ -4178,7 +4197,7 @@
     casa: { nome: "Casa arrumadinha", desc: "Dembow", musica: "dembow", tag: "Casa arrumadinha", titulo: "Casa\n*arrumadinha*", sub: () => "Decoração e organização baratinhas", icone: "coracao", cat: true },
     look: { nome: "Look do dia", desc: "Funk", musica: "funk", tag: "Look do dia", titulo: "Look\n*do dia*", sub: () => "Moda e acessórios com desconto", icone: "brilho", cat: true },
     suplementos: { nome: "Suplementos em conta", desc: "Eletrônica drop", musica: "eletrodrop", tag: "Suplementos em conta", titulo: "Suplementos\n*em conta*", sub: () => "Whey, creatina e vitaminas com desconto", icone: "pote", cat: true },
-    fitness: { nome: "Moda fitness", desc: "Eletrônica", musica: "eletronica", tag: "Moda fitness", titulo: "Moda\n*fitness*", sub: () => "Looks pra treinar com estilo", icone: "tenis", cat: true },
+    fitness: { nome: "Moda fitness", desc: "Eletrônica", musica: "eletronica", tag: "Moda fitness", titulo: "Moda\n*fitness*", sub: () => "Looks pra treinar com estilo", icone: "top", cat: true },
     treino: { nome: "Treino em dia", desc: "Trap", musica: "trap", tag: "Treino em dia", titulo: "Treino\n*em dia*", sub: () => "Fitness e saúde com desconto", icone: "fogo", cat: true },
     organiza: { nome: "Tudo organizado", desc: "Boombap", musica: "boombap", tag: "Tudo organizado", titulo: "Tudo\n*organizado*", sub: () => "Organizadores que salvam o dia", icone: "coracao", cat: true },
     autocuidado: { nome: "Momento autocuidado", desc: "Lo-fi", musica: "lofi", tag: "Momento autocuidado", titulo: "Momento\n*autocuidado*", sub: () => "Pra você se cuidar com carinho", icone: "coracao", cat: true },
@@ -4263,7 +4282,7 @@
     casa: { ic: ["casa", "brilho"], selo: "Casa", frase: "Deixa a casa mais bonita", cor: "branco", lay: "circulo" },
     look: { ic: ["cabide", "brilho"], selo: "Look", frase: "Combina com tudo", cor: "rosa", lay: "revista" },
     suplementos: { ic: ["pote", "haltere"], selo: "Suplementos", frase: "Pra treinar e cuidar da saúde", cor: "preto", lay: "revista" },
-    fitness: { ic: ["tenis", "haltere"], selo: "Fitness", frase: "Treino com estilo e preço bom", cor: "rosa", lay: "circulo" },
+    fitness: { ic: ["top", "tenis"], selo: "Fitness", frase: "Treino com estilo e preço bom", cor: "rosa", lay: "circulo" },
     treino: { ic: ["haltere", "fogo"], selo: "Treino", frase: "Pra treinar com estilo", cor: "preto", lay: "revista" },
     organiza: { ic: ["casa", "brilho"], selo: "Organiza", frase: "Tudo no lugar", cor: "branco", lay: "balao" },
     autocuidado: { ic: ["coracao", "brilho"], selo: "Autocuidado", frase: "Um mimo pra você", cor: "creme", lay: "polaroid" },
@@ -4405,6 +4424,11 @@
       retArredondado(ctx, -72, -88, 144, 40, 12); contorno(PRETO === "#1d1d1f" ? "#3a3a3d" : PRETO);
       retArredondado(ctx, -48, -18, 96, 70, 10); contorno(AMAR);
       ctx.fillStyle = PRETO; ctx.font = "900 34px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("PRO", 0, 18);
+    }
+    else if (nome === "top") { // top fitness
+      ctx.beginPath(); ctx.moveTo(-72, -92); ctx.lineTo(-40, -92); ctx.quadraticCurveTo(-30, -24, 0, -18); ctx.quadraticCurveTo(30, -24, 40, -92); ctx.lineTo(72, -92); ctx.quadraticCurveTo(72, -12, 96, 28); ctx.lineTo(96, 80); ctx.lineTo(-96, 80); ctx.lineTo(-96, 28); ctx.quadraticCurveTo(-72, -12, -72, -92); ctx.closePath(); contorno(ROSA);
+      ctx.beginPath(); ctx.rect(-96, 42, 192, 38); contorno(AMAR);
+      ctx.beginPath(); ctx.moveTo(-40, 10); ctx.quadraticCurveTo(0, 30, 40, 10); ctx.lineWidth = 8; ctx.stroke();
     }
     else if (nome === "tenis") {
       ctx.rotate(-0.08);
@@ -4896,8 +4920,9 @@
             <div class="est-ctrl est-ctrl--3 rp-tiles">
               <button type="button" class="est-btn" id="rBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Baixar vídeo</b></button>
               ${r.capa ? '<button type="button" class="est-btn" id="rBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
-              <button type="button" class="est-btn" id="rRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Gravar de novo</b></button>
+              <button type="button" class="est-btn" id="rRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Regravar</b></button>
             </div>
+            <button type="button" class="btn btn--branco rp-whats" id="rpWhats"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg>Postar no WhatsApp (${itensReels().length} ${itensReels().length > 1 ? "produtos" : "produto"})</button>
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
             ${blocoLegenda(R)}
             <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
@@ -4939,6 +4964,7 @@
       </div>
       <button type="button" class="btn btn--rosa" id="kPostar">Postar / compartilhar</button>
       <button type="button" class="btn btn--branco" id="kBaixar">Baixar as ${l.length + 2} imagens</button>
+      <button type="button" class="btn btn--branco rp-whats" id="rpWhats"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg>Postar no WhatsApp (${l.length} ${l.length > 1 ? "produtos" : "produto"})</button>
       ${blocoLegenda(R)}
       <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
     slidesCarrossel().then((s) => { const tr = $("#kTrilho"); if (!tr) return; tr.innerHTML = ""; s.forEach((cv) => tr.appendChild(cv)); });
