@@ -1097,7 +1097,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=119"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=120"; });
     }
     edFoto = null;
     try {
@@ -1470,7 +1470,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=119"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=120"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2189,7 +2189,8 @@
       const nomeModelo = wz.tituloArte || (campanha() ? campanha().nome : MODELOS_REELS[wz.modelo].nome);
       const comTexto = legendaNoEstudio() && item.precoNovo;
       if (comTexto && (!item.texto || !item.textoEditado)) usarModeloTexto();
-      c.innerHTML = `<div class="estudio">
+      const qualProd = wz.canal === "roteiro" && wz.filaRoteiro ? `<p class="rt-etapa rt-qual">Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ${esc(limparNome(item.nome || ""))}</p>` : "";
+      c.innerHTML = `${qualProd}<div class="estudio">
         <div class="est-previa est-previa--img${wz.formato === "post" && wz.canal !== "roteiro" ? " est-previa--post" : ""}"><canvas id="wzEstTela"></canvas></div>
         <div class="est-ctrl est-ctrl--${wz.canal === "instagram" ? 3 : 2}">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}${wz.canal === "instagram" ? botaoEst("formato", "Formato", wz.formato === "post" ? "Post · feed 4:5" : "Story · em pé") : ""}</div>
       </div>
@@ -2471,7 +2472,8 @@
   const precisaTexto = () => (wz.lugares || []).some((k) => LUGARES[k].texto);
   function passosRoteiro() {
     const temPreco = !!(wzItem() || {}).precoNovo;
-    return ["canal", ...(wz.veioDaLista ? [] : ["produto"]), "lugares", ...(precisaArte() ? ["montagem"] : []), ...(precisaTexto() && (!precisaArte() || !temPreco) ? ["mensagem"] : []), "rodar", "resumo"];
+    // Modelo e cor (com a legenda) sempre antes de postar
+    return ["canal", ...(wz.veioDaLista ? [] : ["produto"]), "lugares", "montagem", ...(precisaTexto() && !temPreco ? ["mensagem"] : []), "rodar", "resumo"];
   }
   function telaRoteiro(c, item) {
     if (wz.passo === "lugares") {
@@ -2529,14 +2531,14 @@
     wz.aguardando = false;
     if (wz.idx < wz.lugares.length - 1) { wz.idx++; mostrarPasso(); return; }
     const prox = proximoDaFila();
-    if (prox) { wz.itemId = prox.id; wz.idx = 0; wz.res = {}; wz.passo = "rodar"; toast(`Agora: ${limparNome(prox.nome || "próximo produto")}`); mostrarPasso(); scrollTo(0, 0); return; }
+    if (prox) { wz.itemId = prox.id; wz.idx = 0; wz.res = {}; wz.passo = "montagem"; toast(`Agora: ${limparNome(prox.nome || "próximo produto")} · escolha modelo e cor`); mostrarPasso(); scrollTo(0, 0); return; }
     wz.passo = "resumo"; mostrarPasso();
   }
   /** Depois do Reels, Carrossel ou Vídeo: posta os mesmos produtos no WhatsApp (canal e grupos), um por um */
   function postarProdutosNoWhats(ids, base = {}) {
     ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
     const lug = lugaresSalvos().filter((k) => LUGARES[k].texto);
-    wz = { canal: "roteiro", passo: "rodar", veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo", "canal"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
+    wz = { canal: "roteiro", passo: "montagem", veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo", "canal"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
     ids.forEach((id) => { const it = fila().find((x) => x.id === id); if (it && !it.textoEditado) it.texto = ""; });
     mostrarPasso(); scrollTo(0, 0);
   }
