@@ -883,3 +883,9 @@ body.modo-selecao main { padding-bottom: 200px; }
 .barra-filtro #ppTotal, .sel-todos { margin-right: 0 !important; }
 .barra-filtro .link-sel { margin-left: auto !important; }
 .barra-filtro { justify-content: flex-start !important; }
+/* "Criar com este produto" no padrão claro do app */
+.pp-criar { background: var(--campo); color: var(--preto); box-shadow: inset 0 0 0 1.5px var(--linha); }
+.pp-criar .pp-salvo { color: var(--cinza); }
+.pp-criar .bs-camp.claro { background: var(--branco); color: var(--preto); box-shadow: inset 0 0 0 1.5px var(--linha); }
+.pp-criar .bs-camp.claro.on { background: #fff3c4; box-shadow: inset 0 0 0 1.5px #ffd23f; }
+.pp-criar .bs-acoes button { box-shadow: var(--sombra-rosa); }
