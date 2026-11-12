@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=103"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=104"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=103"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=104"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2478,7 +2478,9 @@
       if (L.texto && !item.texto) usarModeloTexto();
       const barra = `<div class="rt-prog">${wz.lugares.map((x, i) => `<i class="${wz.res[x] === "feito" ? "ok" : wz.res[x] === "pulado" ? "pulo" : i === wz.idx ? "at" : ""}"></i>`).join("")}</div>
         <div class="rt-etapa">${wz.idx + 1} de ${n} · ${L.nome}</div>`;
-      const pular = `<button type="button" class="btn btn--branco" id="rtPular">${wz.idx === n - 1 ? "Pular e ver o resumo" : "Pular este"}</button>`;
+      // Só passa para o próximo quando você tocar em "Próximo"
+      const feito = wz.res[k] === "feito";
+      const pular = `<button type="button" class="btn ${feito ? "btn--rosa" : "btn--branco"} rt-proximo" id="rtPular">${wz.idx === n - 1 ? "Ver o resumo" : "Próximo"}</button>`;
       let meio = "", botao = "", dica = "";
       if (L.arte) {
         meio = `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`;
@@ -2495,8 +2497,8 @@
         meio += `<button type="button" class="btn btn--branco" id="rtCopiarTexto">Copiar o texto</button>`;
       }
       c.innerHTML = `${barra}${meio}<p class="nota wz-centro">${dica}</p>
-        <div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar${k === "status" || k === "grupo" || k === "canal" ? " wz-zap" : k === "telegram" ? " wz-tg" : ""}" id="rtPostar">${botao}</button></div>
-        ${pular}`;
+        ${feito ? '<p class="nota wz-centro rt-feito">Postado. Toque em “Próximo” para seguir.</p>' : ""}
+        <div class="wz-rodape rt-rodape"><button type="button" class="btn ${feito ? "btn--branco" : "btn--rosa"} wz-continuar${!feito && (k === "status" || k === "grupo" || k === "canal") ? " wz-zap" : !feito && k === "telegram" ? " wz-tg" : ""}" id="rtPostar">${feito ? "Postar de novo" : botao}</button>${pular}</div>`;
       if (L.arte) { const desenhar = () => desenharMontagem($("#rtTela"), true, null, null, L.arte); desenhar(); prepararFoto(item).then(() => { if (wz.passo === "rodar") desenhar(); }); }
       return true;
     }
@@ -2556,11 +2558,10 @@
     if (r === "cancelado") return;
     wz.res[k] = "feito";
     registrarCompartilhado(L.canal, L.nome);
-    if (r === "ok") avancarRoteiro();
-    else { wz.aguardando = true; toast("Quando voltar para o Miga, o roteiro segue para o próximo"); }
+    const y = scrollY; mostrarPasso(); scrollTo(0, y);
   }
   // Voltou do outro app: segue o roteiro
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && wz.aguardando && wz.passo === "rodar") setTimeout(avancarRoteiro, 400); });
+
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "roteiro") return;
     const t = e.target;
@@ -2576,7 +2577,7 @@
       return;
     }
     if (t.closest("#rtPostar")) { postarLugar(); return; }
-    if (t.closest("#rtPular")) { wz.res[wz.lugares[wz.idx]] = "pulado"; avancarRoteiro(); return; }
+    if (t.closest("#rtPular")) { const k = wz.lugares[wz.idx]; if (wz.res[k] !== "feito") wz.res[k] = "pulado"; avancarRoteiro(); return; }
     if (t.closest("#rtCopiarTexto")) { const it = wzItem(); const k = wz.lugares[wz.idx]; if (await copiarTexto(k === "telegram" ? it.texto.replace(/[*~_]/g, "") : it.texto)) toast("Texto copiado"); return; }
     if (t.closest("#rtLista")) { irPara("postar"); iniciarCriar(); return; }
     if (t.closest("#rtProximo")) {
@@ -3171,7 +3172,7 @@
   }
   /** A musiquinha do Miga, tocada pelo próprio celular (Web Audio) e gravada junto com o vídeo */
   function tocarTrilha(ac, saida, total, pops, whooshes, meio, E = MUSICAS.house, plim = null) {
-    const t0 = ac.currentTime + 0.05, SR = ac.sampleRate;
+    const t0 = ac.currentTime + 0.35, SR = ac.sampleRate; // respiro para o áudio "acordar": as primeiras batidas não encavalam
     const ruido = ac.createBuffer(1, SR, SR), d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     // Compressor no fim (som "cheio" de música pronta) e reverb para dar espaço
     const comp = ac.createDynamicsCompressor(); comp.threshold.value = -18; comp.knee.value = 8; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.18; comp.connect(saida);
@@ -3323,6 +3324,7 @@
     const inicio = ac && t0 ? null : performance.now();
     const agora = () => ac && t0 ? ac.currentTime - t0 : (performance.now() - inicio) / 1000;
     let videoTocando = false;
+    if (ac && t0) await new Promise((ok) => { const e = () => (ac.currentTime >= t0 - 0.02 ? ok() : requestAnimationFrame(e)); e(); }); // grava a partir do 1º tempo da música
     rec.start(); manterTelaAcesa(true);
     await new Promise((ok) => {
       const passo = async () => {
@@ -4116,14 +4118,13 @@
   }
   function produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 760, FY = 820;
+    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 760, cima = MODELOS_CIMA.has(D.chave), OY = cima ? 70 : 0, FY = 820 + OY;
     const nome = limparNome(it.nome || ""), novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
     const titulo = mk === "top" ? `Top ${idx + 1}\n*${n > 1 ? "da semana" : "achadinho"}*` : M.titulo.replace("{n}", n > 1 ? n : "");
     const icone = (D.ic && D.ic[0]) || M.icone || "brilho";
     const preco = novo ? brl(novo) : "", off = antigo ? Math.round((1 - novo / antigo) * 100) : 0;
     // Alguns modelos invertem: nome e preço em cima, título embaixo da foto
-    const cima = MODELOS_CIMA.has(D.chave);
-    comSubida(ctx, t, B(0), () => tituloGrande(ctx, titulo, cima ? 190 : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone));
+    comSubida(ctx, t, B(0), () => tituloGrande(ctx, titulo, cima ? 190 + OY : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone));
     // Foto (sempre igual)
     comPulo(ctx, t, B(1), 540, FY, () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
@@ -4138,10 +4139,10 @@
     });
     if (cima) {
       ctx.font = "700 44px Poppins"; const lc = quebrarTexto(ctx, nome, 920, 2);
-      comSubida(ctx, t, B(3), () => { ctx.font = "700 44px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 330 : 360) + j * 50)); });
-      if (antigo) comSubida(ctx, t, B(3.5), () => { ctx.font = "600 46px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1270); ctx.fillRect(540 - w / 2 + ld, 1272, w - ld, 5); });
-      if (novo) comPulo(ctx, t, B(4), 540, antigo ? 1370 : 1310, () => { const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, B(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1460, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1500); });
+      comSubida(ctx, t, B(3), () => { ctx.font = "700 44px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 330 : 360) + OY + j * 50)); });
+      if (antigo) comSubida(ctx, t, B(3.5), () => { ctx.font = "600 46px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1270 + OY); ctx.fillRect(540 - w / 2 + ld, 1272 + OY, w - ld, 5); });
+      if (novo) comPulo(ctx, t, B(4), 540, (antigo ? 1370 : 1310) + OY, () => { const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (it.cupom) comSubida(ctx, t, B(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1460 + OY, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1500 + OY); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
@@ -4350,7 +4351,7 @@
   function efeitosReels(R, n) {
     temposDoModelo(R);
     // Toquinhos exatamente nas batidas em que cada coisa aparece
-    const pops = [0, 1, 2, 3].map(B), whooshes = [], l = itensReels();
+    const pops = [1, 2, 3].map(B), whooshes = [], l = itensReels(); // a logo entra junto com o bumbo do 1º tempo
     for (let i = 0; i < n; i++) {
       const b0 = T_INTRO + i * T_PROD, it = l[i] || {}; whooshes.push(b0 - 0.25);
       [0, 1, 2, 3, 4].forEach((k) => pops.push(b0 + B(k)));
@@ -4390,10 +4391,13 @@
       rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
       rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
       fim = new Promise((ok) => { rec.onstop = ok; });
+      if (ac && t0) await new Promise((ok) => { const e = () => (ac.currentTime >= t0 - 0.02 ? ok() : requestAnimationFrame(e)); e(); }); // grava a partir do 1º tempo da música
       rec.start(); manterTelaAcesa(true);
     }
     const inicio = performance.now();
-    const agora = () => ac && t0 ? ac.currentTime - t0 : (performance.now() - inicio) / 1000;
+    // Na prévia o som sai com atraso (alto-falante/Bluetooth): a imagem espera por ele
+    const atraso = !gravar && ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
+    const agora = () => ac && t0 ? ac.currentTime - t0 - atraso : (performance.now() - inicio) / 1000;
     let parado = false;
     R.tocando = { parar: () => { parado = true; } };
     await new Promise((ok) => {
@@ -4457,15 +4461,28 @@
     }
     if (wz.passo === "rPronto") {
       const r = R.resultado, M = MODELOS_REELS[R.modelo];
-      c.innerHTML = `<h2 class="wz-titulo">${r ? "Reels pronto" : "Seu Reels"}</h2>
-        ${r ? `<video class="vd-previa" src="${r.url}" controls playsinline></video>
-          <p class="nota">Formato: <b>${r.mp4 ? "MP4" : "WebM"}</b>.${r.mp4 ? "" : " Este celular não grava MP4: o WhatsApp aceita, mas o Instagram pode recusar WebM."}</p>
-          <button type="button" class="btn btn--rosa" id="rPostar">Postar / compartilhar</button>
-          ${blocoLegenda(R)}
-          <div class="duas"><button type="button" class="btn btn--branco" id="rBaixar">Baixar vídeo</button>${r.capa ? '<button type="button" class="btn btn--branco" id="rBaixarCapa">Baixar capa</button>' : ""}</div>
-          ${r.capa ? `<div class="capa-bloco"><span>Capa</span><img class="capa-previa" src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"></div>` : ""}
-          <button type="button" class="btn btn--branco" id="rRefazer">Gravar de novo</button>`
-        : `<p class="nota"><b>${esc(M.nome)}</b> · ${esc(CORES_VIDEO[R.cor].nome)} · ${itensReels().length} produto(s) · ${Math.round(duracaoReelsProdutos())} segundos</p>
+      if (r) {
+        c.innerHTML = `<h2 class="wz-titulo">Reels pronto</h2>
+        <div class="rp-grade">
+          <div class="rp-midia">
+            <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
+            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"><figcaption>Capa</figcaption></figure>` : ""}
+          </div>
+          <div class="rp-acoes">
+            <button type="button" class="btn btn--rosa" id="rPostar">Postar / compartilhar</button>
+            <div class="rp-linha">
+              <button type="button" class="btn btn--branco" id="rBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar vídeo</button>
+              ${r.capa ? '<button type="button" class="btn btn--branco" id="rBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg>Baixar capa</button>' : ""}
+            </div>
+            ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
+            ${blocoLegenda(R)}
+            <div class="rp-rodape"><button type="button" class="link-sel" id="rRefazer">Gravar de novo</button><button type="button" class="link-sel" id="wzNovo">Voltar para a lista</button></div>
+          </div>
+        </div>`;
+        return;
+      }
+      c.innerHTML = `<h2 class="wz-titulo">Seu Reels</h2>
+        ${`<p class="nota"><b>${esc(M.nome)}</b> · ${esc(CORES_VIDEO[R.cor].nome)} · ${itensReels().length} produto(s) · ${Math.round(duracaoReelsProdutos())} segundos</p>
           <div class="wz-previa"><canvas id="rQuadro" width="540" height="960"></canvas></div>
           <button type="button" class="btn btn--branco" id="rPrevia">▶ Ver prévia com música</button>
           <div class="vd-progresso" id="rProgresso" hidden><i></i></div>

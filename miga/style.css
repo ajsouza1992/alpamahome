@@ -1064,3 +1064,49 @@ body.modo-selecao main { padding-bottom: 200px; }
   .wz__corpo:has(> .estudio) .est-previa, .wz__corpo:has(> .estudio) .est-previa--img { width: auto; max-width: 100%; height: min(74vh, 760px); aspect-ratio: 9 / 16; justify-self: center; }
   .wz__corpo:has(> .estudio) .car-trilho { height: auto; }
 }
+
+/* ===== Reels pronto: vídeo e capa lado a lado, ações organizadas ===== */
+.rp-grade { display: grid; gap: 18px; }
+.rp-midia { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; align-items: end; }
+.rp-midia figure { margin: 0; display: grid; gap: 6px; justify-items: center; }
+.rp-midia figcaption { font-size: 12.5px; font-weight: 600; color: var(--cinza); }
+.rp-video video { width: 100%; max-height: 62vh; aspect-ratio: 9 / 16; object-fit: contain; border-radius: 18px; background: #000; box-shadow: 0 14px 30px -18px rgba(0,0,0,.5); }
+.rp-capa img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 14px; box-shadow: 0 10px 22px -14px rgba(0,0,0,.45); }
+.rp-acoes { display: grid; gap: 12px; align-content: start; }
+.rp-linha { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.rp-linha .btn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; }
+.rp-linha .btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rp-acoes .campo textarea { min-height: 180px; }
+.rp-rodape { display: flex; justify-content: space-between; gap: 12px; padding-top: 4px; }
+.rt-feito { color: #1f8a4c; font-weight: 600; }
+
+@media (min-width: 960px) {
+  .rp-grade { grid-template-columns: minmax(320px, 460px) minmax(0, 1fr); column-gap: 48px; align-items: start; }
+  .rp-video video { max-height: 70vh; }
+  /* Lista: link, Adicionar e Postar cupons na mesma linha (sem esticar) */
+  #ppListaBloco { grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 12px; }
+  #ppListaBloco > * { grid-column: 1 / -1; }
+  #ppListaBloco > .colar { grid-column: 1; }
+  #ppListaBloco > #ppAdicionar { grid-column: 2; width: auto; padding: 0 32px; margin: 0; }
+  #ppListaBloco > #ppCupons { grid-column: 3; width: auto; padding: 0 26px; margin: 0; }
+  #ppListaBloco > .colar input { height: 56px; }
+  /* Janelas maiores, com os modelos em duas colunas */
+  .dialogo.folha { width: min(900px, 94vw); max-width: 900px; }
+  .folha-est .lista-mod--mini { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .folha-est .lista-mod--mini canvas, .folha-est .mini-mod { width: 78px !important; height: 139px !important; }
+  .folha-est .lista-mod { max-height: 62vh; }
+  .wz-rodape .wz-continuar, .wz__corpo:has(> .estudio) > .wz-continuar { min-height: 56px !important; font-size: 17px !important; }
+}
+/* Telas grandes: tudo um pouco maior para aproveitar o espaço */
+@media (min-width: 1280px) { .conteudo, .dialogo { zoom: 1.1; } }
+@media (min-width: 1680px) { .conteudo, .dialogo { zoom: 1.2; } }
+@media (min-width: 960px) {
+  .folha-est .lista-mod--mini > button { grid-template-columns: 78px minmax(0, 1fr); gap: 14px; padding: 8px 40px 8px 8px; }
+  .folha-est .lista-mod { max-height: min(52vh, 560px); }
+}
+.rt-rodape { display: flex !important; gap: 8px; }
+.rt-rodape .btn { flex: 1; min-height: 48px; margin: 0 !important; }
+.rt-rodape .rt-proximo { flex: 0 0 auto; min-width: 120px; padding: 0 18px; }
+.rt-rodape #rtPostar { flex: 1 1 auto; }
+@media (min-width: 960px) { .rt-rodape { max-width: 640px; margin: 0 auto; width: 100%; } }
+.rt-rodape > .btn, .rt-rodape > .wz-continuar { flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; max-width: none !important; padding: 0 10px !important; white-space: nowrap; font-size: 15px !important; }
