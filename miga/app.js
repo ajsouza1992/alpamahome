@@ -51,11 +51,15 @@
     if (im && im.complete && im.naturalWidth) { const s = r * (loja === "mercadolivre" ? 1.72 : 1.42); ctx.drawImage(im, cx - s / 2, cy - s / 2, s, s); }
   }
   /** Coloca a loja na legenda, logo antes da linha do link */
+  /** Linha do link com o nome da loja na frente: "Mercado Livre: https://..." */
+  const linkLoja = (loja, link) => link ? `${NOME_LOJA[loja] ? NOME_LOJA[loja] + ": " : "Link: "}${link}` : "";
   function comLoja(texto, loja, link) {
-    const l = linhaLoja(loja); if (!l || !link || texto.includes(l)) return texto;
-    const i = texto.lastIndexOf(link); if (i < 0) return texto + "\n" + l;
-    const ini = texto.lastIndexOf("\n", i) + 1;
-    return texto.slice(0, ini) + l + "\n" + texto.slice(ini);
+    if (!link) return texto;
+    const i = texto.lastIndexOf(link); if (i < 0) return texto + "\n" + linkLoja(loja, link);
+    const ini = texto.lastIndexOf("\n", i) + 1, fim = texto.indexOf("\n", i);
+    // tira a linha da loja que já estivesse logo acima e a figurinha/mãozinha antes do link
+    let antes = texto.slice(0, ini); const l = linhaLoja(loja); if (l && antes.endsWith(l + "\n")) antes = antes.slice(0, -(l.length + 1));
+    return antes + linkLoja(loja, link) + texto.slice(fim < 0 ? texto.length : fim);
   }
   const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
   const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração", saude: "Saúde e Fitness", outros: "Outros" };
@@ -612,13 +616,13 @@
   }
   /* Modelos de texto prontos (sem IA): escolhe um e edita à mão se quiser */
   const MODELOS_TEXTO = {
-    amiga: { nome: "Dica de amiga", f: (p) => mensagemReserva(p) },
+    amiga: { abre: true, nome: "Dica de amiga", f: (p) => mensagemReserva(p) },
     curta: { nome: "Curta", f: (p, x) => `✨ *${p.nome}*\n💸 ${x.preco}${x.cupom}\n👉 ${p.link}` },
-    preco: { nome: "Preço em destaque", f: (p, x) => `🔥 BAIXOU O PREÇO! 🔥\n\n*${p.nome}*\n\n${p.precoAntigo ? `De ~${brl(p.precoAntigo)}~\nPor *${brl(p.precoNovo)}*${x.off ? ` (${x.off}% OFF)` : ""} 😱` : `Só *${brl(p.precoNovo)}* 😱`}${x.cupom}\n\n👉 ${p.link}` },
-    animada: { nome: "Animada", f: (p, x) => `Gente, CORRE!!! 😍🏃‍♀️💨\n\nAchei *${p.nome}* ${x.onde} e tô apaixonada! 💖\n\n💸 ${x.preco}${x.cupom}\n\n${x.frase}\n\n👉 ${p.link}\n\nNão vai ficar desse preço por muito tempo, hein! ⏳✨` },
-    urgencia: { nome: "Últimas horas", f: (p, x) => `⏰ *ÚLTIMAS HORAS* ⏰\n\n*${p.nome}*\n💸 ${x.preco}${x.cupom}\n\nEsse preço pode acabar a qualquer momento!\n\n👉 ${p.link}` },
-    elegante: { nome: "Elegante", f: (p, x) => `Seleção da Miga 🌸\n\n*${p.nome}*\n${x.preco}${x.cupom}\n\n${x.frase}\n\nConfira aqui: ${p.link}` },
-    pergunta: { nome: "Você usaria?", f: (p, x) => `Você usaria? 👀\n\n*${p.nome}* ${x.onde}\n💸 ${x.preco}${x.cupom}\n\n${x.frase}\n\nMe conta aqui! 👇\n👉 ${p.link}` }
+    preco: { abre: true, nome: "Preço em destaque", f: (p, x) => `🔥 BAIXOU O PREÇO! 🔥\n\n*${p.nome}*\n\n${p.precoAntigo ? `De ~${brl(p.precoAntigo)}~\nPor *${brl(p.precoNovo)}*${x.off ? ` (${x.off}% OFF)` : ""} 😱` : `Só *${brl(p.precoNovo)}* 😱`}${x.cupom}\n\n👉 ${p.link}` },
+    animada: { abre: true, nome: "Animada", f: (p, x) => `Gente, CORRE!!! 😍🏃‍♀️💨\n\nAchei *${p.nome}* ${x.onde} e tô apaixonada! 💖\n\n💸 ${x.preco}${x.cupom}\n\n${x.frase}\n\n👉 ${p.link}\n\nNão vai ficar desse preço por muito tempo, hein! ⏳✨` },
+    urgencia: { abre: true, nome: "Últimas horas", f: (p, x) => `⏰ *ÚLTIMAS HORAS* ⏰\n\n*${p.nome}*\n💸 ${x.preco}${x.cupom}\n\nEsse preço pode acabar a qualquer momento!\n\n👉 ${p.link}` },
+    elegante: { abre: true, nome: "Elegante", f: (p, x) => `Seleção da Miga 🌸\n\n*${p.nome}*\n${x.preco}${x.cupom}\n\n${x.frase}\n\nConfira aqui: ${p.link}` },
+    pergunta: { abre: true, nome: "Você usaria?", f: (p, x) => `Você usaria? 👀\n\n*${p.nome}* ${x.onde}\n💸 ${x.preco}${x.cupom}\n\n${x.frase}\n\nMe conta aqui! 👇\n👉 ${p.link}` }
   };
   function textoDoModelo(estilo, p) {
     const x = {
@@ -1083,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=101"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=102"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=101"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=102"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1587,7 +1591,7 @@
   function escolherOpcao(titulo, opcoes, atual) {
     const d = $("#folhaEscolha");
     $("#folhaTitulo").textContent = titulo;
-    $("#folhaOpcoes").innerHTML = opcoes.map(([v, n]) => `<button type="submit" value="${esc(v)}" class="${v === atual ? "on" : ""}"><span>${esc(n)}</span>${v === atual ? "<b>✓</b>" : ""}</button>`).join("");
+    $("#folhaOpcoes").innerHTML = opcoes.map(([v, n, cor]) => `<button type="submit" value="${esc(v)}" class="${v === atual ? "on" : ""}">${cor ? `<i class="op-cor" style="background:${cor}"></i>` : ""}<span>${esc(n)}</span>${v === atual ? "<b>✓</b>" : ""}</button>`).join("");
     d.returnValue = "";
     d.showModal();
     return new Promise((ok) => d.addEventListener("close", () => ok(d.returnValue || null), { once: true }));
@@ -1824,7 +1828,8 @@
   const CAMPANHAS = {
     blackfriday: { nome: "Black Friday", tag: "Black Friday", titulo: "*Black*\nFriday", sub: "Os melhores preços do ano", cor: "preto", chamada: "🖤 *BLACK FRIDAY DA MIGA!* 🖤", tags: "#blackfriday #blackfriday2026" },
     d1212: { nome: "12.12", tag: "É 12.12!", titulo: "Ofertas\ndo *12.12*", sub: "Só hoje com esses preços", cor: "rosa", chamada: "🔥 *É 12.12, MIGA!* 🔥", tags: "#1212 #promoção1212" },
-    natal: { nome: "Natal", tag: "Especial de Natal", titulo: "Achadinhos\nde *Natal*", sub: "Presentes com preço de amiga", cor: "rosa", chamada: "🎄 *ESPECIAL DE NATAL DA MIGA* 🎁", tags: "#natal #presentesdenatal" },
+    natal: { nome: "Natal", tag: "Especial de Natal", titulo: "Achadinhos\nde *Natal*", sub: "Presentes com preço de amiga", cor: "rosa", chamada: "🎄 *ESPECIAL DE NATAL DA MIGA* 🎁", tags: "#natal #presentesdenatal", musica: "natalpop" },
+    anonovo: { nome: "Ano Novo", tag: "Ano Novo", titulo: "Ano novo,\n*preço novo*", sub: "Comece o ano economizando", cor: "preto", chamada: "🥂 *ANO NOVO COM A MIGA* ✨", tags: "#anonovo #reveillon", musica: "anonovo" },
     esquenta: { nome: "Esquenta", tag: "Esquenta", titulo: "Esquenta\nde *ofertas*", sub: "Já começou, miga!", cor: "rosa", chamada: "🔥 *ESQUENTA DE OFERTAS* 🔥", tags: "#esquenta #ofertas" },
     queima: { nome: "Queima de estoque", tag: "Queima de estoque", titulo: "Queima de\n*estoque*", sub: "Enquanto durar", cor: "preto", chamada: "💥 *QUEIMA DE ESTOQUE* 💥", tags: "#queimadeestoque #liquidação" },
     maes: { nome: "Dia das Mães", tag: "Dia das Mães", titulo: "Presentes\npra *mãe*", sub: "Ela merece, e cabe no bolso", cor: "creme", chamada: "💐 *ESPECIAL DIA DAS MÃES* 💐", tags: "#diadasmães #presentes" },
@@ -2172,10 +2177,13 @@
     if (wz.passo === "montagem" || wz.passo === "cor") {
       if (!MODELOS_REELS[wz.modelo]) wz.modelo = "achadinho"; if (!CORES_VIDEO[wz.cor]) wz.cor = DECOR[wz.modelo].cor;
       const nomeModelo = wz.tituloArte || (campanha() ? campanha().nome : MODELOS_REELS[wz.modelo].nome);
+      const comTexto = legendaNoEstudio() && item.precoNovo;
+      if (comTexto && !item.texto) usarModeloTexto(item.estiloTexto || "amiga");
       c.innerHTML = `<div class="estudio">
         <div class="est-previa est-previa--img"><canvas id="wzEstTela"></canvas></div>
         <div class="est-ctrl est-ctrl--2">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}</div>
       </div>
+      ${comTexto ? blocoMensagem(item) : ""}
       ${botaoContinuar(true)}`;
       const pintar = () => { const cv = $("#wzEstTela"); if (cv) desenharMontagem(cv, false, wz.modelo, wz.cor, wz.formato === "post" ? "post" : "story"); };
       pintar(); prepararFoto(item).then(pintar);
@@ -2206,13 +2214,7 @@
         return;
       }
       if (!item.texto) usarModeloTexto(item.estiloTexto || proximoEstilo());
-      c.innerHTML = `<h2 class="wz-titulo">Sua mensagem</h2>
-        <p class="nota">Escolha o modelo. Para mudar alguma coisa, toque em “Editar o texto”.</p>
-        <div class="wz-chips" id="wzModelosTexto">${Object.entries(MODELOS_TEXTO).map(([k, m]) => `<button type="button" data-estilo="${k}"${(item.estiloTexto || "amiga") === k ? ' class="on"' : ""}>${m.nome}</button>`).join("")}</div>
-        <button type="button" class="btn btn--branco btn-variar" id="wzVariar"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5"/></svg>Variar texto</button>
-        <div class="balao wz-balao" id="wzBalao">${formatarWhats(textoCanal(item.texto))}</div>
-        <details class="mais"${item.textoEditado ? " open" : ""}><summary>Editar o texto</summary><textarea id="wzTexto" rows="9">${esc(item.texto || "")}</textarea></details>
-        ${botaoContinuar(!!item.texto)}`;
+      c.innerHTML = `<h2 class="wz-titulo">Sua mensagem</h2>${blocoMensagem(item)}${botaoContinuar(!!item.texto)}`;
       return;
     }
     if (wz.passo === "enviar") {
@@ -2233,6 +2235,20 @@
         <button type="button" class="btn btn--branco" id="wzCopiarTg">Copiar o texto</button>
         <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
     }
+  }
+  /** Legenda na mesma tela: escolhe o jeito do texto e edita direto na mensagem (lápis) */
+  const legendaNoEstudio = () => wz.canal === "roteiro" && precisaTexto();
+  const ICO_LAPIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  function blocoMensagem(item) {
+    return `<div class="legenda-est">
+      <span class="legenda-rotulo">Legenda</span>
+      <div class="wz-chips wz-chips--rolar" id="wzModelosTexto">${Object.entries(MODELOS_TEXTO).map(([k, m]) => `<button type="button" data-estilo="${k}"${(item.estiloTexto || "amiga") === k ? ' class="on"' : ""}>${m.nome}</button>`).join("")}</div>
+      <div class="balao-caixa">
+        <div class="balao wz-balao" id="wzBalao">${formatarWhats(textoCanal(item.texto))}</div>
+        <textarea id="wzTexto" class="balao-texto" hidden>${esc(item.texto || "")}</textarea>
+        <button type="button" class="balao-lapis" id="wzEditar" aria-label="Editar a legenda">${ICO_LAPIS}</button>
+      </div>
+    </div>`;
   }
   // Telegram não usa *negrito* do WhatsApp do mesmo jeito: vai o texto limpo
   const textoCanal = (t) => wz.canal === "telegram" ? String(t || "").replace(/[*~_]/g, "") : t;
@@ -2271,7 +2287,12 @@
       catch (err) { $("#wzLink").focus(); toast("Toque e segure no campo para colar"); }
       return;
     }
-    const es = t.closest("[data-estilo]"); if (es) { usarModeloTexto(es.dataset.estilo); mostrarPasso(); return; }
+    const es = t.closest("[data-estilo]"); if (es) { const y = scrollY; usarModeloTexto(es.dataset.estilo); mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#wzEditar")) {
+      const ta = $("#wzTexto"), bl = $("#wzBalao"), ed = !ta.hidden;
+      if (ed) { ta.hidden = true; bl.hidden = false; $("#wzEditar").classList.remove("on"); return; }
+      ta.style.height = Math.max(bl.offsetHeight, 180) + "px"; bl.hidden = true; ta.hidden = false; $("#wzEditar").classList.add("on"); ta.focus(); return;
+    }
     if (t.closest("#wzVariar")) { const it = wzItem(); if (it) { usarModeloTexto(proximoEstilo(it.estiloTexto || "amiga")); mostrarPasso(); toast("Texto trocado: " + MODELOS_TEXTO[it.estiloTexto].nome); } return; }
     const ev = t.closest("[data-enviar-op]"); if (ev) { enviarWhats(ev.dataset.enviarOp); return; }
     const gr = t.closest("[data-grupo]"); if (gr) { enviarGrupo(gr.dataset.grupo); return; }
@@ -2315,7 +2336,10 @@
     const it = wzItem(); if (!it) return;
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
     const chamadaTema = !["achadinho", "top"].includes(wz.modelo) && LEGENDA_REELS[wz.modelo] ? LEGENDA_REELS[wz.modelo].varios(2).replace(/\s*[^.!?⏳💸]*:\s*$/, "") : "";
-    it.estiloTexto = estilo; it.texto = (wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*\n\n` : campanha() ? campanha().chamada + "\n\n" : chamadaTema ? chamadaTema + "\n\n" : "") + textoDoModelo(estilo, p); it.textoEditado = false; salvarFila();
+    const abre = wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*` : campanha() ? campanha().chamada : chamadaTema;
+    let corpo = textoDoModelo(estilo, p);
+    if (abre && MODELOS_TEXTO[estilo] && MODELOS_TEXTO[estilo].abre) corpo = corpo.slice(corpo.indexOf("\n\n") + 2);
+    it.estiloTexto = estilo; it.texto = (abre ? abre + "\n\n" : "") + corpo; it.textoEditado = false; salvarFila();
   }
   async function registrarCompartilhado(canal, onde) {
     const it = wzItem(); if (!it) return;
@@ -2398,7 +2422,7 @@
     if (wz.canal === "whatsapp") {
       // Status do WhatsApp: imagem + texto com o link (no Status o link fica clicável)
       const tela = document.createElement("canvas"); desenharMontagem(tela, false);
-      const texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}${linhaLoja(it.loja) ? " · " + linhaLoja(it.loja) : ""} 👉 ${it.link}`;
+      const texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
       tela.toBlob(async (blob) => {
         const arq = blob && new File([blob], nomeArquivo(it.nome), { type: "image/jpeg" });
         if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
@@ -2435,7 +2459,8 @@
   const precisaArte = () => (wz.lugares || []).some((k) => LUGARES[k].arte);
   const precisaTexto = () => (wz.lugares || []).some((k) => LUGARES[k].texto);
   function passosRoteiro() {
-    return ["canal", ...(wz.veioDaLista ? [] : ["produto"]), "lugares", ...(precisaArte() ? ["montagem"] : []), ...(precisaTexto() ? ["mensagem"] : []), "rodar", "resumo"];
+    const temPreco = !!(wzItem() || {}).precoNovo;
+    return ["canal", ...(wz.veioDaLista ? [] : ["produto"]), "lugares", ...(precisaArte() ? ["montagem"] : []), ...(precisaTexto() && (!precisaArte() || !temPreco) ? ["mensagem"] : []), "rodar", "resumo"];
   }
   function telaRoteiro(c, item) {
     if (wz.passo === "lugares") {
@@ -2516,7 +2541,7 @@
       const arq = await telaParaArquivo(tela, nomeArquivo(it.nome));
       let texto = "";
       if (k === "story") await copiarTexto(it.link);
-      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}${linhaLoja(it.loja) ? " · " + linhaLoja(it.loja) : ""} 👉 ${it.link}`;
+      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
       if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(base.split(it.link).join("🔗 link na bio").replace(/[*~_]/g, "").trim()); }
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { if (arq) baixarBlob(arq, arq.name); if (texto) await copiarTexto(texto); toast("Imagem salva: abra o app e escolha da galeria"); }
@@ -2634,7 +2659,7 @@
     const L = livre();
     const tema = L.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " ").trim();
     const itens = L.itens.slice(0, L.n).map((it, k) =>
-      `${NUM[k]} *${it.nome || "Produto " + (k + 1)}*${it.preco ? `\n💸 por *${brl(it.preco)}*` : ""}${it.link && linhaLoja(detectarLoja(it.link)) ? `\n${linhaLoja(detectarLoja(it.link))}` : ""}${it.link ? `\n👉 ${it.link}` : ""}`);
+      `${NUM[k]} *${it.nome || "Produto " + (k + 1)}*${it.preco ? `\n💸 por *${brl(it.preco)}*` : ""}${it.link ? `\n${linkLoja(detectarLoja(it.link), it.link)}` : ""}`);
     const e = { modelo: L.modelo || "achadinho", camp: L.camp || "" }, LG = LEGENDA_REELS[e.modelo];
     const abre = CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].chamada : L.tituloProp ? `✨ *${L.tituloProp}*` : L.modelo && L.modelo !== "achadinho" && LG ? LG.varios(L.itens.length) : `Miga, separei uns achadinhos pra você! 🛍️💖\n${tema}`;
     return `${abre}\n\n${itens.join("\n\n")}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
@@ -3172,6 +3197,7 @@
     };
     const chimbal = (t, aberto, vol = 1) => { const v = vol * (0.72 + Math.random() * 0.28); barulho(t, aberto ? 0.25 : 0.03, (aberto ? 0.14 : 0.13) * v, "highpass", 9500); };
     const shaker = (t, forte) => { const f = barulho(t, 0.05, forte ? 0.1 : 0.06, "bandpass", 7200); f.Q.value = 1.6; };
+    const guizo = (t, forte) => { [0, 0.012, 0.027].forEach((d, q) => { const f = barulho(t + d, 0.09, (forte ? 0.11 : 0.07) * (1 - q * 0.25), "bandpass", 9000 + q * 1300); f.Q.value = 6; }); };
     const aro = (t) => { const f = barulho(t, 0.03, 0.22, "bandpass", 3200); f.Q.value = 4; osc("sine", 820, t, 0.02, 0.06); };
     /** Pluck moderno: serra com filtro que fecha rápido (no lugar do "beep" de videogame) */
     const pluck = (f, t, dur, vol, pan = 0, brilho = 3200, destino = bomba) => {
@@ -3213,7 +3239,8 @@
     });
     const lider = (m, t, dur) => {
       const tipo = E.lider || "triangle";
-      if (tipo === "sino") { const g = ac.createGain(); env(g, t, 0.14, 0.9, 0.003); g.connect(musica); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(m); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(m) * 3.5; mg.gain.setValueAtTime(nota(m) * 2, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.6); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(t); x.stop(t + 1.1); }); }
+      if (tipo === "piano") { corda(nota(m), t, Math.max(dur, 0.8), E.liderVol || 0.16, 0.1, "piano"); if (E.sinos) { const g = ac.createGain(); env(g, t, 0.035, 1.2, 0.003); g.connect(musica); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(m + 12); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(m + 12) * 3.5; mg.gain.setValueAtTime(nota(m) * 1.5, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.8); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(t); x.stop(t + 1.3); }); } }
+      else if (tipo === "sino") { const g = ac.createGain(); env(g, t, 0.14, 0.9, 0.003); g.connect(musica); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(m); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(m) * 3.5; mg.gain.setValueAtTime(nota(m) * 2, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.6); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(t); x.stop(t + 1.1); }); }
       else if (tipo === "cowbell") { const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = nota(m) * 1.5; f.Q.value = 3; f.connect(musica); osc("square", nota(m), t, 0.12, 0.2, f); osc("square", nota(m) * 1.48, t, 0.12, 0.14, f); }
       else if (tipo === "sine") { const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime((E.liderVol || 0.12) * 0.8, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.25); g.connect(musica); g.connect(sala);
         const o = ac.createOscillator(); o.frequency.value = nota(m); const v = ac.createOscillator(), vg = ac.createGain(); v.frequency.value = 5.2; vg.gain.value = nota(m) * 0.006; v.connect(vg).connect(o.frequency); o.connect(g); [o, v].forEach((x) => { x.start(t); x.stop(t + dur + 0.35); }); }
@@ -3222,17 +3249,18 @@
     const passo = 60 / E.bpm / 4, fimMusica = total - 0.3, P = (s, i) => (s || "")[i % 16] || ".";
     let ultimoBaixo = null;
     for (let st = 0; st * passo < fimMusica; st++) {
-      const i = st % 16, bar = Math.floor(st / 16) % 4, sw = (i % 2 ? (E.balanco || 0) * passo : 0), t = t0 + st * passo + sw;
+      const i = st % 16, nb = (E.raiz || [0]).length, bar = Math.floor(st / 16) % nb, sw = (i % 2 ? (E.balanco || 0) * passo : 0), t = t0 + st * passo + sw;
       if (P(E.k, i) === "x") { kick(t, E.k808); const fundo = E.bomba ? 0.35 : 0.65; bomba.gain.setValueAtTime(fundo, t); bomba.gain.linearRampToValueAtTime(1, t + passo * 3); }
       if (P(E.s, i) === "x") caixa(t, E.palma);
       const h = P(E.h, i); if (h === "x") chimbal(t, false, E.chVol || 1); else if (h === "r") for (let q = 0; q < 3; q++) chimbal(t + q * passo / 3, false, 0.8);
       if (P(E.o, i) === "o") chimbal(t, true);
       if (P(E.tique, i) === "x") aro(t);
       const sh = P(E.sh, i); if (sh === "x" || sh === "X") shaker(t, sh === "X");
+      const gz = P(E.guizo, i); if (gz === "x" || gz === "X") guizo(t, gz === "X");
       const bx = P(E.b, i);
       if (bx === "x" || bx === "X") {
         let len = 1; while (len < 16 && P(E.b, i + len) === "-") len++;
-        const m = E.raiz[bar] + (bx === "X" ? 12 : 0), prox = E.raiz[(bar + (i + len >= 16 ? 1 : 0)) % 4];
+        const m = E.raiz[bar] + (bx === "X" ? 12 : 0), prox = E.raiz[(bar + (i + len >= 16 ? 1 : 0)) % nb];
         if (E.baixo === "808") baixo808(m, t, passo * Math.max(len, 2) * 0.95, prox !== m ? prox : null); else baixoSaw(m, t, passo * Math.max(1, len) * 0.9);
         ultimoBaixo = m;
       }
@@ -3241,9 +3269,9 @@
       if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.025, "highpass", 3000);
     }
     // "Plim" na hora que aparece o seu @
-    if (plim != null) { const tp = t0 + plim; barulho(tp, 0.5, 0.12, "bandpass", 5000, sala); }
+    if (plim != null) { const tp = t0 + plim; [72, 76, 79, 84].forEach((m, q) => corda(nota(m + 12), tp + q * 0.07, 1.2, 0.2 - q * 0.02, (q - 1.5) * 0.25, "piano")); guizo(tp, true); }
     // "Toc" macio quando algo aparece (no lugar do assobio)
-    pops.forEach((p) => { const f = barulho(t0 + p, 0.04, 0.16, "bandpass", 1800, mestre); f.Q.value = 2; });
+    pops.forEach((p) => { const o = osc("sine", 760, t0 + p, 0.09, 0.32, mestre); o.frequency.setValueAtTime(760, t0 + p); o.frequency.exponentialRampToValueAtTime(380, t0 + p + 0.08); const f = barulho(t0 + p, 0.02, 0.12, "bandpass", 3000, mestre); f.Q.value = 1.5; });
     whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.32, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
     return t0;
   }
@@ -3767,6 +3795,14 @@
       acordes: [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 56, 59]], raiz: [33, 31, 29, 28], lider: "pluck", liderVol: 0.11, entra: 16, melodia: [76, 0, 77, 0, 76, 0, 74, 0, 72, 0, 0, 0, 74, 0, 0, 0, 71, 0, 72, 0, 74, 0, 72, 0, 71, 0, 0, 0, 68, 0, 0, 0] },
     latintrap: { bpm: 140, k808: true, desliza: true, k: "x.........x.....", s: "........x.......", palma: true, h: "x.x.x.x.x.x.xrx.", sh: "....x.......x...", b: "x---------x--x--", baixo: "808", c: "x---------------", acordeTipo: "teclado",
       acordes: [[57, 60, 64, 67], [53, 57, 60, 64], [50, 53, 57, 60], [52, 56, 59, 62]], raiz: [33, 29, 26, 28], lider: "sine", liderVol: 0.13, entra: 16, melodia: [76, 0, 0, 0, 72, 0, 74, 0, 76, 0, 0, 0, 0, 0, 0, 0, 77, 0, 0, 0, 76, 0, 74, 0, 72, 0, 0, 0, 71, 0, 0, 0] },
+    natalpop: { bpm: 120, bomba: true, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "..x...x...x...x.", guizo: "x.X.x.X.x.X.x.X.", b: "x..x..x.x..x..x.", baixo: "saw", c: "x...x...x...x...", acordeTipo: "piano",
+      acordes: [[60, 64, 67], [60, 64, 67], [60, 64, 67], [60, 64, 67], [53, 57, 60], [60, 64, 67], [55, 59, 62, 65], [55, 59, 62]], raiz: [36, 36, 36, 36, 41, 36, 43, 43], lider: "piano", sinos: true, melodiaReal: true, liderVol: 0.17, entra: 0, melodia: [76, 0, 0, 0, 76, 0, 0, 0, 76, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 0, 76, 0, 0, 0, 76, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 0, 79, 0, 0, 0, 72, 0, 0, 0, 0, 0, 74, 0, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 0, 0, 0, 77, 0, 0, 0, 77, 0, 0, 0, 0, 0, 77, 0, 77, 0, 0, 0, 76, 0, 0, 0, 76, 0, 0, 0, 76, 0, 76, 0, 76, 0, 0, 0, 74, 0, 0, 0, 74, 0, 0, 0, 76, 0, 0, 0, 74, 0, 0, 0, 0, 0, 0, 0, 79, 0, 0, 0, 0, 0, 0, 0] },
+    natalreggaeton: { bpm: 96, k: "x...x...x...x...", s: "...x..x....x..x.", palma: true, h: "x.x.x.x.x.x.x.x.", chVol: 0.6, guizo: "..x...x...x...x.", b: "x-..x-..x-..x-..", baixo: "808", c: "x-------x-------", acordeTipo: "violao",
+      acordes: [[60, 64, 67], [60, 64, 67], [55, 59, 62, 65], [60, 64, 67]], raiz: [36, 36, 31, 36], lider: "piano", sinos: true, melodiaReal: true, liderVol: 0.16, entra: 0, melodia: [79, 0, 0, 0, 0, 0, 77, 0, 76, 0, 0, 0, 74, 0, 0, 0, 72, 0, 0, 0, 74, 0, 0, 0, 76, 0, 0, 0, 72, 0, 0, 0, 74, 0, 76, 0, 77, 0, 74, 0, 76, 0, 0, 0, 0, 0, 74, 0, 72, 0, 0, 0, 71, 0, 0, 0, 72, 0, 0, 0, 0, 0, 0, 0] },
+    natallofi: { bpm: 82, balanco: 0.16, k: "x......x..x.....", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", chVol: 0.5, chiado: true, guizo: "x...x...x...x...", b: "x-------x-------", baixo: "saw", c: "x-------x-------", acordeTipo: "teclado",
+      acordes: [[60, 64, 67], [55, 59, 62], [55, 59, 62, 65], [60, 64, 67]], raiz: [36, 43, 43, 36], lider: "piano", sinos: true, melodiaReal: true, liderVol: 0.15, entra: 0, melodia: [72, 0, 0, 0, 0, 0, 71, 0, 69, 0, 0, 0, 0, 0, 67, 0, 65, 0, 0, 0, 0, 0, 64, 0, 62, 0, 0, 0, 60, 0, 0, 0, 67, 0, 69, 0, 0, 0, 0, 0, 69, 0, 71, 0, 0, 0, 0, 0, 71, 0, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    anonovo: { bpm: 124, bomba: true, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "..x...x...x...x.", o: "..o...o...o...o.", sh: "xxXxxxXxxxXxxxXx", b: "x-..x-..x-..x-..", baixo: "saw", c: "..x...x...x...x.", acordeTipo: "piano",
+      acordes: [[60, 64, 67], [55, 59, 62], [60, 64, 67], [53, 57, 60]], raiz: [36, 43, 36, 41], lider: "piano", melodiaReal: true, liderVol: 0.17, entra: 16, melodia: [72, 0, 0, 0, 0, 0, 72, 0, 72, 0, 0, 0, 76, 0, 0, 0, 74, 0, 0, 0, 0, 0, 72, 0, 74, 0, 0, 0, 76, 0, 0, 0, 72, 0, 0, 0, 0, 0, 72, 0, 76, 0, 0, 0, 79, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
     phonk: { bpm: 130, k808: true, sujo: true, k: "x.....x...x.....", s: "........x.......", h: "x.x.x.x.x.x.x.x.", b: "x-----x---x-----", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [56, 60, 63], [58, 62, 65]], raiz: [36, 36, 32, 34],
       lider: "cowbell", entra: 0, melodia: [72, 0, 72, 75, 0, 72, 0, 70, 72, 0, 72, 75, 0, 79, 0, 77, 72, 0, 72, 75, 0, 72, 0, 70, 68, 0, 68, 70, 0, 72, 0, 0] }
   };
@@ -3776,7 +3812,7 @@
     trap: ["Trap", "grave que desliza"], trappesado: ["Trap pesado", "grave com muita ênfase"], trapmelodico: ["Trap melódico", "grave e suave"],
     drill: ["Drill", "tenso, com tique-taque"], funk: ["Funk", "dançante"], funkmandela: ["Funk mandelão", "grave estourado"],
     phonk: ["Phonk", "grave sujo e sininho"],
-    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], perreosuave: ["Perreo suave", "romântico com cordas"], reggaetonpop: ["Reggaeton pop", "alegre e romântico"], reggaetonnoite: ["Reggaeton da noite", "lento e envolvente"], bachata: ["Bachata pop", "romântica e dançante"], reggaetonmoderno: ["Reggaeton moderno", "pluck e grave deslizando"], latinpop: ["Latin pop", "violão e shaker, alegre"], moombahton: ["Moombahton", "latino eletrônico"], cumbiapop: ["Cumbia pop", "dançante e leve"], latintrap: ["Trap latino", "grave e romântico"], afrobeat: ["Afrobeat", "suingado"],
+    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], perreosuave: ["Perreo suave", "romântico com cordas"], reggaetonpop: ["Reggaeton pop", "alegre e romântico"], reggaetonnoite: ["Reggaeton da noite", "lento e envolvente"], bachata: ["Bachata pop", "romântica e dançante"], natalpop: ["Natal pop", "Jingle Bells com sininhos"], natalreggaeton: ["Natal reggaeton", "Deck the Halls latino"], natallofi: ["Natal lo-fi", "calminho com piano"], anonovo: ["Ano novo", "festa com Auld Lang Syne"], reggaetonmoderno: ["Reggaeton moderno", "violão e grave deslizando"], latinpop: ["Latin pop", "violão e shaker, alegre"], moombahton: ["Moombahton", "latino eletrônico"], cumbiapop: ["Cumbia pop", "dançante e leve"], latintrap: ["Trap latino", "grave e romântico"], afrobeat: ["Afrobeat", "suingado"],
     disco: ["Disco", "baixo saltitante"], boombap: ["Boom bap", "rap anos 90"], lofi: ["Lo-fi", "calmo e delicado"]
   };
   const MODELOS_REELS = {
@@ -3813,7 +3849,7 @@
   };
   let T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 3.4;
   /** As telas duram um número exato de tempos da batida do modelo */
-  const musicaDe = (R) => MUSICAS[R.musica] ? R.musica : MODELOS_REELS[R.modelo].musica;
+  const musicaDe = (R) => MUSICAS[R.musica] ? R.musica : (CAMPANHAS[R.camp] && CAMPANHAS[R.camp].musica) || MODELOS_REELS[R.modelo].musica;
   function temposDoModelo(R) {
     const bt = ajustarGrade(MUSICAS[musicaDe(typeof R === "string" ? { modelo: R } : R)].bpm);
     T_INTRO = emTempos(2.6, bt); T_PROD = emTempos(3.6, bt); T_FIM = emTempos(3.4, bt);
@@ -3895,6 +3931,7 @@
     c_blackfriday: { ic: ["etiqueta", "raio"], selo: "Black Friday", frase: "O melhor preço do ano", cor: "preto", faixa: "BLACK FRIDAY", lay: "oferta" },
     c_d1212: { ic: ["fogo", "etiqueta"], selo: "12.12", frase: "Só hoje com esse preço", cor: "rosa", faixa: "12.12 · 12.12", lay: "oferta" },
     c_natal: { ic: ["arvore", "floco", "presente"], selo: "Natal", frase: "Presente com preço de amiga", cor: "rosa", natal: true, lay: "polaroid" },
+    c_anonovo: { ic: ["brilho", "presente"], selo: "Ano Novo", frase: "Comece o ano economizando", cor: "preto", lay: "polaroid" },
     c_esquenta: { ic: ["fogo", "raio"], selo: "Esquenta", frase: "As ofertas já começaram", cor: "preto", lay: "oferta" },
     c_queima: { ic: ["fogo", "etiqueta"], selo: "Queima", frase: "Enquanto durar o estoque", cor: "preto", faixa: "QUEIMA DE ESTOQUE", lay: "oferta" },
     c_maes: { ic: ["coracao", "presente"], selo: "Dia das Mães", frase: "Ela merece", cor: "rosa", lay: "circulo" },
@@ -3902,7 +3939,7 @@
     c_beleza: { ic: ["batom", "perfume"], selo: "Beleza", frase: "Autocuidado com desconto", cor: "rosa", lay: "circulo" },
     c_casa: { ic: ["casa", "panela"], selo: "Casa", frase: "Casa linda gastando pouco", cor: "creme", lay: "polaroid" }
   };
-  const decorDe = (R) => (R.camp && DECOR["c_" + R.camp]) || DECOR[R.modelo] || DECOR.achadinho;
+  const decorDe = (R) => { const k = R.camp && DECOR["c_" + R.camp] ? "c_" + R.camp : DECOR[R.modelo] ? R.modelo : "achadinho"; return { ...DECOR[k], chave: k }; };
   let decorAtual = null;
   const POS_DECOR = [[95, 600, 110, -0.2], [985, 720, 105, 0.2], [90, 1060, 95, 0.15], [990, 1110, 100, -0.15], [140, 1810, 90, 0.1]];
   function desenharDecor() { /* fundo limpo: o tema aparece no título, na cor e nos selos */ }
@@ -4049,6 +4086,7 @@
   }
   /* ---------- Arte do produto: fundo limpo, título grande, foto sempre no mesmo lugar ---------- */
   // Estilos (todos centralizados, título solto, sem caixa): mudam a tipografia e o jeito do preço
+  const MODELOS_CIMA = new Set(["cheirosa", "look", "pet", "tech", "casa", "viagem", "presentes", "novidade", "cupom", "make", "bebe", "c_namorados", "c_beleza"]);
   const ESTILO_LAY = { polaroid: "centro", circulo: "grande", revista: "grande", balao: "contorno", oferta: "oferta" };
   /** Título grande centralizado; o ícone do tema vem logo depois da última linha (como "do dia ✨") */
   function tituloGrande(ctx, texto, cy, tam, C, modo, icone) {
@@ -4078,8 +4116,9 @@
     const titulo = mk === "top" ? `Top ${idx + 1}\n*${n > 1 ? "da semana" : "achadinho"}*` : M.titulo.replace("{n}", n > 1 ? n : "");
     const icone = (D.ic && D.ic[0]) || M.icone || "brilho";
     const preco = novo ? brl(novo) : "", off = antigo ? Math.round((1 - novo / antigo) * 100) : 0;
-    // Título com o ícone do tema
-    comSubida(ctx, t, 0.05, () => tituloGrande(ctx, titulo, 270, estilo === "grande" ? 128 : 124, C, estilo, icone));
+    // Alguns modelos invertem: nome e preço em cima, título embaixo da foto
+    const cima = MODELOS_CIMA.has(D.chave);
+    comSubida(ctx, t, 0.05, () => tituloGrande(ctx, titulo, cima ? 1360 : 270, estilo === "grande" ? 128 : 124, C, estilo, icone));
     // Foto (sempre igual)
     comPulo(ctx, t, 0.2, 540, FY, () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
@@ -4092,6 +4131,16 @@
       ctx.rotate(0.08); ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
       ctx.fillStyle = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
+    if (cima) {
+      ctx.font = "700 46px Poppins"; const lc = quebrarTexto(ctx, nome, 920, 2);
+      comSubida(ctx, t, 0.6, () => { ctx.font = "700 46px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, 140 + j * 54)); });
+      let yc = 140 + lc.length * 54 + 14;
+      if (antigo) comSubida(ctx, t, 0.85, () => { ctx.font = "600 40px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, yc); ctx.fillRect(540 - w / 2 + ld, yc + 2, w - ld, 4); });
+      yc += antigo ? 80 : 50;
+      if (novo) comPulo(ctx, t, 1.1, 540, yc, () => { const tx = (antigo ? "por " : "") + preco; let f = 92; ctx.font = `900 ${f}px Poppins`; while (f > 60 && ctx.measureText(tx).width > 640) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (it.cupom) comSubida(ctx, t, 1.5, () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1530, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1570); });
+      return;
+    }
     // Nome, preço antigo e preço (sempre centralizados)
     ctx.font = "700 52px Poppins"; const ln = quebrarTexto(ctx, nome, 920, 2);
     comSubida(ctx, t, 0.6, () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 + j * 62)); });
@@ -4145,13 +4194,14 @@
   ICONE_EST.produtosLivre = ICONE_EST.produtos;
   const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k] || ""}</svg><b>${esc(nome)}</b><small>${esc(valor || "")}</small></button>`;
   let amostra = null, amostraK = "", amostraT = 0;
+  const ICO_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>', ICO_PAUSA = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1"/><rect x="13.5" y="5.5" width="4" height="13" rx="1"/></svg>';
   function tocarAmostra(k) {
     try { if (amostra) amostra.close(); } catch (e) { /* segue */ }
     clearTimeout(amostraT); amostra = null;
-    const parar = () => { amostraK = ""; document.querySelectorAll("[data-ouvir]").forEach((b) => { b.textContent = "▶"; b.classList.remove("tocando"); }); };
+    const parar = () => { amostraK = ""; document.querySelectorAll("[data-ouvir]").forEach((b) => { b.innerHTML = ICO_PLAY; b.classList.remove("tocando"); }); };
     if (!k || k === amostraK) { parar(); return; }
     parar(); amostraK = k;
-    const b = document.querySelector(`[data-ouvir="${k}"]`); if (b) { b.textContent = "❚❚"; b.classList.add("tocando"); }
+    const b = document.querySelector(`[data-ouvir="${k}"]`); if (b) { b.innerHTML = ICO_PAUSA; b.classList.add("tocando"); }
     try { amostra = new (window.AudioContext || window.webkitAudioContext)(); tocarTrilha(amostra, amostra.destination, 8, [], [], null, MUSICAS[k], null); const ac = amostra; amostraT = setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } parar(); }, 8300); } catch (e) { parar(); }
   }
   /** Folha genérica do estúdio */
@@ -4186,7 +4236,7 @@
     if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, R.camp === k && !R.titulo]);
     folhaEst("Modelo", `<div class="tabs-mod">${tabs}</div>
       <div class="lista-mod lista-mod--mini">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>
-      <div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="✏️ Escrever meu título" value="${esc(R.titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>`);
+      <div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="Escrever meu título" value="${esc(R.titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>`);
     pintarMinis(R);
   }
   async function pintarMinis(R) {
@@ -4204,7 +4254,7 @@
   }
   function folhaMusica() {
     const R = rr(), atual = musicaDe(R);
-    folhaEst("Música", `<div class="lista-mod">${Object.entries(NOMES_MUSICA).map(([k, [n, d]]) => `<div class="mus-linha${atual === k ? " on" : ""}"><button type="button" data-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">▶</button></div>`).join("")}</div>`);
+    folhaEst("Música", `<div class="lista-mod">${Object.entries(NOMES_MUSICA).map(([k, [n, d]]) => `<div class="mus-linha${atual === k ? " on" : ""}"><button type="button" data-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`);
   }
   function folhaProdutos() {
     const R = rr(), sel = itensReels(), resto = fila().filter((x) => !x.carregando && !R.itens.includes(x.id));
@@ -4223,7 +4273,7 @@
       if (k === "musica" && wz.canal === "reels") folhaMusica();
       if (k === "produtos") folhaProdutos();
       if (k === "estilo") { const v = await escolherOpcao("Estilo da arte", MONTAGENS.map((m) => [m, ESTILO_MONTAGEM[m]]), wz.modelo); if (v) { wz.modelo = v; aposMudarEstudio(); } }
-      if (k === "cor") { const lista = Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome]); const e = estLer(); const v = await escolherOpcao("Cor", lista, e.cor); if (v) { e.cor = v; estGravar(e); aposMudarEstudio(); } }
+      if (k === "cor") { const lista = Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome, x.fundo]); const e = estLer(); const v = await escolherOpcao("Cor", lista, e.cor); if (v) { e.cor = v; estGravar(e); aposMudarEstudio(); } }
       if (k === "musica" && wz.canal === "video") { const V = vd(); const v = await escolherOpcao("Música", Object.entries(NOMES_MUSICA).map(([m, [n, d]]) => [m, `${n} · ${d}`]), V.batida || "house"); if (v) { V.batida = v; V.resultado = null; tocarAmostra(v); aposMudarEstudio(); } return; }
       if (k === "enquadrar") { const V = vd(); const v = await escolherOpcao("Enquadramento do vídeo", Object.entries(TEMAS_VIDEO), V.tema); if (v) { V.tema = v; V.resultado = null; aposMudarEstudio(); } }
       if (k === "cupons") { wz.passo = "cEscolher"; mostrarPasso(); }
@@ -4504,28 +4554,25 @@
     const linhas = [];
     if (l.length === 1) {
       const it = l[0], nome = limparNome(it.nome || "Produto");
-      if (CAMPANHAS[R.camp]) linhas.push(CAMPANHAS[R.camp].chamada.replace(/[*]/g, ""), "");
-      if (R.titulo) linhas.push(`✨ ${R.titulo.replace(/[*]/g, "")}`, "");
-      linhas.push(L.um(`${nome} ${preco(it)}.`.replace(" .", ".")));
+      const proprio = R.titulo ? `✨ ${R.titulo.replace(/[*]/g, "")}` : CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].chamada.replace(/[*]/g, "") : "";
+      if (proprio) linhas.push(proprio, "", `${nome} ${preco(it)}`.trim());
+      else linhas.push(L.um(`${nome} ${preco(it)}.`.replace(" .", ".")));
       if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
-      if (linhaLoja(it.loja)) linhas.push(linhaLoja(it.loja));
-      if (it.link) linhas.push(`🔗 ${it.link}`);
+      if (it.link) linhas.push(linkLoja(it.loja, it.link));
     } else {
-      if (CAMPANHAS[R.camp]) linhas.push(CAMPANHAS[R.camp].chamada.replace(/[*]/g, ""), "");
-      linhas.push(R.titulo ? `✨ ${R.titulo.replace(/[*]/g, "")}! Olha esses achadinhos:` : L.varios(l.length), "");
+      linhas.push(R.titulo ? `✨ ${R.titulo.replace(/[*]/g, "")}! Olha esses achadinhos:` : CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].chamada.replace(/[*]/g, "") : L.varios(l.length), "");
       const ordem = R.modelo === "top" ? l.map((it, i) => [it, ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][i]]) : l.map((it, i) => [it, ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"][i]]);
       ordem.forEach(([it, n]) => {
         linhas.push(`${n} ${limparNome(it.nome || "Produto")}${preco(it) ? " " + preco(it) : ""}`);
         if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
-        if (linhaLoja(it.loja)) linhas.push(linhaLoja(it.loja));
-        if (it.link) linhas.push(`🔗 ${it.link}`);
+        if (it.link) linhas.push(linkLoja(it.loja, it.link));
         linhas.push("");
       });
       if (linhas[linhas.length - 1] === "") linhas.pop();
     }
     linhas.push("", `💬 Comenta EU QUERO que eu te mando ${l.length > 1 ? "os links" : "o link"}`);
     if (insta) linhas.push(`👉 Segue a ${insta} pra não perder nenhum achadinho`);
-    linhas.push("", `${CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].tags + " " : ""}${L.tags} #migapromo`);
+    linhas.push("", `${CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].tags + " #achadinhos" : L.tags} #migapromo`);
     return comConvite(linhas.join("\n"));
   }
   const blocoLegenda = (R) => `<div class="campo"><span>Legenda pronta</span>
