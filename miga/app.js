@@ -1082,7 +1082,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=80"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=81"; });
     }
     edFoto = null;
     try {
@@ -1455,7 +1455,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=80"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=81"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1673,7 +1673,7 @@
           <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button>${i.carregando ? "" : `<button type="button" class="pp-marcar" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`);
+      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button>${i.carregando || !modoVarios ? "" : `<button type="button" class="pp-marcar" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`);
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
   function chaveLink(u) {
@@ -1760,19 +1760,22 @@
   });
   /* ---------- Marcar produtos na Lista e escolher o que criar ---------- */
   const marcados = new Set();
+  let modoVarios = false;
+  function entrarModoVarios() { modoVarios = true; renderFila(); }
+  function sairModoVarios() { modoVarios = false; marcados.clear(); renderFila(); }
   const itensMarcados = () => fila().filter((i) => marcados.has(i.id) && !i.carregando);
   function pintarMarcados() {
     for (const id of [...marcados]) if (!fila().some((i) => i.id === id)) marcados.delete(id);
     const n = marcados.size, b = $("#barraMarcados");
-    b.hidden = !n || $("#aba-postar").hidden || !!ppAtual;
+    b.hidden = !modoVarios || $("#aba-postar").hidden || !!ppAtual;
     // Modo seleção: a barra de baixo vira os botões de criar
     document.body.classList.toggle("modo-selecao", !b.hidden);
-    $("#qtdMarcados").textContent = `${n} ${n === 1 ? "selecionado" : "selecionados"}`;
-    $("#bsCampanha").textContent = CAMPANHAS[campanhaEscolhida] ? `${CAMPANHAS[campanhaEscolhida].nome} ▾` : "Campanha ▾";
-    $("#bsCampanha").classList.toggle("on", !!CAMPANHAS[campanhaEscolhida]);
+    $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
+    $("#ppSelecionar").lastChild.textContent = modoVarios ? "Seleção rápida" : "Criar com vários";
+    pintarCampanhaBotoes();
     document.querySelectorAll("#bsAcoes [data-criar]").forEach((x) => { const o = OPCOES_CRIAR.find((q) => q[0] === x.dataset.criar); x.classList.toggle("off", !(o && o[3](n))); });
   }
-  $("#desmarcarTodos").addEventListener("click", () => { marcados.clear(); renderFila(); });
+  $("#desmarcarTodos").addEventListener("click", () => sairModoVarios());
   $("#ppCupons").addEventListener("click", () => abrirPostarCupons());
   const SELECOES = {
     todos: ["Marcar todos da lista", (l) => l],
@@ -1788,12 +1791,13 @@
     saude: ["Saúde e fitness", (l) => l.filter((i) => i.categoria === "saude")]
   };
   $("#ppSelecionar").addEventListener("click", async () => {
+    if (!modoVarios) { entrarModoVarios(); toast("Toque nos produtos que quer juntar"); return; }
     const base = fila().filter((i) => !i.carregando);
     const op = await escolherOpcao("Selecionar", Object.entries(SELECOES).map(([k, [n, f]]) => [k, `${n} (${f(base).length})`]), "");
     if (!op) return;
     const l = SELECOES[op][1](base);
     if (!l.length) { toast("Nenhum produto nessa seleção"); return; }
-    marcados.clear(); l.forEach((i) => marcados.add(i.id)); renderFila();
+    marcados.clear(); l.forEach((i) => marcados.add(i.id)); modoVarios = true; renderFila();
     toast(`${l.length} ${l.length === 1 ? "produto selecionado" : "produtos selecionados"}`);
   });
   $("#excluirMarcados").addEventListener("click", async () => {
@@ -1834,14 +1838,15 @@
   $("#bsAcoes").addEventListener("click", (e) => {
     const b = e.target.closest("[data-criar]"); if (!b) return;
     const n = itensMarcados().length, o = OPCOES_CRIAR.find((q) => q[0] === b.dataset.criar);
+    if (!n) { toast("Toque nos produtos primeiro"); return; }
     if (!o[3](n)) { toast(`${o[1]}: ${o[4]}`); return; }
-    criarAPartirDaLista(b.dataset.criar, itensMarcados());
+    criarAPartirDaLista(n === 1 && b.dataset.criar === "livre" ? "instagram" : b.dataset.criar, itensMarcados());
   });
   $("#bsCampanha").addEventListener("click", async () => {
     const v = await escolherOpcao("Campanha", [["", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])], campanhaEscolhida);
     if (v === null) return;
     campanhaEscolhida = v; try { localStorage.setItem("miga_campanha", v); } catch (err) { /* segue */ }
-    pintarMarcados(); if (v) toast(`Campanha ${CAMPANHAS[v].nome}: título, cor e chamada vão combinar`);
+    pintarCampanhaBotoes(); if (v) toast(`Campanha ${CAMPANHAS[v].nome}: título, cor e chamada vão combinar`);
   });
   if ($("#oQueCriar")) $("#oQueCriar").addEventListener("click", () => {
     const n = itensMarcados().length; if (!n) return;
@@ -1866,8 +1871,9 @@
       const L = livre(); L.itens = l.slice(0, 6).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
       if (C) L.titulo = C.titulo;
       L.n = [2, 3, 4, 6].find((q) => q >= L.itens.length) || 6; wz.passo = "grade";
-    } else { wz.passo = "lugares"; if (C) l.forEach((it) => { if (!it.textoEditado) it.texto = ""; }); }
-    marcados.clear();
+    } else if (canal === "instagram") { wz.passo = "formato"; }
+    else { wz.passo = "lugares"; if (C) l.forEach((it) => { if (!it.textoEditado) it.texto = ""; }); }
+    marcados.clear(); modoVarios = false;
     irPara("criar"); mostrarPasso();
   }
   $("#ppLista").addEventListener("click", async (e) => {
@@ -1876,7 +1882,7 @@
     const ph = e.target.closest("[data-ph]");
     if (ph) {
       if (ph.dataset.ph === "postar") { ocultarComp = !ocultarComp; guardarOcultar(); renderFila(); toast(ocultarComp ? "Mostrando só o que falta postar" : "Mostrando todos"); }
-      if (ph.dataset.ph === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); renderFila(); toast(`${l.length} parados selecionados`); }
+      if (ph.dataset.ph === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); modoVarios = true; renderFila(); toast(`${l.length} parados selecionados`); }
       return;
     }
     const mc = e.target.closest("[data-marcar]");
@@ -1897,6 +1903,7 @@
     }
     const b = e.target.closest("[data-pp]");
     if (!b) return;
+    if (modoVarios) { const id = b.dataset.pp; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); renderFila(); return; }
     const item = fila().find((i) => i.id === b.dataset.pp);
     if (item && !item.carregando) abrirItemFila(item);
   });
@@ -1916,6 +1923,7 @@
     $("#ppLinkItem").value = item.link || "";
     ppCategoria.marcar(item.categoria || "outros");
     mostrarFalta(pedirFalta);
+    $("#ppSalvar").hidden = !modoCompletar; pintarCampanhaBotoes(); pintarMarcados();
     window.scrollTo({ top: 0 });
   }
   function mostrarFalta(destacar) {
@@ -1935,7 +1943,7 @@
     $("#ppItem").hidden = true; $("#ppListaBloco").hidden = false;
     renderFila();
   }
-  $("#ppVoltar").addEventListener("click", fecharItemFila);
+  $("#ppVoltar").addEventListener("click", () => { aplicarCamposPp(true); fecharItemFila(true); });
   $("#ppRemover").addEventListener("click", async () => {
     if (!ppAtual || !(await confirmar({ titulo: "Tirar da lista?", texto: `“${ppAtual.nome || "Produto"}” sai da sua lista.`, ok: "Tirar" }))) return;
     config.fila = fila().filter((i) => i !== ppAtual);
@@ -1952,38 +1960,51 @@
     mostrarFotoPp(); salvarFila(true); mostrarFalta(false); toast("Foto salva");
   }
   $("#ppArquivoTopo").addEventListener("change", (e) => { trocarFotoPp(e.target.files && e.target.files[0]); e.target.value = ""; });
-  $("#ppSalvar").addEventListener("click", async () => {
-    if (!ppAtual) return;
-    const it = ppAtual;
+  /** Copia os campos da tela do produto para o produto e salva (sem botão) */
+  function aplicarCamposPp(logo) {
+    const it = ppAtual; if (!it) return;
     it.nome = $("#ppNome").value.trim();
     it.precoNovo = lerPreco($("#ppNovo").value);
     it.precoAntigo = lerPreco($("#ppAntigo").value) || null;
     it.cupom = $("#ppCupom").value.trim();
     if (urlOk($("#ppLinkItem").value)) it.link = $("#ppLinkItem").value.trim();
     it.categoria = ppCategoria.valor();
-    it.texto = ""; // a mensagem é refeita com os dados novos
+    if (!it.textoEditado) it.texto = ""; // a mensagem é refeita com os dados novos
+    salvarFila(logo); mostrarFalta(false);
+    $("#ppSalvo").textContent = "Salvo ✓"; clearTimeout(aplicarCamposPp.t); aplicarCamposPp.t = setTimeout(() => { $("#ppSalvo").textContent = "As mudanças são salvas sozinhas."; }, 1500);
+  }
+  ["#ppNome", "#ppNovo", "#ppAntigo", "#ppCupom", "#ppLinkItem"].forEach((s) => $(s).addEventListener("input", () => { clearTimeout(aplicarCamposPp.d); aplicarCamposPp.d = setTimeout(() => aplicarCamposPp(), 500); }));
+  $("#ppCategoria").addEventListener("click", () => setTimeout(() => aplicarCamposPp(), 0));
+  // Completando vários: vai para o próximo que falta
+  $("#ppSalvar").addEventListener("click", () => {
+    const it = ppAtual; if (!it) return; aplicarCamposPp(true);
+    const p = incompletos().find((x) => x !== it);
+    if (p) { abrirItemFila(p, true); toast("Próximo para completar"); } else { modoCompletar = false; fecharItemFila(); toast("Pronto! Todos completos"); }
+  });
+  $("#ppAcoes").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-pp-criar]"); if (!b || !ppAtual) return;
+    aplicarCamposPp(true);
+    const it = ppAtual;
     if (!it.nome) { toast("Escreva o nome do produto"); $("#ppNome").focus(); return; }
-    clearTimeout(ppSalvarTimer);
-    try { await dados.gravarFila(fila().filter((i) => !i.carregando).map(({ carregando, ...i }) => i)); toast("Produto salvo"); }
-    catch (e) { toast("Não consegui salvar na nuvem: " + (e.code || e.message)); return; }
-    contarFila(); fecharItemFila();
-    // Completando vários: já abre o próximo que falta
-    if (modoCompletar) { const p = incompletos().find((x) => x !== it); if (p) { abrirItemFila(p, true); toast("Salvo. Próximo para completar"); } else { modoCompletar = false; toast("Pronto! Todos completos"); } }
+    modoCompletar = false; fecharItemFila();
+    criarAPartirDaLista(b.dataset.ppCriar, [it]);
   });
-  $("#ppCompartilhar").addEventListener("click", () => {
-    if (!ppAtual) return;
-    if (!ppAtual.nome) { toast("Escreva o nome do produto"); $("#ppNome").focus(); return; }
-    const id = ppAtual.id;
-    fecharItemFila();
-    iniciarCriar({ itemId: id });
-    irPara("criar");
+  $("#ppCampanha").addEventListener("click", async () => {
+    const v = await escolherOpcao("Campanha", [["", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])], campanhaEscolhida);
+    if (v === null) return;
+    campanhaEscolhida = v; try { localStorage.setItem("miga_campanha", v); } catch (err) { /* segue */ }
+    pintarCampanhaBotoes();
   });
+  function pintarCampanhaBotoes() {
+    const t = CAMPANHAS[campanhaEscolhida] ? `${CAMPANHAS[campanhaEscolhida].nome} ▾` : "Campanha ▾";
+    ["#ppCampanha", "#bsCampanha"].forEach((s) => { $(s).textContent = t; $(s).classList.toggle("on", !!CAMPANHAS[campanhaEscolhida]); });
+  }
 
   /* =========================== Criar (passo a passo, uma pergunta por tela) =========================== */
   const CANAIS = {
     roteiro: { nome: "Postar um produto", cor: "#e8336d", desc: "Story, Status, grupos, canal e feed, um depois do outro", icone: "i-lista" },
     whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem para os grupos ou imagem para o Status", icone: "i-rede-whats" },
-    instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post", icone: "i-rede-insta" },
+    instagram: { nome: "Imagem do produto", cor: "#e8336d", desc: "Arte para story, Status ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
     livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
     cupons: { nome: "Postar cupons", cor: "#ffd23f", desc: "Status e grupos só com cupons", icone: "i-etiqueta" },

@@ -812,3 +812,15 @@ body.com-marcados main { padding-bottom: 90px; }
 body.modo-selecao .barra { display: none; }
 body.modo-selecao main { padding-bottom: 150px; }
 @media (min-width: 960px) { body.modo-selecao .barra { display: block; } }
+
+/* Tela do produto: ações embaixo, salva sozinho */
+.pp-criar { display: grid; gap: 10px; margin-top: 6px; padding: 14px; border-radius: 22px; background: var(--preto); color: #fff; }
+.pp-criar__topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pp-criar__topo b { font-size: 15px; }
+.pp-salvo { margin: 0; color: #cfc8b8; text-align: center; font-size: 12.5px; }
+.bs-camp.claro { background: rgba(255,255,255,.14); color: #fff; }
+.bs-camp.claro.on { background: #ffd23f; color: #1d1d1f; }
+#ppItem > .pp-criar, #ppItem > #ppSalvar { grid-column: 1 / -1; }
+.barra-filtro .btn-filtrar, .barra-filtro .nota { white-space: nowrap; }
+.barra-filtro .btn-filtrar { padding: 0 14px; }
+@media (max-width: 430px) { .barra-filtro #ppTotal { display: none; } .barra-filtro { justify-content: flex-end; } .barra-filtro #ppSelecionar { margin-right: auto; } }
