@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=93"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=94"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=93"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=94"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1857,8 +1857,8 @@
     criarAPartirDaLista(n === 1 && b.dataset.criar === "livre" ? "instagram" : b.dataset.criar, itensMarcados());
   });
   $("#bsCampanha").addEventListener("click", async () => {
-    const v = await escolherOpcao("Campanha", [["", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])], campanhaEscolhida);
-    if (v === null) return;
+    let v = await escolherOpcao("Campanha", [["nenhuma", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])], campanhaEscolhida || "nenhuma");
+    if (v === null) return; if (v === "nenhuma") v = "";
     campanhaEscolhida = v; try { localStorage.setItem("miga_campanha", v); } catch (err) { /* segue */ }
     pintarCampanhaBotoes(); if (v) toast(`Campanha ${CAMPANHAS[v].nome}: título, cor e chamada vão combinar`);
   });
@@ -2008,8 +2008,8 @@
     criarAPartirDaLista(b.dataset.ppCriar, [it]);
   });
   $("#ppCampanha").addEventListener("click", async () => {
-    const v = await escolherOpcao("Campanha", [["", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])], campanhaEscolhida);
-    if (v === null) return;
+    let v = await escolherOpcao("Campanha", [["nenhuma", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])], campanhaEscolhida || "nenhuma");
+    if (v === null) return; if (v === "nenhuma") v = "";
     campanhaEscolhida = v; try { localStorage.setItem("miga_campanha", v); } catch (err) { /* segue */ }
     pintarCampanhaBotoes();
   });
@@ -2071,10 +2071,19 @@
     irPasso(-1);
   });
   const opcaoCard = (attr, v, titulo, desc, on, extra = "") => `<button type="button" class="wz-op${on ? " on" : ""}" ${attr}="${esc(v)}">${extra}<span><b>${esc(titulo)}</b>${desc ? `<small>${esc(desc)}</small>` : ""}</span></button>`;
-  const botaoContinuar = (ok, rot = "Continuar") => `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button></div>`;
+  const botaoContinuar = (ok, rot = "Continuar", extra = "") => `<div class="wz-rodape"><button type="button" class="rd-voltar" data-rd-voltar aria-label="Voltar"><svg><use href="#i-seta-baixo"/></svg></button>${extra}<button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button></div>`;
   // Barra de cores fixa embaixo, junto do Continuar (como no Reels)
-  const barraCores = (attr, atual, nomes) => `<div class="barra-cores"><span>Cor</span><div>${Object.entries(nomes).map(([k, n]) => `<button type="button" ${attr}="${k}" class="cor-${k}" aria-checked="${atual === k}">${esc(typeof n === "string" ? n : n.nome)}</button>`).join("")}</div></div>`;
-  const botaoContinuarCom = (extra, ok = true, rot = "Continuar") => `<div class="wz-rodape">${extra}<button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button></div>`;
+  // Cor: um botãozinho redondo no rodapé (abre a escolha); os botões de cada cor ficam escondidos e são "tocados" por ele
+  const barraCores = (attr, atual, nomes) => `<button type="button" class="rd-cor cor-${atual}" data-rd-cor="${attr}" data-atual="${atual}" aria-label="Cor"><i></i></button><span hidden>${Object.entries(nomes).map(([k, n]) => `<button type="button" ${attr}="${k}" data-nome="${esc(typeof n === "string" ? n : n.nome)}" aria-checked="${atual === k}"></button>`).join("")}</span>`;
+  const botaoContinuarCom = (extra, ok = true, rot = "Continuar") => botaoContinuar(ok, rot, extra);
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("[data-rd-voltar]")) { $("#wzVoltar").click(); return; }
+    const b = e.target.closest("[data-rd-cor]"); if (!b) return;
+    const ops = [...b.nextElementSibling.querySelectorAll("button")].map((x) => [x.getAttribute(b.dataset.rdCor), x.dataset.nome]);
+    const v = await escolherOpcao("Cor", ops, b.dataset.atual); if (!v) return;
+    const alvo = b.nextElementSibling.querySelector(`[${b.dataset.rdCor}="${v}"]`); if (alvo) alvo.click();
+    b.className = `rd-cor cor-${v}`; b.dataset.atual = v;
+  });
 
   /* ---------- Continuar de onde parei ---------- */
   const PASSOS_FINAIS = ["resumo", "canal"];
@@ -2156,6 +2165,7 @@
     if (wz.passo === "montagem" || wz.passo === "cor") {
       if (!CORES_NOME[wz.cor]) wz.cor = MODELOS[wz.modelo].fundo;
       c.innerHTML = `<h2 class="wz-titulo">Escolha a montagem</h2>
+        <div class="aj-linha titulo-linha"><input id="wzTituloArte" maxlength="40" value="${esc(wz.tituloArte || "")}" placeholder="Título / tema (opcional)"><button type="button" class="btn-redondo" id="wzTitulosProntos" aria-label="Títulos prontos"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/></svg></button></div>
         <div class="wz-miniaturas">${MONTAGENS.map((v) => `<button type="button" class="wz-mini${wz.modelo === v ? " on" : ""}" data-modelo="${v}"><canvas></canvas><span>${NOME_MONTAGEM[v]}</span></button>`).join("")}</div>
         ${botaoContinuarCom(barraCores("data-cor", wz.cor, CORES_NOME))}`;
       desenharMiniaturas(false);
@@ -2240,6 +2250,10 @@
     const tw = t.closest("[data-tipo-whats]"); if (tw) { wz.tipoWhats = tw.dataset.tipoWhats; if (wz.tipoWhats === "status") wz.formato = "story"; mostrarPasso(); return; }
     const fo = t.closest("[data-formato]"); if (fo) { wz.formato = fo.dataset.formato; mostrarPasso(); return; }
     const mo = t.closest("[data-modelo]"); if (mo) { wz.modelo = mo.dataset.modelo; document.querySelectorAll(".wz-mini").forEach((b) => b.classList.toggle("on", b === mo)); return; }
+    if (t.closest("#wzTitulosProntos")) {
+      const v = await escolherOpcao("Títulos prontos", [["__nenhum", "Usar o título da montagem"], ...TITULOS_REELS.map((x) => [x, x])], wz.tituloArte || "__nenhum");
+      if (v === null) return; wz.tituloArte = v === "__nenhum" ? "" : v; $("#wzTituloArte").value = wz.tituloArte; const it = wzItem(); if (it && !it.textoEditado) it.texto = ""; desenharMiniaturas(false); return;
+    }
     const co = t.closest("[data-cor]"); if (co) { wz.cor = co.dataset.cor; document.querySelectorAll("[data-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); desenharMiniaturas(false); return; }
     if (t.closest("#wzContinuar")) { irPasso(1); return; }
     if (t.closest("#wzColar")) {
@@ -2290,7 +2304,7 @@
   function usarModeloTexto(estilo) {
     const it = wzItem(); if (!it) return;
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
-    it.estiloTexto = estilo; it.texto = (campanha() ? campanha().chamada + "\n\n" : "") + textoDoModelo(estilo, p); it.textoEditado = false; salvarFila();
+    it.estiloTexto = estilo; it.texto = (wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*\n\n` : campanha() ? campanha().chamada + "\n\n" : "") + textoDoModelo(estilo, p); it.textoEditado = false; salvarFila();
   }
   async function registrarCompartilhado(canal, onde) {
     const it = wzItem(); if (!it) return;
@@ -2354,7 +2368,7 @@
   }
   function dadosMontagem(it, modelo, previa) {
     const M = MODELOS[modelo];
-    return { previa, insta: "", titulo: linhasTitulo(campanha() ? campanha().titulo : M.padrao.titulo), texto: M.padrao.texto, botao: "", logo: false, espaco: wz.formato === "story", cupom: it.cupom || "", loja: it.loja || "", foto: ppFotos[it.id] || null, produto: { nome: limparNome(it.nome), antigo: it.precoAntigo, novo: it.precoNovo } };
+    return { previa, insta: "", titulo: linhasTitulo(wz.tituloArte ? tituloDigitado(wz.tituloArte) : campanha() ? campanha().titulo : M.padrao.titulo), texto: M.padrao.texto, botao: "", logo: false, espaco: wz.formato === "story", cupom: it.cupom || "", loja: it.loja || "", foto: ppFotos[it.id] || null, produto: { nome: limparNome(it.nome), antigo: it.precoAntigo, novo: it.precoNovo } };
   }
   function desenharMontagem(tela, previa, modelo, cor, formato) {
     const it = wzItem(); if (!it || !tela) return;
@@ -3287,6 +3301,7 @@
     }
   });
   $("#wzCorpo").addEventListener("input", (e) => {
+    if (e.target.id === "wzTituloArte") { wz.tituloArte = e.target.value.trim(); const it = wzItem(); if (it && !it.textoEditado) it.texto = ""; clearTimeout(wz.tt); wz.tt = setTimeout(() => desenharMiniaturas(false), 400); return; }
     if (wz.canal === "reels" && e.target.id === "rLegenda") { rr().legenda = e.target.value; return; }
     if (wz.canal === "reels" && e.target.id === "rTitulo") { const R = rr(); R.titulo = e.target.value.trim(); document.querySelectorAll("[data-r-titulo]").forEach((b) => b.classList.toggle("on", b.dataset.rTitulo === R.titulo)); R.legenda = null; R.resultado = null; clearTimeout(R.tt); R.tt = setTimeout(pintarModelosReels, 400); return; }
     if (wz.canal !== "video") return;
@@ -3990,13 +4005,9 @@
     if (wz.passo === "rModelo") {
       c.innerHTML = `<h2 class="wz-titulo">Modelo do Reels</h2>
         <p class="nota">Cada modelo tem a sua animação e a sua batida. A cor vale para o vídeo inteiro.</p>
-        <label class="campo"><span>Título do Reels (opcional)</span><input id="rTitulo" maxlength="40" value="${esc(R.titulo || "")}" placeholder="Ex.: Equipe sua cozinha"></label>
-        <p class="nota" style="margin-top:-4px">Toque num título pronto ou escreva o seu. Vazio usa o título do modelo.</p>
-        <div class="wz-chips titulos-reels">${TITULOS_REELS.map((t) => `<button type="button" data-r-titulo="${esc(t)}" class="${R.titulo === t ? "on" : ""}">${esc(t)}</button>`).join("")}</div>
-        <h3 class="wz-sub">Ofertas</h3>
-        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}<small>${esc(m.desc)}</small></span></button>`).join("")}</div>
-        <h3 class="wz-sub">Por categoria</h3>
-        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}<small>${esc(m.desc)}</small></span></button>`).join("")}</div>
+        <div class="aj-linha titulo-linha"><input id="rTitulo" maxlength="40" value="${esc(R.titulo || "")}" placeholder="Título (opcional)"><button type="button" class="btn-redondo" id="rTitulosProntos" aria-label="Títulos prontos"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/></svg></button></div>
+        <div class="filtro-mod">${[["ofertas", "Ofertas"], ["categoria", "Por categoria"]].map(([k, n]) => `<button type="button" data-r-grupo="${k}" class="${(R.grupo || "ofertas") === k ? "on" : ""}">${n}</button>`).join("")}</div>
+        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).filter(([, m]) => (R.grupo || "ofertas") === "categoria" ? m.cat : !m.cat).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}<small>${esc(m.desc)}</small></span></button>`).join("")}</div>
         ${botaoContinuarCom(barraCores("data-r-cor", R.cor, CORES_VIDEO))}`;
       pintarModelosReels();
       return;
@@ -4110,6 +4121,11 @@
       const i = +(sobe ? sobe.dataset.rSobe : desce.dataset.rDesce), j = sobe ? i - 1 : i + 1;
       const ids = itensReels().map((x) => x.id); if (j < 0 || j >= ids.length) return;
       [ids[i], ids[j]] = [ids[j], ids[i]]; R.itens = ids; R.resultado = null; R.legenda = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
+    }
+    const gr = t.closest("[data-r-grupo]"); if (gr) { R.grupo = gr.dataset.rGrupo; mostrarPasso(); return; }
+    if (t.closest("#rTitulosProntos")) {
+      const v = await escolherOpcao("Títulos prontos", [["__nenhum", "Usar o título do modelo"], ...TITULOS_REELS.map((x) => [x, x])], R.titulo || "__nenhum");
+      if (v === null) return; R.titulo = v === "__nenhum" ? "" : v; R.legenda = null; R.resultado = null; $("#rTitulo").value = R.titulo; pintarModelosReels(); return;
     }
     const tr = t.closest("[data-r-titulo]");
     if (tr) { R.titulo = R.titulo === tr.dataset.rTitulo ? "" : tr.dataset.rTitulo; $("#rTitulo").value = R.titulo; R.legenda = null; R.resultado = null;
