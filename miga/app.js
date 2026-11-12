@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=124"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=125"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=124"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=125"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3365,7 +3365,7 @@
         <div class="rp-grade">
           <div class="rp-midia">
             <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
-            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa"><figcaption>Capa</figcaption><div class="rp-capa-op"><button type="button" data-vd-capa="titulo" class="${(V.capaTipo || "titulo") === "titulo" ? "on" : ""}">Título</button><button type="button" data-vd-capa="quadro" class="${V.capaTipo === "quadro" ? "on" : ""}">Quadro</button></div></figure>` : ""}
+            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa"><figcaption>Capa</figcaption><div class="rp-capa-op"><button type="button" data-vd-capa="titulo" class="${(V.capaTipo || "titulo") === "titulo" ? "on" : ""}">Título</button><button type="button" data-vd-capa="quadro" class="${V.capaTipo === "quadro" ? "on" : ""}">Quadro</button></div>${V.url && V.duracao ? `<label class="rp-capa-momento"><span>Momento da capa</span><input type="range" id="vdCapaMomento" min="0" max="${Math.max(0.1, V.duracao - 0.1).toFixed(1)}" step="0.1" value="${(V.capaT != null ? V.capaT : V.duracao / 3).toFixed(1)}"></label>` : ""}</figure>` : ""}
           </div>
           <div class="rp-acoes">
             <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
@@ -3408,6 +3408,21 @@
     if (edMarca) ctx.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160);
     return tc;
   }
+  /** Escolher o momento do vídeo que vira a capa */
+  let capaVideoEl = null, capaTimer = 0;
+  function momentoDaCapa(seg) {
+    const V = vd(); if (!V.url || !V.resultado) return;
+    clearTimeout(capaTimer);
+    capaTimer = setTimeout(async () => {
+      if (!capaVideoEl || capaVideoEl.dataset.src !== V.url) { capaVideoEl = document.createElement("video"); capaVideoEl.muted = true; capaVideoEl.playsInline = true; capaVideoEl.preload = "auto"; capaVideoEl.src = V.url; capaVideoEl.dataset.src = V.url; await new Promise((ok) => { capaVideoEl.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 4000); }); }
+      capaVideoEl.currentTime = seg; await new Promise((ok) => { capaVideoEl.addEventListener("seeked", ok, { once: true }); setTimeout(ok, 2000); });
+      const q = document.createElement("canvas"); q.width = capaVideoEl.videoWidth || 720; q.height = capaVideoEl.videoHeight || 1280; q.getContext("2d").drawImage(capaVideoEl, 0, 0, q.width, q.height);
+      V.capaFrame = q; V.capaT = seg; await carregarMarca();
+      V.resultado.capa = await telaParaJpeg(capaDoVideo(V.capaTipo || "titulo"), "miga-promo-capa.jpg");
+      const img = document.querySelector(".rp-capa img"); if (img) img.src = URL.createObjectURL(V.resultado.capa);
+    }, 180);
+  }
+  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "vdCapaMomento") momentoDaCapa(parseFloat(e.target.value) || 0); });
   let previaLoop = 0;
   async function previaVideoViva() {
     cancelAnimationFrame(previaLoop);
@@ -3688,11 +3703,13 @@
       v = document.createElement("video"); v.src = V.url; v.playsInline = true; v.preload = "auto";
       await new Promise((ok) => v.addEventListener("loadedmetadata", ok, { once: true }));
       if (v.readyState < 2) await new Promise((ok) => { v.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 4000); });
+      try { v.muted = true; await v.play(); await new Promise((ok) => setTimeout(ok, 250)); v.pause(); v.currentTime = 0; await new Promise((ok) => { v.addEventListener("seeked", ok, { once: true }); setTimeout(ok, 1500); }); } catch (e) { /* segue */ }
+      v.muted = false;
       V.duracao = v.duration || 10;
     }
     const bt = ajustarGrade(MUSICAS[V.batida || "house"].bpm);
     const tA = V.abertura ? emTempos(T_ABERTURA, bt) : 0, tF = V.final ? emTempos(T_FINAL, bt) : 0;
-    const tM = Math.ceil((tA + duracaoMeio()) / bt) * bt - tA, total = tA + tM + tF; // o final começa num tempo da música
+    const tM = Math.ceil((tA + duracaoMeio() + (V.semVideo ? 0 : 0.9)) / bt) * bt - tA, total = tA + tM + tF; // folga: a fala termina antes do final // o final começa num tempo da música
     V.iniFinal = tA + tM;
     const fluxo = tela.captureStream(30);
     let t0 = 0;
@@ -3723,12 +3740,12 @@
       const passo = async () => {
         const t = agora();
         if (t >= total) { ok(); return; }
-        if (t < tA) quadroAbertura(ctx, W, Math.max(0, t), V);
+        if (t < tA) { quadroAbertura(ctx, W, Math.max(0, t), V); if (v && !videoTocando && t > tA - 0.15) { videoTocando = true; v.play().catch(() => { v.muted = true; v.play().catch(() => {}); }); } } // começa um tiquinho antes, para cair no tempo
         else if (t < tA + tM) {
           if (v && !videoTocando) { videoTocando = true; try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) { /* segue */ } } }
           const fonteV = v ? (v.readyState >= 2 && v.currentTime > 0 ? v : V.quadroImg || v) : fotoComZoom(V.fotoBmp, (t - tA) / tM);
           V.iniMeio = tA; videoRelogio = t - tA; quadroVideo(ctx, W, H, fonteV, V); videoRelogio = 99;
-          if (v && !V.capaFrame && v.readyState >= 2 && v.currentTime > 0.6) { try { const q = document.createElement("canvas"); q.width = v.videoWidth || 720; q.height = v.videoHeight || 1280; q.getContext("2d").drawImage(v, 0, 0, q.width, q.height); V.capaFrame = q; } catch (e) { /* segue */ } }
+          if (v && !V.capaFrame && v.readyState >= 2 && v.currentTime >= Math.min(1.5, (v.duration || 3) / 3)) { try { const q = document.createElement("canvas"); q.width = v.videoWidth || 720; q.height = v.videoHeight || 1280; q.getContext("2d").drawImage(v, 0, 0, q.width, q.height); V.capaFrame = q; } catch (e) { /* segue */ } }
         } else { if (v && !v.paused) v.pause(); quadroFinal(ctx, W, t - tA - tM, V); }
         previa.drawImage(tela, 0, 0, 540, 960);
         const pct = Math.min(100, Math.round((t / total) * 100));

@@ -1240,3 +1240,5 @@ body.modo-selecao main { padding-bottom: 200px; }
 .rp-capa-op button.on { background: var(--rosa); color: #fff; }
 .ed-add button { flex-direction: column; gap: 4px; min-height: 70px; padding: 8px 4px; font-size: 14px; }
 .ed-add button b { width: 34px; height: 34px; }
+.rp-capa-momento { display: grid; gap: 4px; width: 100%; font-size: 12px; font-weight: 700; color: var(--cinza); text-align: center; }
+.rp-capa-momento input { width: 100%; accent-color: var(--rosa); }
