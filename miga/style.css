@@ -157,7 +157,7 @@ textarea { height: auto; padding: 14px 16px; line-height: 1.55; resize: vertical
   background: linear-gradient(to top, var(--fundo) 55%, rgba(255, 248, 228, 0)); }
 .barra > * { pointer-events: auto; }
 .barra__gerar { max-width: 496px; margin: 0 auto; padding: 16px 0 10px; }
-.abas { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 496px; margin: 0 auto; padding: 6px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
+.abas { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 496px; margin: 0 auto; padding: 6px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
 .abas button { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; height: 46px; border: 0; border-radius: 999px; background: none; font-size: 13.5px; font-weight: 600; color: var(--cinza); cursor: pointer; transition: background .2s, color .2s; }
 .abas button svg { width: 21px; height: 21px; }
 .abas button[aria-current="page"] { background: var(--rosa-claro); color: var(--rosa); }
@@ -711,3 +711,25 @@ body.travado { overflow: hidden; }
 .btn-seta svg { width: 22px; height: 22px; fill: none; stroke: currentColor; }
 .btn-seta[data-r-sobe] svg { transform: rotate(180deg); }
 .btn-seta:disabled { opacity: .3; cursor: default; }
+
+/* ===== Lista como início: marcar produtos, ⋯ no canto de cima e ícone da loja ===== */
+.pp-mini { position: relative; display: block; line-height: 0; }
+.selo-loja { position: absolute; left: -6px; top: -6px; width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid #fff; display: grid; place-items: center; font: 800 11px/1 Poppins, sans-serif; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+.selo-loja--shopee { background: #ee4d2d; }
+.selo-loja--mercadolivre { background: #ffe600; color: #2d3277; }
+.selo-loja--amazon { background: #232f3e; font-size: 13px; padding-bottom: 3px; }
+.selo-loja--amazon::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 4px; height: 4px; border-bottom: 2.5px solid #ff9900; border-radius: 0 0 50% 50%; }
+.pp-linha .pp-item { padding-right: 52px; border: 2px solid transparent; }
+.pp-linha.marcado .pp-item { border-color: var(--rosa); background: #fff4f8; }
+.pp-linha .pp-lixo { top: 8px; right: 8px; transform: none; width: 36px; height: 36px; font-size: 18px; }
+.pp-marcar { position: absolute; right: 12px; bottom: 12px; width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--branco); box-shadow: inset 0 0 0 2px #ddd3b8; cursor: pointer; padding: 0; }
+.pp-marcar[aria-pressed="true"] { background: var(--rosa); box-shadow: none; }
+.pp-marcar[aria-pressed="true"]::after { content: ""; position: absolute; left: 10px; top: 5px; width: 7px; height: 13px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.barra-marcados { position: fixed; left: 12px; right: 12px; bottom: calc(90px + env(safe-area-inset-bottom)); z-index: 17; max-width: 520px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 18px; border-radius: 24px; background: var(--preto); color: #fff; box-shadow: 0 14px 30px -12px rgba(0,0,0,.6); }
+.barra-marcados span { display: grid; }
+.barra-marcados b { font-size: 15px; }
+.barra-marcados .link { color: #cfc8b8; font-size: 13px; text-align: left; padding: 0; min-height: 0; }
+.barra-marcados .btn { min-height: 48px; padding: 0 20px; }
+body.com-marcados main { padding-bottom: 90px; }
+.wz-op.desligado { opacity: .42; cursor: default; }
+#folhaCriarOps { margin-bottom: 12px; }

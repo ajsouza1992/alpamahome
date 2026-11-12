@@ -28,6 +28,11 @@
   const novoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const dataCurta = (t) => new Date(t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const NOME_LOJA = { mercadolivre: "Mercado Livre", shopee: "Shopee", amazon: "Amazon", magalu: "Magalu" };
+  // Lojas com ícone padrão (as que você é afiliada)
+  const LOJA_FIG = { shopee: "🧡", mercadolivre: "💛", amazon: "📦" };
+  const LOJA_SIGLA = { shopee: "S", mercadolivre: "ML", amazon: "a" };
+  const seloLojaHtml = (loja) => LOJA_SIGLA[loja] ? `<span class="selo-loja selo-loja--${loja}" title="${NOME_LOJA[loja]}">${LOJA_SIGLA[loja]}</span>` : "";
+  const linhaLoja = (loja) => LOJA_FIG[loja] ? `${LOJA_FIG[loja]} ${NOME_LOJA[loja]}` : "";
   const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
   const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração", saude: "Saúde e Fitness", outros: "Outros" };
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
@@ -347,7 +352,8 @@
     renderGruposEnvio();
     renderCupons();
     contarFila();
-    iniciarCriar();
+    iniciarCriar(); wz = {};
+    irPara("postar");
     // Link compartilhado de outro app (Shopee, Mercado Livre...): vai para a Lista
     if (recebidoPendente) { const t = recebidoPendente; recebidoPendente = ""; irPara("postar"); adicionarNaFila(t); }
   }
@@ -426,6 +432,7 @@
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
     if (aba === "postar" && !ppAtual) renderFila();
     if (aba === "criar" && !wz.passo) iniciarCriar();
+    pintarMarcados();
     window.scrollTo({ top: 0 });
   }
   document.querySelectorAll(".abas button").forEach((b) => b.addEventListener("click", () => irPara(b.dataset.aba)));
@@ -1588,16 +1595,16 @@
     renderFila();
   });
   function renderFila() {
-    renderCatsLista();
+    renderCatsLista(); pintarMarcados();
     const l = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i)));
-    $("#ppLista").innerHTML = l.length ? l.map((i) => `<div class="pp-linha"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
-        ${fotoMini(i)}
+    $("#ppLista").innerHTML = l.length ? l.map((i) => `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
+        <span class="pp-mini">${fotoMini(i)}${seloLojaHtml(i.loja)}</span>
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}</span>
           <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button></div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
+      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button>${i.carregando ? "" : `<button type="button" class="pp-marcar" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
   function chaveLink(u) {
@@ -1672,7 +1679,51 @@
     config.fila = fila().filter((i) => !prontos.includes(i));
     renderFila(); salvarFila(true);
   });
+  /* ---------- Marcar produtos na Lista e escolher o que criar ---------- */
+  const marcados = new Set();
+  const itensMarcados = () => fila().filter((i) => marcados.has(i.id) && !i.carregando);
+  function pintarMarcados() {
+    for (const id of [...marcados]) if (!fila().some((i) => i.id === id)) marcados.delete(id);
+    const n = marcados.size, b = $("#barraMarcados");
+    b.hidden = !n || $("#aba-postar").hidden || !!ppAtual;
+    document.body.classList.toggle("com-marcados", !b.hidden);
+    $("#qtdMarcados").textContent = `${n} ${n === 1 ? "marcado" : "marcados"}`;
+  }
+  $("#desmarcarTodos").addEventListener("click", () => { marcados.clear(); renderFila(); });
+  const OPCOES_CRIAR = [
+    ["roteiro", "Postar um produto", "Story, Status, grupos, canal e Telegram", (n) => n === 1, "Marque só 1 produto."],
+    ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
+    ["video", "Vídeo com tema", "Seu vídeo com abertura e final com música", (n) => n === 1, "Marque só 1 produto."],
+    ["livre", "Criação livre", "Uma imagem com vários produtos", (n) => n >= 1 && n <= 9, "Marque até 9 produtos."]
+  ];
+  $("#oQueCriar").addEventListener("click", () => {
+    const n = itensMarcados().length; if (!n) return;
+    $("#folhaCriarTitulo").textContent = n === 1 ? "O que vou criar com este produto?" : `O que vou criar com ${n} produtos?`;
+    $("#folhaCriarOps").innerHTML = OPCOES_CRIAR.map(([k, nome, desc, ok, aviso]) => { const v = CANAIS[k], pode = ok(n);
+      return `<button type="button" class="wz-op${pode ? "" : " desligado"}" data-criar="${k}"${pode ? "" : " disabled"}><i class="wz-bolinha" style="background:${v.cor}"><svg><use href="#${v.icone}"/></svg></i><span><b>${esc(nome)}</b><small>${esc(pode ? desc : desc + ". " + aviso)}</small></span></button>`; }).join("");
+    $("#folhaCriar").showModal();
+  });
+  $("#folhaCriarOps").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-criar]"); if (!b || b.disabled) return;
+    $("#folhaCriar").close();
+    criarAPartirDaLista(b.dataset.criar, itensMarcados());
+  });
+  function criarAPartirDaLista(canal, l) {
+    if (!l.length) return;
+    const ids = l.map((x) => x.id);
+    wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, formato: "story", modelo: "achadinho", cor: "auto", idx: 0, res: {}, lugares: lugaresSalvos() };
+    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: "rosa", resultado: null, iniciado: true }; wz.passo = "rModelo"; }
+    else if (canal === "video") { usarProdutoNoVideo(l[0]); vd().iniciado = true; wz.passo = "vDados"; }
+    else if (canal === "livre") {
+      const L = livre(); L.itens = l.slice(0, 9).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
+      L.n = [2, 3, 4, 6, 9].find((q) => q >= L.itens.length) || 9; wz.passo = "grade";
+    } else wz.passo = "lugares";
+    marcados.clear();
+    irPara("criar"); mostrarPasso();
+  }
   $("#ppLista").addEventListener("click", async (e) => {
+    const mc = e.target.closest("[data-marcar]");
+    if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); mc.setAttribute("aria-pressed", String(marcados.has(id))); mc.parentElement.classList.toggle("marcado", marcados.has(id)); pintarMarcados(); return; }
     const menu = e.target.closest("[data-menu-item]");
     if (menu) {
       const it = fila().find((i) => i.id === menu.dataset.menuItem);
@@ -1784,6 +1835,10 @@
   let wz = {};
   const wzItem = () => fila().find((i) => i.id === wz.itemId);
   function passosDe(canal) {
+    const l = passosBase(canal);
+    return wz.veioDaLista ? l.filter((p) => !["canal", "produto", "rItens"].includes(p)) : l;
+  }
+  function passosBase(canal) {
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
     if (canal === "reels") return ["canal", "rItens", "rModelo", ...((wz.reels && wz.reels.itens.length > 1) ? ["rOrdem"] : []), "rPronto"];
@@ -1809,7 +1864,11 @@
     if (!prox) return;
     wz.passo = prox; mostrarPasso();
   }
-  $("#wzVoltar").addEventListener("click", () => irPasso(-1));
+  $("#wzVoltar").addEventListener("click", () => {
+    const l = passosDe(wz.canal || "whatsapp");
+    if (l.indexOf(wz.passo) <= 0 || (wz.canal === "roteiro" && wz.passo === "lugares")) { irPara("postar"); return; }
+    irPasso(-1);
+  });
   const opcaoCard = (attr, v, titulo, desc, on, extra = "") => `<button type="button" class="wz-op${on ? " on" : ""}" ${attr}="${esc(v)}">${extra}<span><b>${esc(titulo)}</b>${desc ? `<small>${esc(desc)}</small>` : ""}</span></button>`;
   const botaoContinuar = (ok, rot = "Continuar") => `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button></div>`;
 
@@ -1817,7 +1876,7 @@
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
     $("#wzBarra").style.width = Math.round(((i + 1) / l.length) * 100) + "%";
     $("#wzPasso").textContent = (wz.canal ? CANAIS[wz.canal].nome + " · " : "") + `Passo ${i + 1} de ${l.length}`;
-    $("#wzVoltar").hidden = i === 0;
+    $("#wzVoltar").hidden = false; $("#wzVoltar").lastChild.textContent = i <= 0 ? "Lista" : "Voltar";
     const c = $("#wzCorpo"), item = wzItem();
     window.scrollTo({ top: 0 });
 
@@ -1969,7 +2028,7 @@
     if (t.closest("#wzBaixar")) { const tela = document.createElement("canvas"); desenharMontagem(tela, false); tela.toBlob((b) => { if (b) { baixarBlob(b, nomeArquivo(wzItem().nome) ); toast("Imagem salva"); } }, "image/jpeg", 0.92); return; }
     if (t.closest("#wzTelegram")) { abrirTelegram(); return; }
     if (t.closest("#wzCopiarTg")) { if (await copiarTexto(textoCanal(wzItem().texto))) { toast("Texto copiado"); registrarCompartilhado("telegram", "Telegram"); } return; }
-    if (t.closest("#wzNovo")) { iniciarCriar(); return; }
+    if (t.closest("#wzNovo")) { wz = {}; irPara("postar"); return; }
     if (t.closest("#wzSalvarPreco")) {
       const it = wzItem(), novo = lerPreco($("#wzNovoPreco").value);
       if (!novo) { toast("Digite o preço novo"); $("#wzNovoPreco").focus(); return; }
