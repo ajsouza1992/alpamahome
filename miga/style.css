@@ -824,3 +824,25 @@ body.modo-selecao main { padding-bottom: 150px; }
 .barra-filtro .btn-filtrar, .barra-filtro .nota { white-space: nowrap; }
 .barra-filtro .btn-filtrar { padding: 0 14px; }
 @media (max-width: 430px) { .barra-filtro #ppTotal { display: none; } .barra-filtro { justify-content: flex-end; } .barra-filtro #ppSelecionar { margin-right: auto; } }
+
+/* Lápis (editar) e caixinha (selecionar) no mesmo lugar, centralizados */
+.pp-linha .pp-item { padding-right: 60px; }
+.pp-lapis, .pp-caixa { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); border: 0; cursor: pointer; padding: 0; display: grid; place-items: center; }
+.pp-lapis { width: 40px; height: 40px; border-radius: 50%; background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); color: var(--preto); }
+.pp-lapis svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pp-caixa { width: 32px; height: 32px; right: 16px; border-radius: 10px; background: var(--branco); box-shadow: inset 0 0 0 2px #cfc5a8; }
+.pp-caixa[aria-pressed="true"] { background: var(--rosa); box-shadow: none; }
+.pp-caixa[aria-pressed="true"]::after { content: ""; position: absolute; left: 11px; top: 6px; width: 7px; height: 13px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.btn-filtrar.cancelar { background: var(--rosa-claro); color: var(--rosa-escuro); }
+.btn-filtrar[hidden] { display: none; }
+.bs-lixo { width: auto; padding: 0 12px; border-radius: 999px; gap: 6px; display: inline-flex; align-items: center; color: #ff9ab8; font: inherit; font-size: 12.5px; font-weight: 700; }
+.bs-fechar[hidden] { display: none; }
+
+/* Barra da seleção: só Excluir e Continuar */
+.barra-selecao { display: grid; gap: 8px; padding: 12px; }
+.barra-selecao > b { font-size: 15px; text-align: center; }
+.bs-duas { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
+.bs-excluir, .bs-continuar { min-height: 52px; border: 0; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.bs-excluir { background: rgba(255,255,255,.12); color: #ff9ab8; }
+.bs-excluir svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+.bs-continuar { background: var(--rosa); color: #fff; }
