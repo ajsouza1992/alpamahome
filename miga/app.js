@@ -52,6 +52,16 @@
   }
   /** Coloca a loja na legenda, logo antes da linha do link */
   /** Linha do link com o nome da loja na frente: "Mercado Livre: https://..." */
+  /** Instagram não deixa link clicável na legenda: no lugar do link vai o aviso de que ele está na bio (canal do WhatsApp) */
+  const AVISO_BIO = "📲 O link tá no meu canal do WhatsApp: toca no link da bio!";
+  function legendaInstagram(texto, loja, link) {
+    let t = String(texto || "");
+    if (link) { const l = linkLoja(loja, link); t = t.split(l).join("§BIO§").split(link).join("§BIO§"); }
+    t = t.split("\n").filter((x) => !/https?:\/\//.test(x)).join("\n"); // convite de grupo e outros links ficam de fora
+    t = t.replace(/§BIO§/, AVISO_BIO).replace(/§BIO§/g, "").replace(/\n{3,}/g, "\n\n");
+    if (!t.includes(AVISO_BIO)) t += "\n\n" + AVISO_BIO;
+    return t.replace(/[*~_]/g, "").trim();
+  }
   const linkLoja = (loja, link) => link ? `${NOME_LOJA[loja] ? NOME_LOJA[loja] + ": " : "Link: "}${link}` : "";
   function comLoja(texto, loja, link) {
     if (!link) return texto;
@@ -1087,7 +1097,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=113"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=114"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1470,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=113"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=114"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1537,7 +1547,7 @@
     } else {
       // Post do feed: link não é clicável na legenda, então vai a legenda pronta com "link na bio"
       const base = atual && atual.texto ? atual.texto : [$("#bnNome").value.trim(), $("#bnTexto").value.trim()].filter(Boolean).join("\n\n");
-      const legenda = base.replace(/[*~_]/g, "").trim(); // Instagram não usa a formatação do WhatsApp
+      const legenda = legendaInstagram(base, atual && atual.produto && atual.produto.loja, link); // sem link (não fica clicável) e avisando que ele está na bio
       if (legenda && await copiarTexto(legenda)) toast("Legenda copiada: no Instagram, cole na legenda do post");
     }
     compartilharTela(telaFinal(), nomeBanner(bnModelo.valor(), bnFormato.valor()));
@@ -2159,7 +2169,7 @@
     if (wz.passo === "formato") {
       c.innerHTML = `<h2 class="wz-titulo">Story ou post?</h2>
         <div class="wz-duas wz-formatos">${opcaoCard("data-formato", "story", "Story", "Tela cheia, em pé", wz.formato === "story", '<canvas data-forma="story"></canvas>')}${opcaoCard("data-formato", "post", "Post", "No feed, 4:5", wz.formato === "post", '<canvas data-forma="post"></canvas>')}</div>
-        <p class="nota">No story o link fica clicável pelo adesivo de Link. No post, o link vai na legenda.</p>
+        <p class="nota">No story o link fica clicável pelo adesivo de Link. No post, a legenda avisa que o link está na bio.</p>
         ${botaoContinuar(true)}`;
       const pintar = () => document.querySelectorAll("[data-forma]").forEach((cv) => desenharMontagem(cv, false, wz.modelo, wz.cor, cv.dataset.forma));
       pintar(); prepararFoto(item).then(() => { if (wz.passo === "formato") pintar(); });
@@ -2201,7 +2211,7 @@
           <input id="wzLinkCopiar" readonly value="${esc(item.link)}" aria-label="Link do produto">
           <button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button>
         </div>
-        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "No story, toque no adesivo de Link e cole. Se o link sumir da memória, volte aqui e toque em “Copiar link”." : "A legenda já vai copiada, com o link."}</p>`;
+        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "No story, toque no adesivo de Link e cole. Se o link sumir da memória, volte aqui e toque em “Copiar link”." : "A legenda já vai copiada, avisando que o link está na bio (seu canal do WhatsApp)."}</p>`;
       prepararFoto(item).then(() => desenharMontagem($("#wzTela"), true));
       desenharMontagem($("#wzTela"), true);
       return;
@@ -2438,7 +2448,7 @@
     if (wz.formato === "story") { if (await copiarTexto(it.link)) toast("Link copiado: no story, toque no adesivo de Link e cole"); }
     else {
       const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`;
-      if (await copiarTexto(base.replace(/[*~_]/g, "").trim())) toast("Legenda copiada: cole na legenda do post");
+      if (await copiarTexto(legendaInstagram(base, it.loja, it.link))) toast("Legenda copiada: cole na legenda do post");
     }
     const tela = document.createElement("canvas"); desenharMontagem(tela, false);
     compartilharTela(tela, nomeArquivo(it.nome));
@@ -2486,7 +2496,7 @@
         meio = `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`;
         if (k === "story") { botao = "Postar no Instagram"; dica = "O link já vai copiado: no story, toque no adesivo de Link e cole."; }
         if (k === "status") { botao = "Postar no Status"; dica = "Escolha o WhatsApp com “B” e depois Meu status. O texto com o link vai junto."; }
-        if (k === "feed") { botao = "Postar no feed"; dica = "A legenda já vai copiada, com o link."; }
+        if (k === "feed") { botao = "Postar no feed"; dica = "A legenda já vai copiada, avisando que o link está na bio."; }
         meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
       } else {
         const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
@@ -2545,7 +2555,7 @@
       let texto = "";
       if (k === "story") await copiarTexto(it.link);
       if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
-      if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(base.replace(/[*~_]/g, "").trim()); }
+      if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(legendaInstagram(base, it.loja, it.link)); }
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { if (arq) baixarBlob(arq, arq.name); if (texto) await copiarTexto(texto); toast("Imagem salva: abra o app e escolha da galeria"); }
     } else if (k === "telegram") {
@@ -2823,7 +2833,7 @@
     ["Mesa decorada", (n) => `Vídeo vertical 9:16 de 6 segundos, vista de cima: o produto da imagem anexada (${n}) sobre uma mesa clara com flores e objetos em tons de rosa e amarelo; a câmera se aproxima devagar até o produto. Estética delicada de loja. Produto igual ao da foto. Sem textos.`]
   ];
   function vd() {
-    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na legenda", itemId: null, resultado: null };
+    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
     return wz.video;
   }
   /** O WebM gravado pelo celular vem sem a duração (a galeria mostra só uns segundos): grava a duração no arquivo */
@@ -3033,7 +3043,7 @@
       const tt = V.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " "); ctx.font = "900 72px Poppins"; const tl = quebrarTexto(ctx, tt, 760, 2), tw = Math.max(...tl.map((x) => ctx.measureText(x).width)) + 90, th = tl.length * 86 + 60;
       retArredondado(ctx, -tw / 2, -th / 2, tw, th, 30); ctx.fillStyle = C.fundo; ctx.fill(); ctx.fillStyle = C.destaque === "#e8336d" && V.cor !== "creme" && V.cor !== "branco" ? "#fff" : C.texto; tl.forEach((x, j) => ctx.fillText(x, 0, -((tl.length - 1) * 43) + j * 86 + 4)); ctx.restore();
       if (V.novo) { ctx.save(); ctx.translate(w / 2, h * 0.58 + 220); ctx.rotate(0.04); ctx.font = "900 70px Poppins"; const t = (V.antigo > V.novo ? "por " : "") + brl(V.novo), qw = ctx.measureText(t).width + 80; retArredondado(ctx, -qw / 2, -58, qw, 116, 24); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore(); }
-      ctx.font = "800 44px Poppins"; const lk = String(V.botao == null ? "Link na legenda" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim().toUpperCase(), lw = ctx.measureText(lk).width + 80;
+      ctx.font = "800 44px Poppins"; const lk = String(V.botao == null ? "Link na bio" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim().toUpperCase(), lw = ctx.measureText(lk).width + 80;
       if (lk) { retArredondado(ctx, w / 2 - lw / 2, h - 330, lw, 100, 20); ctx.fillStyle = "#fff"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(lk, w / 2, h - 278); }
     } else if (V.tema === "desfoque") { // o próprio vídeo desfocado no fundo e o vídeo nítido num cartão
       if (vw) { ctx.save(); ctx.filter = "blur(30px) brightness(.7)"; pintar(-60, -60, w + 120, h + 120); ctx.restore(); } else pintar(0, 0, w, h);
@@ -3217,7 +3227,7 @@
       <label class="campo"><span>Descrição</span><input id="vtNome" maxlength="80" value="${esc(V.nome || "")}" placeholder="Ex.: Fone sem fio com cancelamento de ruído"></label>
       <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vtAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vtNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}" placeholder="opcional"></label></div>
       <label class="campo"><span>Cupom</span><input id="vtCupom" maxlength="20" value="${esc(V.cupom || "")}" placeholder="opcional"></label>
-      <label class="campo"><span>Chamada (final e botão)</span><input id="vtBotao" maxlength="40" value="${esc(V.botao == null ? "Link na legenda" : V.botao)}" placeholder="Ex.: Link na legenda · Link no carrinho"></label>
+      <label class="campo"><span>Chamada (final e botão)</span><input id="vtBotao" maxlength="40" value="${esc(V.botao == null ? "Link na bio" : V.botao)}" placeholder="Ex.: Link na bio · Link no carrinho"></label>
       <p class="nota">Selos, emojis e outros textos: use “＋ Texto”, “＋ Selo” e “＋ Emoji” embaixo da prévia e arraste para onde quiser.</p>`);
   }
   $("#folhaEst").addEventListener("input", (e) => {
@@ -3257,7 +3267,7 @@
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
         <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
         <label class="campo"><span>Cupom (opcional)</span><input id="vdCupom" value="${esc(V.cupom)}" maxlength="20"></label>
-        <label class="campo"><span>Texto do botão</span><input id="vdBotao" value="${esc(V.botao)}" maxlength="40" placeholder="Ex.: Link na legenda"></label>
+        <label class="campo"><span>Texto do botão</span><input id="vdBotao" value="${esc(V.botao)}" maxlength="40" placeholder="Ex.: Link na bio"></label>
         ${botaoContinuar(true)}`;
       return;
     }
@@ -3317,12 +3327,13 @@
           </div>
           <div class="rp-acoes">
             <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
-            <div class="rp-linha">
-              <button type="button" class="btn btn--branco" id="vdBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar vídeo</button>
-              ${r.capa ? '<button type="button" class="btn btn--branco" id="vdBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg>Baixar capa</button>' : ""}
+            <div class="est-ctrl est-ctrl--3 rp-tiles">
+              <button type="button" class="est-btn" id="vdBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Baixar vídeo</b></button>
+              ${r.capa ? '<button type="button" class="est-btn" id="vdBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
+              <button type="button" class="est-btn" id="vdRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Gravar de novo</b></button>
             </div>
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
-            <div class="rp-rodape"><button type="button" class="btn btn--branco" id="vdRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Gravar de novo</button><button type="button" class="btn btn--branco" id="wzNovo"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Voltar à lista</button></div>
+            <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
           </div>
         </div>`;
         return;
@@ -3402,7 +3413,7 @@
   const B = (k) => k * (gradeReels ? gradeReels * 2 : 0.45);
   /** "Pulsa" junto com cada batida (1 no tempo, cai rápido) */
   /** Momentos dos toques fortes (bumbo e palma/caixa) da música, a partir de "ini" segundos: cada aparição cai num deles */
-  let acentoCena = null, ctaReels = "Link na legenda"; // chamada no fim do Reels (editável; vazia = sem chamada)
+  let acentoCena = null, ctaReels = "Link na bio"; // chamada no fim do Reels (editável; vazia = sem chamada)
   function acentosDe(E, ini, n) {
     const p = 60 / E.bpm / 4, out = [], ch = (s, i) => (s || "")[i % 16] || ".";
     for (let st = Math.ceil(ini / p - 0.001); out.length < n && st * p < ini + 30; st++) {
@@ -3476,7 +3487,7 @@
       comPulo(ctx, t, A(2), 540, y, () => { pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 66); });
       y += 190;
     }
-    const botao = String(V.botao == null ? "Link na legenda" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
+    const botao = String(V.botao == null ? "Link na bio" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
     if (botao) comSubida(ctx, t, A(3), () => pilulaReels(ctx, botao, 540, y, "#ffffff", "#1d1d1f", 52, true));
     ctx.restore();
   }
@@ -4509,7 +4520,7 @@
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t; decorAtual = decorDe(R);
     const M = modeloEfetivo(R);
-    const E = MUSICAS[musicaDe(R)]; ctaReels = String(R.cta == null ? "Link na legenda" : R.cta).trim();
+    const E = MUSICAS[musicaDe(R)]; ctaReels = String(R.cta == null ? "Link na bio" : R.cta).trim();
     if (t < T_INTRO) { acentoCena = acentosDe(E, 0, 8); introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : ""); }
     else if (t < T_INTRO + T_PROD * n) {
       const i = Math.floor((t - T_INTRO) / T_PROD); acentoCena = acentosDe(E, T_INTRO + i * T_PROD, 8); const pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
@@ -4652,7 +4663,7 @@
       if (k === "textosVideo") { folhaTextosVideo(); return; }
       if (k === "enquadrar") { const V = vd(); const v = await escolherOpcao("Enquadramento do vídeo", Object.entries(TEMAS_VIDEO), V.tema); if (v) { V.tema = v; V.resultado = null; aposMudarEstudio(); } }
       if (k === "cupons") { wz.passo = "cEscolher"; mostrarPasso(); }
-      if (k === "formato") { const v = await escolherOpcao("Story ou post?", [["story", "Story · tela cheia, em pé (link pelo adesivo)"], ["post", "Post · no feed, 4:5 (o link vai na legenda)"]], wz.formato === "post" ? "post" : "story"); if (v) { wz.formato = v; aposMudarEstudio(); } }
+      if (k === "formato") { const v = await escolherOpcao("Story ou post?", [["story", "Story · tela cheia, em pé (link pelo adesivo)"], ["post", "Post · no feed, 4:5 (link na bio)"]], wz.formato === "post" ? "post" : "story"); if (v) { wz.formato = v; aposMudarEstudio(); } }
       if (k === "produtosLivre") { wz.passo = "itens"; mostrarPasso(); }
       if (k === "grade") { wz.passo = "grade"; mostrarPasso(); }
       return;
@@ -4821,7 +4832,7 @@
         <div class="est-ctrl">
           ${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_VIDEO[R.cor].nome)}${botaoEst("musica", "Música", mu[0])}${botaoEst("produtos", "Produtos", String(n))}
         </div>
-        <label class="campo campo-cta"><span>Chamada no final do vídeo (opcional)</span><input id="rCta" maxlength="40" value="${esc(R.cta == null ? "Link na legenda" : R.cta)}" placeholder="Ex.: Link na legenda · Link no carrinho"></label>
+        <label class="campo campo-cta"><span>Chamada no final do vídeo (opcional)</span><input id="rCta" maxlength="40" value="${esc(R.cta == null ? "Link na bio" : R.cta)}" placeholder="Ex.: Link na bio · Link no carrinho"></label>
       </div>
       ${botaoContinuar(n > 0)}`;
       carregarMarca().then(fotosReels).then((f) => { const cv = $("#rQuadro"); if (cv) quadroReels(cv.getContext("2d"), 540, T_INTRO + 2.6, R, itensReels(), f); });
@@ -4847,13 +4858,14 @@
           </div>
           <div class="rp-acoes">
             <button type="button" class="btn btn--rosa" id="rPostar">Postar / compartilhar</button>
-            <div class="rp-linha">
-              <button type="button" class="btn btn--branco" id="rBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar vídeo</button>
-              ${r.capa ? '<button type="button" class="btn btn--branco" id="rBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg>Baixar capa</button>' : ""}
+            <div class="est-ctrl est-ctrl--3 rp-tiles">
+              <button type="button" class="est-btn" id="rBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Baixar vídeo</b></button>
+              ${r.capa ? '<button type="button" class="est-btn" id="rBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
+              <button type="button" class="est-btn" id="rRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Gravar de novo</b></button>
             </div>
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
             ${blocoLegenda(R)}
-            <div class="rp-rodape"><button type="button" class="btn btn--branco" id="rRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Gravar de novo</button><button type="button" class="btn btn--branco" id="wzNovo"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Voltar à lista</button></div>
+            <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
           </div>
         </div>`;
         return;
@@ -4954,28 +4966,27 @@
       if (proprio) linhas.push(proprio, "", `${nome} ${preco(it)}`.trim());
       else linhas.push(L.um(`${nome} ${preco(it)}.`.replace(" .", ".")));
       if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
-      if (it.link) linhas.push(linkLoja(it.loja, it.link));
     } else {
       linhas.push(R.titulo ? `✨ ${R.titulo.replace(/[*]/g, "")}! Olha esses achadinhos:` : CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].chamada.replace(/[*]/g, "") : L.varios(l.length), "");
       const ordem = R.modelo === "top" ? l.map((it, i) => [it, ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][i]]) : l.map((it, i) => [it, ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"][i]]);
       ordem.forEach(([it, n]) => {
         linhas.push(`${n} ${limparNome(it.nome || "Produto")}${preco(it) ? " " + preco(it) : ""}`);
         if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
-        if (it.link) linhas.push(linkLoja(it.loja, it.link));
         linhas.push("");
       });
       if (linhas[linhas.length - 1] === "") linhas.pop();
     }
+    linhas.push("", l.length > 1 ? "📲 Os links estão no meu canal do WhatsApp: toca no link da bio!" : AVISO_BIO);
     if (insta) linhas.push(`👉 Segue a ${insta} pra não perder nenhum achadinho`);
     // Instagram: no máximo 5 hashtags (a #migapromo sempre vai)
     const tags = [...new Set(`${CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].tags + " #achadinhos" : L.tags}`.split(/\s+/).filter((x) => x.startsWith("#") && x !== "#migapromo"))].slice(0, 4);
     linhas.push("", [...tags, "#migapromo"].join(" "));
-    return comConvite(linhas.join("\n"));
+    return linhas.join("\n").replace(/\n{3,}/g, "\n\n");
   }
-  const blocoLegenda = (R) => `<div class="campo"><span>Legenda pronta</span>
+  const blocoLegenda = (R) => `<div class="leg-bloco">
+      <div class="leg-topo"><span>Legenda pronta</span><div><button type="button" class="leg-btn" id="rCopiarLegenda"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button><button type="button" class="leg-btn" id="rRefazerLegenda"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Refazer</button></div></div>
       <textarea id="rLegenda" rows="9">${esc(R.legenda || (R.legenda = legendaReels()))}</textarea></div>
-      <div class="duas"><button type="button" class="btn btn--branco" id="rCopiarLegenda">Copiar legenda</button><button type="button" class="btn btn--branco" id="rRefazerLegenda">Refazer legenda</button></div>
-      <p class="nota">A legenda já vai com o link. No WhatsApp ele fica clicável.</p>`;
+      <p class="nota">No Instagram o link não fica clicável na legenda: ela avisa que o link está na bio (seu canal do WhatsApp).</p>`;
   async function pintarModelosReels() {
     await carregarMarca(); const f = await fotosReels(), R = rr(), l = itensReels();
     document.querySelectorAll("[data-r-modelo]").forEach((b) => quadroReels(b.querySelector("canvas").getContext("2d"), 270, T_INTRO + 2.4, { ...R, modelo: b.dataset.rModelo }, l, f));
