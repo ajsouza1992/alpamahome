@@ -1110,3 +1110,5 @@ body.modo-selecao main { padding-bottom: 200px; }
 .rt-rodape #rtPostar { flex: 1 1 auto; }
 @media (min-width: 960px) { .rt-rodape { max-width: 640px; margin: 0 auto; width: 100%; } }
 .rt-rodape > .btn, .rt-rodape > .wz-continuar { flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; max-width: none !important; padding: 0 10px !important; white-space: nowrap; font-size: 15px !important; }
+.est-previa.est-previa--post { aspect-ratio: 4 / 5; height: auto; width: min(80vw, 340px); }
+@media (min-width: 960px) { .wz__corpo:has(> .estudio) .est-previa.est-previa--post { height: auto; width: 100%; max-width: 460px; aspect-ratio: 4 / 5; } }

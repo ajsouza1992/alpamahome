@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=104"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=105"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=104"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=105"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1889,12 +1889,12 @@
     wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? C.cor : "auto", idx: 0, res: {}, lugares: lugaresSalvos() };
     if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? C.cor : "rosa", camp: wz.camp, resultado: null, iniciado: true }; wz.passo = "rModelo"; }
     else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? C.cor : "rosa", camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.passo = "kCarrossel"; }
-    else if (canal === "video") { usarProdutoNoVideo(l[0]); const V = vd(); V.iniciado = true; if (C) { V.titulo = C.titulo; V.cor = C.cor; } wz.passo = "vDados"; }
+    else if (canal === "video") { usarProdutoNoVideo(l[0]); const V = vd(); V.iniciado = true; if (C) { V.titulo = C.titulo; V.cor = C.cor; } if (!V.modelo) { V.modelo = "achadinho"; V.titulo = V.titulo || MODELOS_REELS.achadinho.titulo; } wz.passo = "vArquivo"; }
     else if (canal === "livre") {
       const L = livre(); L.itens = l.slice(0, 6).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
       if (C) L.titulo = C.titulo;
       L.n = [2, 3, 4, 6].find((q) => q >= L.itens.length) || 6; wz.passo = "grade";
-    } else if (canal === "instagram") { wz.passo = "formato"; }
+    } else if (canal === "instagram") { wz.passo = "montagem"; }
     else { wz.passo = "lugares"; if (C) l.forEach((it) => { if (!it.textoEditado) it.texto = ""; }); }
     marcados.clear(); modoVarios = false;
     irPara("criar"); mostrarPasso();
@@ -2048,7 +2048,7 @@
   const wzItem = () => fila().find((i) => i.id === wz.itemId);
   function passosDe(canal) {
     const l = passosBase(canal);
-    return wz.veioDaLista ? l.filter((p) => !["canal", "produto", "rItens"].includes(p)) : l;
+    return wz.veioDaLista ? l.filter((p) => !["canal", "produto", "rItens", "vDados"].includes(p)) : l;
   }
   function passosBase(canal) {
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
@@ -2057,7 +2057,7 @@
     if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", "kCarrossel"] : ["canal", "rItens", "rModelo", "rPronto"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
-    if (canal === "instagram") return [...base, "formato", "montagem", "postar"];
+    if (canal === "instagram") return [...base, "montagem", "postar"]; // story/post é escolhido no próprio estúdio
     if (canal === "telegram") return [...base, "mensagem", "telegram"];
     // WhatsApp: mensagem para os grupos ou imagem para o Status
     if (wz.tipoWhats === "status") return [...base, "tipoWhats", "montagem", "postar"];
@@ -2180,8 +2180,8 @@
       const comTexto = legendaNoEstudio() && item.precoNovo;
       if (comTexto && (!item.texto || !item.textoEditado)) usarModeloTexto();
       c.innerHTML = `<div class="estudio">
-        <div class="est-previa est-previa--img"><canvas id="wzEstTela"></canvas></div>
-        <div class="est-ctrl est-ctrl--2">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}</div>
+        <div class="est-previa est-previa--img${wz.formato === "post" && wz.canal !== "roteiro" ? " est-previa--post" : ""}"><canvas id="wzEstTela"></canvas></div>
+        <div class="est-ctrl est-ctrl--${wz.canal === "instagram" ? 3 : 2}">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}${wz.canal === "instagram" ? botaoEst("formato", "Formato", wz.formato === "post" ? "Post · feed 4:5" : "Story · em pé") : ""}</div>
       </div>
       ${comTexto ? blocoMensagem(item) : ""}
       ${botaoContinuar(true)}`;
@@ -2983,11 +2983,10 @@
       // Já vem preenchido: o produto escolhido, ou o último da lista
       if (!V.iniciado) { V.iniciado = true; const ini = wzItem() || fila().find((x) => !x.carregando && x.nome); if (ini) usarProdutoNoVideo(ini); }
       const l2 = fila().filter((x) => !x.carregando);
-      c.innerHTML = `<h2 class="wz-titulo">O que vai aparecer no vídeo?</h2>
+      c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2>
         ${wz.veioDaLista ? `<p class="nota">Confira os textos que vão aparecer no vídeo.</p>` : `<p class="nota">Toque num produto da lista ou cole o link: nome, foto e preço já vêm preenchidos.</p>
         <div class="colar"><input id="vdLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off"><button type="button" class="colar__btn" id="vdColar">Colar</button></div>
         <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>`}
-        <label class="campo"><span>Título</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>${chipsTitulos("vdTitulo")}
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
         <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
         <label class="campo"><span>Cupom (opcional)</span><input id="vdCupom" value="${esc(V.cupom)}" maxlength="20"></label>
@@ -3010,26 +3009,34 @@
       const e = estLer(), nomeM = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
       c.innerHTML = `<div class="estudio">
         <div class="est-previa est-previa--img"><canvas id="vdEst" width="540" height="960"></canvas></div>
-        <div class="est-ctrl">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("enquadrar", "Enquadrar", TEMAS_VIDEO[V.tema])}</div>
-        <div class="vd-chaves">
-          <label class="aj-chave"><span><b>Abertura</b></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
-          <label class="aj-chave"><span><b>Final</b></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
-          <label class="aj-chave"><span><b>Música no vídeo</b></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
-        </div>
+        <div class="est-ctrl">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || TEMAS_VIDEO[V.tema])}</div>
       </div>${botaoContinuar(true)}`;
       carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((q) => { const cv = $("#vdEst"); if (!cv) return; const cx = cv.getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 2.6, V); else quadroVideo(cx, 540, 960, q, V); });
       return;
     }
     if (wz.passo === "vPronto") {
       const r = V.resultado;
-      c.innerHTML = `<h2 class="wz-titulo">${r ? "Vídeo pronto" : "Criar o vídeo"}</h2>
-        ${r ? `<video class="vd-previa" src="${r.url}" controls playsinline></video>
-          <p class="nota">Formato: <b>${r.mp4 ? "MP4" : "WebM"}</b>.${r.mp4 ? "" : " Este celular não grava MP4: o WhatsApp aceita, mas o Instagram pode recusar WebM."}</p>
-          <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
-          <div class="duas"><button type="button" class="btn btn--branco" id="vdBaixar">Baixar vídeo</button>${r.capa ? '<button type="button" class="btn btn--branco" id="vdBaixarCapa">Baixar capa</button>' : ""}</div>
-          ${r.capa ? `<div class="capa-bloco"><span>Capa</span><img class="capa-previa" src="${URL.createObjectURL(r.capa)}" alt="Capa"></div>` : ""}
-          <button type="button" class="btn btn--branco" id="vdRefazer">Gravar de novo</button>`
-        : `<div class="wz-previa"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
+      if (r) {
+        c.innerHTML = `<h2 class="wz-titulo">Vídeo pronto</h2>
+        <div class="rp-grade">
+          <div class="rp-midia">
+            <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
+            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa"><figcaption>Capa</figcaption></figure>` : ""}
+          </div>
+          <div class="rp-acoes">
+            <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
+            <div class="rp-linha">
+              <button type="button" class="btn btn--branco" id="vdBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar vídeo</button>
+              ${r.capa ? '<button type="button" class="btn btn--branco" id="vdBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg>Baixar capa</button>' : ""}
+            </div>
+            ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
+            <div class="rp-rodape"><button type="button" class="link-sel" id="vdRefazer">Gravar de novo</button><button type="button" class="link-sel" id="wzNovo">Voltar para a lista</button></div>
+          </div>
+        </div>`;
+        return;
+      }
+      c.innerHTML = `<h2 class="wz-titulo">Criar o vídeo</h2>
+        ${`<div class="wz-previa"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
           <p class="nota">O app monta o Reels e grava em tempo real: leva o tempo do próprio Reels (${Math.round(duracaoReels())} segundos). Deixe o app aberto até terminar.</p>
           <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo</button>`}
@@ -3085,6 +3092,7 @@
   const B = (k) => k * (gradeReels ? gradeReels * 2 : 0.45);
   /** "Pulsa" junto com cada batida (1 no tempo, cai rápido) */
   const naBatida = (t) => Math.exp(-((t % B(1)) / B(1)) * 5);
+  let pulsoTela = 0; // 1 no tempo da batida (só nos vídeos; na imagem parada fica 0)
   const emTempos = (seg, batida) => Math.max(2, Math.round(seg / batida / 2) * 2) * batida; // duração com número par de tempos
   const entrada = (t, ini, dur = 0.5) => Math.max(0, Math.min(1, (t - noTempo(ini)) / dur));
   const pulo = (p) => p <= 0 ? 0 : p < 0.6 ? 0.6 + (1.08 - 0.6) * (p / 0.6) : 1.08 - 0.08 * ((p - 0.6) / 0.4);
@@ -3098,7 +3106,7 @@
     ctx.save(); ctx.globalAlpha = p; ctx.translate(0, 80 * (1 - suave(p))); desenho(); ctx.restore();
   }
   function bolinhas(ctx, cor1, cor2, T = 0) {
-    const r1 = 175 * (1 + 0.12 * Math.sin(T * 2.2)), r2 = 190 * (1 + 0.18 * Math.sin(T * 2.2 + 1.6));
+    const r1 = 175 * (1 + 0.06 * Math.sin(T * 2.2) + 0.1 * pulsoTela), r2 = 190 * (1 + 0.08 * Math.sin(T * 2.2 + 1.6) + 0.1 * pulsoTela);
     ctx.fillStyle = cor1; ctx.beginPath(); ctx.arc(-10, -10, r1, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = cor2; ctx.beginPath(); ctx.arc(1020, 1860, r2, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(1035, 1240, 30 * (1 + 0.35 * Math.sin(T * 3 + 0.8)), 0, Math.PI * 2); ctx.fillStyle = cor1; ctx.globalAlpha *= 0.7; ctx.fill(); ctx.globalAlpha /= 0.7;
@@ -3275,7 +3283,7 @@
       if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.025, "highpass", 3000);
     }
     // "Plim" na hora que aparece o seu @
-    if (plim != null) { const tp = t0 + plim; [72, 76, 79, 84].forEach((m, q) => corda(nota(m + 12), tp + q * 0.07, 1.2, 0.2 - q * 0.02, (q - 1.5) * 0.25, "piano")); guizo(tp, true); }
+    if (plim != null) { const tp = t0 + plim; [72, 76, 79].forEach((m, q) => corda(nota(m + 12), tp, 1.4, 0.16, (q - 1) * 0.3, "piano")); }
     // "Toc" macio quando algo aparece (no lugar do assobio)
     pops.forEach((p) => { const o = osc("sine", 760, t0 + p, 0.09, 0.32, mestre); o.frequency.setValueAtTime(760, t0 + p); o.frequency.exponentialRampToValueAtTime(380, t0 + p + 0.08); const f = barulho(t0 + p, 0.02, 0.12, "bandpass", 3000, mestre); f.Q.value = 1.5; });
     whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.32, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
@@ -3886,7 +3894,7 @@
     const W = 1080, H = formato === "post" ? 1350 : formato === "quadrado" ? 1080 : 1920;
     tela.width = W; tela.height = H; const ctx = tela.getContext("2d");
     temposDoModelo(R); const C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, M = modeloEfetivo(R);
-    relogioReels = 0; decorAtual = decorDe(R);
+    relogioReels = 0; decorAtual = decorDe(R); pulsoTela = 0;
     if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); return; }
     // Feed/quadrado: fundo no tamanho certo e o conteúdo um pouco menor no meio
     comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor));
@@ -3898,8 +3906,8 @@
     ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.bola; ctx.beginPath(); ctx.arc(60, 60, 200, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = R.cor === "preto" ? "#e9e4d8" : "#ffffff"; ctx.beginPath(); ctx.arc(W - 60, H - 60, 170, 0, Math.PI * 2); ctx.fill();
-    const s = Math.min(1, (H - 30) / 1560), dw = 1080 * s;
-    ctx.drawImage(telaArte, 0, 170, 1080, 1560, (W - dw) / 2, (H - 1560 * s) / 2, dw, 1560 * s);
+    const s = Math.min(1, (H - 20) / 1640), dw = 1080 * s;
+    ctx.drawImage(telaArte, 0, 110, 1080, 1640, (W - dw) / 2, (H - 1640 * s) / 2, dw, 1640 * s);
     if (edMarca) ctx.drawImage(edMarca, W - 165, H - 160, 130, 130);
   }
   let semFundo = false;
@@ -4111,7 +4119,7 @@
         else { ctx.fillStyle = d ? C.destaque : C.texto; ctx.fillText(tx, px, yl); }
         px += ctx.measureText(tx).width;
       });
-      if (ICO(j)) { ctx.save(); ctx.translate(px + GAP + ICO(j) / 2, yl - ICO(j) * 0.04); ctx.rotate(0.1); iconeReels(ctx, icone, ICO(j)); ctx.restore(); }
+      if (ICO(j)) { ctx.save(); ctx.translate(px + GAP + ICO(j) / 2, yl - ICO(j) * 0.04); ctx.rotate(0.1); const ps = 1 + 0.16 * pulsoTela; ctx.scale(ps, ps); iconeReels(ctx, icone, ICO(j)); ctx.restore(); }
       y += h;
     });
     ctx.textAlign = "center"; return linhas.length;
@@ -4134,14 +4142,14 @@
     if (it.loja) comPulo(ctx, t, B(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
     // Selo de desconto liso no canto da foto
     if (off >= 5) comPulo(ctx, t, B(2), 540 + L / 2 - 30, FY - L / 2 + 62, () => {
-      ctx.rotate(0.08); ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
+      ctx.rotate(0.08); { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
       ctx.fillStyle = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
     if (cima) {
       ctx.font = "700 44px Poppins"; const lc = quebrarTexto(ctx, nome, 920, 2);
       comSubida(ctx, t, B(3), () => { ctx.font = "700 44px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 330 : 360) + OY + j * 50)); });
       if (antigo) comSubida(ctx, t, B(3.5), () => { ctx.font = "600 46px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1270 + OY); ctx.fillRect(540 - w / 2 + ld, 1272 + OY, w - ld, 5); });
-      if (novo) comPulo(ctx, t, B(4), 540, (antigo ? 1370 : 1310) + OY, () => { const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (novo) comPulo(ctx, t, B(4), 540, (antigo ? 1370 : 1310) + OY, () => { { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
       if (it.cupom) comSubida(ctx, t, B(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1460 + OY, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1500 + OY); });
       return;
     }
@@ -4150,10 +4158,11 @@
     comSubida(ctx, t, B(3), () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 + j * 62)); });
     let y = 1275 + ln.length * 62 + 30;
     const riscado = (tx, yy, tam) => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = corAntiga(C); ctx.fillText(tx, 540, yy); const w = ctx.measureText(tx).width, ld = ctx.measureText(tx.split(" ")[0] + " ").width; ctx.fillRect(540 - w / 2 + ld, yy + 2, w - ld, 5); };
-    if (antigo && estilo === "oferta") comSubida(ctx, t, B(3.5), () => { ctx.font = "600 44px Poppins"; const a1 = "antes " + brl(antigo), a2 = `  ·  economize ${brl(antigo - novo)}`, w1 = ctx.measureText(a1).width, w2 = ctx.measureText(a2).width, x0 = 540 - (w1 + w2) / 2; ctx.textAlign = "left"; ctx.fillStyle = corAntiga(C); ctx.fillText(a1, x0, y); const ld = ctx.measureText("antes ").width; ctx.fillRect(x0 + ld, y + 2, w1 - ld, 5); ctx.fillStyle = C.texto; ctx.font = "800 44px Poppins"; ctx.fillText(a2, x0 + w1, y); ctx.textAlign = "center"; });
+    if (antigo && estilo === "oferta") comSubida(ctx, t, B(3.5), () => riscado("antes " + brl(antigo), y, 46));
     else if (antigo) comSubida(ctx, t, B(3.5), () => riscado("de " + brl(antigo), y, 46));
     y += antigo ? 95 : 55;
     if (novo) comPulo(ctx, t, B(4), 540, y, () => {
+      { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); }
       const tx = (antigo ? "por " : "") + preco;
       if (estilo === "grande") { ctx.font = "900 88px Poppins"; const w = ctx.measureText(tx).width + 90; retArredondado(ctx, -w / 2, -64, w, 128, 64); ctx.fillStyle = C.pill; ctx.fill(); ctx.fillStyle = C.pillTexto; ctx.fillText(tx, 0, 4); return; }
       let f = estilo === "oferta" ? 124 : 108; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; }
@@ -4164,10 +4173,11 @@
     if (it.cupom) comSubida(ctx, t, B(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1555, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1595); });
   }
   /** Quadro do Reels no tempo t */
-  function quadroReels(ctx, W, t, R, l, fotos) {
+  function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; } }
+  function quadroReels0(ctx, W, t, R, l, fotos) {
     temposDoModelo(R);
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
-    const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t; decorAtual = decorDe(R);
+    const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t; decorAtual = decorDe(R); pulsoTela = naBatida(t);
     const M = modeloEfetivo(R);
     if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : "");
     else if (t < T_INTRO + T_PROD * n) {
@@ -4191,6 +4201,8 @@
     cor: '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.6-.9 1.6-1.6 0-1.4-1.2-1.6-1.2-2.8 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.5" cy="7" r="1"/>',
     musica: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     cupons: '<path d="M3 8a2 2 0 0 0 0 4v4h18v-4a2 2 0 0 1 0-4V4H3z" transform="translate(0 2)"/><path d="M14 6v12" stroke-dasharray="2 2"/>',
+    ajustesVideo: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+    formato: '<rect x="7" y="3" width="10" height="18" rx="2"/><rect x="3" y="7" width="6" height="8" rx="1.5"/>',
     grade: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
     enquadrar: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
     produtos: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>'
@@ -4257,7 +4269,7 @@
     }
   }
   function folhaMusica() {
-    const R = rr(), atual = musicaDe(R);
+    const atual = wz.canal === "video" ? vd().batida || "house" : musicaDe(rr());
     folhaEst("Música", `<div class="lista-mod">${Object.entries(NOMES_MUSICA).map(([k, [n, d]]) => `<div class="mus-linha${atual === k ? " on" : ""}"><button type="button" data-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`);
   }
   function folhaProdutos() {
@@ -4269,6 +4281,17 @@
         <button type="button" class="pp-caixa" aria-pressed="true" data-lp-tira="${esc(x.id)}" aria-label="Tirar"></button></div>`).join("")}
       ${resto.map((x) => `<div class="lp-item">${miniLoja(x, fotoMini(x))}<span>${esc(x.nome || "Sem nome")}</span><button type="button" class="pp-caixa" aria-pressed="false" data-lp-poe="${esc(x.id)}" aria-label="Juntar"></button></div>`).join("")}</div>`);
   }
+  function folhaAjustesVideo() {
+    const V = vd();
+    folhaEst("Ajustes do vídeo", `<p class="nota">Como o seu vídeo aparece:</p>
+      <div class="lista-mod">${Object.entries(TEMAS_VIDEO).map(([k, n]) => `<button type="button" class="${V.tema === k ? "on" : ""}" data-vd-enq="${k}"><b>${esc(n)}</b></button>`).join("")}</div>
+      <div class="vd-chaves">
+        <label class="aj-chave"><span><b>Abertura</b></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
+        <label class="aj-chave"><span><b>Final</b></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
+        <label class="aj-chave"><span><b>Música no vídeo</b></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
+      </div>`);
+  }
+  $("#folhaEst").addEventListener("change", (e) => { if (e.target.dataset && e.target.dataset.vdOp) { const V = vd(); V[e.target.dataset.vdOp] = e.target.checked; V.resultado = null; } });
   function aposMudarEstudio() { if (wz.canal === "reels") { const R = rr(); R.legenda = null; R.resultado = null; } if (wz.canal === "livre") livre().legenda = ""; const y = scrollY; mostrarPasso(); scrollTo(0, y); }
   $("#wzCorpo").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-est]"); if (b) {
@@ -4278,9 +4301,11 @@
       if (k === "produtos") folhaProdutos();
       if (k === "estilo") { const v = await escolherOpcao("Estilo da arte", MONTAGENS.map((m) => [m, ESTILO_MONTAGEM[m]]), wz.modelo); if (v) { wz.modelo = v; aposMudarEstudio(); } }
       if (k === "cor") { const lista = Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome, x.fundo]); const e = estLer(); const v = await escolherOpcao("Cor", lista, e.cor); if (v) { e.cor = v; estGravar(e); aposMudarEstudio(); } }
-      if (k === "musica" && wz.canal === "video") { const V = vd(); const v = await escolherOpcao("Música", Object.entries(NOMES_MUSICA).map(([m, [n, d]]) => [m, `${n} · ${d}`]), V.batida || "house"); if (v) { V.batida = v; V.resultado = null; tocarAmostra(v); aposMudarEstudio(); } return; }
+      if (k === "musica" && wz.canal === "video") { folhaMusica(); return; }
+      if (k === "ajustesVideo") { folhaAjustesVideo(); return; }
       if (k === "enquadrar") { const V = vd(); const v = await escolherOpcao("Enquadramento do vídeo", Object.entries(TEMAS_VIDEO), V.tema); if (v) { V.tema = v; V.resultado = null; aposMudarEstudio(); } }
       if (k === "cupons") { wz.passo = "cEscolher"; mostrarPasso(); }
+      if (k === "formato") { const v = await escolherOpcao("Story ou post?", [["story", "Story · tela cheia, em pé (link pelo adesivo)"], ["post", "Post · no feed, 4:5 (use “link na bio”)"]], wz.formato === "post" ? "post" : "story"); if (v) { wz.formato = v; aposMudarEstudio(); } }
       if (k === "produtosLivre") { wz.passo = "itens"; mostrarPasso(); }
       if (k === "grade") { wz.passo = "grade"; mostrarPasso(); }
       return;
@@ -4302,13 +4327,14 @@
       $("#folhaEst").close(); aposMudarEstudio(); return;
     }
     const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; }
-    const mu = t.closest("[data-escolhe-mus]"); if (mu) { R.musica = mu.dataset.escolheMus; tocarAmostra(""); $("#folhaEst").close(); aposMudarEstudio(); return; }
+    const enq = t.closest("[data-vd-enq]"); if (enq) { const V = vd(); V.tema = enq.dataset.vdEnq; V.resultado = null; folhaAjustesVideo(); return; }
+    const mu = t.closest("[data-escolhe-mus]"); if (mu) { if (wz.canal === "video") { const V = vd(); V.batida = mu.dataset.escolheMus; V.resultado = null; } else R.musica = mu.dataset.escolheMus; tocarAmostra(""); $("#folhaEst").close(); aposMudarEstudio(); return; }
     const sobe = t.closest("[data-lp-sobe]"), desce = t.closest("[data-lp-desce]");
     if (sobe || desce) { const i = +(sobe ? sobe.dataset.lpSobe : desce.dataset.lpDesce), j = sobe ? i - 1 : i + 1; const ids = itensReels().map((x) => x.id); [ids[i], ids[j]] = [ids[j], ids[i]]; R.itens = ids; folhaProdutos(); return; }
     const tira = t.closest("[data-lp-tira]"); if (tira) { if (R.itens.length <= 1) { toast("Deixe pelo menos 1 produto"); return; } R.itens = R.itens.filter((x) => x !== tira.dataset.lpTira); folhaProdutos(); return; }
     const poe = t.closest("[data-lp-poe]"); if (poe) { if (R.itens.length >= limiteReels()) { toast(`No máximo ${limiteReels()} produtos`); return; } R.itens.push(poe.dataset.lpPoe); folhaProdutos(); return; }
   });
-  $("#folhaEst").addEventListener("close", () => { tocarAmostra(""); if (wz.canal === "reels" && (wz.passo === "rModelo" || wz.passo === "kCarrossel")) aposMudarEstudio(); });
+  $("#folhaEst").addEventListener("close", () => { tocarAmostra(""); if ((wz.canal === "reels" && (wz.passo === "rModelo" || wz.passo === "kCarrossel")) || (wz.canal === "video" && wz.passo === "vTema")) aposMudarEstudio(); });
   /** Título digitado: quebra em 2 linhas e destaca a última palavra (ou o que estiver entre *asteriscos*) */
   function tituloDigitado(t) {
     t = String(t || "").trim(); if (t.includes("*") || t.includes("\n")) return t;
@@ -4591,7 +4617,9 @@
     }
     linhas.push("", `💬 Comenta EU QUERO que eu te mando ${l.length > 1 ? "os links" : "o link"}`);
     if (insta) linhas.push(`👉 Segue a ${insta} pra não perder nenhum achadinho`);
-    linhas.push("", `${CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].tags + " #achadinhos" : L.tags} #migapromo`);
+    // Instagram: no máximo 5 hashtags (a #migapromo sempre vai)
+    const tags = [...new Set(`${CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].tags + " #achadinhos" : L.tags}`.split(/\s+/).filter((x) => x.startsWith("#") && x !== "#migapromo"))].slice(0, 4);
+    linhas.push("", [...tags, "#migapromo"].join(" "));
     return comConvite(linhas.join("\n"));
   }
   const blocoLegenda = (R) => `<div class="campo"><span>Legenda pronta</span>
