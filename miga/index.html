@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=95">
+  <link rel="manifest" href="manifest.json?v=96">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=95">
+  <link rel="stylesheet" href="style.css?v=96">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -55,7 +55,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=95" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=96" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -81,7 +81,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=95" alt="">
+    <img src="logo.png?v=96" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -266,7 +266,7 @@
       </div>
       <label class="campo"><span>Link do produto</span><input id="ppLinkItem" type="url" inputmode="url"></label>
       <div class="pp-criar">
-        <div class="pp-criar__topo"><b>Criar com este produto</b><button type="button" class="bs-camp claro" id="ppCampanha">Campanha ▾</button></div>
+        <div class="pp-criar__topo"><b>Criar com este produto</b><button type="button" class="bs-camp claro" id="ppCampanha" hidden>Campanha ▾</button></div>
         <div class="bs-acoes" id="ppAcoes">
           <button type="button" data-pp-criar="roteiro"><svg><use href="#i-lista"/></svg>Postar</button>
           <button type="button" data-pp-criar="reels"><svg><use href="#i-brilho"/></svg>Reels</button>
@@ -381,10 +381,17 @@
     </div>
     <button type="button" id="desmarcarTodos" hidden></button><button type="button" id="bsCampanha" hidden></button><div id="bsAcoes" hidden></div>
   </div>
+  <dialog id="folhaEst" class="dialogo folha folha-est">
+    <form method="dialog">
+      <h2 id="folhaEstTitulo">Modelo</h2>
+      <div id="folhaEstCorpo"></div>
+      <button class="btn btn--branco" value="" type="submit">Fechar</button>
+    </form>
+  </dialog>
   <dialog id="folhaCriar" class="dialogo folha">
     <form method="dialog">
       <h2 id="folhaCriarTitulo">O que vou criar?</h2>
-      <div class="grupo-filtro"><span>Campanha (opcional)</span><div class="opcoes-texto" id="folhaCampanhas"></div></div>
+      <div class="grupo-filtro" hidden><div class="opcoes-texto" id="folhaCampanhas"></div></div>
       <div class="wz-ops" id="folhaCriarOps"></div>
       <button class="btn btn--branco" value="" type="submit">Fechar</button>
     </form>
@@ -648,7 +655,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=95"></script>
-  <script src="app.js?v=95"></script>
+  <script src="firebase-config.js?v=96"></script>
+  <script src="app.js?v=96"></script>
 </body>
 </html>

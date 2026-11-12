@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=95"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=96"; });
     }
     edFoto = null;
     try {
@@ -1183,7 +1183,7 @@
       padrao: { titulo: "Oferta\n*relâmpago* ⚡", texto: "Corre que é por pouco tempo!", botao: "" },
       blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 1], ["gap", 30], ["preco", 0], ...comCupom(d), ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
     baixou: { nome: "baixou-o-preco", fundo: "creme", produto: true, logo: false,
-      padrao: { titulo: "*Baixou*\no preço! *↓*", texto: "", botao: "" },
+      padrao: { titulo: "*Baixou*\no preço!", texto: "", botao: "" },
       blocos: (d) => [["titulo", d.titulo], ["gap", 30], ["precoGrande", 0], ["gap", 30], ["foto", 1], ["gap", 26], ["nome", 0], ...comCupom(d), ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
     ultimas: { nome: "ultimas-horas", fundo: "rosa", produto: true, logo: false,
       padrao: { titulo: "*Últimas*\nhoras ⏰", texto: "Esse preço termina hoje!", botao: "" },
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=95"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=96"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1835,6 +1835,7 @@
   let campanhaEscolhida = "";
   try { campanhaEscolhida = localStorage.getItem("miga_campanha") || ""; } catch (e) { /* segue */ }
   const campanha = () => CAMPANHAS[wz.camp] || null;
+  campanhaEscolhida = ""; // campanhas agora ficam dentro de "Modelo"
   function pintarCampanhas() {
     $("#folhaCampanhas").innerHTML = [["", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])].map(([k, n]) => `<button type="button" data-camp="${k}" class="${campanhaEscolhida === k ? "on" : ""}">${esc(n)}</button>`).join("");
   }
@@ -2046,7 +2047,7 @@
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
     if (canal === "cupons") return ["cEscolher", "cPronto"];
-    if (canal === "reels") return ["canal", "rItens", "rModelo", ...((wz.reels && wz.reels.itens.length > 1) ? ["rOrdem"] : []), "rPronto"];
+    if (canal === "reels") return ["canal", "rItens", "rModelo", "rPronto"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "formato", "montagem", "postar"];
@@ -2168,11 +2169,14 @@
     }
     if (wz.passo === "montagem" || wz.passo === "cor") {
       if (!CORES_NOME[wz.cor]) wz.cor = MODELOS[wz.modelo].fundo;
-      c.innerHTML = `<h2 class="wz-titulo">Escolha a montagem</h2>
-        <div class="aj-linha titulo-linha"><input id="wzTituloArte" maxlength="40" value="${esc(wz.tituloArte || "")}" placeholder="Título / tema (opcional)"><button type="button" class="btn-redondo" id="wzTitulosProntos" aria-label="Títulos prontos"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/></svg></button></div>
-        <div class="wz-miniaturas">${MONTAGENS.map((v) => `<button type="button" class="wz-mini${wz.modelo === v ? " on" : ""}" data-modelo="${v}"><canvas></canvas><span>${wz.tituloArte || campanha() ? ESTILO_MONTAGEM[v] : NOME_MONTAGEM[v]}</span></button>`).join("")}</div>
-        ${botaoContinuarCom(barraCores("data-cor", wz.cor, CORES_NOME))}`;
-      desenharMiniaturas(false);
+      const nomeModelo = wz.tituloArte || (campanha() ? campanha().nome : NOME_MONTAGEM[wz.modelo]);
+      c.innerHTML = `<div class="estudio">
+        <div class="est-previa est-previa--img"><canvas id="wzEstTela"></canvas></div>
+        <div class="est-ctrl est-ctrl--3">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("estilo", "Estilo", ESTILO_MONTAGEM[wz.modelo])}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}</div>
+      </div>
+      ${botaoContinuar(true)}`;
+      const pintar = () => { const cv = $("#wzEstTela"); if (cv) desenharMontagem(cv, false, wz.modelo, wz.cor, wz.formato === "post" ? "post" : "story"); };
+      pintar(); prepararFoto(item).then(pintar);
       return;
     }
     if (wz.passo === "postar") {
@@ -2308,7 +2312,8 @@
   function usarModeloTexto(estilo) {
     const it = wzItem(); if (!it) return;
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
-    it.estiloTexto = estilo; it.texto = (wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*\n\n` : campanha() ? campanha().chamada + "\n\n" : "") + textoDoModelo(estilo, p); it.textoEditado = false; salvarFila();
+    const chamadaTema = wz.temaArte && LEGENDA_REELS[wz.temaArte] ? LEGENDA_REELS[wz.temaArte].varios().replace(" Olha esses achadinhos:", "") : "";
+    it.estiloTexto = estilo; it.texto = (chamadaTema ? chamadaTema + "\n\n" : wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*\n\n` : campanha() ? campanha().chamada + "\n\n" : "") + textoDoModelo(estilo, p); it.textoEditado = false; salvarFila();
   }
   async function registrarCompartilhado(canal, onde) {
     const it = wzItem(); if (!it) return;
@@ -2978,6 +2983,7 @@
           <label class="aj-chave"><span><b>Final com música</b><small>Logo, seu @ e o botão</small></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
           <label class="aj-chave"><span><b>Música durante o vídeo</b><small>Baixinha, por baixo do som do vídeo</small></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
         </div>
+        <button type="button" class="btn btn--branco" id="vdBatida">Música: ${esc(NOMES_MUSICA[V.batida || "house"][0])} ▾</button>
         ${botaoContinuar(true)}`;
       pintarTemasVideo();
       return;
@@ -3208,7 +3214,7 @@
       await new Promise((ok) => v.addEventListener("loadedmetadata", ok, { once: true }));
       V.duracao = v.duration || 10;
     }
-    const bt = ajustarGrade(MUSICAS.house.bpm);
+    const bt = ajustarGrade(MUSICAS[V.batida || "house"].bpm);
     const tA = V.abertura ? emTempos(T_ABERTURA, bt) : 0, tF = V.final ? emTempos(T_FINAL, bt) : 0;
     const tM = Math.ceil((tA + duracaoMeio()) / bt) * bt - tA, total = tA + tM + tF; // o final começa num tempo da música
     const fluxo = tela.captureStream(30);
@@ -3224,7 +3230,7 @@
       if (V.abertura) whooshes.push(tA - 0.3);
       // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
       const temTrilha = V.abertura || V.final || V.musica;
-      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS.house, V.final ? tA + tM + noTempo(arroba(config.instagram) ? 1.05 : 1.6) : null);
+      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + noTempo(arroba(config.instagram) ? 1.05 : 1.6) : null);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
     } catch (e) { if (v) v.muted = true; }
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
@@ -3294,6 +3300,7 @@
       V.semVideo = !V.semVideo; if (V.semVideo) V.tema = "moldura"; if (V.semVideo && V.url) { URL.revokeObjectURL(V.url); V.url = ""; V.quadro = null; }
       V.resultado = null; mostrarPasso(); return;
     }
+    if (t.closest("#vdBatida")) { const v = await escolherOpcao("Música", Object.entries(NOMES_MUSICA).map(([k, [n, d]]) => [k, `${n} · ${d}`]), V.batida || "house"); if (v) { V.batida = v; V.resultado = null; tocarAmostra(v); mostrarPasso(); } return; }
     if (t.closest("#vdGerar")) { gravarVideo(); return; }
     if (t.closest("#vdRefazer")) { V.resultado = null; mostrarPasso(); return; }
     if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); toast("Vídeo salvo"); return; }
@@ -3669,8 +3676,37 @@
     boombap: { bpm: 90, balanco: 0.15, k: "x......x.x......", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", chVol: 0.8, chiado: true, b: "x------x.x------", baixo: "saw", c: "x-------x-------", acordeTipo: "teclado",
       acordes: [[57, 60, 64, 67], [50, 53, 57, 60], [55, 59, 62, 65], [48, 52, 55, 59]], raiz: [45, 38, 43, 36], lider: "sine", liderVol: 0.12, entra: 16,
       melodia: [72, 0, 0, 74, 0, 76, 0, 0, 79, 0, 76, 0, 74, 0, 0, 0, 72, 0, 0, 69, 0, 72, 0, 0, 74, 0, 0, 0, 0, 0, 0, 0] },
+    housegrave: { bpm: 122, bomba: true, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "..x...x...x...x.", o: "..o...o...o...o.", b: "x-..x-..x-..x-..", baixo: "808", c: "x.......x.......", acordeTipo: "teclado",
+      acordes: [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]], raiz: [33, 29, 31, 28], lider: "sino", entra: 16, melodia: [76, 0, 0, 74, 0, 72, 0, 0, 74, 0, 0, 76, 0, 0, 0, 0, 72, 0, 0, 71, 0, 69, 0, 0, 71, 0, 0, 72, 0, 0, 0, 0] },
+    tropical: { bpm: 112, bomba: true, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "..x...x...x...x.", b: "x..x..x.x..x..x.", baixo: "saw", c: "..x...x...x...x.", acordeTipo: "piano",
+      acordes: [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]], raiz: [36, 33, 29, 31], lider: "sino", entra: 16, melodia: [79, 0, 76, 0, 79, 0, 81, 0, 79, 0, 76, 0, 74, 0, 0, 0, 76, 0, 74, 0, 72, 0, 74, 0, 76, 0, 0, 0, 0, 0, 0, 0] },
+    trappesado: { bpm: 145, k808: true, desliza: true, sujo: true, k: "x.....x...x..x..", s: "........x.......", palma: true, h: "xrx.xrx.x.xrxxrr", b: "x-----x---x--x--", baixo: "808", c: "", acordes: [[60, 63, 67], [58, 62, 65], [56, 60, 63], [55, 59, 62]], raiz: [24, 22, 20, 19],
+      lider: "sino", entra: 0, melodia: [72, 0, 0, 0, 75, 0, 0, 0, 74, 0, 72, 0, 0, 0, 0, 0, 72, 0, 0, 0, 79, 0, 0, 77, 75, 0, 74, 0, 0, 0, 0, 0] },
+    trapmelodico: { bpm: 136, k808: true, desliza: true, k: "x.........x.....", s: "........x.......", h: "x.x.x.x.x.x.xrxr", b: "x---------x-----", baixo: "808", c: "x---------------", acordeTipo: "teclado", acordes: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], raiz: [33, 29, 36, 31],
+      lider: "sine", liderVol: 0.14, entra: 16, melodia: [76, 0, 74, 0, 72, 0, 0, 0, 69, 0, 72, 0, 74, 0, 0, 0, 76, 0, 77, 0, 76, 0, 74, 0, 72, 0, 0, 0, 0, 0, 0, 0] },
+    funkmandela: { bpm: 130, sujo: true, k808: true, k: "x..x..x.x..x..x.", s: "....x.......x...", palma: true, h: "x.x.x.x.x.x.x.x.", b: "x..x..x.x..x..x.", baixo: "808", c: "", acordes: [[64, 67, 71], [64, 67, 71], [62, 65, 69], [62, 65, 69]], raiz: [28, 28, 26, 26],
+      lider: "square", liderVol: 0.07, entra: 16, melodia: [76, 0, 76, 0, 0, 79, 0, 0, 76, 0, 74, 0, 0, 0, 0, 0, 76, 0, 76, 0, 0, 81, 0, 0, 79, 0, 76, 0, 0, 0, 0, 0] },
+    funk150: { bpm: 150, sujo: true, k808: true, k: "x..x....x..x....", s: "...x..x....x..x.", palma: true, h: "xxx.xxx.xxx.xxx.", b: "x..x....x..x....", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [58, 62, 65], [56, 60, 63]], raiz: [24, 24, 22, 20],
+      lider: "cowbell", entra: 0, melodia: [72, 0, 72, 0, 75, 0, 72, 0, 70, 0, 72, 0, 0, 0, 0, 0, 72, 0, 72, 0, 77, 0, 75, 0, 72, 0, 70, 0, 0, 0, 0, 0] },
+    phonkdrift: { bpm: 140, k808: true, sujo: true, k: "x.....x.x.x.....", s: "........x.......", h: "x.x.x.x.xrx.x.xr", b: "x-----x-x-x-----", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [56, 60, 63], [55, 58, 62]], raiz: [24, 24, 20, 19],
+      lider: "cowbell", entra: 0, melodia: [72, 72, 0, 75, 72, 0, 70, 0, 72, 72, 0, 75, 77, 0, 75, 0, 72, 72, 0, 75, 72, 0, 70, 0, 68, 68, 0, 70, 72, 0, 0, 0] },
+    eletrodrop: { bpm: 126, bomba: true, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "x.x.x.x.x.x.x.x.", o: "..o...o...o...o.", b: "..X...X...X...X.", baixo: "saw", c: "x.x.x.x.x.x.x.x.", acordeTipo: "super",
+      acordes: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], raiz: [33, 29, 36, 31], lider: "square", liderVol: 0.06, entra: 16, melodia: [81, 0, 81, 0, 84, 0, 81, 0, 79, 0, 76, 0, 79, 0, 0, 0, 81, 0, 81, 0, 84, 0, 86, 0, 84, 0, 81, 0, 0, 0, 0, 0] },
+    reggaetonromantico: { bpm: 92, k: "x...x...x...x...", s: "...x..x....x..x.", h: "x.x.x.x.x.x.x.x.", chVol: 0.7, b: "x-..x-..x-..x-..", baixo: "808", c: "x-------x-------", acordeTipo: "teclado", acordes: [[62, 65, 69], [58, 62, 65], [60, 64, 67], [57, 60, 64]], raiz: [26, 22, 24, 21],
+      lider: "sine", liderVol: 0.15, entra: 16, melodia: [74, 0, 0, 72, 0, 74, 0, 77, 0, 0, 76, 0, 74, 0, 0, 0, 72, 0, 0, 70, 0, 72, 0, 74, 0, 0, 72, 0, 69, 0, 0, 0] },
+    afrobeat: { bpm: 108, balanco: 0.08, k: "x.....x...x.....", s: "...x..x....x..x.", h: "x.xx.x.xx.x.x.xx", chVol: 0.8, b: "x--x--x-x--x--x-", baixo: "808", c: "..x...x...x...x.", acordeTipo: "piano", acordes: [[60, 64, 67], [57, 60, 64], [65, 69, 72], [55, 59, 62]], raiz: [24, 21, 29, 19],
+      lider: "triangle", liderVol: 0.12, entra: 16, melodia: [79, 0, 79, 76, 0, 79, 0, 81, 79, 0, 76, 0, 74, 0, 0, 0, 76, 0, 76, 74, 0, 76, 0, 79, 76, 0, 74, 0, 72, 0, 0, 0] },
     phonk: { bpm: 130, k808: true, sujo: true, k: "x.....x...x.....", s: "........x.......", h: "x.x.x.x.x.x.x.x.", b: "x-----x---x-----", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [56, 60, 63], [58, 62, 65]], raiz: [36, 36, 32, 34],
       lider: "cowbell", entra: 0, melodia: [72, 0, 72, 75, 0, 72, 0, 70, 72, 0, 72, 75, 0, 79, 0, 77, 72, 0, 72, 75, 0, 72, 0, 70, 68, 0, 68, 70, 0, 72, 0, 0] }
+  };
+  const NOMES_MUSICA = {
+    house: ["House", "animada e alegre"], housegrave: ["House grave", "grave marcante"], tropical: ["House tropical", "leve, de verão"],
+    eletronica: ["Eletrônica", "agitada"], eletrodrop: ["Eletrônica drop", "com virada forte"],
+    trap: ["Trap", "grave que desliza"], trappesado: ["Trap pesado", "grave com muita ênfase"], trapmelodico: ["Trap melódico", "grave e suave"],
+    drill: ["Drill", "tenso, com tique-taque"], funk: ["Funk", "dançante"], funkmandela: ["Funk mandelão", "grave estourado"], funk150: ["Funk 150", "acelerado"],
+    phonk: ["Phonk", "grave sujo e sininho"], phonkdrift: ["Phonk drift", "pesado, de corrida"],
+    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], afrobeat: ["Afrobeat", "suingado"],
+    disco: ["Disco", "baixo saltitante"], boombap: ["Boom bap", "rap anos 90"], lofi: ["Lo-fi", "calmo e delicado"]
   };
   const MODELOS_REELS = {
     achadinho: { nome: "Achadinho do dia", desc: "Batida house", musica: "house", tag: "Achadinho do dia", titulo: "Achadinho\n*do dia*", sub: (n) => n > 1 ? `${n} achadinhos pra você` : "Olha o que eu achei", icone: "brilho" },
@@ -3696,17 +3732,24 @@
     presentes: { nome: "Ideias de presente", desc: "Disco", musica: "disco", tag: "Ideias de presente", titulo: "Ideias de\n*presente*", sub: () => "Presentes que agradam e cabem no bolso", icone: "presente", cat: true },
     ate50: { nome: "Tudo até R$ 50", desc: "Phonk", musica: "phonk", tag: "Tudo até R$ 50", titulo: "Tudo até\n*R$ 50*", sub: () => "Achadinhos baratinhos", icone: "etiqueta", cat: true },
     viagem: { nome: "Pra levar na viagem", desc: "House", musica: "house", tag: "Pra levar na viagem", titulo: "Pra levar\nna *viagem*", sub: () => "Itens que facilitam a viagem", icone: "bolsa", cat: true },
+    peleRica: { nome: "Pele de rica", desc: "lofi", musica: "lofi", tag: "Pele de rica", titulo: "Pele de rica\n*gastando pouco*", sub: () => "Skincare com preço de amiga", icone: "coracao", cat: true },
+    make: { nome: "Make baratinha", desc: "disco", musica: "disco", tag: "Make baratinha", titulo: "Make\n*baratinha*", sub: () => "Maquiagem com desconto", icone: "brilho", cat: true },
+    cozinhaSonhos: { nome: "Cozinha dos sonhos", desc: "tropical", musica: "tropical", tag: "Cozinha dos sonhos", titulo: "Cozinha\ndos *sonhos*", sub: () => "Utilidades lindas e baratas", icone: "presente", cat: true },
+    looks50: { nome: "Looks até R$ 50", desc: "funkmandela", musica: "funkmandela", tag: "Looks até R$ 50", titulo: "Looks até\n*R$ 50*", sub: () => "Moda baratinha", icone: "brilho", cat: true },
+    viral: { nome: "Achadinhos virais", desc: "trappesado", musica: "trappesado", tag: "Achadinhos virais", titulo: "Achadinhos\n*virais*", sub: () => "O que todo mundo está comprando", icone: "fogo", cat: true },
+    aulas: { nome: "Volta às aulas", desc: "house", musica: "house", tag: "Volta às aulas", titulo: "Volta às\n*aulas*", sub: () => "Material e mochila com desconto", icone: "bolsa", cat: true },
     sohoje: { nome: "Só hoje", desc: "Phonk", musica: "phonk", tag: "Só hoje", titulo: "*Só hoje*\nnesse preço", sub: () => "Amanhã pode voltar", icone: "fogo" }
   };
   let T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 3.4;
   /** As telas duram um número exato de tempos da batida do modelo */
-  function temposDoModelo(mk) {
-    const bt = ajustarGrade(MUSICAS[MODELOS_REELS[mk].musica].bpm);
+  const musicaDe = (R) => MUSICAS[R.musica] ? R.musica : MODELOS_REELS[R.modelo].musica;
+  function temposDoModelo(R) {
+    const bt = ajustarGrade(MUSICAS[musicaDe(typeof R === "string" ? { modelo: R } : R)].bpm);
     T_INTRO = emTempos(2.6, bt); T_PROD = emTempos(3.6, bt); T_FIM = emTempos(3.4, bt);
   }
   function rr() { if (!wz.reels) wz.reels = { itens: [], modelo: "achadinho", cor: "rosa", resultado: null }; return wz.reels; }
   const itensReels = () => rr().itens.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
-  const duracaoReelsProdutos = () => { temposDoModelo(rr().modelo); return T_INTRO + T_PROD * Math.max(1, itensReels().length) + T_FIM; };
+  const duracaoReelsProdutos = () => { temposDoModelo(rr()); return T_INTRO + T_PROD * Math.max(1, itensReels().length) + T_FIM; };
   async function fotosReels() {
     const l = itensReels(), cache = rr().fotos || (rr().fotos = {});
     await Promise.all(l.map(async (it) => {
@@ -3844,7 +3887,6 @@
       const ini = mk === "baixou" ? 1.65 : 1.15;
       if (mk === "baixou") {
         const p = entrada(t, ini, 0.45); if (p > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, p * 2); ctx.translate(540, y + 40 - 160 * (1 - suave(p))); etiquetaReels(ctx, (antigo ? "por " : "") + brl(novo), 0, 0, 72, -0.03); ctx.restore(); }
-        comPulo(ctx, t, ini + 0.3, 975, y + 40, () => { const b = Math.sin(t * 8) * 10; ctx.translate(0, b); ctx.fillStyle = C.destaque; ctx.beginPath(); ctx.moveTo(-40, -50); ctx.lineTo(40, -50); ctx.lineTo(40, 0); ctx.lineTo(75, 0); ctx.lineTo(0, 70); ctx.lineTo(-75, 0); ctx.lineTo(-40, 0); ctx.closePath(); ctx.fill(); });
       } else comPulo(ctx, t, ini, 540, y + 40, () => { const s = mk === "relampago" && t > 1.7 ? 1 + 0.05 * Math.sin(t * 14) : 1; ctx.scale(s, s); etiquetaReels(ctx, (antigo ? "por " : "") + brl(novo), 0, 0, 72, -0.03); });
       y += 200;
     }
@@ -3861,11 +3903,11 @@
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) {
-    temposDoModelo(R.modelo);
+    temposDoModelo(R);
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t;
     let M = CP ? { ...M0, titulo: CP.titulo, tag: CP.tag, sub: () => CP.sub } : M0;
-    if (R.titulo) M = { ...M, titulo: tituloDigitado(R.titulo), tag: R.titulo.replace(/[*\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 28) };
+    if (R.titulo) M = { ...M, titulo: tituloDigitado(R.titulo), tag: R.titulo.replace(/[*\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 28), sub: () => "" };
     if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : "");
     else if (t < T_INTRO + T_PROD * n) {
       const i = Math.floor((t - T_INTRO) / T_PROD), pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
@@ -3881,6 +3923,96 @@
     "Presentes até R$ 50", "Tudo até R$ 20", "Tudo até R$ 50", "Pra levar na viagem", "Achadinhos da semana", "Os mais amados",
     "Achadinhos que viralizaram", "Preço de amiga", "Volta às aulas", "Especial Dia das Mães", "Especial de Natal", "Esquenta Black Friday"
   ];
+  /* ---------- Estúdio: botões Modelo / Cor / Música / Produtos e as folhas de escolha ---------- */
+  const ICONE_EST = {
+    modelo: '<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h5"/>',
+    estilo: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/>',
+    cor: '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.6-.9 1.6-1.6 0-1.4-1.2-1.6-1.2-2.8 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.5" cy="7" r="1"/>',
+    musica: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    produtos: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>'
+  };
+  const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k]}</svg><b>${esc(nome)}</b><small>${esc(valor || "")}</small></button>`;
+  let amostra = null;
+  function tocarAmostra(k) {
+    try { if (amostra) amostra.close(); } catch (e) { /* segue */ }
+    if (!k) { amostra = null; return; }
+    try { amostra = new (window.AudioContext || window.webkitAudioContext)(); tocarTrilha(amostra, amostra.destination, 6, [], [], null, MUSICAS[k], null); const ac = amostra; setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } }, 6300); } catch (e) { /* segue */ }
+  }
+  /** Folha genérica do estúdio */
+  function folhaEst(titulo, html) {
+    $("#folhaEstTitulo").textContent = titulo; $("#folhaEstCorpo").innerHTML = html;
+    const d = $("#folhaEst"); if (!d.open) d.showModal();
+  }
+  const TEMAS_POST = () => Object.entries(MODELOS_REELS).filter(([, m]) => m.cat);
+  function folhaModelo(aba) {
+    const reels = wz.canal === "reels", R = reels ? rr() : null;
+    aba = aba || wz.abaModelo || "sugestoes"; wz.abaModelo = aba;
+    const tabs = [["sugestoes", "Sugestões"], ["temas", "Temas"], ["campanhas", "Campanhas"]].map(([k, n]) => `<button type="button" data-aba-mod="${k}" class="${aba === k ? "on" : ""}">${n}</button>`).join("");
+    let itens = [];
+    if (aba === "sugestoes") itens = reels ? Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => [k, m.nome, NOMES_MUSICA[m.musica][0], !R.titulo && !R.camp && R.modelo === k])
+      : MONTAGENS.map((k) => [k, NOME_MONTAGEM[k], ESTILO_MONTAGEM[k], !wz.tituloArte && !wz.camp && wz.modelo === k]);
+    if (aba === "temas") itens = TEMAS_POST().map(([k, m]) => [k, m.nome, m.sub(), reels ? !R.titulo && !R.camp && R.modelo === k : wz.temaArte === k]);
+    if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, reels ? R.camp === k && !R.titulo : wz.camp === k && !wz.tituloArte]);
+    const titulo = reels ? R.titulo : (wz.temaArte ? "" : wz.tituloArte);
+    folhaEst("Modelo", `<div class="tabs-mod">${tabs}</div>
+      <div class="lista-mod">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><b>${esc(n)}</b><small>${esc(d || "")}</small>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>
+      <div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="✏️ Escrever meu título" value="${esc(titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>`);
+  }
+  function folhaMusica() {
+    const R = rr(), atual = musicaDe(R);
+    folhaEst("Música", `<div class="lista-mod">${Object.entries(NOMES_MUSICA).map(([k, [n, d]]) => `<div class="mus-linha${atual === k ? " on" : ""}"><button type="button" data-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">▶</button></div>`).join("")}</div>`);
+  }
+  function folhaProdutos() {
+    const R = rr(), sel = itensReels(), resto = fila().filter((x) => !x.carregando && !R.itens.includes(x.id));
+    folhaEst(`Produtos (${sel.length})`, `<p class="nota">Até 5 produtos. Use as setas para mudar a ordem${R.modelo === "top" ? " (o 1º é o Top 1)" : ""}.</p>
+      <div class="lista-prod">${sel.map((x, i) => `<div class="lp-item on">${miniLoja(x, fotoMini(x))}<span>${esc(x.nome || "Sem nome")}</span>
+        <button type="button" class="btn-seta" data-lp-sobe="${i}"${i === 0 ? " disabled" : ""} aria-label="Subir"><svg><use href="#i-seta-baixo"/></svg></button>
+        <button type="button" class="btn-seta" data-lp-desce="${i}"${i === sel.length - 1 ? " disabled" : ""} aria-label="Descer"><svg><use href="#i-seta-baixo"/></svg></button>
+        <button type="button" class="pp-caixa" aria-pressed="true" data-lp-tira="${esc(x.id)}" aria-label="Tirar"></button></div>`).join("")}
+      ${resto.map((x) => `<div class="lp-item">${miniLoja(x, fotoMini(x))}<span>${esc(x.nome || "Sem nome")}</span><button type="button" class="pp-caixa" aria-pressed="false" data-lp-poe="${esc(x.id)}" aria-label="Juntar"></button></div>`).join("")}</div>`);
+  }
+  function aposMudarEstudio() { if (wz.canal === "reels") { const R = rr(); R.legenda = null; R.resultado = null; } const y = scrollY; mostrarPasso(); scrollTo(0, y); }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-est]"); if (b) {
+      const k = b.dataset.est, reels = wz.canal === "reels";
+      if (k === "modelo") folhaModelo();
+      if (k === "musica") folhaMusica();
+      if (k === "produtos") folhaProdutos();
+      if (k === "estilo") { const v = await escolherOpcao("Estilo da arte", MONTAGENS.map((m) => [m, ESTILO_MONTAGEM[m]]), wz.modelo); if (v) { wz.modelo = v; aposMudarEstudio(); } }
+      if (k === "cor") { const lista = reels ? Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome]) : Object.entries(CORES_NOME); const v = await escolherOpcao("Cor", lista, reels ? rr().cor : wz.cor); if (v) { if (reels) rr().cor = v; else wz.cor = v; aposMudarEstudio(); } }
+      return;
+    }
+    if (e.target.closest("#rTocar") && wz.canal === "reels") { rodarReels(false); }
+  });
+  $("#folhaEst").addEventListener("click", (e) => {
+    const t = e.target, reels = wz.canal === "reels", R = reels ? rr() : null;
+    const ab = t.closest("[data-aba-mod]"); if (ab) { folhaModelo(ab.dataset.abaMod); return; }
+    const em = t.closest("[data-escolhe-mod]");
+    if (em) {
+      const [aba, k] = em.dataset.escolheMod.split(":");
+      if (reels) { R.titulo = ""; if (aba === "campanhas") { R.camp = k; R.cor = CAMPANHAS[k].cor; } else { R.camp = ""; R.modelo = k; } }
+      else {
+        wz.tituloArte = ""; wz.temaArte = ""; wz.camp = "";
+        if (aba === "sugestoes") wz.modelo = k;
+        if (aba === "temas") { wz.temaArte = k; wz.tituloArte = MODELOS_REELS[k].nome; }
+        if (aba === "campanhas") { wz.camp = k; wz.cor = CAMPANHAS[k].cor; }
+        const it = wzItem(); if (it && !it.textoEditado) it.texto = "";
+      }
+      $("#folhaEst").close(); aposMudarEstudio(); return;
+    }
+    if (t.closest("#estTituloOk")) {
+      const v = $("#estTitulo").value.trim();
+      if (reels) { R.titulo = v; } else { wz.tituloArte = v; wz.temaArte = ""; const it = wzItem(); if (it && !it.textoEditado) it.texto = ""; }
+      $("#folhaEst").close(); aposMudarEstudio(); return;
+    }
+    const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; }
+    const mu = t.closest("[data-escolhe-mus]"); if (mu) { R.musica = mu.dataset.escolheMus; tocarAmostra(""); $("#folhaEst").close(); aposMudarEstudio(); return; }
+    const sobe = t.closest("[data-lp-sobe]"), desce = t.closest("[data-lp-desce]");
+    if (sobe || desce) { const i = +(sobe ? sobe.dataset.lpSobe : desce.dataset.lpDesce), j = sobe ? i - 1 : i + 1; const ids = itensReels().map((x) => x.id); [ids[i], ids[j]] = [ids[j], ids[i]]; R.itens = ids; folhaProdutos(); return; }
+    const tira = t.closest("[data-lp-tira]"); if (tira) { if (R.itens.length <= 1) { toast("Deixe pelo menos 1 produto"); return; } R.itens = R.itens.filter((x) => x !== tira.dataset.lpTira); folhaProdutos(); return; }
+    const poe = t.closest("[data-lp-poe]"); if (poe) { if (R.itens.length >= 5) { toast("No máximo 5 produtos"); return; } R.itens.push(poe.dataset.lpPoe); folhaProdutos(); return; }
+  });
+  $("#folhaEst").addEventListener("close", () => { tocarAmostra(""); if (wz.canal === "reels" && wz.passo === "rModelo") aposMudarEstudio(); });
   /** Título digitado: quebra em 2 linhas e destaca a última palavra (ou o que estiver entre *asteriscos*) */
   function tituloDigitado(t) {
     t = String(t || "").trim(); if (t.includes("*") || t.includes("\n")) return t;
@@ -3890,7 +4022,7 @@
   }
   /** Capa do Reels com os produtos aparecendo (vitrine no perfil) */
   function capaReels(ctx, R, l, fotos) {
-    temposDoModelo(R.modelo);
+    temposDoModelo(R);
     const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length;
     const titulo = R.titulo ? tituloDigitado(R.titulo) : CP ? CP.titulo : M0.titulo.replace("{n}", n > 1 ? n : "");
     relogioReels = 0; fundoReels(ctx, C, R.cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -3921,7 +4053,7 @@
     if (edMarca) ctx.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160);
   }
   function efeitosReels(R, n) {
-    temposDoModelo(R.modelo);
+    temposDoModelo(R);
     const pops = [0.1, 0.35, 0.85, 1.25].map(noTempo), whooshes = [], q = noTempo;
     for (let i = 0; i < n; i++) {
       const b0 = T_INTRO + i * T_PROD; whooshes.push(b0 - 0.3);
@@ -3942,7 +4074,7 @@
     let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
     if (R.tocando) { R.tocando.parar(); }
     await carregarMarca(); const fotos = await fotosReels();
-    temposDoModelo(R.modelo); const total = duracaoReelsProdutos(), n = l.length;
+    temposDoModelo(R); const total = duracaoReelsProdutos(), n = l.length;
     const W = gravar ? 1080 : 540, tela = gravar ? document.createElement("canvas") : $("#rQuadro");
     if (!tela) return;
     if (gravar) { tela.width = 1080; tela.height = 1920; }
@@ -3956,7 +4088,7 @@
       dest = gravar ? ac.createMediaStreamDestination() : ac.destination;
       const { pops, whooshes } = efeitosReels(R, n);
       const f = T_INTRO + T_PROD * n;
-      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[MODELOS_REELS[R.modelo].musica], f + noTempo(arroba(config.instagram) ? 1.0 : 1.5));
+      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[musicaDe(R)], f + noTempo(arroba(config.instagram) ? 1.0 : 1.5));
     } catch (e) { t0 = 0; }
     if (gravar) {
       fluxo = tela.captureStream(30);
@@ -4007,13 +4139,16 @@
       return;
     }
     if (wz.passo === "rModelo") {
-      c.innerHTML = `<h2 class="wz-titulo">Modelo do Reels</h2>
-        <p class="nota">Cada modelo tem a sua animação e a sua batida. A cor vale para o vídeo inteiro.</p>
-        <div class="aj-linha titulo-linha"><input id="rTitulo" maxlength="40" value="${esc(R.titulo || "")}" placeholder="Título (opcional)"><button type="button" class="btn-redondo" id="rTitulosProntos" aria-label="Títulos prontos"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/></svg></button></div>
-        <div class="filtro-mod">${[["ofertas", "Ofertas"], ["categoria", "Por categoria"]].map(([k, n]) => `<button type="button" data-r-grupo="${k}" class="${(R.grupo || "ofertas") === k ? "on" : ""}">${n}</button>`).join("")}</div>
-        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).filter(([, m]) => (R.grupo || "ofertas") === "categoria" ? m.cat : !m.cat).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${R.titulo || CAMPANHAS[R.camp] ? `${esc(m.desc)}<small>animação ${esc(m.nome)}</small>` : `${esc(m.nome)}<small>${esc(m.desc)}</small>`}</span></button>`).join("")}</div>
-        ${botaoContinuarCom(barraCores("data-r-cor", R.cor, CORES_VIDEO))}`;
-      pintarModelosReels();
+      const n = itensReels().length, Mx = MODELOS_REELS[R.modelo], mu = NOMES_MUSICA[musicaDe(R)];
+      const nomeModelo = R.titulo || (CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].nome : Mx.nome);
+      c.innerHTML = `<div class="estudio">
+        <button type="button" class="est-previa" id="rTocar" aria-label="Ver a prévia com música"><canvas id="rQuadro" width="540" height="960"></canvas><span id="rPrevia">▶ Ver com música</span></button>
+        <div class="est-ctrl">
+          ${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_VIDEO[R.cor].nome)}${botaoEst("musica", "Música", mu[0])}${botaoEst("produtos", "Produtos", String(n))}
+        </div>
+      </div>
+      ${botaoContinuar(n > 0)}`;
+      carregarMarca().then(fotosReels).then((f) => { const cv = $("#rQuadro"); if (cv) quadroReels(cv.getContext("2d"), 540, T_INTRO + 2.6, R, itensReels(), f); });
       return;
     }
     if (wz.passo === "rOrdem") {
@@ -4071,6 +4206,12 @@
     presentes: { um: (p) => `🎁 Ideias de presente com preço de amiga! ${p}`, varios: () => "🎁 Ideias de presente com preço de amiga! Olha esses achadinhos:", tags: "#presentes #ideiasdepresente #presentear #achadinhos" },
     ate50: { um: (p) => `💸 Tudo até R$ 50, miga! ${p}`, varios: () => "💸 Tudo até R$ 50, miga! Olha esses achadinhos:", tags: "#baratinhos #ate50reais #economia #achadinhos" },
     viagem: { um: (p) => `✈️ Achadinhos pra levar na viagem! ${p}`, varios: () => "✈️ Achadinhos pra levar na viagem! Olha esses achadinhos:", tags: "#viagem #mala #dicasdeviagem #achadinhos" },
+    peleRica: { um: (p) => `✨ Pele de rica gastando pouco! ${p}`, varios: () => "✨ Pele de rica gastando pouco! Olha esses achadinhos:", tags: "#skincare #beleza #pele #achadinhos" },
+    make: { um: (p) => `💄 Make baratinha, miga! ${p}`, varios: () => "💄 Make baratinha, miga! Olha esses achadinhos:", tags: "#maquiagem #make #beleza #achadinhos" },
+    cozinhaSonhos: { um: (p) => `🍽️ A cozinha dos sonhos cabe no bolso! ${p}`, varios: () => "🍽️ A cozinha dos sonhos cabe no bolso! Olha esses achadinhos:", tags: "#cozinha #utilidades #casa #achadinhos" },
+    looks50: { um: (p) => `👗 Looks até R$ 50! ${p}`, varios: () => "👗 Looks até R$ 50! Olha esses achadinhos:", tags: "#moda #looks #modabarata #achadinhos" },
+    viral: { um: (p) => `🔥 Os achadinhos que viralizaram! ${p}`, varios: () => "🔥 Os achadinhos que viralizaram! Olha esses achadinhos:", tags: "#viral #achadinhosvirais #tiktokmademebuyit #achadinhos" },
+    aulas: { um: (p) => `🎒 Volta às aulas com desconto! ${p}`, varios: () => "🎒 Volta às aulas com desconto! Olha esses achadinhos:", tags: "#voltaasaulas #material #escola #achadinhos" },
     sohoje: { um: (p) => `🔥 Só hoje nesse preço! ${p} Amanhã pode voltar ao normal!`, varios: () => "🔥 Só hoje nesses preços! Amanhã pode voltar ao normal:", tags: "#sóhoje #promoção #achadinhos #ofertas" }
   };
   function legendaReels() {
