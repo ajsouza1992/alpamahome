@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=100"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=101"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=100"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=101"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3179,6 +3179,24 @@
       const g = ac.createGain(); env(g, t, vol, Math.max(0.18, dur), 0.004); fl.connect(g); const sai = lado(destino, pan); g.connect(sai); g.connect(sala);
       [-9, 9].forEach((dt) => { const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t + dur + 0.2); });
     };
+    const cordas0 = {};
+    const cordaBuf = (f, tipo) => {
+      const k = tipo + Math.round(f * 10); if (cordas0[k]) return cordas0[k];
+      const dur = tipo === "piano" ? 2.2 : 1.6, n = Math.floor(SR * dur), b = ac.createBuffer(1, n, SR), y = b.getChannelData(0), N = Math.max(2, Math.round(SR / f));
+      const perda = tipo === "piano" ? 0.9985 : 0.996, mistura = tipo === "piano" ? 0.35 : 0.5;
+      let ant = 0; for (let i = 0; i < N; i++) { const r = Math.random() * 2 - 1; ant = ant + (r - ant) * (tipo === "piano" ? 0.55 : 0.35); y[i] = ant; }
+      for (let i = N; i < n; i++) y[i] = perda * (mistura * y[i - N] + (1 - mistura) * y[i - N - 1 < 0 ? 0 : i - N - 1]);
+      let pico = 0; for (let i = 0; i < n; i++) pico = Math.max(pico, Math.abs(y[i])); for (let i = 0; i < n; i++) y[i] /= pico || 1;
+      for (let i = 0; i < 64; i++) y[i] *= i / 64;
+      return (cordas0[k] = b);
+    };
+    const corda = (f, t, dur, vol, pan = 0, tipo = "violao") => {
+      const s = ac.createBufferSource(), g = ac.createGain(), fl = ac.createBiquadFilter(); s.buffer = cordaBuf(f, tipo);
+      fl.type = "lowpass"; fl.frequency.value = tipo === "piano" ? 5200 : 3400;
+      g.gain.setValueAtTime(vol, t); g.gain.setValueAtTime(vol, t + Math.max(0.05, dur)); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.05, dur) + 0.25);
+      s.connect(fl).connect(g); g.connect(lado(bomba, pan)); g.connect(sala); s.start(t); s.stop(t + dur + 0.3);
+      if (tipo === "piano") { const s2 = ac.createBufferSource(); s2.buffer = cordaBuf(f * 1.0015, tipo); s2.connect(fl); s2.start(t); s2.stop(t + dur + 0.3); }
+    };
     const rhodes = (f, t, dur, vol, pan = 0) => {
       const g = ac.createGain(); env(g, t, vol, dur * 1.1, 0.006); const sai = lado(bomba, pan); g.connect(sai); g.connect(sala);
       const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = f; o.connect(g); o.start(t); o.stop(t + dur * 1.2 + 0.1);
@@ -3188,10 +3206,10 @@
     const baixoSaw = (m, t, dur) => { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 600; f.connect(bomba); osc("sawtooth", nota(m), t, dur, 0.3, f); osc("sine", nota(m - 12), t, dur, 0.35, bomba); };
     const acorde = (ms, t, dur, tipo) => ms.forEach((m) => {
       if (tipo === "super") { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 4200; f.connect(bomba); f.connect(sala); [[-24, -0.6], [-11, -0.3], [0, 0], [11, 0.3], [24, 0.6]].forEach(([dt, p]) => osc("sawtooth", nota(m + 12), t, dur, 0.03, lado(f, p), dt)); }
-      else if (tipo === "piano" || tipo === "teclado") rhodes(nota(m + 12), t, Math.max(dur, 0.5), tipo === "piano" ? 0.1 : 0.08, (m % 3 - 1) * 0.25);
-      else if (tipo === "violao") ms.length && pluck(nota(m + 12), t + ms.indexOf(m) * 0.018, 0.5, 0.07, (ms.indexOf(m) - 1) * 0.3, 2200);
+      else if (tipo === "piano" || tipo === "teclado") corda(nota(m + 12), t + ms.indexOf(m) * 0.006, Math.max(dur, 0.6), tipo === "piano" ? 0.13 : 0.1, (ms.indexOf(m) - 1) * 0.25, "piano");
+      else if (tipo === "violao" || tipo === "pluck") corda(nota(m + 12), t + ms.indexOf(m) * 0.022, Math.max(dur, 0.5), 0.12, (ms.indexOf(m) - 1) * 0.3, "violao");
       else if (tipo === "cordas") { const g = ac.createGain(), o = ac.createOscillator(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1800; o.type = "sawtooth"; o.frequency.value = nota(m + 12); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.035, t + 0.15); g.gain.linearRampToValueAtTime(0.0001, t + dur); o.connect(f).connect(g); g.connect(lado(musica, (m % 2 ? 0.35 : -0.35))); g.connect(sala); o.start(t); o.stop(t + dur + 0.05); }
-      else pluck(nota(m + 12), t, Math.min(dur, 0.45), 0.06, (m % 3 - 1) * 0.3);
+      else corda(nota(m + 12), t + ms.indexOf(m) * 0.022, Math.max(dur, 0.5), 0.12, (ms.indexOf(m) - 1) * 0.3, "violao");
     });
     const lider = (m, t, dur) => {
       const tipo = E.lider || "triangle";
@@ -3219,13 +3237,13 @@
         ultimoBaixo = m;
       }
       const cx = P(E.c, i); if (cx === "x") { let len = 1; while (len < 16 && P(E.c, i + len) === "-") len++; acorde(E.acordes[bar], t, passo * len * 0.95, E.acordeTipo); }
-      if (E.melodia && st >= (E.entra ?? 32)) { const m = E.melodia[(st - (E.entra ?? 32)) % E.melodia.length]; if (m) lider(m, t, passo * 1.6); }
+      if (E.melodiaReal && E.melodia && st >= (E.entra ?? 32)) { const m = E.melodia[(st - (E.entra ?? 32)) % E.melodia.length]; if (m) lider(m, t, passo * 1.6); }
       if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.025, "highpass", 3000);
     }
     // "Plim" na hora que aparece o seu @
-    if (plim != null) { const tp = t0 + plim; [84, 91, 96].forEach((m, q) => osc("sine", nota(m), tp, 1.1, [0.25, 0.12, 0.07][q], mestre)); osc("triangle", nota(96), tp, 0.4, 0.05, mestre); }
+    if (plim != null) { const tp = t0 + plim; barulho(tp, 0.5, 0.12, "bandpass", 5000, sala); }
     // "Toc" macio quando algo aparece (no lugar do assobio)
-    pops.forEach((p) => { const o = osc("triangle", 620, t0 + p, 0.07, 0.38, mestre); o.frequency.setValueAtTime(620, t0 + p); o.frequency.exponentialRampToValueAtTime(330, t0 + p + 0.06); barulho(t0 + p, 0.012, 0.18, "highpass", 3500, mestre); });
+    pops.forEach((p) => { const f = barulho(t0 + p, 0.04, 0.16, "bandpass", 1800, mestre); f.Q.value = 2; });
     whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.32, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
     return t0;
   }
@@ -3743,7 +3761,7 @@
       acordes: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], raiz: [33, 29, 36, 31], lider: "sine", liderVol: 0.12, entra: 32, melodia: [76, 0, 0, 74, 0, 0, 72, 0, 74, 0, 76, 0, 0, 0, 0, 0, 72, 0, 0, 71, 0, 0, 69, 0, 71, 0, 72, 0, 0, 0, 0, 0] },
     latinpop: { bpm: 102, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "..x...x...x...x.", sh: "xXxxxXxxxXxxxXxx", b: "x..x..x.x..x..x.", baixo: "808", c: "x..x..x.x..x..x.", acordeTipo: "violao",
       acordes: [[59, 62, 66], [55, 59, 62], [50, 54, 57], [57, 61, 64]], raiz: [35, 31, 26, 33], lider: "pluck", liderVol: 0.11, entra: 32, melodia: [78, 0, 76, 0, 74, 0, 74, 76, 78, 0, 0, 0, 79, 0, 78, 0, 76, 0, 74, 0, 73, 0, 74, 76, 0, 0, 0, 0, 0, 0, 0, 0] },
-    moombahton: { bpm: 108, bomba: true, k: "x...x...x...x...", s: "...x..x....x..x.", palma: true, h: "x.x.x.x.x.x.x.x.", o: "..o...o...o...o.", b: "x-..x-..x-..x-..", baixo: "saw", c: "x.....x.....x...", acordeTipo: "super",
+    moombahton: { bpm: 108, bomba: true, k: "x...x...x...x...", s: "...x..x....x..x.", palma: true, h: "x.x.x.x.x.x.x.x.", o: "..o...o...o...o.", b: "x-..x-..x-..x-..", baixo: "saw", c: "x.....x.....x...", acordeTipo: "piano",
       acordes: [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 55, 59]], raiz: [33, 31, 29, 28], lider: "pluck", liderVol: 0.1, entra: 32, melodia: [81, 0, 0, 79, 0, 0, 76, 0, 79, 0, 81, 0, 0, 0, 0, 0, 84, 0, 0, 81, 0, 0, 79, 0, 76, 0, 79, 0, 0, 0, 0, 0] },
     cumbiapop: { bpm: 96, k: "x.......x.......", s: "....x.......x...", h: "..x...x...x...x.", sh: "xxXxxxXxxxXxxxXx", b: "x...x...x...x...", baixo: "808", c: "..x...x...x...x.", acordeTipo: "violao",
       acordes: [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 56, 59]], raiz: [33, 31, 29, 28], lider: "pluck", liderVol: 0.11, entra: 16, melodia: [76, 0, 77, 0, 76, 0, 74, 0, 72, 0, 0, 0, 74, 0, 0, 0, 71, 0, 72, 0, 74, 0, 72, 0, 71, 0, 0, 0, 68, 0, 0, 0] },
@@ -3864,7 +3882,7 @@
     autocuidado: { ic: ["coracao", "brilho"], selo: "Autocuidado", frase: "Um mimo pra você", cor: "creme", lay: "polaroid" },
     bebe: { ic: ["mamadeira", "coracao"], selo: "Bebê", frase: "Pros pequenos", cor: "branco", lay: "balao" },
     pet: { ic: ["patinha", "coracao"], selo: "Pet", frase: "Mimo pro seu bichinho", cor: "creme", lay: "balao" },
-    tech: { ic: ["fone", "raio"], selo: "Tech", frase: "Tecnologia com desconto", cor: "preto", lay: "revista" },
+    tech: { ic: ["raio", "brilho"], selo: "Tech", frase: "Tecnologia com desconto", cor: "preto", lay: "revista" },
     presentes: { ic: ["presente", "coracao"], selo: "Presente", frase: "Agrada sem gastar muito", cor: "rosa", lay: "balao" },
     ate50: { ic: ["etiqueta", "cupom"], selo: "Até R$ 50", frase: "Baratinho de verdade", cor: "creme", lay: "balao" },
     viagem: { ic: ["aviao", "bolsa"], selo: "Viagem", frase: "Pra levar na mala", cor: "branco", lay: "revista" },
@@ -4030,44 +4048,38 @@
     if (!semFundo && edMarca) comPulo(ctx, t, 0.3, 975, 1815, () => ctx.drawImage(edMarca, -75, -75, 150, 150));
   }
   /* ---------- Arte do produto: fundo limpo, título grande, foto sempre no mesmo lugar ---------- */
-  const ESTILO_LAY = { polaroid: "centro", circulo: "cartao", revista: "esquerda", balao: "contorno", oferta: "oferta" };
-  function tituloGrande(ctx, texto, x, y, tam, alinhar, C, modo, larg = 960) {
+  // Estilos (todos centralizados, título solto, sem caixa): mudam a tipografia e o jeito do preço
+  const ESTILO_LAY = { polaroid: "centro", circulo: "grande", revista: "grande", balao: "contorno", oferta: "oferta" };
+  /** Título grande centralizado; o ícone do tema vem logo depois da última linha (como "do dia ✨") */
+  function tituloGrande(ctx, texto, cy, tam, C, modo, icone) {
     const linhas = linhasTitulo(String(texto).replace(/\p{Extended_Pictographic}/gu, "").trim());
-    const medir = (l) => l.reduce((s, [tx]) => s + ctx.measureText(tx).width, 0);
-    ctx.font = `900 ${tam}px Poppins`; while (tam > 60 && linhas.some((l) => medir(l) > larg)) { tam -= 4; ctx.font = `900 ${tam}px Poppins`; }
-    const alto = tam * 1.0, y0 = y - ((linhas.length - 1) * alto) / 2;
-    ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+    const tamDe = (j) => modo === "grande" && linhas.length > 1 ? (j === linhas.length - 1 ? tam * 1.12 : tam * 0.78) : tam;
+    const ICO = (j) => (icone && j === linhas.length - 1 ? tamDe(j) * 0.9 : 0), GAP = 34;
+    const medir = (l, j) => { ctx.font = `900 ${tamDe(j)}px Poppins`; return l.reduce((s, [tx]) => s + ctx.measureText(tx).width, 0) + (ICO(j) ? ICO(j) + GAP : 0); };
+    while (tam > 56 && linhas.some((l, j) => medir(l, j) > 960)) tam -= 4;
+    const alturas = linhas.map((l, j) => tamDe(j) * 1.0), total = alturas.reduce((s, h) => s + h, 0);
+    let y = cy - total / 2; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
     linhas.forEach((partes, j) => {
-      let px = alinhar === "left" ? x : x - medir(partes) / 2;
+      const h = alturas[j], yl = y + h / 2, w = medir(partes, j); let px = 540 - w / 2; ctx.font = `900 ${tamDe(j)}px Poppins`;
       partes.forEach(([tx, d]) => {
-        if (d && modo === "contorno") { ctx.lineWidth = Math.max(4, tam * 0.045); ctx.strokeStyle = C.destaque; ctx.strokeText(tx, px, y0 + j * alto); }
-        else { ctx.fillStyle = d ? (modo === "cartao" ? "#e8336d" : C.destaque) : (modo === "cartao" ? "#1d1d1f" : C.texto); ctx.fillText(tx, px, y0 + j * alto); }
+        if (d && modo === "contorno") { ctx.lineWidth = Math.max(4, tamDe(j) * 0.045); ctx.strokeStyle = C.destaque; ctx.strokeText(tx, px, yl); }
+        else { ctx.fillStyle = d ? C.destaque : C.texto; ctx.fillText(tx, px, yl); }
         px += ctx.measureText(tx).width;
       });
+      if (ICO(j)) { ctx.save(); ctx.translate(px + GAP + ICO(j) / 2, yl - ICO(j) * 0.04); ctx.rotate(0.1); iconeReels(ctx, icone, ICO(j)); ctx.restore(); }
+      y += h;
     });
     ctx.textAlign = "center"; return linhas.length;
-  }
-  function textoEspacado(ctx, tx, x, y, tam, cor, alinhar = "center") {
-    ctx.font = `800 ${tam}px Poppins`; ctx.fillStyle = cor; ctx.textAlign = alinhar; ctx.textBaseline = "middle";
-    if ("letterSpacing" in ctx) ctx.letterSpacing = `${Math.round(tam * 0.16)}px`; ctx.fillText(tx.toUpperCase(), x, y); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.textAlign = "center";
   }
   function produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 760, FY = 820;
     const nome = limparNome(it.nome || ""), novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
-    const titulo = M.titulo.replace("{n}", n > 1 ? n : ""), kicker = mk === "top" ? `Top ${idx + 1}` : (D.selo || M.tag || "");
+    const titulo = mk === "top" ? `Top ${idx + 1}\n*${n > 1 ? "da semana" : "achadinho"}*` : M.titulo.replace("{n}", n > 1 ? n : "");
+    const icone = (D.ic && D.ic[0]) || M.icone || "brilho";
     const preco = novo ? brl(novo) : "", off = antigo ? Math.round((1 - novo / antigo) * 100) : 0;
-    const escuro = C.fundo === "#1d1d1f";
-    // Título
-    if (estilo === "esquerda") {
-      comSubida(ctx, t, 0.0, () => textoEspacado(ctx, kicker, 84, 160, 32, C.destaque, "left"));
-      comSubida(ctx, t, 0.08, () => tituloGrande(ctx, titulo, 80, 300, 116, "left", C, "", 680));
-    } else if (estilo === "cartao") {
-      comPulo(ctx, t, 0.05, 540, 262, () => { ctx.save(); ctx.shadowColor = "rgba(0,0,0,.18)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; retArredondado(ctx, -480, -128, 960, 256, 56); ctx.fillStyle = escuro ? "#ffd23f" : "#ffffff"; ctx.fill(); ctx.restore(); tituloGrande(ctx, titulo, 0, 0, 100, "center", C, "cartao", 880); });
-    } else if (estilo === "oferta") {
-      comPulo(ctx, t, 0.0, 540, 150, () => { ctx.font = "800 36px Poppins"; const w = ctx.measureText(kicker.toUpperCase()).width + 90; retArredondado(ctx, -w / 2, -34, w, 68, 34); ctx.fillStyle = C.pill; ctx.fill(); textoEspacado(ctx, kicker, 0, 2, 30, C.pillTexto); });
-      if (novo) comPulo(ctx, t, 0.15, 540, 305, () => { const s = 1 + 0.03 * Math.sin(t * 6); ctx.scale(s, s); ctx.font = "900 172px Poppins"; let f = 172; while (f > 90 && ctx.measureText(preco).width > 980) { f -= 6; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(preco, 0, 0); });
-    } else comSubida(ctx, t, 0.05, () => tituloGrande(ctx, titulo, 540, 265, 124, "center", C, estilo === "contorno" ? "contorno" : ""));
+    // Título com o ícone do tema
+    comSubida(ctx, t, 0.05, () => tituloGrande(ctx, titulo, 270, estilo === "grande" ? 128 : 124, C, estilo, icone));
     // Foto (sempre igual)
     comPulo(ctx, t, 0.2, 540, FY, () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
@@ -4075,34 +4087,27 @@
       else iconeReels(ctx, "bolsa", 300);
     }, 0.55);
     if (it.loja) comPulo(ctx, t, 0.45, 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
-    // Selo de desconto: círculo liso no canto da foto
-    // Um único ícone do tema, no canto de baixo da foto (sem poluir o fundo)
-    const ic = D.ic && D.ic[0]; if (ic) comPulo(ctx, t, 0.5, 540 - L / 2 + 50, FY + L / 2 - 70, () => { ctx.rotate(-0.12 + Math.sin(t * 2) * 0.03); iconeReels(ctx, ic, 115); });
+    // Selo de desconto liso no canto da foto
     if (off >= 5) comPulo(ctx, t, 0.55, 540 + L / 2 - 30, FY - L / 2 + 62, () => {
       ctx.rotate(0.08); ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
-      const ct = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.fillStyle = ct; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
+      ctx.fillStyle = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
-    // Nome
-    const alinhar = estilo === "esquerda" ? "left" : "center", xT = estilo === "esquerda" ? 84 : 540;
+    // Nome, preço antigo e preço (sempre centralizados)
     ctx.font = "700 52px Poppins"; const ln = quebrarTexto(ctx, nome, 920, 2);
-    comSubida(ctx, t, 0.6, () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ctx.textAlign = alinhar; ln.forEach((l, j) => ctx.fillText(l, xT, 1275 + j * 62)); ctx.textAlign = "center"; });
+    comSubida(ctx, t, 0.6, () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 + j * 62)); });
     let y = 1275 + ln.length * 62 + 30;
-    const riscado = (tx, x, yy, tam, al = "center") => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = corAntiga(C); ctx.textAlign = al; ctx.fillText(tx, x, yy); const w = ctx.measureText(tx).width, ld = ctx.measureText(tx.startsWith("de ") ? "de " : tx.startsWith("antes ") ? "antes " : "").width, x0 = al === "left" ? x : x - w / 2; ctx.fillRect(x0 + ld, yy + 2, w - ld, 5); ctx.textAlign = "center"; };
-    if (estilo === "oferta") {
-      if (antigo) comSubida(ctx, t, 0.85, () => riscado("antes " + brl(antigo), 540, y, 46));
-      if (antigo) comPulo(ctx, t, 1.1, 540, y + 85, () => { ctx.font = "800 54px Poppins"; ctx.fillStyle = C.destaque; ctx.fillText(`Economia de ${brl(antigo - novo)}`, 0, 0); });
-    } else {
-      if (antigo) comSubida(ctx, t, 0.85, () => riscado("de " + brl(antigo), xT, y, 46, alinhar));
-      y += antigo ? 95 : 55;
-      if (novo) comPulo(ctx, t, 1.1, xT, y, () => {
-        const tx = (antigo ? "por " : "") + preco;
-        if (estilo === "cartao") { ctx.font = "900 92px Poppins"; const w = ctx.measureText(tx).width + 90; retArredondado(ctx, -w / 2, -66, w, 132, 66); ctx.fillStyle = C.pill; ctx.fill(); ctx.fillStyle = C.pillTexto; ctx.fillText(tx, 0, 4); return; }
-        ctx.font = "900 108px Poppins"; let f = 108; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; }
-        const w = ctx.measureText(tx).width;
-        if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
-        ctx.fillStyle = C.destaque; ctx.textAlign = alinhar; ctx.fillText(tx, 0, 0); ctx.textAlign = "center";
-      });
-    }
+    const riscado = (tx, yy, tam) => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = corAntiga(C); ctx.fillText(tx, 540, yy); const w = ctx.measureText(tx).width, ld = ctx.measureText(tx.split(" ")[0] + " ").width; ctx.fillRect(540 - w / 2 + ld, yy + 2, w - ld, 5); };
+    if (antigo && estilo === "oferta") comSubida(ctx, t, 0.85, () => { ctx.font = "600 44px Poppins"; const a1 = "antes " + brl(antigo), a2 = `  ·  economize ${brl(antigo - novo)}`, w1 = ctx.measureText(a1).width, w2 = ctx.measureText(a2).width, x0 = 540 - (w1 + w2) / 2; ctx.textAlign = "left"; ctx.fillStyle = corAntiga(C); ctx.fillText(a1, x0, y); const ld = ctx.measureText("antes ").width; ctx.fillRect(x0 + ld, y + 2, w1 - ld, 5); ctx.fillStyle = C.texto; ctx.font = "800 44px Poppins"; ctx.fillText(a2, x0 + w1, y); ctx.textAlign = "center"; });
+    else if (antigo) comSubida(ctx, t, 0.85, () => riscado("de " + brl(antigo), y, 46));
+    y += antigo ? 95 : 55;
+    if (novo) comPulo(ctx, t, 1.1, 540, y, () => {
+      const tx = (antigo ? "por " : "") + preco;
+      if (estilo === "grande") { ctx.font = "900 88px Poppins"; const w = ctx.measureText(tx).width + 90; retArredondado(ctx, -w / 2, -64, w, 128, 64); ctx.fillStyle = C.pill; ctx.fill(); ctx.fillStyle = C.pillTexto; ctx.fillText(tx, 0, 4); return; }
+      let f = estilo === "oferta" ? 124 : 108; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; }
+      const w = ctx.measureText(tx).width;
+      if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
+      ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
+    });
     if (it.cupom) comSubida(ctx, t, 1.5, () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1555, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1595); });
   }
   /** Quadro do Reels no tempo t */
