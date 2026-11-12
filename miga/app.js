@@ -1051,7 +1051,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=69"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=70"; });
     }
     edFoto = null;
     try {
@@ -1407,7 +1407,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=69"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=70"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2938,6 +2938,7 @@
     }
   });
   $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal === "reels" && e.target.id === "rLegenda") { rr().legenda = e.target.value; return; }
     if (wz.canal !== "video") return;
     const V = vd(), id = e.target.id, v = e.target.value;
     if (id === "vdTitulo") V.titulo = v;
@@ -3488,6 +3489,7 @@
         ${r ? `<video class="vd-previa" src="${r.url}" controls playsinline></video>
           <p class="nota">Formato: <b>${r.mp4 ? "MP4" : "WebM"}</b>.${r.mp4 ? "" : " Este celular não grava MP4: o WhatsApp aceita, mas o Instagram pode recusar WebM."}</p>
           <button type="button" class="btn btn--rosa" id="rPostar">Postar / compartilhar</button>
+          ${blocoLegenda(R)}
           <button type="button" class="btn btn--branco" id="rBaixar">Baixar o vídeo</button>
           <button type="button" class="btn btn--branco" id="rRefazer">Gravar de novo</button>`
         : `<p class="nota"><b>${esc(M.nome)}</b> · ${esc(CORES_VIDEO[R.cor].nome)} · ${itensReels().length} produto(s) · ${Math.round(duracaoReelsProdutos())} segundos</p>
@@ -3495,11 +3497,54 @@
           <button type="button" class="btn btn--branco" id="rPrevia">▶ Ver prévia com música</button>
           <div class="vd-progresso" id="rProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="rGerar">Criar o vídeo</button>
-          <p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`}
+          <p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>
+          ${blocoLegenda(R)}`}
         <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
       if (!r) carregarMarca().then(fotosReels).then((f) => quadroReels($("#rQuadro").getContext("2d"), 540, T_INTRO + 2.2, R, itensReels(), f));
     }
   }
+  /** Legenda pronta do Reels, com nome, preço, cupom e link de cada produto */
+  const LEGENDA_REELS = {
+    achadinho: { um: (p) => `Achadinho do dia, miga! ✨ ${p}`, varios: (n) => `${n} achadinhos do dia pra você, miga! ✨`, tags: "#achadinhos #achadinhosdodia #promoção #ofertas" },
+    relampago: { um: (p) => `⚡ Oferta relâmpago! ${p} Corre que acaba rápido! ⏳`, varios: () => "⚡ Ofertas relâmpago! Corre que acaba rápido ⏳", tags: "#ofertarelampago #promoção #achadinhos #ofertas" },
+    baixou: { um: (p) => `Baixou, miga! 💸 ${p}`, varios: () => "Baixou o preço, miga! 💸 Olha esses precinhos:", tags: "#baixouopreço #promoção #achadinhos #desconto" },
+    ultimas: { um: (p) => `⏰ Últimas horas nesse preço! ${p} Aproveita antes que acabe!`, varios: () => "⏰ Últimas horas nesse preço! Aproveita antes que acabe:", tags: "#últimashoras #promoção #achadinhos #ofertas" },
+    novidade: { um: (p) => `Chegou novidade 🎁 ${p} Fresquinho pra você 💖`, varios: () => "Chegou novidade 🎁 Fresquinhos pra você:", tags: "#novidade #achadinhos #comprinhas #lançamento" },
+    top: { um: (p) => `🏆 O achadinho mais amado da semana! ${p}`, varios: (n) => `🏆 Top ${n} achadinhos da semana! Qual é o seu favorito? Responde aqui 👇`, tags: "#top3 #achadinhos #achadinhosdasemana #promoção" },
+    cupom: { um: (p) => `🎟️ Cupom liberado! ${p}`, varios: () => "🎟️ Cupom liberado! Desconto na mão:", tags: "#cupomdedesconto #cupom #promoção #achadinhos" },
+    amei: { um: (p) => `Amei esse aqui 💖 ${p} Precisava te mostrar!`, varios: () => "Amei esses aqui 💖 Precisava te mostrar:", tags: "#achadinhos #amei #comprinhas #promoção" },
+    vale: { um: (p) => `Vale ou não vale? ✅ ${p} Pra mim vale muito a pena!`, varios: () => "Vale ou não vale? ✅ Pra mim, todos valem muito a pena:", tags: "#valeapena #achadinhos #promoção #ofertas" },
+    sohoje: { um: (p) => `🔥 Só hoje nesse preço! ${p} Amanhã pode voltar ao normal!`, varios: () => "🔥 Só hoje nesses preços! Amanhã pode voltar ao normal:", tags: "#sóhoje #promoção #achadinhos #ofertas" }
+  };
+  function legendaReels() {
+    const R = rr(), l = itensReels(), L = LEGENDA_REELS[R.modelo] || LEGENDA_REELS.achadinho, insta = arroba(config.instagram);
+    const preco = (it) => it.precoNovo ? (it.precoAntigo > it.precoNovo ? `de ${brl(it.precoAntigo)} por ${brl(it.precoNovo)}` : `por ${brl(it.precoNovo)}`) : "";
+    const linhas = [];
+    if (l.length === 1) {
+      const it = l[0], nome = limparNome(it.nome || "Produto");
+      linhas.push(L.um(`${nome} ${preco(it)}.`.replace(" .", ".")));
+      if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
+      if (it.link) linhas.push(`🔗 ${it.link}`);
+    } else {
+      linhas.push(L.varios(l.length), "");
+      const ordem = R.modelo === "top" ? l.map((it, i) => [it, ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][i]]) : l.map((it, i) => [it, ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"][i]]);
+      ordem.forEach(([it, n]) => {
+        linhas.push(`${n} ${limparNome(it.nome || "Produto")}${preco(it) ? " " + preco(it) : ""}`);
+        if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
+        if (it.link) linhas.push(`🔗 ${it.link}`);
+        linhas.push("");
+      });
+      if (linhas[linhas.length - 1] === "") linhas.pop();
+    }
+    linhas.push("", `💬 Comenta EU QUERO que eu te mando ${l.length > 1 ? "os links" : "o link"}`);
+    if (insta) linhas.push(`👉 Segue a ${insta} pra não perder nenhum achadinho`);
+    linhas.push("", `${L.tags} #migapromo`);
+    return comConvite(linhas.join("\n"));
+  }
+  const blocoLegenda = (R) => `<div class="campo"><span>Legenda pronta</span>
+      <textarea id="rLegenda" rows="9">${esc(R.legenda || (R.legenda = legendaReels()))}</textarea></div>
+      <div class="duas"><button type="button" class="btn btn--branco" id="rCopiarLegenda">Copiar legenda</button><button type="button" class="btn btn--branco" id="rRefazerLegenda">Refazer legenda</button></div>
+      <p class="nota">No Instagram o link não fica clicável na legenda: use o “Link na bio” ou mande no direct de quem comentar. No WhatsApp e no Telegram o link funciona.</p>`;
   async function pintarModelosReels() {
     await carregarMarca(); const f = await fotosReels(), R = rr(), l = itensReels();
     document.querySelectorAll("[data-r-modelo]").forEach((b) => quadroReels(b.querySelector("canvas").getContext("2d"), 270, T_INTRO + 2.4, { ...R, modelo: b.dataset.rModelo }, l, f));
@@ -3511,22 +3556,25 @@
     if (it) {
       const id = it.dataset.rItem, i = R.itens.indexOf(id);
       if (i >= 0) R.itens.splice(i, 1); else if (R.itens.length >= 5) { toast("No máximo 5 produtos por Reels"); return; } else R.itens.push(id);
-      R.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
+      R.resultado = null; R.legenda = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
     }
     const sobe = t.closest("[data-r-sobe]"), desce = t.closest("[data-r-desce]");
     if (sobe || desce) {
       const i = +(sobe ? sobe.dataset.rSobe : desce.dataset.rDesce), j = sobe ? i - 1 : i + 1;
       const ids = itensReels().map((x) => x.id); if (j < 0 || j >= ids.length) return;
-      [ids[i], ids[j]] = [ids[j], ids[i]]; R.itens = ids; R.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
+      [ids[i], ids[j]] = [ids[j], ids[i]]; R.itens = ids; R.resultado = null; R.legenda = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
     }
-    const m = t.closest("[data-r-modelo]"); if (m) { R.modelo = m.dataset.rModelo; R.resultado = null; document.querySelectorAll("[data-r-modelo]").forEach((b) => b.classList.toggle("on", b === m)); return; }
+    const m = t.closest("[data-r-modelo]"); if (m) { R.modelo = m.dataset.rModelo; R.resultado = null; R.legenda = null; document.querySelectorAll("[data-r-modelo]").forEach((b) => b.classList.toggle("on", b === m)); return; }
     const co = t.closest("[data-r-cor]"); if (co) { R.cor = co.dataset.rCor; R.resultado = null; document.querySelectorAll("[data-r-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarModelosReels(); return; }
+    if (t.closest("#rCopiarLegenda")) { if (await copiarTexto($("#rLegenda").value)) toast("Legenda copiada"); return; }
+    if (t.closest("#rRefazerLegenda")) { R.legenda = legendaReels(); $("#rLegenda").value = R.legenda; toast("Legenda refeita"); return; }
     if (t.closest("#rPrevia")) { rodarReels(false); return; }
     if (t.closest("#rGerar")) { if (R.tocando) R.tocando.parar(); setTimeout(() => rodarReels(true), 50); return; }
     if (t.closest("#rRefazer")) { R.resultado = null; mostrarPasso(); return; }
     if (t.closest("#rBaixar")) { baixarBlob(R.resultado.blob, R.resultado.nome); toast("Vídeo salvo"); return; }
     if (t.closest("#rPostar")) {
       const r = R.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
+      if (await copiarTexto(R.legenda || legendaReels())) toast("Legenda copiada: é só colar no Instagram");
       if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
       baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram e escolha da galeria");
     }
