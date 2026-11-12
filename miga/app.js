@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=112"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=113"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=112"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=113"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3091,12 +3091,17 @@
       marca(50, 60, 150, "#ffffff");
     }
     // Camadas do editor (textos, selos e emojis que você posiciona)
-    migrarCamadas(V); (V.camadas || []).forEach((cm) => desenharCamada(ctx, cm));
+    migrarCamadas(V);
+    { const E = MUSICAS[V.batida || "house"], ac = acentosDe(E, V.iniMeio || 0, 16); let k = 0;
+      (V.camadas || []).forEach((cm) => { let en = 1; if (cm.anim === "batida") { const ini = ac[1 + (k++ % 12)] || 0; en = Math.max(0, Math.min(1, (videoRelogio - ini) / 0.34)); } desenharCamada(ctx, cm, en); }); }
     ctx.restore();
   }
   /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
   const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
   const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
+  const FIGURAS = ["brilho", "estrela", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis"];
+  const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
+  let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
   const FORMAS_SELO = { estrela: "Estrela", circulo: "Círculo", fita: "Fita", etiqueta: "Etiqueta" };
   function migrarCamadas(V) {
@@ -3113,19 +3118,25 @@
     const x = w / 2 + 20, y = h / 2 + 6; ctx.moveTo(-x - 40, 0); ctx.lineTo(-x, -y); ctx.lineTo(x, -y); ctx.quadraticCurveTo(x + 14, -y, x + 14, -y + 14); ctx.lineTo(x + 14, y - 14); ctx.quadraticCurveTo(x + 14, y, x, y); ctx.lineTo(-x, y); ctx.closePath();
   }
   /** Desenha uma camada e guarda a área dela (para tocar e arrastar) */
-  function desenharCamada(ctx, cm) {
-    const cor = CORES_EDITOR[cm.cor] || "#ffffff", txt = String(cm.txt || "").trim(); if (!txt) { cm._box = null; return; }
-    ctx.save(); ctx.translate(cm.x, cm.y); ctx.rotate(cm.giro || 0); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    if (cm.tipo === "emoji") {
+  function desenharCamada(ctx, cm, entrada = 1) {
+    const cor = CORES_EDITOR[cm.cor] || "#ffffff", txt = String(cm.txt || "").trim(); if (!txt || entrada <= 0) { if (!txt) cm._box = null; return; }
+    ctx.save(); ctx.translate(cm.x, cm.y); ctx.rotate(cm.giro || 0); if (entrada < 1) { const s = pulo(entrada); ctx.scale(s, s); ctx.globalAlpha = Math.min(1, entrada * 2.5); }
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (cm.tipo === "figura") {
+      const s = cm.tam * 2.2; iconeReels(ctx, txt, s); cm._box = [cm.x - s * 0.55, cm.y - s * 0.55, s * 1.1, s * 1.1];
+    } else if (cm.tipo === "emoji") {
       const s = cm.tam * 1.8; ctx.font = `${s}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; ctx.fillText(txt, 0, 4);
       cm._box = [cm.x - s * 0.6, cm.y - s * 0.6, s * 1.2, s * 1.2];
     } else {
-      const peso = cm.tipo === "selo" ? 900 : 800; ctx.font = `${peso} ${cm.tam}px Poppins`;
+      const F = FONTES_EDITOR[cm.fonte || "forte"] || FONTES_EDITOR.forte, peso = cm.tipo === "selo" ? 900 : F[1]; ctx.font = `${peso} ${cm.tipo === "selo" ? cm.tam : Math.round(cm.tam * (cm.fonte === "script" ? 1.25 : 1))}px ${cm.tipo === "selo" ? "Poppins" : F[2]}`;
       const linhas = quebrarTexto(ctx, cm.tipo === "selo" ? txt.toUpperCase() : txt, cm.tipo === "selo" ? Math.max(260, cm.tam * 6) : 920, 3), lh = cm.tam * 1.12;
       const w = Math.max(...linhas.map((l) => ctx.measureText(l).width)), h = linhas.length * lh, px = cm.tipo === "selo" ? 34 : 30, py = cm.tipo === "selo" ? 22 : 16;
       if (cm.tipo === "selo") {
         ctx.save(); ctx.rotate(-0.12); ctx.shadowColor = "rgba(0,0,0,.28)"; ctx.shadowBlur = 22; ctx.shadowOffsetY = 8; formaSelo(ctx, cm.forma || "estrela", w + px * 2, h + py * 2); ctx.fillStyle = cor; ctx.fill(); ctx.restore();
         ctx.rotate(-0.12); ctx.fillStyle = contraste(cor);
+      } else if (cm.fonte === "contorno") {
+        ctx.lineJoin = "round"; ctx.lineWidth = Math.max(5, cm.tam * 0.09); ctx.strokeStyle = cor; linhas.forEach((l, j) => ctx.strokeText(l, 0, (j - (linhas.length - 1) / 2) * lh + 2));
+        ctx.fillStyle = "rgba(0,0,0,0)";
       } else if (cm.fundo) {
         ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 6; retArredondado(ctx, -w / 2 - px, -h / 2 - py, w + px * 2, h + py * 2, Math.min(36, (h + py * 2) / 2)); ctx.fillStyle = cor; ctx.fill(); ctx.restore();
         ctx.fillStyle = contraste(cor);
@@ -3140,21 +3151,23 @@
   }
   function barraEditor() {
     const V = vd(), cm = (V.camadas || []).find((x) => x.id === V.sel);
-    if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b>Aa</b>Texto</button><button type="button" data-ed-add="selo"><b>★</b>Selo</button><button type="button" data-ed-add="emoji"><b>☺</b>Emoji</button></div>
+    if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b>Aa</b>Texto</button><button type="button" data-ed-add="selo"><b>★</b>Selo</button><button type="button" data-ed-add="emoji"><b>✦</b>Figurinha</button></div>
       <p class="nota ed-dica">Toque num texto da prévia para editar. Arraste para posicionar.</p>`;
     const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
     const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
     const fim = `<button type="button" data-ed-del class="ed-del">Excluir</button><button type="button" data-ed-ok class="ed-ok">Pronto</button>`;
-    if (cm.tipo === "emoji") return `<div class="ed-sel"><div class="ed-emojis">${EMOJIS.map((e) => `<button type="button" data-ed-emoji="${e}" class="${cm.txt === e ? "on" : ""}">${e}</button>`).join("")}</div><div class="ed-linha">${tam}${fim}</div></div>`;
+    const girar = `<button type="button" data-ed-giro="-" aria-label="Girar para a esquerda">⟲</button><button type="button" data-ed-giro="+" aria-label="Girar para a direita">⟳</button>`;
+    const anim = `<button type="button" data-ed-anim class="${cm.anim === "batida" ? "on" : ""}">${cm.anim === "batida" ? "Entra na batida" : "Fixo"}</button>`;
+    if (cm.tipo === "figura" || cm.tipo === "emoji") return `<div class="ed-sel"><div class="ed-figuras">${FIGURAS.map((f) => `<button type="button" data-ed-fig="${f}" class="${cm.txt === f ? "on" : ""}" aria-label="${f}"><canvas width="88" height="88" data-fig="${f}"></canvas></button>`).join("")}</div><div class="ed-linha">${tam}${girar}${anim}${fim}</div></div>`;
     const selos = cm.tipo === "selo" ? `<div class="ed-chips">${Object.keys(SELOS_VIDEO).map((s) => `<button type="button" data-ed-selotxt="${esc(s)}">${esc(s)}</button>`).join("")}</div>
       <div class="ed-chips">${Object.entries(FORMAS_SELO).map(([k, n]) => `<button type="button" data-ed-forma="${k}" class="${(cm.forma || "estrela") === k ? "on" : ""}">${n}</button>`).join("")}</div>` : "";
     return `<div class="ed-sel">
       <input id="edTxt" maxlength="60" value="${esc(cm.txt)}" placeholder="Escreva aqui" autocomplete="off">
-      ${selos}${cores}
-      <div class="ed-linha">${cm.tipo === "texto" ? `<button type="button" data-ed-fundo class="${cm.fundo ? "on" : ""}">${cm.fundo ? "Com fundo" : "Sem fundo"}</button>` : ""}${tam}${fim}</div>
+      ${selos}${cm.tipo === "texto" ? `<div class="ed-chips">${Object.entries(FONTES_EDITOR).map(([k, [n, p, f]]) => `<button type="button" data-ed-fonte="${k}" class="${(cm.fonte || "forte") === k ? "on" : ""}" style="font-family:${f.replace(/\\?"/g, "'")};font-weight:${p}">${n}</button>`).join("")}</div>` : ""}${cores}
+      <div class="ed-linha">${cm.tipo === "texto" && cm.fonte !== "contorno" ? `<button type="button" data-ed-fundo class="${cm.fundo ? "on" : ""}">${cm.fundo ? "Com fundo" : "Sem fundo"}</button>` : ""}${tam}${girar}${anim}${fim}</div>
     </div>`;
   }
-  const atualizarBarraEditor = () => { const b = $("#edBarra"); if (b) b.innerHTML = barraEditor(); };
+  const atualizarBarraEditor = () => { const b = $("#edBarra"); if (!b) return; b.innerHTML = barraEditor(); b.querySelectorAll("[data-fig]").forEach((c) => { const x = c.getContext("2d"); x.translate(44, 44); iconeReels(x, c.dataset.fig, 70); }); };
   $("#wzCorpo").addEventListener("click", (e) => {
     if (wz.canal !== "video" || wz.passo !== "vTema") return;
     const t = e.target, V = vd(); if (!V.camadas) V.camadas = [];
@@ -3164,7 +3177,7 @@
       const tipo = ad.dataset.edAdd, n = { id: novoId(), tipo, x: 540, y: 960, tam: 64, cor: "amarelo", fundo: true };
       if (tipo === "texto") Object.assign(n, { txt: "Seu texto aqui", y: 1080, cor: "branco", fundo: true });
       if (tipo === "selo") Object.assign(n, { txt: "Promoção", x: 860, y: 560, tam: 50, cor: "rosa", forma: "estrela" });
-      if (tipo === "emoji") Object.assign(n, { txt: "🔥", x: 200, y: 560, tam: 70 });
+      if (tipo === "emoji") Object.assign(n, { tipo: "figura", txt: "brilho", x: 200, y: 560, tam: 60 });
       V.camadas.push(n); V.sel = n.id; V.resultado = null; atualizarBarraEditor(); const i = $("#edTxt"); if (i && tipo === "texto") { i.focus(); i.select(); } return;
     }
     if (!cm) return;
@@ -3174,6 +3187,10 @@
     const fo = t.closest("[data-ed-forma]"); if (fo) { cm.forma = fo.dataset.edForma; atualizarBarraEditor(); return; }
     const st = t.closest("[data-ed-selotxt]"); if (st) { const s = SELOS_VIDEO[st.dataset.edSelotxt]; cm.txt = st.dataset.edSelotxt; if (s) { cm.cor = s[2]; cm.forma = s[3]; } atualizarBarraEditor(); return; }
     const em = t.closest("[data-ed-emoji]"); if (em) { cm.txt = em.dataset.edEmoji; atualizarBarraEditor(); return; }
+    const fg = t.closest("[data-ed-fig]"); if (fg) { cm.tipo = "figura"; cm.txt = fg.dataset.edFig; atualizarBarraEditor(); return; }
+    const fn = t.closest("[data-ed-fonte]"); if (fn) { cm.fonte = fn.dataset.edFonte; atualizarBarraEditor(); return; }
+    const gi = t.closest("[data-ed-giro]"); if (gi) { cm.giro = (cm.giro || 0) + (gi.dataset.edGiro === "+" ? 0.08 : -0.08); return; }
+    if (t.closest("[data-ed-anim]")) { cm.anim = cm.anim === "batida" ? "fixo" : "batida"; V.resultado = null; atualizarBarraEditor(); return; }
     if (t.closest("[data-ed-del]")) { V.camadas = V.camadas.filter((x) => x !== cm); V.sel = null; V.resultado = null; atualizarBarraEditor(); return; }
     if (t.closest("[data-ed-ok]")) { V.sel = null; atualizarBarraEditor(); return; }
   });
@@ -3305,7 +3322,7 @@
               ${r.capa ? '<button type="button" class="btn btn--branco" id="vdBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg>Baixar capa</button>' : ""}
             </div>
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
-            <div class="rp-rodape"><button type="button" class="link-sel" id="vdRefazer">Gravar de novo</button><button type="button" class="link-sel" id="wzNovo">Voltar para a lista</button></div>
+            <div class="rp-rodape"><button type="button" class="btn btn--branco" id="vdRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Gravar de novo</button><button type="button" class="btn btn--branco" id="wzNovo"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Voltar à lista</button></div>
           </div>
         </div>`;
         return;
@@ -3330,7 +3347,7 @@
     const passo = () => {
       if (!cv.isConnected || V.gravando || wz.passo !== "vTema") { if (el) el.pause(); return; }
       const fonte = el && el.readyState >= 2 ? el : V.semVideo && V.fotoBmp ? fotoComZoom(V.fotoBmp, ((performance.now() - t0) / 1000 % 6) / 6) : V.quadroImg;
-      quadroVideo(cx, 540, 960, fonte, V);
+      V.iniMeio = 0; videoRelogio = ((performance.now() - t0) / 1000) % 8; quadroVideo(cx, 540, 960, fonte, V); videoRelogio = 99;
       const sel = (V.camadas || []).find((x) => x.id === V.sel);
       if (sel && sel._box) { const [bx, by, bw, bh] = sel._box.map((n) => n / 2); cx.save(); cx.setLineDash([8, 6]); cx.lineWidth = 2.5; cx.strokeStyle = "#ffffff"; cx.shadowColor = "rgba(0,0,0,.6)"; cx.shadowBlur = 4; cx.strokeRect(bx - 6, by - 6, bw + 12, bh + 12); cx.restore(); }
       previaLoop = requestAnimationFrame(passo);
@@ -3627,7 +3644,7 @@
         if (t < tA) quadroAbertura(ctx, W, Math.max(0, t), V);
         else if (t < tA + tM) {
           if (v && !videoTocando) { videoTocando = true; try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) { /* segue */ } } }
-          quadroVideo(ctx, W, H, v || fotoComZoom(V.fotoBmp, (t - tA) / tM), V);
+          V.iniMeio = tA; videoRelogio = t - tA; quadroVideo(ctx, W, H, v || fotoComZoom(V.fotoBmp, (t - tA) / tM), V); videoRelogio = 99;
         } else { if (v && !v.paused) v.pause(); quadroFinal(ctx, W, t - tA - tM, V); }
         previa.drawImage(tela, 0, 0, 540, 960);
         const pct = Math.min(100, Math.round((t / total) * 100));
@@ -4266,6 +4283,22 @@
     const coracao = (cor) => { ctx.beginPath(); ctx.moveTo(0, 80); ctx.bezierCurveTo(-110, 10, -95, -85, -45, -85); ctx.bezierCurveTo(-15, -85, 0, -60, 0, -42); ctx.bezierCurveTo(0, -60, 15, -85, 45, -85); ctx.bezierCurveTo(95, -85, 110, 10, 0, 80); ctx.closePath(); contorno(cor);
       ctx.beginPath(); ctx.ellipse(-48, -42, 16, 10, -0.6, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fill(); };
     if (nome === "brilho") { estrela(-15, 10, 85, AMAR); estrela(65, -65, 34, ROSA); }
+    else if (nome === "estrela") { ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5 - Math.PI / 2, r = i % 2 ? 42 : 95; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r + 8); } ctx.closePath(); contorno(AMAR); }
+    else if (nome === "carrinho") {
+      ctx.beginPath(); ctx.moveTo(-95, -70); ctx.lineTo(-62, -70); ctx.lineTo(-40, 30); ctx.lineTo(70, 30); ctx.lineTo(90, -40); ctx.lineTo(-52, -40); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-48, -40); ctx.lineTo(90, -40); ctx.lineTo(70, 30); ctx.lineTo(-38, 30); ctx.closePath(); contorno(ROSA);
+      [[-25, 68], [55, 68]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2); contorno(AMAR); });
+    }
+    else if (nome === "seta") { ctx.beginPath(); ctx.moveTo(-90, -28); ctx.lineTo(20, -28); ctx.lineTo(20, -75); ctx.lineTo(95, 0); ctx.lineTo(20, 75); ctx.lineTo(20, 28); ctx.lineTo(-90, 28); ctx.closePath(); contorno(ROSA); }
+    else if (nome === "dinheiro") {
+      ctx.rotate(-0.15); retArredondado(ctx, -95, -55, 190, 110, 16); contorno("#7ed39a");
+      ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); contorno("#ffffff"); ctx.fillStyle = PRETO; ctx.font = "900 40px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("$", 0, 3);
+    }
+    else if (nome === "porcento") { ctx.beginPath(); ctx.arc(0, 0, 88, 0, Math.PI * 2); contorno(AMAR); ctx.fillStyle = PRETO; ctx.font = "900 110px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("%", 0, 8); }
+    else if (nome === "megafone") {
+      ctx.rotate(-0.2); ctx.beginPath(); ctx.moveTo(-70, -25); ctx.lineTo(60, -80); ctx.lineTo(60, 80); ctx.lineTo(-70, 25); ctx.closePath(); contorno(ROSA);
+      retArredondado(ctx, -95, -30, 30, 60, 8); contorno(AMAR); ctx.beginPath(); ctx.moveTo(-60, 25); ctx.lineTo(-45, 85); ctx.lineTo(-20, 85); ctx.lineTo(-30, 18); ctx.closePath(); contorno(AMAR);
+    }
     else if (nome === "raio") { ctx.beginPath(); ctx.moveTo(25, -95); ctx.lineTo(-60, 15); ctx.lineTo(-5, 15); ctx.lineTo(-28, 95); ctx.lineTo(62, -20); ctx.lineTo(8, -20); ctx.closePath(); contorno(AMAR); }
     else if (nome === "etiqueta") {
       ctx.rotate(-0.25); ctx.beginPath(); ctx.moveTo(-85, -58); ctx.lineTo(35, -58); ctx.lineTo(92, 0); ctx.lineTo(35, 58); ctx.lineTo(-85, 58); ctx.closePath(); contorno(ROSA);
@@ -4820,7 +4853,7 @@
             </div>
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
             ${blocoLegenda(R)}
-            <div class="rp-rodape"><button type="button" class="link-sel" id="rRefazer">Gravar de novo</button><button type="button" class="link-sel" id="wzNovo">Voltar para a lista</button></div>
+            <div class="rp-rodape"><button type="button" class="btn btn--branco" id="rRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Gravar de novo</button><button type="button" class="btn btn--branco" id="wzNovo"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Voltar à lista</button></div>
           </div>
         </div>`;
         return;
