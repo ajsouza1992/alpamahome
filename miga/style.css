@@ -976,3 +976,24 @@ body.modo-selecao main { padding-bottom: 200px; }
 .est-previa--img canvas { width: 100%; height: 100%; object-fit: contain; }
 .estudio { gap: 10px; }
 @media (max-width: 959px) { .wz__corpo:has(.estudio) { padding-bottom: 76px !important; } }
+
+.est-ctrl--2 { grid-template-columns: repeat(2, 1fr); }
+.lista-mod--mini > button { grid-template-columns: 54px 1fr; align-items: center; gap: 12px; padding: 6px 40px 6px 6px; }
+.lista-mod--mini .mini-mod { width: 54px; height: 96px; border-radius: 8px; background: var(--campo); box-shadow: 0 2px 8px -4px rgba(0,0,0,.4); }
+.lista-mod--mini > button > span { display: grid; gap: 2px; }
+.mus-play.tocando { background: var(--rosa); color: #fff; box-shadow: none; font-size: 12px; letter-spacing: -2px; }
+
+.titulo-proprio .btn { flex: none; width: auto; }
+.vd-chaves { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+.vd-chaves .aj-chave { flex-direction: column; gap: 6px; padding: 8px; border-radius: 16px; background: var(--campo); text-align: center; }
+.vd-chaves .aj-chave b { font-size: 12.5px; }
+.vd-chaves { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.vd-chaves .aj-chave { min-width: 0; }
+.vd-chaves .aj-chave b { overflow-wrap: anywhere; }
+.vd-chaves .aj-chave { position: relative; overflow: hidden; }
+.vd-chaves .aj-chave input { width: 1px; height: 1px; }
+
+.car-trilho { display: flex; gap: 12px; width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 12px; -webkit-overflow-scrolling: touch; }
+.car-trilho canvas { flex: none; width: 74%; height: auto; aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: center; box-shadow: 0 8px 22px rgba(0,0,0,.14); background: #fff; }
+.car-vazio { width: 100%; aspect-ratio: 4 / 5; max-height: 420px; display: grid; place-items: center; border-radius: 16px; background: var(--campo); color: var(--cinza); font-weight: 600; }
+.car-nota { margin: 0; text-align: center; }

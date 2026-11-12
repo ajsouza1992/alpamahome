@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=96"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=98"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=96"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=98"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1848,7 +1848,8 @@
     ["roteiro", "Postar um produto", "Story, Status, grupos, canal e feed, um depois do outro", (n) => n === 1, "Marque só 1 produto."],
     ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
     ["video", "Vídeo com tema", "Seu vídeo com abertura e final com música", (n) => n === 1, "Marque só 1 produto."],
-    ["livre", "Imagem", "Arte com o produto, ou montagem com vários", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."]
+    ["livre", "Imagem", "Arte com o produto, ou montagem com vários", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."],
+    ["carrossel", "Carrossel de preços", "Capa no tema e um slide de preço para cada produto", (n) => n >= 1 && n <= 8, "Marque de 1 a 8 produtos."]
   ];
   $("#bsAcoes").addEventListener("click", (e) => {
     const b = e.target.closest("[data-criar]"); if (!b) return;
@@ -1867,7 +1868,7 @@
     if (!itensMarcados().length) { toast("Toque nos produtos primeiro"); return; }
     const n = itensMarcados().length; if (!n) return;
     $("#folhaCriarTitulo").textContent = n === 1 ? "O que vou criar com este produto?" : `O que vou criar com ${n} produtos?`;
-    $("#folhaCriarOps").innerHTML = OPCOES_CRIAR.map(([k, nome, desc, ok, aviso]) => { const v = CANAIS[k], pode = ok(n);
+    $("#folhaCriarOps").innerHTML = OPCOES_CRIAR.map(([k, nome, desc, ok, aviso]) => { const v = CANAIS[k] || { cor: "#e8336d", icone: "i-rede-grade" }, pode = ok(n);
       return `<button type="button" class="wz-op${pode ? "" : " desligado"}" data-criar="${k}"${pode ? "" : " disabled"}><i class="wz-bolinha" style="background:${v.cor}"><svg><use href="#${v.icone}"/></svg></i><span><b>${esc(nome)}</b><small>${esc(pode ? desc : desc + ". " + aviso)}</small></span></button>`; }).join("");
     pintarCampanhas();
     $("#folhaCriar").showModal();
@@ -1882,6 +1883,7 @@
     const ids = l.map((x) => x.id), C = CAMPANHAS[camp === undefined ? campanhaEscolhida : camp] || null;
     wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? C.cor : "auto", idx: 0, res: {}, lugares: lugaresSalvos() };
     if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? C.cor : "rosa", camp: wz.camp, resultado: null, iniciado: true }; wz.passo = "rModelo"; }
+    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? C.cor : "rosa", camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.passo = "kCarrossel"; }
     else if (canal === "video") { usarProdutoNoVideo(l[0]); const V = vd(); V.iniciado = true; if (C) { V.titulo = C.titulo; V.cor = C.cor; } wz.passo = "vDados"; }
     else if (canal === "livre") {
       const L = livre(); L.itens = l.slice(0, 6).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
@@ -2047,7 +2049,7 @@
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
     if (canal === "cupons") return ["cEscolher", "cPronto"];
-    if (canal === "reels") return ["canal", "rItens", "rModelo", "rPronto"];
+    if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", "kCarrossel"] : ["canal", "rItens", "rModelo", "rPronto"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "formato", "montagem", "postar"];
@@ -2120,7 +2122,7 @@
     setTimeout(guardarProgresso, 0);
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
     $("#wzBarra").style.width = Math.round(((i + 1) / l.length) * 100) + "%";
-    $("#wzPasso").textContent = (wz.canal ? CANAIS[wz.canal].nome + " · " : "") + `Passo ${i + 1} de ${l.length}`;
+    $("#wzPasso").textContent = (wz.canal ? (wz.reels && wz.reels.carrossel && wz.canal === "reels" ? "Carrossel" : CANAIS[wz.canal].nome) + " · " : "") + `Passo ${i + 1} de ${l.length}`;
     $("#wzVoltar").hidden = false; $("#wzVoltar").lastChild.textContent = i <= 0 ? "Lista" : "Voltar";
     const c = $("#wzCorpo"), item = wzItem();
     window.scrollTo({ top: 0 });
@@ -2168,11 +2170,11 @@
       return;
     }
     if (wz.passo === "montagem" || wz.passo === "cor") {
-      if (!CORES_NOME[wz.cor]) wz.cor = MODELOS[wz.modelo].fundo;
-      const nomeModelo = wz.tituloArte || (campanha() ? campanha().nome : NOME_MONTAGEM[wz.modelo]);
+      if (!MODELOS_REELS[wz.modelo]) wz.modelo = "achadinho"; if (!CORES_VIDEO[wz.cor]) wz.cor = DECOR[wz.modelo].cor;
+      const nomeModelo = wz.tituloArte || (campanha() ? campanha().nome : MODELOS_REELS[wz.modelo].nome);
       c.innerHTML = `<div class="estudio">
         <div class="est-previa est-previa--img"><canvas id="wzEstTela"></canvas></div>
-        <div class="est-ctrl est-ctrl--3">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("estilo", "Estilo", ESTILO_MONTAGEM[wz.modelo])}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}</div>
+        <div class="est-ctrl est-ctrl--2">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}</div>
       </div>
       ${botaoContinuar(true)}`;
       const pintar = () => { const cv = $("#wzEstTela"); if (cv) desenharMontagem(cv, false, wz.modelo, wz.cor, wz.formato === "post" ? "post" : "story"); };
@@ -2312,8 +2314,8 @@
   function usarModeloTexto(estilo) {
     const it = wzItem(); if (!it) return;
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
-    const chamadaTema = wz.temaArte && LEGENDA_REELS[wz.temaArte] ? LEGENDA_REELS[wz.temaArte].varios().replace(" Olha esses achadinhos:", "") : "";
-    it.estiloTexto = estilo; it.texto = (chamadaTema ? chamadaTema + "\n\n" : wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*\n\n` : campanha() ? campanha().chamada + "\n\n" : "") + textoDoModelo(estilo, p); it.textoEditado = false; salvarFila();
+    const chamadaTema = !["achadinho", "top"].includes(wz.modelo) && LEGENDA_REELS[wz.modelo] ? LEGENDA_REELS[wz.modelo].varios(2).replace(/\s*[^.!?⏳💸]*:\s*$/, "") : "";
+    it.estiloTexto = estilo; it.texto = (wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*\n\n` : campanha() ? campanha().chamada + "\n\n" : chamadaTema ? chamadaTema + "\n\n" : "") + textoDoModelo(estilo, p); it.textoEditado = false; salvarFila();
   }
   async function registrarCompartilhado(canal, onde) {
     const it = wzItem(); if (!it) return;
@@ -2381,8 +2383,8 @@
   }
   function desenharMontagem(tela, previa, modelo, cor, formato) {
     const it = wzItem(); if (!it || !tela) return;
-    const f = formato || wz.formato;
-    desenharBanner(tela, modelo || wz.modelo, f, cor || wz.cor, { ...dadosMontagem(it, modelo || wz.modelo, previa), espaco: f === "story" });
+    const f = formato || wz.formato, mk = MODELOS_REELS[modelo || wz.modelo] ? (modelo || wz.modelo) : "achadinho", c = CORES_VIDEO[cor || wz.cor] ? (cor || wz.cor) : (DECOR[mk] || {}).cor || "rosa";
+    artePost(tela, { modelo: mk, camp: wz.camp || "", titulo: wz.tituloArte || "", cor: c }, it, ppFotos[it.id], f === "story" || f === "status" ? "story" : f);
   }
   async function desenharMiniaturas(porCor) {
     const it = wzItem();
@@ -2585,6 +2587,7 @@
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
+    if (L.modelo) { const D = decorDe({ modelo: L.modelo, camp: L.camp }); [[70, H * 0.3, 90, -0.2], [1010, H * 0.42, 90, 0.2], [80, H - 220, 80, 0.15], [960, 150, 80, -0.1]].forEach(([x, y2, s, r], i) => { ctx.save(); ctx.translate(x, y2); ctx.rotate(r); iconeReels(ctx, D.ic[i % D.ic.length], s); ctx.restore(); }); }
     // Título
     const linhas = linhasTitulo(op.titulo != null ? op.titulo : L.titulo);
     const FT = formato === "quadrado" ? 70 : 84;
@@ -2633,7 +2636,9 @@
     const tema = L.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " ").trim();
     const itens = L.itens.slice(0, L.n).map((it, k) =>
       `${NUM[k]} *${it.nome || "Produto " + (k + 1)}*${it.preco ? `\n💸 por *${brl(it.preco)}*` : ""}${it.link && linhaLoja(detectarLoja(it.link)) ? `\n${linhaLoja(detectarLoja(it.link))}` : ""}${it.link ? `\n👉 ${it.link}` : ""}`);
-    return `Miga, separei uns achadinhos pra você! 🛍️💖\n${tema}\n\n${itens.join("\n\n")}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
+    const e = { modelo: L.modelo || "achadinho", camp: L.camp || "" }, LG = LEGENDA_REELS[e.modelo];
+    const abre = CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].chamada : L.tituloProp ? `✨ *${L.tituloProp}*` : L.modelo && L.modelo !== "achadinho" && LG ? LG.varios(L.itens.length) : `Miga, separei uns achadinhos pra você! 🛍️💖\n${tema}`;
+    return `${abre}\n\n${itens.join("\n\n")}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
   }
   const legendaLivre = () => { const L = livre(); return L.legenda || legendaPadrao(); };
   async function legendaComIA() {
@@ -2673,12 +2678,13 @@
       return;
     }
     if (wz.passo === "tema") {
-      c.innerHTML = `<h2 class="wz-titulo">Tema e cor</h2>
-        <div class="wz-chips" id="lvTemas">${Object.entries(TEMAS_LIVRE).map(([k, v]) => `<button type="button" data-lv-tema="${k}"${L.tema === k ? ' class="on"' : ""}>${v.nome}</button>`).join("")}</div>
-        <label class="campo"><span>Título</span><textarea id="lvTitulo" rows="2">${esc(L.titulo)}</textarea></label>${chipsTitulos("lvTitulo")}
-        <div class="wz-miniaturas">${["creme", "rosa", "branco", "preto"].map((cr) => `<button type="button" class="wz-mini${L.cor === cr ? " on" : ""}" data-lv-cor="${cr}"><canvas></canvas><span>${CORES_NOME[cr]}</span></button>`).join("")}</div>
-        ${botaoContinuar(true)}`;
-      const pintar = () => document.querySelectorAll("[data-lv-cor]").forEach((b) => desenharGrade(b.querySelector("canvas"), { cor: b.dataset.lvCor }));
+      if (!L.modelo) { L.modelo = "achadinho"; L.titulo = L.titulo || MODELOS_REELS.achadinho.titulo; }
+      const e = estLer(), nome = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
+      c.innerHTML = `<div class="estudio">
+        <div class="est-previa est-previa--img"><canvas id="lvEst"></canvas></div>
+        <div class="est-ctrl">${botaoEst("modelo", "Modelo", nome)}${botaoEst("cor", "Cor", CORES_VIDEO[L.cor] ? CORES_VIDEO[L.cor].nome : "Creme")}${botaoEst("produtosLivre", "Produtos", String(L.itens.length))}${botaoEst("grade", "Formato", `${L.n} · ${L.formato === "story" ? "Story" : L.formato === "quadrado" ? "Quadrado" : "Post"}`)}</div>
+      </div>${botaoContinuar(true)}`;
+      const pintar = () => { const cv = $("#lvEst"); if (cv) desenharGrade(cv); };
       pintar(); fotosDaLista().then(() => { if (wz.passo === "tema") pintar(); });
       return;
     }
@@ -2975,17 +2981,17 @@
       return;
     }
     if (wz.passo === "vTema") {
-      c.innerHTML = `<h2 class="wz-titulo">Tema do vídeo</h2>
-        <div class="wz-miniaturas">${Object.entries(TEMAS_VIDEO).map(([k, t]) => `<button type="button" class="wz-mini${V.tema === k ? " on" : ""}" data-vd-tema="${k}"><canvas width="270" height="480"></canvas><span>${t}</span></button>`).join("")}</div>
-        <div class="campo"><span>Cor</span><div class="alternar" id="vdCor">${Object.entries(CORES_VIDEO).map(([k, x]) => `<button type="button" role="radio" data-vd-cor="${k}" aria-checked="${V.cor === k}">${x.nome}</button>`).join("")}</div></div>
-        <div class="aj-bloco vd-extras">
-          <label class="aj-chave"><span><b>Abertura com música</b><small>3 segundos com título, foto e preço</small></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
-          <label class="aj-chave"><span><b>Final com música</b><small>Logo, seu @ e o botão</small></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
-          <label class="aj-chave"><span><b>Música durante o vídeo</b><small>Baixinha, por baixo do som do vídeo</small></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
+      const e = estLer(), nomeM = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
+      c.innerHTML = `<div class="estudio">
+        <div class="est-previa est-previa--img"><canvas id="vdEst" width="540" height="960"></canvas></div>
+        <div class="est-ctrl">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("enquadrar", "Enquadrar", TEMAS_VIDEO[V.tema])}</div>
+        <div class="vd-chaves">
+          <label class="aj-chave"><span><b>Abertura</b></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
+          <label class="aj-chave"><span><b>Final</b></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
+          <label class="aj-chave"><span><b>Música no vídeo</b></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
         </div>
-        <button type="button" class="btn btn--branco" id="vdBatida">Música: ${esc(NOMES_MUSICA[V.batida || "house"][0])} ▾</button>
-        ${botaoContinuar(true)}`;
-      pintarTemasVideo();
+      </div>${botaoContinuar(true)}`;
+      carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((q) => { const cv = $("#vdEst"); if (!cv) return; const cx = cv.getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 2.6, V); else quadroVideo(cx, 540, 960, q, V); });
       return;
     }
     if (wz.passo === "vPronto") {
@@ -3080,6 +3086,7 @@
     const C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme, foto = V.fotoBmp;
     ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920);
     bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t);
+    if (V.modelo || V.camp) { relogioReels = t; desenharDecor(ctx, decorDe({ modelo: V.modelo || "achadinho", camp: V.camp })); }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     comPulo(ctx, t, 0.1, 540, 270, () => { if (edMarca) ctx.drawImage(edMarca, -140, -140, 280, 280); });
     const linhas = linhasTitulo(V.titulo || "Achadinho\n*do dia*"), tam = linhas.length > 2 ? 100 : 116;
@@ -3118,6 +3125,7 @@
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const C = CORES_VIDEO[V.cor] || CORES_VIDEO.rosa;
     ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t + 30);
+    if (V.modelo || V.camp) { relogioReels = t; desenharDecor(ctx, decorDe({ modelo: V.modelo || "achadinho", camp: V.camp })); }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     comPulo(ctx, t, 0.1, 540, 640, () => { if (edMarca) ctx.drawImage(edMarca, -220, -220, 440, 440); }, 0.55);
     comSubida(ctx, t, 0.55, () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 990); });
@@ -3553,7 +3561,8 @@
   }
   function textoCupons() {
     const C = cc(), l = C.sel;
-    const linhas = [l.length > 1 ? "🎟️ *CUPONS DO DIA, MIGA!*" : "🎟️ *CUPOM LIBERADO, MIGA!*", ""];
+    const abre = C.tituloProp ? `🎟️ *${C.tituloProp}*` : CAMPANHAS[C.camp] ? CAMPANHAS[C.camp].chamada + " 🎟️" : C.modelo && C.modelo !== "cupom" && LEGENDA_REELS[C.modelo] ? LEGENDA_REELS[C.modelo].varios(2).replace(/\s*[^.!?⏳💸]*:\s*$/, "") + " Cupons pra você:" : (l.length > 1 ? "🎟️ *CUPONS DO DIA, MIGA!*" : "🎟️ *CUPOM LIBERADO, MIGA!*");
+    const linhas = [abre, ""];
     l.forEach((cp) => { const i = infoCupom(cp); linhas.push(`${i.loja && LOJA_FIG[i.loja] ? LOJA_FIG[i.loja] + " " + NOME_LOJA[i.loja] + ": " : "👉 "}*${cp}*${i.desc ? " · " + i.desc : ""}`); });
     linhas.push("", "Use na finalização da compra e economize 💖", "Corre que cupom bom acaba rápido! ⏳");
     return comConvite(linhas.join("\n"));
@@ -3565,8 +3574,11 @@
     ctx.fillStyle = P.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, P.bola, C.cor === "preto" ? "#e9e4d8" : "#ffffff", 0);
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     if (edMarca) ctx.drawImage(edMarca, 540 - 110, 150, 220, 220);
-    ctx.save(); ctx.translate(540, 470); ctx.rotate(-0.04); pilulaReels(ctx, l.length > 1 ? "Cupons do dia" : "Cupom liberado", 0, 0, "#ffd23f", "#1d1d1f", 56, true); ctx.restore();
-    ctx.font = "800 104px Poppins"; ctx.fillStyle = P.texto; ctx.fillText(l.length > 1 ? "Economiza" : "Economiza", 540, 640); ctx.fillStyle = P.destaque; ctx.fillText("aí, miga!", 540, 750);
+    const temModelo = !!(C.modelo && C.modelo !== "cupom") || C.camp || C.tituloProp;
+    if (temModelo) { relogioReels = 0; desenharDecor(ctx, { ...decorDe({ modelo: C.modelo, camp: C.camp }), faixa: "" }); }
+    const tagC = C.tituloProp || (CAMPANHAS[C.camp] ? CAMPANHAS[C.camp].tag : temModelo ? MODELOS_REELS[C.modelo].tag : (l.length > 1 ? "Cupons do dia" : "Cupom liberado"));
+    ctx.save(); ctx.translate(540, 470); ctx.rotate(-0.04); pilulaReels(ctx, tagC, 0, 0, "#ffd23f", "#1d1d1f", 56, true); ctx.restore();
+    ctx.font = "800 104px Poppins"; ctx.fillStyle = P.texto; ctx.fillText(l.length > 1 ? "Cupons" : "Cupom", 540, 640); ctx.fillStyle = P.destaque; ctx.fillText(l.length > 1 ? "pra economizar!" : "pra economizar!", 540, 750);
     const alt = l.length > 3 ? 170 : 210, gap = 28, y0 = 870 + Math.max(0, (3 - l.length)) * 40;
     l.forEach((cp, j) => {
       const i = infoCupom(cp), y = y0 + j * (alt + gap), x = 90, w = 900;
@@ -3600,9 +3612,11 @@
     }
     if (wz.passo === "cPronto") {
       if (C.texto == null) C.texto = textoCupons();
-      c.innerHTML = `<h2 class="wz-titulo">Pronto para postar</h2>
-        <div class="wz-previa"><canvas id="cArte"></canvas></div>
-        ${barraCores("data-c-cor", C.cor, CORES_VIDEO)}
+      const e = estLer(), nomeM = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
+      c.innerHTML = `<div class="estudio">
+        <div class="est-previa est-previa--img"><canvas id="cArte"></canvas></div>
+        <div class="est-ctrl est-ctrl--3">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[C.cor].nome)}${botaoEst("cupons", "Cupons", String(C.sel.length))}</div>
+        </div>
         <div class="campo"><span>Texto para os grupos</span><textarea id="cTexto" rows="8">${esc(C.texto)}</textarea></div>
         <button type="button" class="btn btn--rosa" id="cStatus">Postar no Status / Story</button>
         <button type="button" class="btn btn--rosa" id="cGrupos">Enviar nos grupos</button>
@@ -3686,14 +3700,18 @@
       lider: "sine", liderVol: 0.14, entra: 16, melodia: [76, 0, 74, 0, 72, 0, 0, 0, 69, 0, 72, 0, 74, 0, 0, 0, 76, 0, 77, 0, 76, 0, 74, 0, 72, 0, 0, 0, 0, 0, 0, 0] },
     funkmandela: { bpm: 130, sujo: true, k808: true, k: "x..x..x.x..x..x.", s: "....x.......x...", palma: true, h: "x.x.x.x.x.x.x.x.", b: "x..x..x.x..x..x.", baixo: "808", c: "", acordes: [[64, 67, 71], [64, 67, 71], [62, 65, 69], [62, 65, 69]], raiz: [28, 28, 26, 26],
       lider: "square", liderVol: 0.07, entra: 16, melodia: [76, 0, 76, 0, 0, 79, 0, 0, 76, 0, 74, 0, 0, 0, 0, 0, 76, 0, 76, 0, 0, 81, 0, 0, 79, 0, 76, 0, 0, 0, 0, 0] },
-    funk150: { bpm: 150, sujo: true, k808: true, k: "x..x....x..x....", s: "...x..x....x..x.", palma: true, h: "xxx.xxx.xxx.xxx.", b: "x..x....x..x....", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [58, 62, 65], [56, 60, 63]], raiz: [24, 24, 22, 20],
-      lider: "cowbell", entra: 0, melodia: [72, 0, 72, 0, 75, 0, 72, 0, 70, 0, 72, 0, 0, 0, 0, 0, 72, 0, 72, 0, 77, 0, 75, 0, 72, 0, 70, 0, 0, 0, 0, 0] },
-    phonkdrift: { bpm: 140, k808: true, sujo: true, k: "x.....x.x.x.....", s: "........x.......", h: "x.x.x.x.xrx.x.xr", b: "x-----x-x-x-----", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [56, 60, 63], [55, 58, 62]], raiz: [24, 24, 20, 19],
-      lider: "cowbell", entra: 0, melodia: [72, 72, 0, 75, 72, 0, 70, 0, 72, 72, 0, 75, 77, 0, 75, 0, 72, 72, 0, 75, 72, 0, 70, 0, 68, 68, 0, 70, 72, 0, 0, 0] },
     eletrodrop: { bpm: 126, bomba: true, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "x.x.x.x.x.x.x.x.", o: "..o...o...o...o.", b: "..X...X...X...X.", baixo: "saw", c: "x.x.x.x.x.x.x.x.", acordeTipo: "super",
       acordes: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], raiz: [33, 29, 36, 31], lider: "square", liderVol: 0.06, entra: 16, melodia: [81, 0, 81, 0, 84, 0, 81, 0, 79, 0, 76, 0, 79, 0, 0, 0, 81, 0, 81, 0, 84, 0, 86, 0, 84, 0, 81, 0, 0, 0, 0, 0] },
     reggaetonromantico: { bpm: 92, k: "x...x...x...x...", s: "...x..x....x..x.", h: "x.x.x.x.x.x.x.x.", chVol: 0.7, b: "x-..x-..x-..x-..", baixo: "808", c: "x-------x-------", acordeTipo: "teclado", acordes: [[62, 65, 69], [58, 62, 65], [60, 64, 67], [57, 60, 64]], raiz: [26, 22, 24, 21],
       lider: "sine", liderVol: 0.15, entra: 16, melodia: [74, 0, 0, 72, 0, 74, 0, 77, 0, 0, 76, 0, 74, 0, 0, 0, 72, 0, 0, 70, 0, 72, 0, 74, 0, 0, 72, 0, 69, 0, 0, 0] },
+    perreosuave: { bpm: 90, k: "x...x...x...x...", s: "...x..x....x..x.", h: "x.x.x.x.x.x.x.x.", chVol: 0.6, b: "x-..x-..x-..x-..", baixo: "808", c: "x-------x-------", acordeTipo: "cordas", acordes: [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]], raiz: [21, 29, 31, 28],
+      lider: "sine", liderVol: 0.15, entra: 16, melodia: [76, 0, 0, 74, 0, 72, 0, 0, 74, 0, 0, 0, 72, 0, 69, 0, 72, 0, 0, 74, 0, 76, 0, 0, 79, 0, 0, 0, 76, 0, 0, 0] },
+    reggaetonpop: { bpm: 96, k: "x...x...x...x...", s: "...x..x....x..x.", palma: true, h: "x.x.x.x.x.x.x.x.", b: "x-..x-..x-..x-..", baixo: "808", c: "x.....x.....x...", acordeTipo: "piano", acordes: [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]], raiz: [24, 19, 21, 29],
+      lider: "triangle", liderVol: 0.13, entra: 16, melodia: [79, 0, 79, 0, 76, 0, 79, 0, 81, 0, 79, 0, 76, 0, 0, 0, 74, 0, 74, 0, 76, 0, 79, 0, 76, 0, 74, 0, 72, 0, 0, 0] },
+    reggaetonnoite: { bpm: 88, k: "x...x...x...x...", s: "...x..x....x..x.", h: "x...x...x...x...", chVol: 0.7, b: "x--.x--.x--.x--.", baixo: "808", c: "x---------------", acordeTipo: "teclado", acordes: [[62, 65, 69, 72], [58, 62, 65, 69], [55, 58, 62, 65], [57, 61, 64, 67]], raiz: [26, 22, 19, 21],
+      lider: "sine", liderVol: 0.14, entra: 16, melodia: [74, 0, 0, 0, 77, 0, 76, 0, 74, 0, 0, 0, 72, 0, 0, 0, 70, 0, 0, 0, 74, 0, 72, 0, 69, 0, 0, 0, 0, 0, 0, 0] },
+    bachata: { bpm: 100, k: "x.......x.......", s: "....x.......x...", h: "x.xxx.xxx.xxx.xx", chVol: 0.5, b: "x...x...x...x...", baixo: "saw", c: "x.x.x.x.x.x.x.x.", acordeTipo: "teclado", acordes: [[57, 60, 64], [52, 55, 59], [53, 57, 60], [55, 59, 62]], raiz: [33, 28, 29, 31],
+      lider: "triangle", liderVol: 0.13, entra: 16, melodia: [76, 0, 77, 76, 74, 0, 72, 0, 74, 0, 76, 0, 72, 0, 0, 0, 71, 0, 72, 71, 69, 0, 67, 0, 69, 0, 71, 0, 72, 0, 0, 0] },
     afrobeat: { bpm: 108, balanco: 0.08, k: "x.....x...x.....", s: "...x..x....x..x.", h: "x.xx.x.xx.x.x.xx", chVol: 0.8, b: "x--x--x-x--x--x-", baixo: "808", c: "..x...x...x...x.", acordeTipo: "piano", acordes: [[60, 64, 67], [57, 60, 64], [65, 69, 72], [55, 59, 62]], raiz: [24, 21, 29, 19],
       lider: "triangle", liderVol: 0.12, entra: 16, melodia: [79, 0, 79, 76, 0, 79, 0, 81, 79, 0, 76, 0, 74, 0, 0, 0, 76, 0, 76, 74, 0, 76, 0, 79, 76, 0, 74, 0, 72, 0, 0, 0] },
     phonk: { bpm: 130, k808: true, sujo: true, k: "x.....x...x.....", s: "........x.......", h: "x.x.x.x.x.x.x.x.", b: "x-----x---x-----", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [56, 60, 63], [58, 62, 65]], raiz: [36, 36, 32, 34],
@@ -3703,9 +3721,9 @@
     house: ["House", "animada e alegre"], housegrave: ["House grave", "grave marcante"], tropical: ["House tropical", "leve, de verão"],
     eletronica: ["Eletrônica", "agitada"], eletrodrop: ["Eletrônica drop", "com virada forte"],
     trap: ["Trap", "grave que desliza"], trappesado: ["Trap pesado", "grave com muita ênfase"], trapmelodico: ["Trap melódico", "grave e suave"],
-    drill: ["Drill", "tenso, com tique-taque"], funk: ["Funk", "dançante"], funkmandela: ["Funk mandelão", "grave estourado"], funk150: ["Funk 150", "acelerado"],
-    phonk: ["Phonk", "grave sujo e sininho"], phonkdrift: ["Phonk drift", "pesado, de corrida"],
-    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], afrobeat: ["Afrobeat", "suingado"],
+    drill: ["Drill", "tenso, com tique-taque"], funk: ["Funk", "dançante"], funkmandela: ["Funk mandelão", "grave estourado"],
+    phonk: ["Phonk", "grave sujo e sininho"],
+    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], perreosuave: ["Perreo suave", "romântico com cordas"], reggaetonpop: ["Reggaeton pop", "alegre e romântico"], reggaetonnoite: ["Reggaeton da noite", "lento e envolvente"], bachata: ["Bachata pop", "romântica e dançante"], afrobeat: ["Afrobeat", "suingado"],
     disco: ["Disco", "baixo saltitante"], boombap: ["Boom bap", "rap anos 90"], lofi: ["Lo-fi", "calmo e delicado"]
   };
   const MODELOS_REELS = {
@@ -3717,14 +3735,14 @@
     top: { nome: "Top 3 achadinhos", desc: "Funk · ranking do 3º ao 1º", musica: "funk", tag: "Top achadinhos", titulo: "Top {n}\n*achadinhos*", sub: () => "da semana", icone: "trofeu" },
     cupom: { nome: "Cupom liberado", desc: "Reggaeton", musica: "dembow", tag: "Cupom liberado", titulo: "*Cupom*\nliberado!", sub: () => "Desconto na mão", icone: "cupom" },
     amei: { nome: "Amei esse", desc: "Disco", musica: "disco", tag: "Amei esse", titulo: "Amei\n*esse aqui*", sub: () => "Precisava te mostrar", icone: "coracao" },
-    vale: { nome: "Vale a pena", desc: "Boom bap", musica: "boombap", tag: "Vale muito a pena", titulo: "Vale\n*a pena?*", sub: () => "Olha só esse preço", icone: "check" },
+    vale: { nome: "Vale a pena", desc: "Boom bap", musica: "boombap", tag: "Vale muito a pena", titulo: "Vale\n*a pena?*", sub: () => "Olha só esse preço", icone: "coracao" },
     cozinha: { nome: "Equipe sua cozinha", desc: "House", musica: "house", tag: "Equipe sua cozinha", titulo: "Equipe sua\n*cozinha*", sub: () => "Tudo que facilita o dia a dia", icone: "presente", cat: true },
     cheirosa: { nome: "Fique cheirosa", desc: "Disco", musica: "disco", tag: "Fique cheirosa", titulo: "Fique\n*cheirosa*", sub: () => "Perfumes e hidratantes com desconto", icone: "brilho", cat: true },
     linda: { nome: "Fique linda", desc: "Lo-fi", musica: "lofi", tag: "Fique linda", titulo: "Fique\n*linda*", sub: () => "Beleza e skincare com preço de amiga", icone: "coracao", cat: true },
-    casa: { nome: "Casa arrumadinha", desc: "Dembow", musica: "dembow", tag: "Casa arrumadinha", titulo: "Casa\n*arrumadinha*", sub: () => "Decoração e organização baratinhas", icone: "check", cat: true },
+    casa: { nome: "Casa arrumadinha", desc: "Dembow", musica: "dembow", tag: "Casa arrumadinha", titulo: "Casa\n*arrumadinha*", sub: () => "Decoração e organização baratinhas", icone: "coracao", cat: true },
     look: { nome: "Look do dia", desc: "Funk", musica: "funk", tag: "Look do dia", titulo: "Look\n*do dia*", sub: () => "Moda e acessórios com desconto", icone: "brilho", cat: true },
     treino: { nome: "Treino em dia", desc: "Trap", musica: "trap", tag: "Treino em dia", titulo: "Treino\n*em dia*", sub: () => "Fitness e saúde com desconto", icone: "fogo", cat: true },
-    organiza: { nome: "Tudo organizado", desc: "Boombap", musica: "boombap", tag: "Tudo organizado", titulo: "Tudo\n*organizado*", sub: () => "Organizadores que salvam o dia", icone: "check", cat: true },
+    organiza: { nome: "Tudo organizado", desc: "Boombap", musica: "boombap", tag: "Tudo organizado", titulo: "Tudo\n*organizado*", sub: () => "Organizadores que salvam o dia", icone: "coracao", cat: true },
     autocuidado: { nome: "Momento autocuidado", desc: "Lo-fi", musica: "lofi", tag: "Momento autocuidado", titulo: "Momento\n*autocuidado*", sub: () => "Pra você se cuidar com carinho", icone: "coracao", cat: true },
     bebe: { nome: "Mamãe e bebê", desc: "House", musica: "house", tag: "Mamãe e bebê", titulo: "Mamãe\ne *bebê*", sub: () => "Achadinhos para os pequenos", icone: "coracao", cat: true },
     pet: { nome: "Pro seu pet", desc: "Disco", musica: "disco", tag: "Pro seu pet", titulo: "Pro seu\n*pet*", sub: () => "Mimos para o seu bichinho", icone: "coracao", cat: true },
@@ -3747,6 +3765,7 @@
     const bt = ajustarGrade(MUSICAS[musicaDe(typeof R === "string" ? { modelo: R } : R)].bpm);
     T_INTRO = emTempos(2.6, bt); T_PROD = emTempos(3.6, bt); T_FIM = emTempos(3.4, bt);
   }
+  const limiteReels = () => (wz.reels && wz.reels.carrossel ? 8 : 5);
   function rr() { if (!wz.reels) wz.reels = { itens: [], modelo: "achadinho", cor: "rosa", resultado: null }; return wz.reels; }
   const itensReels = () => rr().itens.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
   const duracaoReelsProdutos = () => { temposDoModelo(rr()); return T_INTRO + T_PROD * Math.max(1, itensReels().length) + T_FIM; };
@@ -3759,8 +3778,92 @@
     return cache;
   }
   const corAntiga = (C) => C.antigo || "#8a817b";
+  function modeloEfetivo(R) {
+    const M0 = MODELOS_REELS[R.modelo] || MODELOS_REELS.achadinho, CP = CAMPANHAS[R.camp];
+    let M = CP ? { ...M0, titulo: CP.titulo, tag: CP.tag, sub: () => CP.sub } : M0;
+    if (R.titulo) M = { ...M, titulo: tituloDigitado(R.titulo), tag: R.titulo.replace(/[*\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 28), sub: () => "" };
+    return M;
+  }
+  /** Arte parada (Status, Story, feed) com o mesmo modelo dos Reels */
+  let telaArte = null;
+  function artePost(tela, R, it, bmp, formato) {
+    const W = 1080, H = formato === "post" ? 1350 : formato === "quadrado" ? 1080 : 1920;
+    tela.width = W; tela.height = H; const ctx = tela.getContext("2d");
+    temposDoModelo(R); const C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, M = modeloEfetivo(R);
+    relogioReels = 0; decorAtual = decorDe(R);
+    if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); return; }
+    // Feed/quadrado: fundo no tamanho certo e o conteúdo um pouco menor no meio
+    comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor));
+  }
+  function comporPost(ctx, W, H, R, C, desenhar) {
+    if (!telaArte) { telaArte = document.createElement("canvas"); telaArte.width = 1080; telaArte.height = 1920; }
+    const tx = telaArte.getContext("2d"); tx.clearRect(0, 0, 1080, 1920);
+    semFundo = true; try { desenhar(tx); } finally { semFundo = false; }
+    ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = C.bola; ctx.beginPath(); ctx.arc(60, 60, 200, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = R.cor === "preto" ? "#e9e4d8" : "#ffffff"; ctx.beginPath(); ctx.arc(W - 60, H - 60, 170, 0, Math.PI * 2); ctx.fill();
+    const D = decorAtual; if (D) [[95, H * 0.42, 100, -0.2], [985, H * 0.5, 100, 0.2], [110, H * 0.86, 90, 0.15]].forEach(([x, y, s, r], i) => { ctx.save(); ctx.translate(x, y); ctx.rotate(r); iconeReels(ctx, D.ic[i % D.ic.length], s); ctx.restore(); });
+    const s = Math.min(1, (H - 30) / 1560), dw = 1080 * s;
+    ctx.drawImage(telaArte, 0, 170, 1080, 1560, (W - dw) / 2, (H - 1560 * s) / 2, dw, 1560 * s);
+    if (edMarca) ctx.drawImage(edMarca, W - 165, H - 160, 130, 130);
+  }
+  let semFundo = false;
+  /** A cara de cada modelo: figurinhas do tema, selo, frase, cor e faixa */
+  const DECOR = {
+    achadinho: { ic: ["brilho", "bolsa"], selo: "Achadinho", frase: "Achei e já separei pra você", cor: "rosa" },
+    relampago: { ic: ["raio", "relogio"], selo: "Corre!", frase: "Por pouco tempo", cor: "preto" },
+    baixou: { ic: ["etiqueta", "cupom"], selo: "Baixou!", frase: "O menor preço que eu vi", cor: "creme" },
+    ultimas: { ic: ["relogio", "fogo"], frase: "Termina hoje", cor: "rosa" },
+    novidade: { ic: ["presente", "brilho"], selo: "Novidade", frase: "Acabou de chegar", cor: "branco" },
+    top: { ic: ["trofeu", "brilho"], frase: "Os mais amados da semana", cor: "creme" },
+    cupom: { ic: ["cupom", "etiqueta"], selo: "Com cupom", frase: "Use o cupom no carrinho", cor: "rosa" },
+    amei: { ic: ["coracao", "brilho"], selo: "Amei", frase: "Precisava te mostrar", cor: "branco", lay: "balao" },
+    vale: { ic: ["coracao", "brilho"], frase: "Bem avaliado e com preço bom", cor: "creme", lay: "balao" },
+    sohoje: { ic: ["fogo", "relogio"], frase: "Amanhã pode voltar ao normal", cor: "preto", lay: "oferta" },
+    cozinha: { ic: ["panela", "brilho"], selo: "Cozinha", frase: "Facilita o dia a dia na cozinha", cor: "creme", lay: "polaroid" },
+    cheirosa: { ic: ["perfume", "brilho"], selo: "Cheirosa", frase: "Perfume com preço de amiga", cor: "rosa", lay: "circulo" },
+    linda: { ic: ["batom", "coracao"], selo: "Beleza", frase: "Pra ficar linda gastando pouco", cor: "rosa", lay: "circulo" },
+    casa: { ic: ["casa", "brilho"], selo: "Casa", frase: "Deixa a casa mais bonita", cor: "creme", lay: "polaroid" },
+    look: { ic: ["cabide", "brilho"], selo: "Look", frase: "Combina com tudo", cor: "rosa", lay: "revista" },
+    treino: { ic: ["haltere", "fogo"], selo: "Treino", frase: "Pra treinar com estilo", cor: "preto", lay: "revista" },
+    organiza: { ic: ["casa", "brilho"], selo: "Organiza", frase: "Tudo no lugar", cor: "branco", lay: "polaroid" },
+    autocuidado: { ic: ["coracao", "brilho"], selo: "Autocuidado", frase: "Um mimo pra você", cor: "rosa", lay: "circulo" },
+    bebe: { ic: ["mamadeira", "coracao"], selo: "Bebê", frase: "Pros pequenos", cor: "branco", lay: "balao" },
+    pet: { ic: ["patinha", "coracao"], selo: "Pet", frase: "Mimo pro seu bichinho", cor: "creme", lay: "balao" },
+    tech: { ic: ["fone", "raio"], selo: "Tech", frase: "Tecnologia com desconto", cor: "preto", lay: "revista" },
+    presentes: { ic: ["presente", "coracao"], selo: "Presente", frase: "Agrada sem gastar muito", cor: "rosa", lay: "polaroid" },
+    ate50: { ic: ["etiqueta", "cupom"], selo: "Até R$ 50", frase: "Baratinho de verdade", cor: "creme", lay: "balao" },
+    viagem: { ic: ["aviao", "bolsa"], selo: "Viagem", frase: "Pra levar na mala", cor: "branco", lay: "polaroid" },
+    peleRica: { ic: ["batom", "brilho"], selo: "Skincare", frase: "Pele de rica gastando pouco", cor: "rosa", lay: "circulo" },
+    make: { ic: ["batom", "coracao"], selo: "Make", frase: "Make linda e baratinha", cor: "rosa", lay: "circulo" },
+    cozinhaSonhos: { ic: ["panela", "coracao"], selo: "Cozinha", frase: "A cozinha dos sonhos", cor: "creme", lay: "polaroid" },
+    looks50: { ic: ["cabide", "etiqueta"], selo: "Até R$ 50", frase: "Look completo gastando pouco", cor: "rosa", lay: "revista" },
+    viral: { ic: ["fogo", "brilho"], selo: "Viral", frase: "Todo mundo está comprando", cor: "preto", lay: "revista" },
+    aulas: { ic: ["lapis", "bolsa"], selo: "Volta às aulas", frase: "Material com desconto", cor: "branco", lay: "revista" },
+    c_blackfriday: { ic: ["etiqueta", "raio"], selo: "Black Friday", frase: "O melhor preço do ano", cor: "preto", faixa: "BLACK FRIDAY", lay: "oferta" },
+    c_d1212: { ic: ["fogo", "etiqueta"], selo: "12.12", frase: "Só hoje com esse preço", cor: "rosa", faixa: "12.12 · 12.12", lay: "oferta" },
+    c_natal: { ic: ["arvore", "floco", "presente"], selo: "Natal", frase: "Presente com preço de amiga", cor: "rosa", natal: true, lay: "polaroid" },
+    c_esquenta: { ic: ["fogo", "raio"], selo: "Esquenta", frase: "As ofertas já começaram", cor: "preto", lay: "oferta" },
+    c_queima: { ic: ["fogo", "etiqueta"], selo: "Queima", frase: "Enquanto durar o estoque", cor: "preto", faixa: "QUEIMA DE ESTOQUE", lay: "oferta" },
+    c_maes: { ic: ["coracao", "presente"], selo: "Dia das Mães", frase: "Ela merece", cor: "rosa", lay: "circulo" },
+    c_namorados: { ic: ["coracao", "presente"], selo: "Namorados", frase: "Amor com desconto", cor: "rosa", lay: "circulo" },
+    c_beleza: { ic: ["batom", "perfume"], selo: "Beleza", frase: "Autocuidado com desconto", cor: "rosa", lay: "circulo" },
+    c_casa: { ic: ["casa", "panela"], selo: "Casa", frase: "Casa linda gastando pouco", cor: "creme", lay: "polaroid" }
+  };
+  const decorDe = (R) => (R.camp && DECOR["c_" + R.camp]) || DECOR[R.modelo] || DECOR.achadinho;
+  let decorAtual = null;
+  const POS_DECOR = [[95, 600, 110, -0.2], [985, 720, 105, 0.2], [90, 1060, 95, 0.15], [990, 1110, 100, -0.15], [140, 1810, 90, 0.1]];
+  function desenharDecor(ctx, D) {
+    if (!D) return; const T = relogioReels;
+    if (D.natal) for (let i = 0; i < 14; i++) { const x = (i * 157 + 60) % 1080, y = ((i * 263 + T * 90) % 2000) - 40; ctx.save(); ctx.globalAlpha = 0.35; ctx.translate(x, y); ctx.rotate(T + i); iconeReels(ctx, "floco", 50 + (i % 3) * 16); ctx.restore(); }
+    POS_DECOR.forEach(([x, y, s, r], i) => { const nome = D.ic[i % D.ic.length]; ctx.save(); ctx.translate(x, y + Math.sin(T * 2 + i) * 10); ctx.rotate(r + Math.sin(T * 1.5 + i) * 0.06); iconeReels(ctx, nome, s); ctx.restore(); });
+    if (D.faixa) {
+      ctx.save(); ctx.translate(540, 96); ctx.rotate(-0.04); ctx.fillStyle = "#ffd23f"; ctx.fillRect(-700, -40, 1400, 80); ctx.fillStyle = "#1d1d1f"; ctx.font = "800 44px Poppins"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      const txt = (D.faixa + "  •  ").repeat(8), w = ctx.measureText(D.faixa + "  •  ").width; ctx.fillText(txt, -700 - ((T * 120) % w), 3); ctx.restore();
+    }
+  }
   let relogioReels = 0; // tempo total do Reels, para as bolinhas não "pularem" na troca de tela
-  function fundoReels(ctx, C, cor) { ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, cor === "preto" ? "#e9e4d8" : "#ffffff", relogioReels); }
+  function fundoReels(ctx, C, cor) { if (semFundo) return; ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, cor === "preto" ? "#e9e4d8" : "#ffffff", relogioReels); desenharDecor(ctx, decorAtual); }
   /** Ícones desenhados com a cara do Miga (contorno preto, rosa e amarelo), no lugar de emojis */
   function iconeReels(ctx, nome, tam) {
     const ROSA = "#e8336d", AMAR = "#ffd23f", PRETO = "#1d1d1f", s = tam / 200;
@@ -3808,6 +3911,66 @@
       ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(0, -40, 42, Math.PI, 0); ctx.stroke(); ctx.lineWidth = 11;
       retArredondado(ctx, -82, -45, 164, 140, 22); contorno(ROSA); estrela(0, 25, 38, AMAR);
     }
+    else if (nome === "arvore") {
+      ctx.beginPath(); ctx.rect(-16, 60, 32, 34); contorno("#8a5a2b");
+      [[-80, 70, -10], [-62, 20, -48], [-44, -30, -86]].forEach(([w, yb, yt]) => { ctx.beginPath(); ctx.moveTo(-w, yb); ctx.lineTo(w, yb); ctx.lineTo(0, yt - 20); ctx.closePath(); contorno("#1fa463"); });
+      estrela(0, -104, 26, AMAR); [[-30, 40], [28, 6], [-14, -30]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fillStyle = ROSA; ctx.fill(); });
+    }
+    else if (nome === "floco") {
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 12;
+      for (let i = 0; i < 6; i++) { ctx.save(); ctx.rotate(i * Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -88); ctx.moveTo(0, -55); ctx.lineTo(-22, -75); ctx.moveTo(0, -55); ctx.lineTo(22, -75); ctx.stroke(); ctx.restore(); }
+      ctx.strokeStyle = "#9fd3ff"; ctx.lineWidth = 5; for (let i = 0; i < 6; i++) { ctx.save(); ctx.rotate(i * Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -88); ctx.stroke(); ctx.restore(); }
+    }
+    else if (nome === "panela") {
+      ctx.beginPath(); ctx.moveTo(-95, -20); ctx.lineTo(-130, -30); ctx.stroke(); ctx.beginPath(); ctx.moveTo(95, -20); ctx.lineTo(130, -30); ctx.stroke();
+      retArredondado(ctx, -95, -30, 190, 110, 26); contorno(ROSA); retArredondado(ctx, -105, -52, 210, 28, 14); contorno(AMAR);
+      ctx.beginPath(); ctx.arc(0, -62, 14, Math.PI, 0); contorno(AMAR);
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 8; [-30, 0, 30].forEach((x) => { ctx.beginPath(); ctx.moveTo(x, -78); ctx.quadraticCurveTo(x + 14, -98, x, -118); ctx.stroke(); });
+    }
+    else if (nome === "perfume") {
+      retArredondado(ctx, -22, -100, 44, 34, 8); contorno(AMAR); ctx.beginPath(); ctx.rect(-12, -68, 24, 18); contorno("#ffffff");
+      retArredondado(ctx, -78, -52, 156, 150, 40); contorno(ROSA);
+      ctx.beginPath(); ctx.ellipse(-36, -14, 14, 26, -0.3, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fill(); estrela(30, 40, 26, AMAR);
+    }
+    else if (nome === "batom") {
+      ctx.rotate(0.35); retArredondado(ctx, -34, 0, 68, 96, 10); contorno(AMAR); retArredondado(ctx, -26, -40, 52, 42, 6); contorno("#c9c2b4");
+      ctx.beginPath(); ctx.moveTo(-22, -40); ctx.lineTo(-22, -96); ctx.lineTo(22, -70); ctx.lineTo(22, -40); ctx.closePath(); contorno(ROSA);
+    }
+    else if (nome === "cabide") {
+      ctx.beginPath(); ctx.arc(0, -70, 20, Math.PI, Math.PI * 2.3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -50); ctx.lineTo(-100, 20); ctx.lineTo(100, 20); ctx.closePath(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-70, 20); ctx.lineTo(-80, 100); ctx.lineTo(80, 100); ctx.lineTo(70, 20); ctx.closePath(); contorno(ROSA);
+    }
+    else if (nome === "haltere") {
+      ctx.beginPath(); ctx.rect(-60, -10, 120, 20); contorno("#c9c2b4");
+      [-1, 1].forEach((s) => { retArredondado(ctx, s * 60 - (s > 0 ? 0 : 36), -50, 36, 100, 10); contorno(ROSA); retArredondado(ctx, s * 96 - (s > 0 ? 0 : 22), -32, 22, 64, 8); contorno(AMAR); });
+    }
+    else if (nome === "patinha") {
+      ctx.beginPath(); ctx.ellipse(0, 30, 52, 44, 0, 0, Math.PI * 2); contorno(ROSA);
+      [[-62, -30], [-24, -66], [24, -66], [62, -30]].forEach(([x, y]) => { ctx.beginPath(); ctx.ellipse(x, y, 20, 26, x * 0.006, 0, Math.PI * 2); contorno(ROSA); });
+    }
+    else if (nome === "mamadeira") {
+      ctx.beginPath(); ctx.moveTo(-14, -60); ctx.quadraticCurveTo(0, -112, 14, -60); ctx.closePath(); contorno(AMAR);
+      retArredondado(ctx, -40, -64, 80, 22, 8); contorno(ROSA); retArredondado(ctx, -46, -42, 92, 140, 30); contorno("#ffffff");
+      ctx.lineWidth = 6; [-10, 20, 50].forEach((y) => { ctx.beginPath(); ctx.moveTo(-46, y); ctx.lineTo(-22, y); ctx.stroke(); });
+    }
+    else if (nome === "fone") {
+      ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(0, 10, 80, Math.PI, 0); ctx.stroke(); ctx.lineWidth = 11;
+      [-1, 1].forEach((s) => { retArredondado(ctx, s * 80 - 28, 0, 56, 90, 22); contorno(ROSA); });
+    }
+    else if (nome === "aviao") {
+      ctx.rotate(-0.5); ctx.beginPath(); ctx.moveTo(-100, 0); ctx.quadraticCurveTo(0, -24, 100, -8); ctx.quadraticCurveTo(110, 0, 100, 8); ctx.quadraticCurveTo(0, 24, -100, 0); contorno("#ffffff");
+      ctx.beginPath(); ctx.moveTo(-10, -8); ctx.lineTo(30, -80); ctx.lineTo(48, -80); ctx.lineTo(30, -6); contorno(ROSA); ctx.beginPath(); ctx.moveTo(-10, 8); ctx.lineTo(30, 80); ctx.lineTo(48, 80); ctx.lineTo(30, 6); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(-86, -2); ctx.lineTo(-104, -44); ctx.lineTo(-92, -44); ctx.lineTo(-70, -6); contorno(AMAR);
+    }
+    else if (nome === "lapis") {
+      ctx.rotate(0.6); retArredondado(ctx, -22, -80, 44, 130, 6); contorno(AMAR); ctx.beginPath(); ctx.moveTo(-22, 50); ctx.lineTo(0, 100); ctx.lineTo(22, 50); ctx.closePath(); contorno("#f4d9b3");
+      retArredondado(ctx, -22, -104, 44, 26, 8); contorno(ROSA);
+    }
+    else if (nome === "casa") {
+      ctx.beginPath(); ctx.moveTo(-96, -6); ctx.lineTo(0, -92); ctx.lineTo(96, -6); ctx.closePath(); contorno(ROSA);
+      retArredondado(ctx, -74, -10, 148, 106, 8); contorno("#ffffff"); retArredondado(ctx, -20, 30, 40, 66, 6); contorno(AMAR);
+    }
     ctx.restore();
   }
   function tituloReels(ctx, texto, y, C, tam) {
@@ -3836,6 +3999,12 @@
   }
   /** Um produto na tela (3,6 s). Mesma cor do começo ao fim; o modelo muda a animação. */
   function produtoReels(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
+    produtoReelsBase(ctx, t, it, bmp, idx, n, mk, M, C, cor);
+    // Marca da Miga sempre no canto de baixo, à direita
+    if (!semFundo && edMarca) comPulo(ctx, t, 0.3, 975, 1815, () => ctx.drawImage(edMarca, -75, -75, 150, 150));
+  }
+  function produtoReelsBase(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
+    if (decorAtual && decorAtual.lay) return produtoLayout(ctx, t, it, bmp, mk, M, C, decorAtual);
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const tag = mk === "top" ? (idx === 0 ? "O mais amado!" : `Top ${n} achadinhos`) : M.tag;
     comPulo(ctx, t, 0.05, 540, 250, () => { if (mk === "relampago") ctx.rotate(Math.sin(t * 30) * 0.03 * Math.max(0, 1 - t)); etiquetaReels(ctx, tag, 0, 0, 46); });
@@ -3864,15 +4033,18 @@
     });
     if (mk === "amei") for (let s = 0; s < 7; s++) { const fase = (t * 0.55 + s / 7) % 1, x = 540 + (s % 2 ? 1 : -1) * (L / 2 + 20 + (s % 3) * 18) + Math.sin(t * 3 + s) * 20, yy = fy + L / 2 - fase * (L + 120); if (t > 0.7) { ctx.save(); ctx.globalAlpha = Math.sin(fase * Math.PI); ctx.translate(x, yy); iconeReels(ctx, "coracao", 60 + (s % 3) * 18); ctx.restore(); } }
     if (mk === "vale") comPulo(ctx, t, 1.4, 540 + L / 2 - 70, fy + L / 2 - 70, () => {
-      ctx.rotate(-0.2); iconeReels(ctx, "check", 230);
+      ctx.rotate(-0.2); iconeReels(ctx, "coracao", 230);
     }, 0.35);
     if (mk === "sohoje" && t > 0.5) { ctx.save(); ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(t * 5)); retArredondado(ctx, 540 - L / 2 - 14, fy - L / 2 - 14, L + 28, L + 28, 74); ctx.lineWidth = 14; ctx.strokeStyle = "#ff7a00"; ctx.stroke(); ctx.restore();
       comPulo(ctx, t, 0.5, 540 + L / 2 - 40, fy - L / 2 + 30, () => { const s = 1 + 0.08 * Math.sin(t * 9); ctx.scale(s, s); iconeReels(ctx, "fogo", 170); }); }
+    const D = decorAtual || {};
+    if (D.selo && !["top", "ultimas", "sohoje", "vale"].includes(mk)) comPulo(ctx, t, 0.5, 540 + L / 2 - 20, fy - L / 2 + 26, () => { ctx.rotate(0.12); pilulaReels(ctx, D.selo, 0, 0, "#ffd23f", "#1d1d1f", 38, true); });
     // Nome
-    const nome = limparNome(it.nome || "");
+    const nome = limparNome(it.nome || ""), antigoTem = it.precoAntigo && it.precoAntigo > it.precoNovo;
     let y = fy + L / 2 + 110;
     comSubida(ctx, t, 0.6, () => { ctx.font = "700 54px Poppins"; ctx.fillStyle = C.texto; quebrarTexto(ctx, nome, 940, 2).forEach((l, j) => ctx.fillText(l, 540, y + j * 66)); });
     ctx.font = "700 54px Poppins"; y += nome && quebrarTexto(ctx, nome, 940, 2).length > 1 ? 160 : 95;
+    if (D.frase && !it.cupom && !(antigoTem && quebrarTexto(ctx, nome, 940, 2).length > 1)) { comSubida(ctx, t, 0.75, () => { ctx.font = "italic 500 40px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.85; ctx.fillText(D.frase, 540, y - 22); }); y += 46; }
     const novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
     if (antigo) {
       const ini = mk === "baixou" ? 0.8 : 0.85;
@@ -3881,7 +4053,7 @@
         const lw = ctx.measureText(tx).width, ld = ctx.measureText("de ").width, p = mk === "baixou" ? suave(entrada(t, 1.2, 0.45)) : 1;
         ctx.fillRect(540 - lw / 2 + ld, y + 2, (lw - ld) * p, 6);
       });
-      y += 110;
+      y += 100;
     }
     if (novo) {
       const ini = mk === "baixou" ? 1.65 : 1.15;
@@ -3901,13 +4073,91 @@
       ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, y + 2);
     });
   }
+  /* ---------- Layouts próprios de cada tema: foto, selo, balão e preço em lugares diferentes ---------- */
+  function formaEstrela(ctx, r, pts) { ctx.beginPath(); for (let i = 0; i < pts * 2; i++) { const a = (i * Math.PI) / pts - Math.PI / 2, q = i % 2 ? r * 0.8 : r; ctx.lineTo(Math.cos(a) * q, Math.sin(a) * q); } ctx.closePath(); }
+  function textoNoMeio(ctx, txt, larg, tam, cor, peso = 800, maxL = 2) {
+    let s = tam; ctx.font = `${peso} ${s}px Poppins`; let l = maxL === 1 ? [txt] : quebrarTexto(ctx, txt, larg, 2);
+    while (s > 22 && l.some((x) => ctx.measureText(x).width > larg)) { s -= 2; ctx.font = `${peso} ${s}px Poppins`; l = maxL === 1 ? [txt] : quebrarTexto(ctx, txt, larg, 2); }
+    ctx.fillStyle = cor; ctx.textAlign = "center"; ctx.textBaseline = "middle"; l.forEach((x, i) => ctx.fillText(x, 0, (i - (l.length - 1) / 2) * s * 1.1));
+  }
+  function seloForma(ctx, forma, txt, r) {
+    ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f";
+    if (forma === "estrela") { formaEstrela(ctx, r, 14); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.stroke(); textoNoMeio(ctx, txt, r * 1.35, r * 0.36, "#1d1d1f"); }
+    else if (forma === "carimbo") { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.strokeStyle = "#e8336d"; ctx.stroke(); ctx.setLineDash([12, 9]); ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, 0, r - 18, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); textoNoMeio(ctx, txt, r * 1.4, r * 0.34, "#e8336d"); }
+    else if (forma === "fita") { ctx.font = "800 44px Poppins"; const w = Math.max(260, ctx.measureText(txt).width + 110); ctx.beginPath(); ctx.moveTo(-w / 2, -42); ctx.lineTo(w / 2, -42); ctx.lineTo(w / 2 - 30, 0); ctx.lineTo(w / 2, 42); ctx.lineTo(-w / 2, 42); ctx.lineTo(-w / 2 + 30, 0); ctx.closePath(); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.stroke(); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, 0, 3); }
+    else pilulaReels(ctx, txt, 0, 0, "#ffd23f", "#1d1d1f", 40, true);
+  }
+  function balaoForma(ctx, w, h, cauda, fundo) {
+    const r = 46; ctx.beginPath(); ctx.moveTo(-w / 2 + r, -h / 2); ctx.arcTo(w / 2, -h / 2, w / 2, h / 2, r); ctx.arcTo(w / 2, h / 2, -w / 2, h / 2, r);
+    ctx.arcTo(-w / 2, h / 2, -w / 2, -h / 2, r); ctx.arcTo(-w / 2, -h / 2, w / 2, -h / 2, r); ctx.closePath();
+    ctx.fillStyle = fundo; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
+  }
+  function fotoNaForma(ctx, bmp, w, h, t, caminho) {
+    ctx.save(); caminho(); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.clip();
+    if (bmp) { const s = Math.min((w - 60) / bmp.width, (h - 60) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); } else iconeReels(ctx, "bolsa", 260);
+    ctx.restore();
+  }
+  function produtoLayout(ctx, t, it, bmp, mk, M, C, D) {
+    fundoReels(ctx, C, null); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const nome = limparNome(it.nome || ""), novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
+    const tag = M.tag, selo = D.selo || tag, frase = D.frase || "", preco = novo ? brl(novo) : "";
+    const linhasNome = (larg, tam, x, y, alinha = "center", cor = C.texto) => comSubida(ctx, t, 0.6, () => { ctx.font = `700 ${tam}px Poppins`; ctx.fillStyle = cor; ctx.textAlign = alinha; quebrarTexto(ctx, nome, larg, 2).forEach((l, j) => ctx.fillText(l, x, y + j * tam * 1.2)); ctx.textAlign = "center"; });
+    const antigoRiscado = (x, y, tam, cor = corAntiga(C)) => { if (!antigo) return; comSubida(ctx, t, 0.85, () => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = cor; const tx = "de " + brl(antigo); ctx.fillText(tx, x, y); const lw = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillRect(x - lw / 2 + ld, y + 2, lw - ld, 5); }); };
+    const sombra = () => { ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; };
+    // A foto fica sempre no mesmo lugar e tamanho; o que muda é o que está em volta dela
+    const L = 760, FY = 820;
+    const foto = (extra) => comPulo(ctx, t, 0.2, 540, FY, () => { if (extra) extra(); ctx.save(); sombra(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#fff"; ctx.fill(); ctx.restore(); fotoNaForma(ctx, bmp, L, L, t, () => retArredondado(ctx, -L / 2, -L / 2, L, L, 64)); }, 0.55);
+    const loja = () => { if (it.loja) comPulo(ctx, t, 0.45, 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62)); };
+    if (D.lay === "polaroid") {
+      // Caixa com o nome do modelo no alto, selo estrela no canto e preço numa caixa
+      comPulo(ctx, t, 0.05, 380, 250, () => { ctx.rotate(-0.04); balaoForma(ctx, 600, 130, 1, "#ffffff"); textoNoMeio(ctx, tag, 540, 50, "#1d1d1f"); });
+      foto(); loja();
+      comPulo(ctx, t, 0.5, 910, 460, () => { ctx.rotate(0.18 + Math.sin(t * 3) * 0.04); seloForma(ctx, "estrela", selo, 120); });
+      linhasNome(940, 50, 540, 1285);
+      antigoRiscado(540, 1425, 48);
+      if (novo) comPulo(ctx, t, 1.15, 540, 1530, () => { ctx.rotate(0.03); balaoForma(ctx, 580, 140, 0, C.pill); textoNoMeio(ctx, (antigo ? "por " : "") + preco, 540, 70, C.pillTexto, 800, 1); });
+    } else if (D.lay === "circulo") {
+      // Frase grande em cima, selo carimbo e preço numa bola sobre a foto
+      comPulo(ctx, t, 0.05, 540, 150, () => pilulaReels(ctx, tag, 0, 0, C.pill, C.pillTexto, 40, true));
+      comSubida(ctx, t, 0.2, () => { ctx.save(); ctx.translate(540, 315); textoNoMeio(ctx, frase || tag, 920, 66, C.texto); ctx.restore(); });
+      foto(); loja();
+      comPulo(ctx, t, 0.5, 880, 490, () => { ctx.rotate(0.2); seloForma(ctx, "carimbo", selo, 112); });
+      if (novo) comPulo(ctx, t, 1.1, 860, 1160, () => { const s = 1 + 0.04 * Math.sin(t * 5); ctx.scale(s, s); ctx.rotate(0.1); ctx.beginPath(); ctx.arc(0, 0, 165, 0, Math.PI * 2); ctx.fillStyle = C.pill; ctx.fill(); ctx.lineWidth = 9; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.font = "600 34px Poppins"; ctx.fillStyle = C.pillTexto; ctx.fillText(antigo ? "por apenas" : "só", 0, -62); ctx.save(); ctx.translate(0, 14); textoNoMeio(ctx, preco, 270, 64, C.pillTexto, 800, 1); ctx.restore(); });
+      linhasNome(940, 52, 540, 1300); antigoRiscado(540, 1440, 46);
+    } else if (D.lay === "revista") {
+      // Manchete grande à esquerda, bloco colorido atrás da foto, fita no canto e preço numa faixa
+      comSubida(ctx, t, 0.05, () => { ctx.font = "900 96px Poppins"; ctx.fillStyle = C.texto; ctx.textAlign = "left"; quebrarTexto(ctx, tag.toUpperCase(), 920, 2).forEach((l, j, arr) => ctx.fillText(l, 80, (arr.length > 1 ? 200 : 260) + j * 100)); ctx.textAlign = "center"; });
+      if (frase) comSubida(ctx, t, 0.3, () => { ctx.font = "italic 500 38px Poppins"; ctx.fillStyle = C.destaque; ctx.textAlign = "left"; ctx.fillText(frase, 84, 385); ctx.textAlign = "center"; });
+      foto(() => { ctx.fillStyle = C.destaque; retArredondado(ctx, -L / 2 + 34, -L / 2 + 34, L, L, 64); ctx.fill(); }); loja();
+      comPulo(ctx, t, 0.5, 850, 470, () => { ctx.rotate(0.3); seloForma(ctx, "fita", selo, 0); });
+      linhasNome(920, 50, 80, 1300, "left");
+      if (novo) comSubida(ctx, t, 1.1, () => { const esc0 = C.fundo === "#1d1d1f"; ctx.fillStyle = esc0 ? "#ffd23f" : "#1d1d1f"; ctx.fillRect(0, 1430, 1080, 150); ctx.fillStyle = esc0 ? "#1d1d1f" : "#ffd23f"; ctx.font = "900 84px Poppins"; ctx.textAlign = "left"; ctx.fillText(preco, 80, 1508); if (antigo) { ctx.font = "600 44px Poppins"; ctx.fillStyle = esc0 ? "rgba(29,29,31,.7)" : "rgba(255,255,255,.75)"; ctx.textAlign = "right"; const tx = brl(antigo), w = ctx.measureText(tx).width; ctx.fillText(tx, 1000, 1508); ctx.fillRect(1000 - w, 1510, w, 5); } ctx.textAlign = "center"; });
+    } else if (D.lay === "balao") {
+      // Frase numa caixa branca em cima, selo estrela rosa e etiqueta de preço
+      comPulo(ctx, t, 0.05, 540, 250, () => { balaoForma(ctx, 900, 160, 1, "#ffffff"); textoNoMeio(ctx, frase || tag, 820, 52, "#1d1d1f"); });
+      comPulo(ctx, t, 0.15, 220, 160, () => { ctx.rotate(-0.12); pilulaReels(ctx, tag, 0, 0, C.pill, C.pillTexto, 34, true); });
+      foto(); loja();
+      comPulo(ctx, t, 0.5, 905, 470, () => { ctx.rotate(0.15 + Math.sin(t * 3) * 0.05); formaEstrela(ctx, 115, 10); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); textoNoMeio(ctx, selo, 150, 40, "#fff"); });
+      linhasNome(940, 52, 540, 1290); antigoRiscado(540, 1420, 48);
+      if (novo) comPulo(ctx, t, 1.15, 540, 1525, () => etiquetaReels(ctx, (antigo ? "por " : "") + preco, 0, 0, 76, 0.03));
+    } else {
+      // "oferta": o preço vem primeiro, enorme, com a porcentagem numa estrela
+      antigoRiscado(540, 205, 50);
+      if (novo) comPulo(ctx, t, 0.1, 540, 330, () => { const s = 1 + 0.04 * Math.sin(t * 8); ctx.scale(s, s); ctx.font = "900 150px Poppins"; ctx.lineWidth = 16; ctx.strokeStyle = "#1d1d1f"; ctx.lineJoin = "round"; ctx.strokeText(preco, 0, 0); ctx.fillStyle = "#ffd23f"; ctx.fillText(preco, 0, 0); });
+      foto(); loja();
+      if (antigo) comPulo(ctx, t, 0.4, 905, 470, () => { ctx.rotate(0.2); formaEstrela(ctx, 120, 16); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); textoNoMeio(ctx, `-${Math.round((1 - novo / antigo) * 100)}%`, 170, 64, "#fff", 900); });
+      comPulo(ctx, t, 0.6, 540, 1200, () => pilulaReels(ctx, selo.toUpperCase(), 0, 0, "#1d1d1f", "#ffd23f", 48, true));
+      linhasNome(940, 50, 540, 1340);
+      if (frase) comSubida(ctx, t, 0.9, () => { ctx.font = "italic 500 42px Poppins"; ctx.fillStyle = C.texto; ctx.fillText(frase, 540, 1480); });
+    }
+    if (it.cupom) comSubida(ctx, t, 1.6, () => { ctx.font = "800 42px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1735, cw, 80, 40); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1777); });
+  }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) {
     temposDoModelo(R);
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
-    const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t;
-    let M = CP ? { ...M0, titulo: CP.titulo, tag: CP.tag, sub: () => CP.sub } : M0;
-    if (R.titulo) M = { ...M, titulo: tituloDigitado(R.titulo), tag: R.titulo.replace(/[*\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 28), sub: () => "" };
+    const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t; decorAtual = decorDe(R);
+    const M = modeloEfetivo(R);
     if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : "");
     else if (t < T_INTRO + T_PROD * n) {
       const i = Math.floor((t - T_INTRO) / T_PROD), pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
@@ -3929,14 +4179,22 @@
     estilo: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/>',
     cor: '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.6-.9 1.6-1.6 0-1.4-1.2-1.6-1.2-2.8 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.5" cy="7" r="1"/>',
     musica: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    cupons: '<path d="M3 8a2 2 0 0 0 0 4v4h18v-4a2 2 0 0 1 0-4V4H3z" transform="translate(0 2)"/><path d="M14 6v12" stroke-dasharray="2 2"/>',
+    grade: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+    enquadrar: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
     produtos: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>'
   };
-  const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k]}</svg><b>${esc(nome)}</b><small>${esc(valor || "")}</small></button>`;
-  let amostra = null;
+  ICONE_EST.produtosLivre = ICONE_EST.produtos;
+  const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k] || ""}</svg><b>${esc(nome)}</b><small>${esc(valor || "")}</small></button>`;
+  let amostra = null, amostraK = "", amostraT = 0;
   function tocarAmostra(k) {
     try { if (amostra) amostra.close(); } catch (e) { /* segue */ }
-    if (!k) { amostra = null; return; }
-    try { amostra = new (window.AudioContext || window.webkitAudioContext)(); tocarTrilha(amostra, amostra.destination, 6, [], [], null, MUSICAS[k], null); const ac = amostra; setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } }, 6300); } catch (e) { /* segue */ }
+    clearTimeout(amostraT); amostra = null;
+    const parar = () => { amostraK = ""; document.querySelectorAll("[data-ouvir]").forEach((b) => { b.textContent = "▶"; b.classList.remove("tocando"); }); };
+    if (!k || k === amostraK) { parar(); return; }
+    parar(); amostraK = k;
+    const b = document.querySelector(`[data-ouvir="${k}"]`); if (b) { b.textContent = "❚❚"; b.classList.add("tocando"); }
+    try { amostra = new (window.AudioContext || window.webkitAudioContext)(); tocarTrilha(amostra, amostra.destination, 8, [], [], null, MUSICAS[k], null); const ac = amostra; amostraT = setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } parar(); }, 8300); } catch (e) { parar(); }
   }
   /** Folha genérica do estúdio */
   function folhaEst(titulo, html) {
@@ -3944,19 +4202,47 @@
     const d = $("#folhaEst"); if (!d.open) d.showModal();
   }
   const TEMAS_POST = () => Object.entries(MODELOS_REELS).filter(([, m]) => m.cat);
+  /** Modelo/campanha/título/cor de cada tela, num formato só */
+  function estLer() {
+    if (wz.canal === "reels") { const R = rr(); return { modelo: R.modelo, camp: R.camp || "", titulo: R.titulo || "", cor: R.cor }; }
+    if (wz.canal === "livre") { const L = livre(); return { modelo: L.modelo || "achadinho", camp: L.camp || "", titulo: L.tituloProp || "", cor: L.cor }; }
+    if (wz.canal === "cupons") { const C = cc(); return { modelo: C.modelo || "cupom", camp: C.camp || "", titulo: C.tituloProp || "", cor: C.cor }; }
+    if (wz.canal === "video") { const V = vd(); return { modelo: V.modelo || "achadinho", camp: V.camp || "", titulo: V.tituloProp || "", cor: V.cor }; }
+    return { modelo: wz.modelo, camp: wz.camp || "", titulo: wz.tituloArte || "", cor: wz.cor };
+  }
+  const tituloDoModelo = (e, n) => e.titulo ? tituloDigitado(e.titulo) : CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].titulo : MODELOS_REELS[e.modelo].titulo.replace("{n}", n > 1 ? n : "");
+  function estGravar(e) {
+    if (wz.canal === "reels") { const R = rr(); Object.assign(R, { modelo: e.modelo, camp: e.camp, titulo: e.titulo, cor: e.cor, legenda: null, resultado: null }); return; }
+    if (wz.canal === "livre") { const L = livre(); Object.assign(L, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, titulo: tituloDoModelo(e, L.n), legenda: "" }); return; }
+    if (wz.canal === "cupons") { const C = cc(); Object.assign(C, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, texto: null }); return; }
+    if (wz.canal === "video") { const V = vd(); Object.assign(V, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, titulo: tituloDoModelo(e, 1), resultado: null }); return; }
+    Object.assign(wz, { modelo: e.modelo, camp: e.camp, tituloArte: e.titulo, cor: e.cor }); const it = wzItem(); if (it && !it.textoEditado) it.texto = "";
+  }
   function folhaModelo(aba) {
-    const reels = wz.canal === "reels", R = reels ? rr() : null;
+    const reels = wz.canal === "reels", R = estLer();
     aba = aba || wz.abaModelo || "sugestoes"; wz.abaModelo = aba;
     const tabs = [["sugestoes", "Sugestões"], ["temas", "Temas"], ["campanhas", "Campanhas"]].map(([k, n]) => `<button type="button" data-aba-mod="${k}" class="${aba === k ? "on" : ""}">${n}</button>`).join("");
     let itens = [];
-    if (aba === "sugestoes") itens = reels ? Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => [k, m.nome, NOMES_MUSICA[m.musica][0], !R.titulo && !R.camp && R.modelo === k])
-      : MONTAGENS.map((k) => [k, NOME_MONTAGEM[k], ESTILO_MONTAGEM[k], !wz.tituloArte && !wz.camp && wz.modelo === k]);
-    if (aba === "temas") itens = TEMAS_POST().map(([k, m]) => [k, m.nome, m.sub(), reels ? !R.titulo && !R.camp && R.modelo === k : wz.temaArte === k]);
-    if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, reels ? R.camp === k && !R.titulo : wz.camp === k && !wz.tituloArte]);
-    const titulo = reels ? R.titulo : (wz.temaArte ? "" : wz.tituloArte);
+    if (aba === "sugestoes") itens = Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => [k, m.nome, DECOR[k].frase, !R.titulo && !R.camp && R.modelo === k]);
+    if (aba === "temas") itens = Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => [k, m.nome, m.sub(), !R.titulo && !R.camp && R.modelo === k]);
+    if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, R.camp === k && !R.titulo]);
     folhaEst("Modelo", `<div class="tabs-mod">${tabs}</div>
-      <div class="lista-mod">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><b>${esc(n)}</b><small>${esc(d || "")}</small>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>
-      <div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="✏️ Escrever meu título" value="${esc(titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>`);
+      <div class="lista-mod lista-mod--mini">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>
+      <div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="✏️ Escrever meu título" value="${esc(R.titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>`);
+    pintarMinis(R);
+  }
+  async function pintarMinis(R) {
+    const lista = wz.canal === "reels" ? itensReels() : wz.canal === "livre" ? livre().itens.map((x) => fila().find((y) => y.id === x.itemId)).filter(Boolean) : wz.canal === "video" ? [vdItem()].filter(Boolean) : wz.canal === "cupons" ? fila().slice(0, 1) : [wzItem()].filter(Boolean);
+    const it = lista[0] || { nome: "Seu achadinho", precoNovo: 29.9, precoAntigo: 49.9, imagem: "", loja: "" };
+    await carregarMarca(); let bmp = null;
+    if (it.id && it.imagem) { await prepararFoto(it); bmp = ppFotos[it.id]; }
+    const tmp = document.createElement("canvas");
+    for (const cv of document.querySelectorAll("[data-mini]")) {
+      const [aba, k] = cv.dataset.mini.split(":");
+      const r = aba === "campanhas" ? { modelo: R.modelo, camp: k, titulo: "", cor: CAMPANHAS[k].cor } : { modelo: k, camp: "", titulo: "", cor: DECOR[k].cor };
+      artePost(tmp, r, it, bmp, "story"); cv.getContext("2d").drawImage(tmp, 0, 0, 108, 192);
+      await new Promise((ok) => setTimeout(ok, 0));
+    }
   }
   function folhaMusica() {
     const R = rr(), atual = musicaDe(R);
@@ -3964,22 +4250,27 @@
   }
   function folhaProdutos() {
     const R = rr(), sel = itensReels(), resto = fila().filter((x) => !x.carregando && !R.itens.includes(x.id));
-    folhaEst(`Produtos (${sel.length})`, `<p class="nota">Até 5 produtos. Use as setas para mudar a ordem${R.modelo === "top" ? " (o 1º é o Top 1)" : ""}.</p>
+    folhaEst(`Produtos (${sel.length})`, `<p class="nota">Até ${limiteReels()} produtos. Use as setas para mudar a ordem${R.modelo === "top" ? " (o 1º é o Top 1)" : ""}.</p>
       <div class="lista-prod">${sel.map((x, i) => `<div class="lp-item on">${miniLoja(x, fotoMini(x))}<span>${esc(x.nome || "Sem nome")}</span>
         <button type="button" class="btn-seta" data-lp-sobe="${i}"${i === 0 ? " disabled" : ""} aria-label="Subir"><svg><use href="#i-seta-baixo"/></svg></button>
         <button type="button" class="btn-seta" data-lp-desce="${i}"${i === sel.length - 1 ? " disabled" : ""} aria-label="Descer"><svg><use href="#i-seta-baixo"/></svg></button>
         <button type="button" class="pp-caixa" aria-pressed="true" data-lp-tira="${esc(x.id)}" aria-label="Tirar"></button></div>`).join("")}
       ${resto.map((x) => `<div class="lp-item">${miniLoja(x, fotoMini(x))}<span>${esc(x.nome || "Sem nome")}</span><button type="button" class="pp-caixa" aria-pressed="false" data-lp-poe="${esc(x.id)}" aria-label="Juntar"></button></div>`).join("")}</div>`);
   }
-  function aposMudarEstudio() { if (wz.canal === "reels") { const R = rr(); R.legenda = null; R.resultado = null; } const y = scrollY; mostrarPasso(); scrollTo(0, y); }
+  function aposMudarEstudio() { if (wz.canal === "reels") { const R = rr(); R.legenda = null; R.resultado = null; } if (wz.canal === "livre") livre().legenda = ""; const y = scrollY; mostrarPasso(); scrollTo(0, y); }
   $("#wzCorpo").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-est]"); if (b) {
       const k = b.dataset.est, reels = wz.canal === "reels";
       if (k === "modelo") folhaModelo();
-      if (k === "musica") folhaMusica();
+      if (k === "musica" && wz.canal === "reels") folhaMusica();
       if (k === "produtos") folhaProdutos();
       if (k === "estilo") { const v = await escolherOpcao("Estilo da arte", MONTAGENS.map((m) => [m, ESTILO_MONTAGEM[m]]), wz.modelo); if (v) { wz.modelo = v; aposMudarEstudio(); } }
-      if (k === "cor") { const lista = reels ? Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome]) : Object.entries(CORES_NOME); const v = await escolherOpcao("Cor", lista, reels ? rr().cor : wz.cor); if (v) { if (reels) rr().cor = v; else wz.cor = v; aposMudarEstudio(); } }
+      if (k === "cor") { const lista = Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome]); const e = estLer(); const v = await escolherOpcao("Cor", lista, e.cor); if (v) { e.cor = v; estGravar(e); aposMudarEstudio(); } }
+      if (k === "musica" && wz.canal === "video") { const V = vd(); const v = await escolherOpcao("Música", Object.entries(NOMES_MUSICA).map(([m, [n, d]]) => [m, `${n} · ${d}`]), V.batida || "house"); if (v) { V.batida = v; V.resultado = null; tocarAmostra(v); aposMudarEstudio(); } return; }
+      if (k === "enquadrar") { const V = vd(); const v = await escolherOpcao("Enquadramento do vídeo", Object.entries(TEMAS_VIDEO), V.tema); if (v) { V.tema = v; V.resultado = null; aposMudarEstudio(); } }
+      if (k === "cupons") { wz.passo = "cEscolher"; mostrarPasso(); }
+      if (k === "produtosLivre") { wz.passo = "itens"; mostrarPasso(); }
+      if (k === "grade") { wz.passo = "grade"; mostrarPasso(); }
       return;
     }
     if (e.target.closest("#rTocar") && wz.canal === "reels") { rodarReels(false); }
@@ -3989,20 +4280,13 @@
     const ab = t.closest("[data-aba-mod]"); if (ab) { folhaModelo(ab.dataset.abaMod); return; }
     const em = t.closest("[data-escolhe-mod]");
     if (em) {
-      const [aba, k] = em.dataset.escolheMod.split(":");
-      if (reels) { R.titulo = ""; if (aba === "campanhas") { R.camp = k; R.cor = CAMPANHAS[k].cor; } else { R.camp = ""; R.modelo = k; } }
-      else {
-        wz.tituloArte = ""; wz.temaArte = ""; wz.camp = "";
-        if (aba === "sugestoes") wz.modelo = k;
-        if (aba === "temas") { wz.temaArte = k; wz.tituloArte = MODELOS_REELS[k].nome; }
-        if (aba === "campanhas") { wz.camp = k; wz.cor = CAMPANHAS[k].cor; }
-        const it = wzItem(); if (it && !it.textoEditado) it.texto = "";
-      }
-      $("#folhaEst").close(); aposMudarEstudio(); return;
+      const [aba, k] = em.dataset.escolheMod.split(":"), e = estLer();
+      e.titulo = ""; e.cor = aba === "campanhas" ? CAMPANHAS[k].cor : DECOR[k].cor;
+      if (aba === "campanhas") e.camp = k; else { e.camp = ""; e.modelo = k; }
+      estGravar(e); $("#folhaEst").close(); aposMudarEstudio(); return;
     }
     if (t.closest("#estTituloOk")) {
-      const v = $("#estTitulo").value.trim();
-      if (reels) { R.titulo = v; } else { wz.tituloArte = v; wz.temaArte = ""; const it = wzItem(); if (it && !it.textoEditado) it.texto = ""; }
+      const e = estLer(); e.titulo = $("#estTitulo").value.trim(); estGravar(e);
       $("#folhaEst").close(); aposMudarEstudio(); return;
     }
     const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; }
@@ -4010,9 +4294,9 @@
     const sobe = t.closest("[data-lp-sobe]"), desce = t.closest("[data-lp-desce]");
     if (sobe || desce) { const i = +(sobe ? sobe.dataset.lpSobe : desce.dataset.lpDesce), j = sobe ? i - 1 : i + 1; const ids = itensReels().map((x) => x.id); [ids[i], ids[j]] = [ids[j], ids[i]]; R.itens = ids; folhaProdutos(); return; }
     const tira = t.closest("[data-lp-tira]"); if (tira) { if (R.itens.length <= 1) { toast("Deixe pelo menos 1 produto"); return; } R.itens = R.itens.filter((x) => x !== tira.dataset.lpTira); folhaProdutos(); return; }
-    const poe = t.closest("[data-lp-poe]"); if (poe) { if (R.itens.length >= 5) { toast("No máximo 5 produtos"); return; } R.itens.push(poe.dataset.lpPoe); folhaProdutos(); return; }
+    const poe = t.closest("[data-lp-poe]"); if (poe) { if (R.itens.length >= limiteReels()) { toast(`No máximo ${limiteReels()} produtos`); return; } R.itens.push(poe.dataset.lpPoe); folhaProdutos(); return; }
   });
-  $("#folhaEst").addEventListener("close", () => { tocarAmostra(""); if (wz.canal === "reels" && wz.passo === "rModelo") aposMudarEstudio(); });
+  $("#folhaEst").addEventListener("close", () => { tocarAmostra(""); if (wz.canal === "reels" && (wz.passo === "rModelo" || wz.passo === "kCarrossel")) aposMudarEstudio(); });
   /** Título digitado: quebra em 2 linhas e destaca a última palavra (ou o que estiver entre *asteriscos*) */
   function tituloDigitado(t) {
     t = String(t || "").trim(); if (t.includes("*") || t.includes("\n")) return t;
@@ -4025,7 +4309,7 @@
     temposDoModelo(R);
     const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length;
     const titulo = R.titulo ? tituloDigitado(R.titulo) : CP ? CP.titulo : M0.titulo.replace("{n}", n > 1 ? n : "");
-    relogioReels = 0; fundoReels(ctx, C, R.cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    relogioReels = 0; decorAtual = decorDe(R); fundoReels(ctx, C, R.cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const nl = tituloReels(ctx, titulo, 300, C, 120);
     const foto = (it, cx, cy, L, raio) => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16; retArredondado(ctx, cx - L / 2, cy - L / 2, L, L, raio); ctx.fillStyle = "#fff"; ctx.fill(); ctx.restore();
@@ -4128,6 +4412,7 @@
   }
   function telaReels(c) {
     const R = rr();
+    if (wz.passo === "kCarrossel") { telaCarrossel(c); return; }
     if (wz.passo === "rItens") {
       if (!R.iniciado) { R.iniciado = true; if (wz.itemId && !R.itens.length) R.itens = [wz.itemId]; }
       const l = fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
@@ -4181,6 +4466,47 @@
       if (!r) carregarMarca().then(fotosReels).then((f) => quadroReels($("#rQuadro").getContext("2d"), 540, T_INTRO + 2.2, R, itensReels(), f));
     }
   }
+  /* ---------- Carrossel de preços: capa no tema, um slide por produto e o final ---------- */
+  async function slidesCarrossel() {
+    await carregarMarca(); const R = rr(), l = itensReels(), f = await fotosReels(), C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa;
+    const nova = () => { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1350; return cv; };
+    const capa = nova(); temposDoModelo(R); decorAtual = decorDe(R);
+    comporPost(capa.getContext("2d"), 1080, 1350, R, C, (tx) => capaReels(tx, R, l, f));
+    { const cx = capa.getContext("2d"); cx.save(); cx.textAlign = "center"; cx.textBaseline = "middle"; cx.translate(500, 1265); cx.rotate(-0.02); pilulaReels(cx, "Arrasta para o lado", 0, 0, "#ffd23f", "#1d1d1f", 40, true); cx.restore(); }
+    const slides = [capa];
+    l.forEach((it) => { const cv = nova(); artePost(cv, R, it, f[it.id] && f[it.id].bmp, "post"); slides.push(cv); });
+    const fim = nova(); decorAtual = decorDe(R); comporPost(fim.getContext("2d"), 1080, 1350, R, C, (tx) => { relogioReels = 9; fimReels(tx, 9, C, R.cor); }); slides.push(fim);
+    return slides;
+  }
+  const blobDe = (cv) => new Promise((ok) => cv.toBlob(ok, "image/jpeg", 0.92));
+  function telaCarrossel(c) {
+    const R = rr(), l = itensReels(), e = estLer(), nomeM = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
+    c.innerHTML = `<div class="estudio">
+        <div class="car-trilho" id="kTrilho"><div class="car-vazio">Montando os slides...</div></div>
+        <p class="nota car-nota">${l.length + 2} imagens: capa, ${l.length} ${l.length > 1 ? "produtos" : "produto"} e o final. Arraste para ver.</p>
+        <div class="est-ctrl est-ctrl--3">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[R.cor].nome)}${botaoEst("produtos", "Produtos", String(l.length))}</div>
+      </div>
+      <button type="button" class="btn btn--rosa" id="kPostar">Postar / compartilhar</button>
+      <button type="button" class="btn btn--branco" id="kBaixar">Baixar as ${l.length + 2} imagens</button>
+      ${blocoLegenda(R)}
+      <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
+    slidesCarrossel().then((s) => { const tr = $("#kTrilho"); if (!tr) return; tr.innerHTML = ""; s.forEach((cv) => tr.appendChild(cv)); });
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "reels" || wz.passo !== "kCarrossel") return;
+    const postar = e.target.closest("#kPostar"), baixar = e.target.closest("#kBaixar"); if (!postar && !baixar) return;
+    const slides = [...document.querySelectorAll("#kTrilho canvas")]; if (!slides.length) { toast("Espere os slides ficarem prontos"); return; }
+    const nome = (i) => `miga-carrossel-${String(i + 1).padStart(2, "0")}.jpg`;
+    const blobs = await Promise.all(slides.map(blobDe));
+    if (postar) {
+      const arqs = blobs.map((b, i) => new File([b], nome(i), { type: "image/jpeg" })), legenda = rr().legenda || legendaReels();
+      try { await navigator.clipboard.writeText(legenda); } catch (er) { /* segue */ }
+      if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs }); toast("Legenda copiada: é só colar"); return; } catch (er) { if (er && er.name === "AbortError") return; } }
+      toast("Este celular não compartilha várias imagens: vou baixar todas");
+    }
+    for (let i = 0; i < blobs.length; i++) { baixarBlob(blobs[i], nome(i)); await new Promise((ok) => setTimeout(ok, 350)); }
+    toast(`${blobs.length} imagens baixadas, na ordem do carrossel`);
+  });
   /** Legenda pronta do Reels, com nome, preço, cupom e link de cada produto */
   const LEGENDA_REELS = {
     achadinho: { um: (p) => `Achadinho do dia, miga! ✨ ${p}`, varios: (n) => `${n} achadinhos do dia pra você, miga! ✨`, tags: "#achadinhos #achadinhosdodia #promoção #ofertas" },
@@ -4258,7 +4584,7 @@
     const it = t.closest("[data-r-item]");
     if (it) {
       const id = it.dataset.rItem, i = R.itens.indexOf(id);
-      if (i >= 0) R.itens.splice(i, 1); else if (R.itens.length >= 5) { toast("No máximo 5 produtos por Reels"); return; } else R.itens.push(id);
+      if (i >= 0) R.itens.splice(i, 1); else if (R.itens.length >= limiteReels()) { toast(`No máximo ${limiteReels()} produtos`); return; } else R.itens.push(id);
       R.resultado = null; R.legenda = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
     }
     const sobe = t.closest("[data-r-sobe]"), desce = t.closest("[data-r-desce]");
