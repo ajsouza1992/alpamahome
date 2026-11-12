@@ -1216,3 +1216,9 @@ body.modo-selecao main { padding-bottom: 200px; }
 .ed-add button b svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .ed-linha .ed-ico { width: 42px; padding: 0; display: grid; place-items: center; }
 .ed-linha .ed-ico svg { width: 20px; height: 20px; fill: none; stroke: var(--preto); stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+/* Campo de marcação (flag) no lugar do ✓: círculo vazio em todas as opções, preenchido na escolhida */
+.lista-mod > button i, #folhaOpcoes button > b { display: none; }
+.lista-mod > button::after, #folhaOpcoes button::after { content: ""; position: absolute; right: 14px; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; box-sizing: border-box; border: 2px solid #cfc6b4; background: #fff; }
+.lista-mod > button.on::after, #folhaOpcoes button.on::after { border: 7px solid var(--rosa); background: #fff; }
+#folhaOpcoes button { position: relative; padding-right: 48px !important; }
+.op-cor { border-radius: 7px; }
