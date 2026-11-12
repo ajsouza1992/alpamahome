@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=91"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=92"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=91"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=92"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3288,6 +3288,7 @@
   });
   $("#wzCorpo").addEventListener("input", (e) => {
     if (wz.canal === "reels" && e.target.id === "rLegenda") { rr().legenda = e.target.value; return; }
+    if (wz.canal === "reels" && e.target.id === "rTitulo") { const R = rr(); R.titulo = e.target.value.trim(); R.legenda = null; R.resultado = null; clearTimeout(R.tt); R.tt = setTimeout(pintarModelosReels, 400); return; }
     if (wz.canal !== "video") return;
     const V = vd(), id = e.target.id, v = e.target.value;
     if (id === "vdTitulo") V.titulo = v;
@@ -3662,6 +3663,20 @@
     cupom: { nome: "Cupom liberado", desc: "Reggaeton", musica: "dembow", tag: "Cupom liberado", titulo: "*Cupom*\nliberado!", sub: () => "Desconto na mão", icone: "cupom" },
     amei: { nome: "Amei esse", desc: "Disco", musica: "disco", tag: "Amei esse", titulo: "Amei\n*esse aqui*", sub: () => "Precisava te mostrar", icone: "coracao" },
     vale: { nome: "Vale a pena", desc: "Boom bap", musica: "boombap", tag: "Vale muito a pena", titulo: "Vale\n*a pena?*", sub: () => "Olha só esse preço", icone: "check" },
+    cozinha: { nome: "Equipe sua cozinha", desc: "House", musica: "house", tag: "Equipe sua cozinha", titulo: "Equipe sua\n*cozinha*", sub: () => "Tudo que facilita o dia a dia", icone: "presente", cat: true },
+    cheirosa: { nome: "Fique cheirosa", desc: "Disco", musica: "disco", tag: "Fique cheirosa", titulo: "Fique\n*cheirosa*", sub: () => "Perfumes e hidratantes com desconto", icone: "brilho", cat: true },
+    linda: { nome: "Fique linda", desc: "Lo-fi", musica: "lofi", tag: "Fique linda", titulo: "Fique\n*linda*", sub: () => "Beleza e skincare com preço de amiga", icone: "coracao", cat: true },
+    casa: { nome: "Casa arrumadinha", desc: "Dembow", musica: "dembow", tag: "Casa arrumadinha", titulo: "Casa\n*arrumadinha*", sub: () => "Decoração e organização baratinhas", icone: "check", cat: true },
+    look: { nome: "Look do dia", desc: "Funk", musica: "funk", tag: "Look do dia", titulo: "Look\n*do dia*", sub: () => "Moda e acessórios com desconto", icone: "brilho", cat: true },
+    treino: { nome: "Treino em dia", desc: "Trap", musica: "trap", tag: "Treino em dia", titulo: "Treino\n*em dia*", sub: () => "Fitness e saúde com desconto", icone: "fogo", cat: true },
+    organiza: { nome: "Tudo organizado", desc: "Boombap", musica: "boombap", tag: "Tudo organizado", titulo: "Tudo\n*organizado*", sub: () => "Organizadores que salvam o dia", icone: "check", cat: true },
+    autocuidado: { nome: "Momento autocuidado", desc: "Lo-fi", musica: "lofi", tag: "Momento autocuidado", titulo: "Momento\n*autocuidado*", sub: () => "Pra você se cuidar com carinho", icone: "coracao", cat: true },
+    bebe: { nome: "Mamãe e bebê", desc: "House", musica: "house", tag: "Mamãe e bebê", titulo: "Mamãe\ne *bebê*", sub: () => "Achadinhos para os pequenos", icone: "coracao", cat: true },
+    pet: { nome: "Pro seu pet", desc: "Disco", musica: "disco", tag: "Pro seu pet", titulo: "Pro seu\n*pet*", sub: () => "Mimos para o seu bichinho", icone: "coracao", cat: true },
+    tech: { nome: "Achados tech", desc: "Eletronica", musica: "eletronica", tag: "Achados tech", titulo: "Achados\n*tech*", sub: () => "Tecnologia com desconto", icone: "raio", cat: true },
+    presentes: { nome: "Ideias de presente", desc: "Disco", musica: "disco", tag: "Ideias de presente", titulo: "Ideias de\n*presente*", sub: () => "Presentes que agradam e cabem no bolso", icone: "presente", cat: true },
+    ate50: { nome: "Tudo até R$ 50", desc: "Phonk", musica: "phonk", tag: "Tudo até R$ 50", titulo: "Tudo até\n*R$ 50*", sub: () => "Achadinhos baratinhos", icone: "etiqueta", cat: true },
+    viagem: { nome: "Pra levar na viagem", desc: "House", musica: "house", tag: "Pra levar na viagem", titulo: "Pra levar\nna *viagem*", sub: () => "Itens que facilitam a viagem", icone: "bolsa", cat: true },
     sohoje: { nome: "Só hoje", desc: "Phonk", musica: "phonk", tag: "Só hoje", titulo: "*Só hoje*\nnesse preço", sub: () => "Amanhã pode voltar", icone: "fogo" }
   };
   let T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 3.4;
@@ -3830,7 +3845,8 @@
     temposDoModelo(R.modelo);
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t;
-    const M = CP ? { ...M0, titulo: CP.titulo, tag: CP.tag, sub: () => CP.sub } : M0;
+    let M = CP ? { ...M0, titulo: CP.titulo, tag: CP.tag, sub: () => CP.sub } : M0;
+    if (R.titulo) M = { ...M, titulo: tituloDigitado(R.titulo), tag: R.titulo.replace(/[*\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 28) };
     if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : "");
     else if (t < T_INTRO + T_PROD * n) {
       const i = Math.floor((t - T_INTRO) / T_PROD), pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
@@ -3839,11 +3855,18 @@
     else fimReels(ctx, t - T_INTRO - T_PROD * n, C, R.cor);
     ctx.restore();
   }
+  /** Título digitado: quebra em 2 linhas e destaca a última palavra (ou o que estiver entre *asteriscos*) */
+  function tituloDigitado(t) {
+    t = String(t || "").trim(); if (t.includes("*") || t.includes("\n")) return t;
+    const p = t.split(/\s+/); if (p.length < 2) return `*${t}*`;
+    const meio = Math.ceil(p.length / 2), l1 = p.slice(0, meio).join(" "), l2 = p.slice(meio);
+    return `${l1}\n${l2.slice(0, -1).join(" ")}${l2.length > 1 ? " " : ""}*${l2[l2.length - 1]}*`;
+  }
   /** Capa do Reels com os produtos aparecendo (vitrine no perfil) */
   function capaReels(ctx, R, l, fotos) {
     temposDoModelo(R.modelo);
     const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length;
-    const titulo = CP ? CP.titulo : M0.titulo.replace("{n}", n > 1 ? n : "");
+    const titulo = R.titulo ? tituloDigitado(R.titulo) : CP ? CP.titulo : M0.titulo.replace("{n}", n > 1 ? n : "");
     relogioReels = 0; fundoReels(ctx, C, R.cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const nl = tituloReels(ctx, titulo, 300, C, 120);
     const foto = (it, cx, cy, L, raio) => {
@@ -3960,7 +3983,12 @@
     if (wz.passo === "rModelo") {
       c.innerHTML = `<h2 class="wz-titulo">Modelo do Reels</h2>
         <p class="nota">Cada modelo tem a sua animação e a sua batida. A cor vale para o vídeo inteiro.</p>
-        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}<small>${esc(m.desc)}</small></span></button>`).join("")}</div>
+        <label class="campo"><span>Título do Reels (opcional)</span><input id="rTitulo" maxlength="40" value="${esc(R.titulo || "")}" placeholder="Ex.: Equipe sua cozinha"></label>
+        <p class="nota" style="margin-top:-4px">Deixe vazio para usar o título do modelo. Vale para o vídeo, a capa e a legenda.</p>
+        <h3 class="wz-sub">Ofertas</h3>
+        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}<small>${esc(m.desc)}</small></span></button>`).join("")}</div>
+        <h3 class="wz-sub">Por categoria</h3>
+        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}<small>${esc(m.desc)}</small></span></button>`).join("")}</div>
         ${botaoContinuarCom(barraCores("data-r-cor", R.cor, CORES_VIDEO))}`;
       pintarModelosReels();
       return;
@@ -4006,6 +4034,20 @@
     cupom: { um: (p) => `🎟️ Cupom liberado! ${p}`, varios: () => "🎟️ Cupom liberado! Desconto na mão:", tags: "#cupomdedesconto #cupom #promoção #achadinhos" },
     amei: { um: (p) => `Amei esse aqui 💖 ${p} Precisava te mostrar!`, varios: () => "Amei esses aqui 💖 Precisava te mostrar:", tags: "#achadinhos #amei #comprinhas #promoção" },
     vale: { um: (p) => `Vale ou não vale? ✅ ${p} Pra mim vale muito a pena!`, varios: () => "Vale ou não vale? ✅ Pra mim, todos valem muito a pena:", tags: "#valeapena #achadinhos #promoção #ofertas" },
+    cozinha: { um: (p) => `🍳 Equipe sua cozinha, miga! ${p}`, varios: () => "🍳 Equipe sua cozinha, miga! Olha esses achadinhos:", tags: "#cozinha #utilidadesdomesticas #achadinhosdecasa #achadinhos" },
+    cheirosa: { um: (p) => `✨ Fique cheirosa gastando pouco! ${p}`, varios: () => "✨ Fique cheirosa gastando pouco! Olha esses achadinhos:", tags: "#perfume #perfumes #fiquecheirosa #achadinhos" },
+    linda: { um: (p) => `💄 Fique linda com esses achadinhos! ${p}`, varios: () => "💄 Fique linda com esses achadinhos! Olha esses achadinhos:", tags: "#beleza #skincare #maquiagem #achadinhos" },
+    casa: { um: (p) => `🏠 Casa arrumadinha gastando pouco! ${p}`, varios: () => "🏠 Casa arrumadinha gastando pouco! Olha esses achadinhos:", tags: "#casa #decoracao #organizacao #achadinhos" },
+    look: { um: (p) => `👗 Look do dia com preço de amiga! ${p}`, varios: () => "👗 Look do dia com preço de amiga! Olha esses achadinhos:", tags: "#moda #lookdodia #modafeminina #achadinhos" },
+    treino: { um: (p) => `💪 Treino em dia sem pesar no bolso! ${p}`, varios: () => "💪 Treino em dia sem pesar no bolso! Olha esses achadinhos:", tags: "#fitness #treino #vidasaudavel #achadinhos" },
+    organiza: { um: (p) => `📦 Tudo organizado e baratinho! ${p}`, varios: () => "📦 Tudo organizado e baratinho! Olha esses achadinhos:", tags: "#organizacao #organizadores #casaorganizada #achadinhos" },
+    autocuidado: { um: (p) => `🛁 Momento autocuidado, miga! ${p}`, varios: () => "🛁 Momento autocuidado, miga! Olha esses achadinhos:", tags: "#autocuidado #selfcare #skincare #achadinhos" },
+    bebe: { um: (p) => `🍼 Achadinhos para mamãe e bebê! ${p}`, varios: () => "🍼 Achadinhos para mamãe e bebê! Olha esses achadinhos:", tags: "#bebe #maternidade #enxoval #achadinhos" },
+    pet: { um: (p) => `🐾 Mimos pro seu pet! ${p}`, varios: () => "🐾 Mimos pro seu pet! Olha esses achadinhos:", tags: "#pet #cachorro #gato #achadinhos" },
+    tech: { um: (p) => `⚡ Achados de tecnologia com desconto! ${p}`, varios: () => "⚡ Achados de tecnologia com desconto! Olha esses achadinhos:", tags: "#tecnologia #eletronicos #gadgets #achadinhos" },
+    presentes: { um: (p) => `🎁 Ideias de presente com preço de amiga! ${p}`, varios: () => "🎁 Ideias de presente com preço de amiga! Olha esses achadinhos:", tags: "#presentes #ideiasdepresente #presentear #achadinhos" },
+    ate50: { um: (p) => `💸 Tudo até R$ 50, miga! ${p}`, varios: () => "💸 Tudo até R$ 50, miga! Olha esses achadinhos:", tags: "#baratinhos #ate50reais #economia #achadinhos" },
+    viagem: { um: (p) => `✈️ Achadinhos pra levar na viagem! ${p}`, varios: () => "✈️ Achadinhos pra levar na viagem! Olha esses achadinhos:", tags: "#viagem #mala #dicasdeviagem #achadinhos" },
     sohoje: { um: (p) => `🔥 Só hoje nesse preço! ${p} Amanhã pode voltar ao normal!`, varios: () => "🔥 Só hoje nesses preços! Amanhã pode voltar ao normal:", tags: "#sóhoje #promoção #achadinhos #ofertas" }
   };
   function legendaReels() {
@@ -4015,13 +4057,14 @@
     if (l.length === 1) {
       const it = l[0], nome = limparNome(it.nome || "Produto");
       if (CAMPANHAS[R.camp]) linhas.push(CAMPANHAS[R.camp].chamada.replace(/[*]/g, ""), "");
+      if (R.titulo) linhas.push(`✨ ${R.titulo.replace(/[*]/g, "")}`, "");
       linhas.push(L.um(`${nome} ${preco(it)}.`.replace(" .", ".")));
       if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
       if (linhaLoja(it.loja)) linhas.push(linhaLoja(it.loja));
       if (it.link) linhas.push(`🔗 ${it.link}`);
     } else {
       if (CAMPANHAS[R.camp]) linhas.push(CAMPANHAS[R.camp].chamada.replace(/[*]/g, ""), "");
-      linhas.push(L.varios(l.length), "");
+      linhas.push(R.titulo ? `✨ ${R.titulo.replace(/[*]/g, "")}! Olha esses achadinhos:` : L.varios(l.length), "");
       const ordem = R.modelo === "top" ? l.map((it, i) => [it, ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][i]]) : l.map((it, i) => [it, ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"][i]]);
       ordem.forEach(([it, n]) => {
         linhas.push(`${n} ${limparNome(it.nome || "Produto")}${preco(it) ? " " + preco(it) : ""}`);

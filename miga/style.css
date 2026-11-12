@@ -902,3 +902,5 @@ body.modo-selecao main { padding-bottom: 200px; }
 .capa-bloco { display: grid; gap: 6px; justify-items: center; }
 .capa-bloco span { font-size: 13px; font-weight: 600; color: var(--cinza); }
 .capa-previa { width: 140px; border-radius: 14px; box-shadow: var(--sombra); }
+
+.wz-sub { margin: 6px 0 -2px; font-size: 15px; font-weight: 800; color: var(--rosa); }
