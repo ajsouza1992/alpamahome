@@ -33,6 +33,27 @@
   const LOJA_SIGLA = { shopee: "S", mercadolivre: "ML", amazon: "a" };
   const seloLojaHtml = (loja) => LOJA_SIGLA[loja] ? `<span class="selo-loja selo-loja--${loja}" title="${NOME_LOJA[loja]}">${LOJA_SIGLA[loja]}</span>` : "";
   const linhaLoja = (loja) => LOJA_FIG[loja] ? `${LOJA_FIG[loja]} ${NOME_LOJA[loja]}` : "";
+  /** Ícone padrão da loja (círculo com a cor e a sigla) desenhado nas artes, Reels e vídeos */
+  function seloLojaCanvas(ctx, loja, cx, cy, r) {
+    if (!LOJA_SIGLA[loja]) return;
+    const cor = { shopee: "#ee4d2d", mercadolivre: "#ffe600", amazon: "#232f3e" }[loja], letra = { shopee: "#ffffff", mercadolivre: "#2d3277", amazon: "#ffffff" }[loja];
+    ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = r * 0.35; ctx.shadowOffsetY = r * 0.1;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r * 0.86, 0, Math.PI * 2); ctx.fillStyle = cor; ctx.fill();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = letra;
+    if (loja === "amazon") {
+      ctx.font = `800 ${r * 0.95}px Poppins, sans-serif`; ctx.fillText("a", cx, cy - r * 0.12);
+      ctx.strokeStyle = "#ff9900"; ctx.lineWidth = r * 0.11; ctx.lineCap = "round"; ctx.beginPath(); ctx.arc(cx, cy - r * 0.2, r * 0.5, Math.PI * 0.25, Math.PI * 0.75); ctx.stroke();
+    } else { ctx.font = `800 ${r * (loja === "mercadolivre" ? 0.62 : 0.9)}px Poppins, sans-serif`; ctx.fillText(LOJA_SIGLA[loja], cx, cy + r * 0.04); }
+    ctx.restore();
+  }
+  /** Coloca a loja na legenda, logo antes da linha do link */
+  function comLoja(texto, loja, link) {
+    const l = linhaLoja(loja); if (!l || !link || texto.includes(l)) return texto;
+    const i = texto.lastIndexOf(link); if (i < 0) return texto + "\n" + l;
+    const ini = texto.lastIndexOf("\n", i) + 1;
+    return texto.slice(0, ini) + l + "\n" + texto.slice(ini);
+  }
   const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
   const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração", saude: "Saúde e Fitness", outros: "Outros" };
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
@@ -603,7 +624,7 @@
       off: p.precoAntigo && p.precoAntigo > p.precoNovo ? Math.round((1 - p.precoNovo / p.precoAntigo) * 100) : 0,
       frase: FRASES[p.categoria] || FRASES.outros
     };
-    return comConvite((MODELOS_TEXTO[estilo] || MODELOS_TEXTO.amiga).f(p, x));
+    return comConvite(comLoja((MODELOS_TEXTO[estilo] || MODELOS_TEXTO.amiga).f(p, x), p.loja, p.link));
   }
   function comConvite(texto) {
     const g = config.grupos.find((x) => x.id === config.convite);
@@ -1058,7 +1079,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=70"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=72"; });
     }
     edFoto = null;
     try {
@@ -1145,6 +1166,7 @@
   const linhasTitulo = (t) => String(t || "").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 4)
     .map((l) => l.split(/(\*[^*]+\*)/).filter(Boolean).map((p) => /^\*.+\*$/.test(p) ? [p.slice(1, -1), 1] : [p, 0]));
   const comBotao = (d) => d.botao ? [["gap", 44], ["pill", d.botao]] : [];
+  const comCupom = (d) => d.cupom ? [["gap", 22], ["cupomP", d.cupom]] : [];
   const comTexto = (d, gap = 26) => d.texto ? [["gap", gap], ["sub", d.texto]] : [];
   const comLink = (d) => d.espaco ? [["gap", 30], ["link", 0]] : [];
   /* Cada modelo: valores iniciais dos campos (todos editáveis) + blocos de cima para baixo.
@@ -1152,19 +1174,19 @@
   const MODELOS = {
     achadinho: { nome: "achadinho-do-dia", fundo: "creme", produto: true, logo: false,
       padrao: { titulo: "Achadinho\n*do dia* ✨", texto: "", botao: "" },
-      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comTexto(d, 18), ...comBotao(d), ...comLink(d)] },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comCupom(d), ...comTexto(d, 18), ...comBotao(d), ...comLink(d)] },
     relampago: { nome: "oferta-relampago", fundo: "rosa", produto: true, logo: false,
       padrao: { titulo: "Oferta\n*relâmpago* ⚡", texto: "Corre que é por pouco tempo!", botao: "" },
-      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 1], ["gap", 30], ["preco", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 1], ["gap", 30], ["preco", 0], ...comCupom(d), ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
     baixou: { nome: "baixou-o-preco", fundo: "creme", produto: true, logo: false,
       padrao: { titulo: "*Baixou*\no preço! *↓*", texto: "", botao: "" },
-      blocos: (d) => [["titulo", d.titulo], ["gap", 30], ["precoGrande", 0], ["gap", 30], ["foto", 1], ["gap", 26], ["nome", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 30], ["precoGrande", 0], ["gap", 30], ["foto", 1], ["gap", 26], ["nome", 0], ...comCupom(d), ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
     ultimas: { nome: "ultimas-horas", fundo: "rosa", produto: true, logo: false,
       padrao: { titulo: "*Últimas*\nhoras ⏰", texto: "Esse preço termina hoje!", botao: "" },
-      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comCupom(d), ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
     novidade: { nome: "chegou-novidade", fundo: "branco", produto: true, logo: false,
       padrao: { titulo: "Chegou\n*novidade* 💖", texto: "", botao: "" },
-      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
+      blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 30], ["nome", 0], ["gap", 10], ["preco", 0], ...comCupom(d), ...comTexto(d, 14), ...comBotao(d), ...comLink(d)] },
     enquete: { nome: "voce-usaria", fundo: "creme", produto: true, logo: false, rotuloLink: "enquete",
       padrao: { titulo: "Você *usaria*? 🤔", texto: "Responde aqui embaixo 👇", botao: "" },
       blocos: (d) => [["titulo", d.titulo], ["gap", 34], ["foto", 0], ["gap", 26], ["nome", 0], ...comTexto(d, 18), ...comBotao(d), ...comLink(d)] },
@@ -1223,6 +1245,12 @@
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
+    // Bolinhas pequenas
+    ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(W - 70, H * 0.17, 28, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(66, H * 0.8, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(W - 150, H * 0.62, 12, 0, Math.PI * 2); ctx.fill();
+    // Ícone da loja na bolinha do canto
+    if (d.loja) seloLojaCanvas(ctx, d.loja, 92, 92, 58);
 
     const blocos = [...(d.logo ? [["logo", 260], ["gap", 40]] : []), ...M.blocos(d)].filter(([t, v]) => t !== "titulo" || (v && v.length));
     const FT = Math.round(96 * escala), FS = Math.round(40 * escala), LARG = W - 180;
@@ -1236,6 +1264,7 @@
       if (tipo === "passos") return v.length * 160 * escala + (v.length - 1) * 26 * escala;
       if (tipo === "cats") return 2 * 220 * escala + 26 * escala;
       if (tipo === "cupom") return 170 * escala;
+      if (tipo === "cupomP") return 104 * escala;
       if (tipo === "nome") { ctx.font = `700 ${Math.round(46 * escala)}px Poppins`; return p.nome ? quebrarTexto(ctx, p.nome, LARG, 2).length * 58 * escala : 0; }
       if (tipo === "preco") return p.novo ? (p.antigo ? 150 : 100) * escala : 0;
       if (tipo === "precoGrande") return p.novo ? (p.antigo ? 230 : 180) * escala : 0;
@@ -1367,6 +1396,13 @@
         ctx.setLineDash([22, 14]); ctx.lineWidth = 7; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore();
       }
+      if (tipo === "cupomP") {
+        ctx.font = `800 ${Math.round(44 * escala)}px Poppins`;
+        const t = "CUPOM " + String(v).toUpperCase(), cw = ctx.measureText(t).width + 90 * escala;
+        retArredondado(ctx, (W - cw) / 2, y + 4 * escala, cw, h - 8 * escala, (h - 8 * escala) / 2); ctx.fillStyle = "#ffffff"; ctx.fill();
+        ctx.setLineDash([16, 10]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, W / 2, y + h / 2 + 2);
+      }
       if (tipo === "link" && d.previa && false) {
         // Só na prévia: onde colocar o adesivo de link (ou de enquete) do Instagram
         const lw = 320 * escala;
@@ -1414,7 +1450,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=70"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=72"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1694,7 +1730,7 @@
     ["roteiro", "Postar um produto", "Story, Status, grupos, canal e Telegram", (n) => n === 1, "Marque só 1 produto."],
     ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
     ["video", "Vídeo com tema", "Seu vídeo com abertura e final com música", (n) => n === 1, "Marque só 1 produto."],
-    ["livre", "Criação livre", "Uma imagem com vários produtos", (n) => n >= 1 && n <= 9, "Marque até 9 produtos."]
+    ["livre", "Criação livre", "Uma imagem com vários produtos", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."]
   ];
   $("#oQueCriar").addEventListener("click", () => {
     const n = itensMarcados().length; if (!n) return;
@@ -1715,8 +1751,8 @@
     if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: "rosa", resultado: null, iniciado: true }; wz.passo = "rModelo"; }
     else if (canal === "video") { usarProdutoNoVideo(l[0]); vd().iniciado = true; wz.passo = "vDados"; }
     else if (canal === "livre") {
-      const L = livre(); L.itens = l.slice(0, 9).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
-      L.n = [2, 3, 4, 6, 9].find((q) => q >= L.itens.length) || 9; wz.passo = "grade";
+      const L = livre(); L.itens = l.slice(0, 6).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
+      L.n = [2, 3, 4, 6].find((q) => q >= L.itens.length) || 6; wz.passo = "grade";
     } else wz.passo = "lugares";
     marcados.clear();
     irPara("criar"); mostrarPasso();
@@ -1844,10 +1880,10 @@
     if (canal === "reels") return ["canal", "rItens", "rModelo", ...((wz.reels && wz.reels.itens.length > 1) ? ["rOrdem"] : []), "rPronto"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
-    if (canal === "instagram") return [...base, "formato", "montagem", "cor", "postar"];
+    if (canal === "instagram") return [...base, "formato", "montagem", "postar"];
     if (canal === "telegram") return [...base, "mensagem", "telegram"];
     // WhatsApp: mensagem para os grupos ou imagem para o Status
-    if (wz.tipoWhats === "status") return [...base, "tipoWhats", "montagem", "cor", "postar"];
+    if (wz.tipoWhats === "status") return [...base, "tipoWhats", "montagem", "postar"];
     return [...base, "tipoWhats", "mensagem", "enviar"];
   }
   const filtroCatWz = () => `<button type="button" class="chip-filtro chip-filtro--largo" data-wz-cat><small>Categoria</small><b>${(wz.filtroCat && wz.filtroCat !== "todas") ? CATS_LISTA[wz.filtroCat] : "Todas"}</b><span class="seta">▾</span></button>`;
@@ -1871,6 +1907,9 @@
   });
   const opcaoCard = (attr, v, titulo, desc, on, extra = "") => `<button type="button" class="wz-op${on ? " on" : ""}" ${attr}="${esc(v)}">${extra}<span><b>${esc(titulo)}</b>${desc ? `<small>${esc(desc)}</small>` : ""}</span></button>`;
   const botaoContinuar = (ok, rot = "Continuar") => `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button></div>`;
+  // Barra de cores fixa embaixo, junto do Continuar (como no Reels)
+  const barraCores = (attr, atual, nomes) => `<div class="barra-cores"><span>Cor</span><div>${Object.entries(nomes).map(([k, n]) => `<button type="button" ${attr}="${k}" class="cor-${k}" aria-checked="${atual === k}">${esc(typeof n === "string" ? n : n.nome)}</button>`).join("")}</div></div>`;
+  const botaoContinuarCom = (extra, ok = true, rot = "Continuar") => `<div class="wz-rodape">${extra}<button type="button" class="btn btn--rosa wz-continuar" id="wzContinuar"${ok ? "" : " disabled"}>${rot}</button></div>`;
 
   function mostrarPasso() {
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
@@ -1922,12 +1961,11 @@
       return;
     }
     if (wz.passo === "montagem" || wz.passo === "cor") {
-      const porCor = wz.passo === "cor";
-      const lista = porCor ? ["auto", "creme", "rosa", "branco", "preto"] : MONTAGENS;
-      c.innerHTML = `<h2 class="wz-titulo">${porCor ? "Escolha a cor" : "Escolha a montagem"}</h2>
-        <div class="wz-miniaturas">${lista.map((v) => `<button type="button" class="wz-mini${(porCor ? wz.cor : wz.modelo) === v ? " on" : ""}" data-${porCor ? "cor" : "modelo"}="${v}"><canvas></canvas><span>${porCor ? (v === "auto" ? "Do modelo" : CORES_NOME[v]) : NOME_MONTAGEM[v]}</span></button>`).join("")}</div>
-        ${botaoContinuar(true)}`;
-      desenharMiniaturas(porCor);
+      if (!CORES_NOME[wz.cor]) wz.cor = MODELOS[wz.modelo].fundo;
+      c.innerHTML = `<h2 class="wz-titulo">Escolha a montagem</h2>
+        <div class="wz-miniaturas">${MONTAGENS.map((v) => `<button type="button" class="wz-mini${wz.modelo === v ? " on" : ""}" data-modelo="${v}"><canvas></canvas><span>${NOME_MONTAGEM[v]}</span></button>`).join("")}</div>
+        ${botaoContinuarCom(barraCores("data-cor", wz.cor, CORES_NOME))}`;
+      desenharMiniaturas(false);
       return;
     }
     if (wz.passo === "postar") {
@@ -2008,7 +2046,7 @@
     const tw = t.closest("[data-tipo-whats]"); if (tw) { wz.tipoWhats = tw.dataset.tipoWhats; if (wz.tipoWhats === "status") wz.formato = "story"; mostrarPasso(); return; }
     const fo = t.closest("[data-formato]"); if (fo) { wz.formato = fo.dataset.formato; mostrarPasso(); return; }
     const mo = t.closest("[data-modelo]"); if (mo) { wz.modelo = mo.dataset.modelo; document.querySelectorAll(".wz-mini").forEach((b) => b.classList.toggle("on", b === mo)); return; }
-    const co = t.closest("[data-cor]"); if (co) { wz.cor = co.dataset.cor; document.querySelectorAll(".wz-mini").forEach((b) => b.classList.toggle("on", b === co)); return; }
+    const co = t.closest("[data-cor]"); if (co) { wz.cor = co.dataset.cor; document.querySelectorAll("[data-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); desenharMiniaturas(false); return; }
     if (t.closest("#wzContinuar")) { irPasso(1); return; }
     if (t.closest("#wzColar")) {
       try { const v = (await navigator.clipboard.readText()).trim(); const it = await adicionarNaFila(v); if (it) { wz.itemId = it.id; mostrarPasso(); } }
@@ -2113,7 +2151,7 @@
   }
   function dadosMontagem(it, modelo, previa) {
     const M = MODELOS[modelo];
-    return { previa, insta: "", titulo: linhasTitulo(M.padrao.titulo), texto: M.padrao.texto, botao: "", logo: false, espaco: wz.formato === "story", cupom: it.cupom || "", foto: ppFotos[it.id] || null, produto: { nome: limparNome(it.nome), antigo: it.precoAntigo, novo: it.precoNovo } };
+    return { previa, insta: "", titulo: linhasTitulo(M.padrao.titulo), texto: M.padrao.texto, botao: "", logo: false, espaco: wz.formato === "story", cupom: it.cupom || "", loja: it.loja || "", foto: ppFotos[it.id] || null, produto: { nome: limparNome(it.nome), antigo: it.precoAntigo, novo: it.precoNovo } };
   }
   function desenharMontagem(tela, previa, modelo, cor, formato) {
     const it = wzItem(); if (!it || !tela) return;
@@ -2122,7 +2160,7 @@
   }
   async function desenharMiniaturas(porCor) {
     const it = wzItem();
-    const pintar = () => document.querySelectorAll(".wz-mini").forEach((b) => desenharMontagem(b.querySelector("canvas"), false, porCor ? wz.modelo : b.dataset.modelo, porCor ? b.dataset.cor : "auto"));
+    const pintar = () => document.querySelectorAll(".wz-mini").forEach((b) => desenharMontagem(b.querySelector("canvas"), false, porCor ? wz.modelo : b.dataset.modelo, porCor ? b.dataset.cor : wz.cor));
     pintar();
     await prepararFoto(it);
     if (wz.passo === (porCor ? "cor" : "montagem")) pintar();
@@ -2132,7 +2170,7 @@
     if (wz.canal === "whatsapp") {
       // Status do WhatsApp: imagem + texto com o link (no Status o link fica clicável)
       const tela = document.createElement("canvas"); desenharMontagem(tela, false);
-      const texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""} 👉 ${it.link}`;
+      const texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}${linhaLoja(it.loja) ? " · " + linhaLoja(it.loja) : ""} 👉 ${it.link}`;
       tela.toBlob(async (blob) => {
         const arq = blob && new File([blob], nomeArquivo(it.nome), { type: "image/jpeg" });
         if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
@@ -2170,7 +2208,7 @@
   const precisaArte = () => (wz.lugares || []).some((k) => LUGARES[k].arte);
   const precisaTexto = () => (wz.lugares || []).some((k) => LUGARES[k].texto);
   function passosRoteiro() {
-    return ["canal", ...(wz.veioDaLista ? [] : ["produto"]), "lugares", ...(precisaArte() ? ["montagem", "cor"] : []), ...(precisaTexto() ? ["mensagem"] : []), "rodar", "resumo"];
+    return ["canal", ...(wz.veioDaLista ? [] : ["produto"]), "lugares", ...(precisaArte() ? ["montagem"] : []), ...(precisaTexto() ? ["mensagem"] : []), "rodar", "resumo"];
   }
   function telaRoteiro(c, item) {
     if (wz.passo === "lugares") {
@@ -2232,6 +2270,17 @@
     return "sem";
   }
   const telaParaArquivo = (tela, nome) => new Promise((ok) => tela.toBlob((b) => ok(b ? new File([b], nome, { type: "image/jpeg" }) : null), "image/jpeg", 0.92));
+  /** Foto do produto com o ícone da loja no cantinho (para os grupos e o canal) */
+  async function fotoComLoja(arq, loja) {
+    if (!arq || !LOJA_SIGLA[loja]) return arq;
+    try {
+      const bmp = await createImageBitmap(arq), s = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+      const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
+      const r = Math.max(26, Math.min(c.width, c.height) * 0.075); seloLojaCanvas(x, loja, r * 1.35, r * 1.35, r);
+      return await new Promise((ok) => c.toBlob((b) => ok(b ? new File([b], arq.name || "achadinho.jpg", { type: "image/jpeg" }) : arq), "image/jpeg", 0.92));
+    } catch (e) { return arq; }
+  }
   async function postarLugar() {
     const it = wzItem(), k = wz.lugares[wz.idx], L = LUGARES[k];
     let r = "sem";
@@ -2240,15 +2289,15 @@
       const arq = await telaParaArquivo(tela, nomeArquivo(it.nome));
       let texto = "";
       if (k === "story") await copiarTexto(it.link);
-      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""} 👉 ${it.link}`;
+      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}${linhaLoja(it.loja) ? " · " + linhaLoja(it.loja) : ""} 👉 ${it.link}`;
       if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(base.split(it.link).join("🔗 link na bio").replace(/[*~_]/g, "").trim()); }
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { if (arq) baixarBlob(arq, arq.name); if (texto) await copiarTexto(texto); toast("Imagem salva: abra o app e escolha da galeria"); }
     } else if (k === "telegram") {
       abrirTelegram(); r = "aberto";
     } else {
-      const foto = it.imagem ? await converterImagem(await arquivoDaImagem(it.imagem)) : null;
-      r = await compartilharArquivo(foto, it.texto);
+      const foto = it.imagem ? await fotoComLoja(await converterImagem(await arquivoDaImagem(it.imagem)), it.loja) : null;
+      r = await compartilharArquivo(foto, comLoja(it.texto || "", it.loja, it.link));
       if (r === "sem") { await copiarTexto(it.texto); abrirWhatsApp(it.texto); r = "aberto"; }
     }
     if (r === "cancelado") return;
@@ -2358,7 +2407,7 @@
     const L = livre();
     const tema = L.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " ").trim();
     const itens = L.itens.slice(0, L.n).map((it, k) =>
-      `${NUM[k]} *${it.nome || "Produto " + (k + 1)}*${it.preco ? `\n💸 por *${brl(it.preco)}*` : ""}${it.link ? `\n👉 ${it.link}` : ""}`);
+      `${NUM[k]} *${it.nome || "Produto " + (k + 1)}*${it.preco ? `\n💸 por *${brl(it.preco)}*` : ""}${it.link && linhaLoja(detectarLoja(it.link)) ? `\n${linhaLoja(detectarLoja(it.link))}` : ""}${it.link ? `\n👉 ${it.link}` : ""}`);
     return `Miga, separei uns achadinhos pra você! 🛍️💖\n${tema}\n\n${itens.join("\n\n")}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
   }
   const legendaLivre = () => { const L = livre(); return L.legenda || legendaPadrao(); };
@@ -2623,11 +2672,12 @@
       if (V.botao) pilula(V.botao, w / 2, h - 200, C.pill, C.pillTexto, 40);
       marca(50, 60, 150, "#ffffff");
     }
+    if (V.loja) seloLojaCanvas(ctx, V.loja, 96, 96, 60);
     ctx.restore();
   }
   const vdItem = () => fila().find((i) => i.id === vd().itemId);
   function usarProdutoNoVideo(it) {
-    const V = vd(); V.itemId = it ? it.id : null;
+    const V = vd(); V.itemId = it ? it.id : null; V.loja = it ? it.loja || "" : "";
     if (it) { V.nome = limparNome(it.nome || ""); V.antigo = it.precoAntigo || null; V.novo = it.precoNovo || null; V.cupom = it.cupom || ""; }
   }
   /** Foto do produto pronta para mandar à IA de vídeo (JPEG), com opção de trocar */
@@ -2651,9 +2701,9 @@
       if (!V.iniciado) { V.iniciado = true; const ini = wzItem() || fila().find((x) => !x.carregando && x.nome); if (ini) usarProdutoNoVideo(ini); }
       const l2 = fila().filter((x) => !x.carregando);
       c.innerHTML = `<h2 class="wz-titulo">O que vai aparecer no vídeo?</h2>
-        <p class="nota">Toque num produto da lista ou cole o link: nome, foto e preço já vêm preenchidos.</p>
+        ${wz.veioDaLista ? `<p class="nota">Confira os textos que vão aparecer no vídeo.</p>` : `<p class="nota">Toque num produto da lista ou cole o link: nome, foto e preço já vêm preenchidos.</p>
         <div class="colar"><input id="vdLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off"><button type="button" class="colar__btn" id="vdColar">Colar</button></div>
-        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>
+        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>`}
         <label class="campo"><span>Título</span><textarea id="vdTitulo" rows="2">${esc(V.titulo)}</textarea></label>${chipsTitulos("vdTitulo")}
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
         <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
@@ -2794,7 +2844,7 @@
       retArredondado(ctx, -L / 2, -L / 2, L, L, 60); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
       const s = Math.min((L - 70) / foto.width, (L - 70) / foto.height); ctx.drawImage(foto, -foto.width * s / 2, -foto.height * s / 2, foto.width * s, foto.height * s);
     });
-    const yPreco = foto ? yFoto + 480 : yFoto;
+    const yPreco = foto ? yFoto + (V.cupom ? 440 : 480) : yFoto;
     if (V.novo) {
       if (V.antigo && V.antigo > V.novo) comSubida(ctx, t, 1.35, () => {
         ctx.font = "600 48px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.8; const tx = "de " + brl(V.antigo); ctx.fillText(tx, 540, yPreco - 112);
@@ -2802,6 +2852,12 @@
       });
       comPulo(ctx, t, 1.6, 540, yPreco, () => { ctx.rotate(-0.04); pilulaReels(ctx, (V.antigo > V.novo ? "por " : "") + brl(V.novo), 0, 0, "#ffd23f", "#1d1d1f", 70, true); });
     }
+    if (V.cupom) comSubida(ctx, t, 2.0, () => {
+      ctx.font = "800 46px Poppins"; const tx = "CUPOM " + String(V.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 80;
+      retArredondado(ctx, 540 - cw / 2, yPreco + 105, cw, 90, 45); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.setLineDash([14, 9]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, yPreco + 152);
+    });
+    if (V.loja) comPulo(ctx, t, 0.1, 96, 96, () => seloLojaCanvas(ctx, V.loja, 0, 0, 60));
     ctx.restore();
   }
   /** Final (3,8 s): logo, "Segue a Miga!", seu @ e o botão */
@@ -3345,8 +3401,9 @@
     ctx.textAlign = "center"; return linhas.length;
   }
   function etiquetaReels(ctx, texto, cx, cy, tam = 50, giro = -0.04) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(giro); pilulaReels(ctx, texto, 0, 0, "#ffd23f", "#1d1d1f", tam, true); ctx.restore(); }
-  function introReels(ctx, t, M, C, cor, n) {
+  function introReels(ctx, t, M, C, cor, n, lojaUnica) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (lojaUnica) comPulo(ctx, t, 0.1, 96, 96, () => seloLojaCanvas(ctx, lojaUnica, 0, 0, 60));
     comPulo(ctx, t, 0.1, 540, 360, () => { if (edMarca) ctx.drawImage(edMarca, -130, -130, 260, 260); });
     comSubida(ctx, t, 0.35, () => tituloReels(ctx, M.titulo.replace("{n}", n > 1 ? n : ""), 760, C, 140));
     comSubida(ctx, t, 0.85, () => { ctx.font = "600 60px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.9; ctx.fillText(M.sub(n), 540, 1080); });
@@ -3365,8 +3422,9 @@
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const tag = mk === "top" ? (idx === 0 ? "O mais amado!" : `Top ${n} achadinhos`) : M.tag;
     comPulo(ctx, t, 0.05, 540, 250, () => { if (mk === "relampago") ctx.rotate(Math.sin(t * 30) * 0.03 * Math.max(0, 1 - t)); etiquetaReels(ctx, tag, 0, 0, 46); });
-    // Foto
-    const L = 760, fy = 820;
+    seloLojaCanvas(ctx, it.loja, 96, 96, 60);
+    // Foto (menor quando tem cupom, para sobrar espaço)
+    const L = it.cupom ? 640 : 760, fy = it.cupom ? 790 : 820;
     const foto = () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
       if (bmp) { const s = Math.min((L - 80) / bmp.width, (L - 80) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.save(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.clip(); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); ctx.restore(); }
@@ -3433,7 +3491,7 @@
     temposDoModelo(R.modelo);
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const M = MODELOS_REELS[R.modelo], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t;
-    if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n);
+    if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : "");
     else if (t < T_INTRO + T_PROD * n) {
       const i = Math.floor((t - T_INTRO) / T_PROD), pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
       produtoReels(ctx, t - T_INTRO - i * T_PROD, it, fotos[it.id] && fotos[it.id].bmp, pos, n, R.modelo, M, C, R.cor);
@@ -3528,8 +3586,7 @@
       c.innerHTML = `<h2 class="wz-titulo">Modelo do Reels</h2>
         <p class="nota">Cada modelo tem a sua animação e a sua batida. A cor vale para o vídeo inteiro.</p>
         <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}<small>${esc(m.desc)}</small></span></button>`).join("")}</div>
-        <div class="campo"><span>Cor</span><div class="alternar">${Object.entries(CORES_VIDEO).map(([k, x]) => `<button type="button" role="radio" data-r-cor="${k}" aria-checked="${R.cor === k}">${x.nome}</button>`).join("")}</div></div>
-        ${botaoContinuar(true)}`;
+        ${botaoContinuarCom(barraCores("data-r-cor", R.cor, CORES_VIDEO))}`;
       pintarModelosReels();
       return;
     }
@@ -3583,6 +3640,7 @@
       const it = l[0], nome = limparNome(it.nome || "Produto");
       linhas.push(L.um(`${nome} ${preco(it)}.`.replace(" .", ".")));
       if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
+      if (linhaLoja(it.loja)) linhas.push(linhaLoja(it.loja));
       if (it.link) linhas.push(`🔗 ${it.link}`);
     } else {
       linhas.push(L.varios(l.length), "");
@@ -3590,6 +3648,7 @@
       ordem.forEach(([it, n]) => {
         linhas.push(`${n} ${limparNome(it.nome || "Produto")}${preco(it) ? " " + preco(it) : ""}`);
         if (it.cupom) linhas.push(`🎟️ Cupom: ${String(it.cupom).toUpperCase()}`);
+        if (linhaLoja(it.loja)) linhas.push(linhaLoja(it.loja));
         if (it.link) linhas.push(`🔗 ${it.link}`);
         linhas.push("");
       });

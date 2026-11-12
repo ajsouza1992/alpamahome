@@ -733,3 +733,13 @@ body.travado { overflow: hidden; }
 body.com-marcados main { padding-bottom: 90px; }
 .wz-op.desligado { opacity: .42; cursor: default; }
 #folhaCriarOps { margin-bottom: 12px; }
+
+/* Barra de cores embaixo, junto do Continuar */
+.barra-cores { width: 100%; max-width: 496px; margin: 0 auto 8px; padding: 8px 10px; border-radius: 20px; background: var(--branco); box-shadow: var(--sombra); }
+.barra-cores > span { display: block; font-size: 12px; font-weight: 600; color: var(--cinza); margin: 0 0 6px 4px; }
+.barra-cores > div { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.barra-cores button { min-height: 40px; border: 0; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: inset 0 0 0 1.5px var(--linha); background: var(--branco); color: var(--preto); }
+.barra-cores .cor-creme { background: #fff3c4; } .barra-cores .cor-rosa { background: #e8336d; color: #fff; } .barra-cores .cor-preto { background: #1d1d1f; color: #fff; }
+.barra-cores button[aria-checked="true"] { box-shadow: 0 0 0 3px var(--branco), 0 0 0 5px var(--rosa); }
+.wz-rodape:has(.barra-cores) { display: block; }
+.wz__corpo:has(.barra-cores) { padding-bottom: 120px; }
