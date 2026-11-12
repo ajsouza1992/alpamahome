@@ -461,6 +461,7 @@
   document.addEventListener("click", (e) => { if (e.target.closest("[data-abrir-link]")) e.stopPropagation(); }, true);
   /* =========================== Abas =========================== */
   function irPara(aba) {
+    if (modoVarios && (aba === "postar" || aba === "historico")) { modoVarios = false; marcados.clear(); }
     document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-" + aba; });
     document.querySelectorAll(".abas button").forEach((b) => {
       if (b.dataset.aba === aba) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
@@ -1097,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=121"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=122"; });
     }
     edFoto = null;
     try {
@@ -1470,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=121"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=122"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1583,8 +1584,9 @@
     if (logo) ir(); else ppSalvarTimer = setTimeout(ir, 600);
   }
   function contarFila() {
-    const n = fila().length;
+    const n = fila().filter((i) => !foiCompartilhado(i)).length, h = fila().filter(foiCompartilhado).length;
     $("#contPostar").hidden = !n; $("#contPostar").textContent = n;
+    $("#contHistorico").hidden = !h; $("#contHistorico").textContent = h;
   }
   const tagsFeito = (i) => {
     const f = i.feito || {};
@@ -1638,7 +1640,7 @@
     $("#ppTags").innerHTML = tags.map(([k, n]) => `<button type="button" data-tirar-filtro="${k}">${esc(n)} ✕</button>`).join("");
     $("#ppFiltroQtd").hidden = !tags.length; $("#ppFiltroQtd").textContent = tags.length;
     $("#ppFiltrar").classList.toggle("ativo", !!tags.length);
-    const vis = fila().filter((i) => (filtroLista === "todas" || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i))).length;
+    const vis = fila().filter((i) => (filtroLista === "todas" || (i.categoria || "outros") === filtroLista) && !foiCompartilhado(i)).length;
     $("#ppTotal").textContent = `${vis} produto${vis === 1 ? "" : "s"}`;
   }
   const opTexto = (sel, lista, atual, attr) => { $(sel).innerHTML = lista.map(([v, n]) => `<button type="button" data-${attr}="${v}" class="${v === atual ? "on" : ""}">${esc(n)}</button>`).join(""); };
@@ -1682,7 +1684,7 @@
   let modoCompletar = false;
   function renderFila() {
     renderCatsLista(); pintarMarcados();
-    const l = ordenar(fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i))));
+    const l = ordenar(fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && !foiCompartilhado(i)));
     $("#ppLista").innerHTML = painelHoje() + (l.length ? l.map((i) => `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
@@ -1690,7 +1692,7 @@
           <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>` : `<button type="button" class="pp-lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`);
+      </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>` : `<button type="button" class="pp-lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().some((i) => !foiCompartilhado(i)) ? "Nenhum produto nessa categoria." : fila().length ? "Tudo postado! O que você já postou está no Histórico." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`);
     pintarMarcados();
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
@@ -1779,17 +1781,20 @@
   /* ---------- Marcar produtos na Lista e escolher o que criar ---------- */
   const marcados = new Set();
   let modoVarios = false;
-  function entrarModoVarios() { modoVarios = true; renderFila(); }
-  function sairModoVarios() { modoVarios = false; marcados.clear(); renderFila(); }
+  function entrarModoVarios() { modoVarios = true; renderFila(); if (!$("#aba-historico").hidden) renderHistorico(); }
+  function sairModoVarios() { modoVarios = false; marcados.clear(); renderFila(); if (!$("#aba-historico").hidden) renderHistorico(); }
   const itensMarcados = () => fila().filter((i) => marcados.has(i.id) && !i.carregando);
   function pintarMarcados() {
     for (const id of [...marcados]) if (!fila().some((i) => i.id === id)) marcados.delete(id);
     const n = marcados.size, b = $("#barraMarcados");
-    b.hidden = !modoVarios || $("#aba-postar").hidden || !!ppAtual;
+    b.hidden = !modoVarios || ($("#aba-postar").hidden && $("#aba-historico").hidden) || !!ppAtual;
     // Modo seleção: a barra de baixo vira os botões de criar
     document.body.classList.toggle("modo-selecao", !b.hidden);
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
-    $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
+    $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
+    $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
+    const visH = [...document.querySelectorAll("#historico [data-marcar]")].map((x) => x.dataset.marcar);
+    $("#hiTodosCx").classList.toggle("on", !!visH.length && visH.every((id) => marcados.has(id)));
     $("#ppTodos").hidden = !modoVarios; $("#ppTotal").hidden = modoVarios; $("#ppFiltrar").hidden = modoVarios;
     const vis = [...document.querySelectorAll("#ppLista [data-marcar]")].map((x) => x.dataset.marcar);
     $("#ppTodosCx").classList.toggle("on", !!vis.length && vis.every((id) => marcados.has(id)));
@@ -1831,9 +1836,10 @@
   });
   $("#excluirMarcados").addEventListener("click", async () => {
     const l = itensMarcados(); if (!l.length) return;
-    if (!(await confirmar({ titulo: `Excluir ${l.length} ${l.length === 1 ? "produto" : "produtos"}?`, texto: "Eles saem da sua lista (o que já foi compartilhado continua no Histórico).", ok: "Excluir" }))) return;
+    if (!(await confirmar({ titulo: `Excluir ${l.length} ${l.length === 1 ? "produto" : "produtos"}?`, texto: "Eles saem do app (da Lista e do Histórico).", ok: "Excluir" }))) return;
     const ids = new Set(l.map((i) => i.id)); config.fila = fila().filter((i) => !ids.has(i.id)); marcados.clear();
-    renderFila(); salvarFila(true); contarFila(); toast("Produtos excluídos");
+    l.forEach((i) => { if (i.histId) dados.apagar(i.histId).catch(() => {}); });
+    renderFila(); salvarFila(true); contarFila(); if (!$("#aba-historico").hidden) renderHistorico(); toast("Produtos excluídos");
   });
   /* ---------- Campanhas prontas: título, cor e chamada iguais em tudo que for criado ---------- */
   const CAMPANHAS = {
@@ -1914,7 +1920,7 @@
     if (e.target.closest("[data-continuar]")) { continuarProgresso(); return; }
     const ph = e.target.closest("[data-ph]");
     if (ph) {
-      if (ph.dataset.ph === "postar") { ocultarComp = !ocultarComp; guardarOcultar(); renderFila(); toast(ocultarComp ? "Mostrando só o que falta postar" : "Mostrando todos"); }
+      if (ph.dataset.ph === "postar") { toast("A Lista mostra só o que falta postar. O que já foi postado fica no Histórico"); }
       if (ph.dataset.ph === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); modoVarios = true; renderFila(); toast(`${l.length} parados selecionados`); }
       return;
     }
@@ -2357,11 +2363,21 @@
   const ORDEM_CORES = ["creme", "rosa", "branco", "preto"];
   function guardarCorUsada(cor) { if (!ORDEM_CORES.includes(cor)) return; try { localStorage.setItem("miga_ult_cor", cor); } catch (e) { /* segue */ } }
   function proximaCor() { let u = ""; try { u = localStorage.getItem("miga_ult_cor") || ""; } catch (e) { /* segue */ } const i = ORDEM_CORES.indexOf(u); return ORDEM_CORES[(i + 1) % ORDEM_CORES.length]; }
+  $("#wzCorpo").addEventListener("click", (e) => {
+    const pt = e.target.closest("#rPostar, #kPostar, #vdPostar"); if (!pt) return;
+    if (wz.canal === "reels") { const R = rr(); itensReels().forEach((it) => marcarPostado(it, "instagram", R.carrossel ? "Carrossel" : "Reels")); }
+    if (wz.canal === "video") { const it = vdItem(); if (it) marcarPostado(it, "instagram", "Vídeo"); }
+  }, true);
   $("#wzCorpo").addEventListener("click", (e) => { if (e.target.closest("#rPostar, #rBaixar, #vdPostar, #vdBaixar, #kPostar, #kBaixar, #wzPostar, #wzBaixar, #rtPostar")) { try { guardarCorUsada(estLer().cor); } catch (er) { /* segue */ } } }, true);
+  /** Marca o produto como postado (sai da Lista e vai para o Histórico, com data e onde) */
+  function marcarPostado(it, canal, onde) {
+    it.feito = { ...(it.feito || {}), [canal]: true }; it.postadoEm = Date.now();
+    it.ondePostou = [...new Set([...(it.ondePostou || []), onde])]; salvarFila(true); contarFila();
+  }
   async function registrarCompartilhado(canal, onde) {
     try { guardarCorUsada(estLer().cor); } catch (e) { /* segue */ }
     const it = wzItem(); if (!it) return;
-    it.feito = { ...(it.feito || {}), [canal]: true }; salvarFila(true);
+    marcarPostado(it, canal, onde);
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
     try {
       let h = it.histId ? await dados.pegar(it.histId) : null;
@@ -3915,63 +3931,55 @@
   });
 
   /* =========================== Histórico =========================== */
-  async function renderHistorico() {
-    let itens = [];
-    try { itens = await dados.listar(); }
-    catch (e) { $("#historico").innerHTML = '<p class="vazio-lista">Não consegui carregar o histórico. Confira a internet.</p>'; return; }
-    const termo = $("#buscaHistorico").value.trim().toLowerCase();
-    if (termo) itens = itens.filter((i) => (i.produto.nome || "").toLowerCase().includes(termo));
-    $("#apagarTudo").hidden = !itens.length && !termo;
-    if (!itens.length) {
-      $("#historico").innerHTML = `<p class="vazio-lista">${termo ? "Nada encontrado." : "Tudo que você gerar aparece aqui."}</p>`;
-      return;
-    }
-    $("#historico").innerHTML = itens.map((i) => {
-      const p = i.produto;
-      const fotoMini = i.card || i.imagem;
-      const mini = fotoMini
-        ? `<img src="${esc(fotoMini)}" data-original="${esc(fotoMini)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-        : '<span class="sem-foto"><svg><use href="#i-foto"/></svg></span>';
-      const enviado = i.enviadoPara && i.enviadoPara.length
-        ? `<span class="etiqueta etiqueta--ok">Enviado: ${esc(i.enviadoPara.join(", "))}</span>`
-        : '<span class="etiqueta">Não enviado</span>';
-      const site = urlOk(p.link) ? esc(p.link) : "";
-      const abreSite = (html) => site ? `<a class="item__link" href="${site}" target="_blank" rel="noopener" title="Abrir no site">${html}</a>` : html;
-      return `<div class="item" data-id="${esc(i.id)}">
-        ${miniLoja({ link: p.link, loja: p.loja }, abreSite(mini))}
-        <div>
-          ${abreSite(`<strong>${esc(p.nome)}</strong>`)}
-          <div class="item__meta"><span class="preco">${brl(p.precoNovo)}</span><span>${esc(NOME_CAT[p.categoria] || "")}</span><span>${dataCurta(i.criadoEm)}</span></div>
-          <div class="item__meta">${enviado}</div>
-        </div>
-        <div class="item__acoes">
-          <button type="button" class="grupo__acao grupo__acao--rosa" data-abrir="${esc(i.id)}">Abrir</button>
-          <button type="button" class="grupo__acao" data-copiar="${esc(i.id)}">Copiar</button>
-          <button type="button" class="grupo__acao" data-apagar="${esc(i.id)}">Apagar</button>
-        </div>
-      </div>`;
-    }).join("");
+  let historicoMigrado = false;
+  /** Traz os registros antigos do histórico para a lista de produtos (como já postados) */
+  async function migrarHistoricoAntigo() {
+    if (historicoMigrado) return; historicoMigrado = true;
+    let regs = []; try { regs = await dados.listar(); } catch (e) { return; }
+    let mudou = false;
+    regs.forEach((r) => {
+      const pr = r.produto || {}; if (!pr.link && !pr.nome) return;
+      const ja = fila().find((i) => i.histId === r.id || (pr.link && mesmoProduto(i, pr.link)));
+      if (ja) { if (!ja.ondePostou && r.enviadoPara && r.enviadoPara.length) { ja.ondePostou = [...r.enviadoPara]; ja.postadoEm = ja.postadoEm || r.ultimoEnvio || r.criadoEm; mudou = true; } return; }
+      fila().push({ id: novoId(), link: pr.link || "", loja: pr.loja || detectarLoja(pr.link || "") || "", nome: pr.nome || "", precoNovo: pr.precoNovo || null, precoAntigo: pr.precoAntigo || null, imagem: r.imagem || "", cupom: pr.cupom || "", categoria: pr.categoria || "outros", texto: r.texto || "", feito: { historico: true }, criadoEm: r.criadoEm || Date.now(), postadoEm: r.ultimoEnvio || r.criadoEm || Date.now(), ondePostou: r.enviadoPara || [], histId: r.id });
+      mudou = true;
+    });
+    if (mudou) { salvarFila(true); contarFila(); }
   }
-  $("#buscaHistorico").addEventListener("input", renderHistorico);
-  $("#historico").addEventListener("click", async (e) => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    const id = b.dataset.abrir || b.dataset.copiar || b.dataset.apagar;
-    let item;
-    try { item = await dados.pegar(id); } catch (err) { toast("Não consegui abrir agora"); return; }
-    if (!item) return;
-    if (b.dataset.apagar) {
-      const ok = await confirmar({ titulo: "Apagar do histórico?", texto: `“${item.produto.nome}” será apagado.`, ok: "Apagar" });
-      if (!ok) return;
-      await dados.apagar(id);
-      if (atual && atual.id === id) { atual = null; $("#resultado").hidden = true; }
-      renderHistorico(); atualizarContadores(); toast("Apagado do histórico");
-    } else if (b.dataset.copiar) {
-      toast((await copiarTexto(item.texto)) ? "Texto copiado" : "Não consegui copiar");
-    } else {
-      abrirDoHistorico(item);
-    }
+  async function renderHistorico() {
+    await migrarHistoricoAntigo();
+    const termo = $("#buscaHistorico").value.trim().toLowerCase();
+    let l = fila().filter((i) => foiCompartilhado(i) && !i.carregando).sort((x, y) => (y.postadoEm || y.criadoEm || 0) - (x.postadoEm || x.criadoEm || 0));
+    $("#hiTotal").textContent = `${l.length} ${l.length === 1 ? "produto postado" : "produtos postados"}`;
+    if (termo) l = l.filter((i) => (i.nome || "").toLowerCase().includes(termo));
+    $("#historico").innerHTML = l.length ? l.map((i) => {
+      const onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
+      return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}"><button type="button" class="pp-item" data-pp="${esc(i.id)}">
+        ${miniLoja(i, fotoMini(i))}
+        <span><strong>${esc(i.nome || "Sem nome")}</strong>
+          <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}</span>
+          <span class="hi-quando">Postado ${dataCurta(i.postadoEm || i.criadoEm)}${onde.length ? ` · ${esc(onde.join(", "))}` : ""}</span>
+        </span>
+        <span class="seta">›</span>
+      </button>${modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>` : `<button type="button" class="pp-lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button>`}</div>`;
+    }).join("") : `<p class="vazio-lista">${termo ? "Nada encontrado." : "O que você postar aparece aqui, com a data e onde foi postado."}</p>`;
+    pintarMarcados();
+  }
+  $("#historico").addEventListener("click", (e) => {
+    if (e.target.closest("[data-abrir-link]")) return;
+    const mc = e.target.closest("[data-marcar]");
+    if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); renderHistorico(); return; }
+    const b = e.target.closest("[data-editar], [data-pp]"); if (!b) return;
+    const it = fila().find((i) => i.id === (b.dataset.editar || b.dataset.pp)); if (!it) return;
+    if (modoVarios) { if (marcados.has(it.id)) marcados.delete(it.id); else marcados.add(it.id); renderHistorico(); return; }
+    irPara("postar"); abrirItemFila(it);
   });
+  $("#hiSelecionar").addEventListener("click", () => { if (modoVarios) sairModoVarios(); else entrarModoVarios(); });
+  $("#hiTodos").addEventListener("click", () => {
+    const vis = [...document.querySelectorAll("#historico [data-marcar]")].map((x) => x.dataset.marcar), todos = vis.length && vis.every((id) => marcados.has(id));
+    vis.forEach((id) => (todos ? marcados.delete(id) : marcados.add(id))); renderHistorico();
+  });
+  $("#buscaHistorico").addEventListener("input", renderHistorico);
   $("#apagarTudo").addEventListener("click", async () => {
     const ok = await confirmar({ titulo: "Apagar todo o histórico?", texto: "Todos os produtos salvos serão apagados. Isso não pode ser desfeito.", ok: "Apagar tudo" });
     if (!ok) return;
@@ -5105,11 +5113,7 @@
   });
 
   async function atualizarContadores() {
-    const g = config.grupos.length;
-    $("#contGrupos").textContent = g;
-    let n = 0;
-    try { n = (await dados.listar()).length; } catch (e) { n = 0; }
-    $("#contHistorico").hidden = !n; $("#contHistorico").textContent = n;
+    const g = config.grupos.length; $("#contGrupos").textContent = g; contarFila();
   }
 
   /* =========================== Configurações =========================== */

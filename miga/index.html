@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=121">
+  <link rel="manifest" href="manifest.json?v=122">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=121">
+  <link rel="stylesheet" href="style.css?v=122">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -55,7 +55,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=121" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=122" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -81,7 +81,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=121" alt="">
+    <img src="logo.png?v=122" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -218,7 +218,7 @@
     <section class="bloco" id="ppListaBloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Minha lista</h2>
-        <button type="button" class="link" id="ppLimpar">Tirar os prontos</button>
+        <button type="button" class="link" id="ppLimpar" hidden>Tirar os prontos</button>
       </div>
       <div class="colar">
         <input id="ppLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off" aria-label="Link do produto">
@@ -340,10 +340,16 @@
     <section class="bloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Histórico</h2>
-        <button type="button" class="link link--perigo" id="apagarTudo">Apagar tudo</button>
+        <button type="button" class="link link--perigo" id="apagarTudo" hidden>Apagar tudo</button>
       </div>
       <input class="busca-lista" id="buscaHistorico" type="search" placeholder="Buscar no histórico">
-      <div class="historico" id="historico"></div>
+      <div class="barra-filtro">
+        <button type="button" class="sel-todos" id="hiTodos" hidden><span class="pp-caixa-mini" id="hiTodosCx"></span>Todos</button>
+        <span class="nota" id="hiTotal"></span>
+        <button type="button" class="link-sel" id="hiSelecionar">Selecionar</button>
+      </div>
+      <div class="pp-lista" id="historico"></div>
+      <p class="nota">Tudo que você posta sai da Lista e fica aqui. Para postar de novo, toque em “Selecionar”, marque os produtos e toque em “Continuar”.</p>
     </section>
   </div>
 
@@ -436,7 +442,7 @@
       </section>
 
       <section class="aj-bloco">
-        <label class="aj-chave"><span><b>Esconder os já compartilhados</b><small>A lista mostra só o que falta postar</small></span><input type="checkbox" id="ajOcultar"><i></i></label>
+        <label class="aj-chave" hidden><span><b>Esconder os já compartilhados</b><small>A lista mostra só o que falta postar</small></span><input type="checkbox" id="ajOcultar"><i></i></label>
       </section>
 
       <section class="aj-bloco conta">
@@ -460,7 +466,7 @@
       <h2>Filtrar a lista</h2>
       <div class="grupo-filtro"><span>Ordenar</span><div class="opcoes-texto" id="ffOrdem"></div></div>
       <div class="grupo-filtro"><span>Categoria</span><div class="opcoes-texto" id="ffCat"></div></div>
-      <div class="grupo-filtro"><span>Produtos</span><div class="opcoes-texto" id="ffComp"></div></div>
+      <div class="grupo-filtro" hidden><span>Produtos</span><div class="opcoes-texto" id="ffComp"></div></div>
       <div class="grupo-filtro"><span>Categoria do próximo produto colado</span><div class="opcoes-texto" id="ffNova"></div></div>
       <div class="duas"><button class="btn btn--branco" type="button" id="ffLimpar">Limpar</button><button class="btn btn--rosa" value="ok" type="submit">Ver produtos</button></div>
     </form>
@@ -657,7 +663,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=121"></script>
-  <script src="app.js?v=121"></script>
+  <script src="firebase-config.js?v=122"></script>
+  <script src="app.js?v=122"></script>
 </body>
 </html>
