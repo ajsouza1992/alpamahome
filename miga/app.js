@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=99"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=100"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=99"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=100"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -4031,8 +4031,8 @@
   }
   /* ---------- Arte do produto: fundo limpo, título grande, foto sempre no mesmo lugar ---------- */
   const ESTILO_LAY = { polaroid: "centro", circulo: "cartao", revista: "esquerda", balao: "contorno", oferta: "oferta" };
-  function tituloGrande(ctx, texto, x, y, tam, alinhar, C, modo) {
-    const linhas = linhasTitulo(String(texto).replace(/\p{Extended_Pictographic}/gu, "").trim()), larg = 960;
+  function tituloGrande(ctx, texto, x, y, tam, alinhar, C, modo, larg = 960) {
+    const linhas = linhasTitulo(String(texto).replace(/\p{Extended_Pictographic}/gu, "").trim());
     const medir = (l) => l.reduce((s, [tx]) => s + ctx.measureText(tx).width, 0);
     ctx.font = `900 ${tam}px Poppins`; while (tam > 60 && linhas.some((l) => medir(l) > larg)) { tam -= 4; ctx.font = `900 ${tam}px Poppins`; }
     const alto = tam * 1.0, y0 = y - ((linhas.length - 1) * alto) / 2;
@@ -4061,13 +4061,13 @@
     // Título
     if (estilo === "esquerda") {
       comSubida(ctx, t, 0.0, () => textoEspacado(ctx, kicker, 84, 160, 32, C.destaque, "left"));
-      comSubida(ctx, t, 0.08, () => tituloGrande(ctx, titulo, 80, 295, 116, "left", C));
+      comSubida(ctx, t, 0.08, () => tituloGrande(ctx, titulo, 80, 300, 116, "left", C, "", 680));
     } else if (estilo === "cartao") {
-      comPulo(ctx, t, 0.05, 540, 280, () => { ctx.save(); ctx.shadowColor = "rgba(0,0,0,.18)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; retArredondado(ctx, -480, -135, 960, 270, 56); ctx.fillStyle = escuro ? "#ffd23f" : "#ffffff"; ctx.fill(); ctx.restore(); tituloGrande(ctx, titulo, 0, 0, 104, "center", C, "cartao"); });
+      comPulo(ctx, t, 0.05, 540, 262, () => { ctx.save(); ctx.shadowColor = "rgba(0,0,0,.18)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; retArredondado(ctx, -480, -128, 960, 256, 56); ctx.fillStyle = escuro ? "#ffd23f" : "#ffffff"; ctx.fill(); ctx.restore(); tituloGrande(ctx, titulo, 0, 0, 100, "center", C, "cartao", 880); });
     } else if (estilo === "oferta") {
       comPulo(ctx, t, 0.0, 540, 150, () => { ctx.font = "800 36px Poppins"; const w = ctx.measureText(kicker.toUpperCase()).width + 90; retArredondado(ctx, -w / 2, -34, w, 68, 34); ctx.fillStyle = C.pill; ctx.fill(); textoEspacado(ctx, kicker, 0, 2, 30, C.pillTexto); });
       if (novo) comPulo(ctx, t, 0.15, 540, 305, () => { const s = 1 + 0.03 * Math.sin(t * 6); ctx.scale(s, s); ctx.font = "900 172px Poppins"; let f = 172; while (f > 90 && ctx.measureText(preco).width > 980) { f -= 6; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(preco, 0, 0); });
-    } else comSubida(ctx, t, 0.05, () => tituloGrande(ctx, titulo, 540, 270, 128, "center", C, estilo === "contorno" ? "contorno" : ""));
+    } else comSubida(ctx, t, 0.05, () => tituloGrande(ctx, titulo, 540, 265, 124, "center", C, estilo === "contorno" ? "contorno" : ""));
     // Foto (sempre igual)
     comPulo(ctx, t, 0.2, 540, FY, () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
@@ -4076,7 +4076,9 @@
     }, 0.55);
     if (it.loja) comPulo(ctx, t, 0.45, 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
     // Selo de desconto: círculo liso no canto da foto
-    if (off >= 5) comPulo(ctx, t, 0.55, 540 + L / 2 - 30, FY - L / 2 + 30, () => {
+    // Um único ícone do tema, no canto de baixo da foto (sem poluir o fundo)
+    const ic = D.ic && D.ic[0]; if (ic) comPulo(ctx, t, 0.5, 540 - L / 2 + 50, FY + L / 2 - 70, () => { ctx.rotate(-0.12 + Math.sin(t * 2) * 0.03); iconeReels(ctx, ic, 115); });
+    if (off >= 5) comPulo(ctx, t, 0.55, 540 + L / 2 - 30, FY - L / 2 + 62, () => {
       ctx.rotate(0.08); ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
       const ct = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.fillStyle = ct; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
