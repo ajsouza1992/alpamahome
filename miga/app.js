@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=125"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=126"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=125"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=126"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3732,7 +3732,7 @@
     const fim = new Promise((ok) => { rec.onstop = ok; });
     const inicio = ac && t0 ? null : performance.now();
     const agora = () => ac && t0 ? ac.currentTime - t0 : (performance.now() - inicio) / 1000;
-    let videoTocando = false;
+    let videoTocando = false, fimVideoEm = 0;
     if (ac && t0) await new Promise((ok) => { const e = () => (ac.currentTime >= t0 - 0.02 ? ok() : requestAnimationFrame(e)); e(); }); // grava a partir do 1º tempo da música
     if (tA > 0) quadroAbertura(ctx, W, 0, V); else quadroVideo(ctx, W, H, (v && v.readyState >= 2) ? v : V.quadroImg || (V.fotoBmp && fotoComZoom(V.fotoBmp, 0)), V);
     rec.start(); manterTelaAcesa(true);
@@ -3744,7 +3744,15 @@
         else if (t < tA + tM) {
           if (v && !videoTocando) { videoTocando = true; try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) { /* segue */ } } }
           const fonteV = v ? (v.readyState >= 2 && v.currentTime > 0 ? v : V.quadroImg || v) : fotoComZoom(V.fotoBmp, (t - tA) / tM);
-          V.iniMeio = tA; videoRelogio = t - tA; quadroVideo(ctx, W, H, fonteV, V); videoRelogio = 99;
+          // Quando o seu vídeo acaba antes da hora, em vez de "travar" no último quadro: zoom leve e vai virando a tela final
+          if (v && !fimVideoEm && (v.ended || (v.duration && v.currentTime >= v.duration - 0.04))) fimVideoEm = t;
+          V.iniMeio = tA; videoRelogio = t - tA;
+          if (fimVideoEm && V.final) {
+            const resto = Math.max(0.2, tA + tM - fimVideoEm), p = Math.min(1, (t - fimVideoEm) / resto);
+            ctx.save(); const z = 1 + 0.06 * p; ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2); quadroVideo(ctx, W, H, fonteV, V); ctx.restore();
+            ctx.save(); ctx.globalAlpha = p * p; quadroFinal(ctx, W, 0, V); ctx.restore();
+          } else quadroVideo(ctx, W, H, fonteV, V);
+          videoRelogio = 99;
           if (v && !V.capaFrame && v.readyState >= 2 && v.currentTime >= Math.min(1.5, (v.duration || 3) / 3)) { try { const q = document.createElement("canvas"); q.width = v.videoWidth || 720; q.height = v.videoHeight || 1280; q.getContext("2d").drawImage(v, 0, 0, q.width, q.height); V.capaFrame = q; } catch (e) { /* segue */ } }
         } else { if (v && !v.paused) v.pause(); quadroFinal(ctx, W, t - tA - tM, V); }
         previa.drawImage(tela, 0, 0, 540, 960);
