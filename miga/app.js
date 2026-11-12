@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=102"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=103"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=102"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=103"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2178,7 +2178,7 @@
       if (!MODELOS_REELS[wz.modelo]) wz.modelo = "achadinho"; if (!CORES_VIDEO[wz.cor]) wz.cor = DECOR[wz.modelo].cor;
       const nomeModelo = wz.tituloArte || (campanha() ? campanha().nome : MODELOS_REELS[wz.modelo].nome);
       const comTexto = legendaNoEstudio() && item.precoNovo;
-      if (comTexto && !item.texto) usarModeloTexto(item.estiloTexto || "amiga");
+      if (comTexto && (!item.texto || !item.textoEditado)) usarModeloTexto();
       c.innerHTML = `<div class="estudio">
         <div class="est-previa est-previa--img"><canvas id="wzEstTela"></canvas></div>
         <div class="est-ctrl est-ctrl--2">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}</div>
@@ -2213,7 +2213,7 @@
           <button type="button" class="btn btn--rosa" id="wzSalvarPreco">Montar a mensagem</button>`;
         return;
       }
-      if (!item.texto) usarModeloTexto(item.estiloTexto || proximoEstilo());
+      if (!item.texto || !item.textoEditado) usarModeloTexto();
       c.innerHTML = `<h2 class="wz-titulo">Sua mensagem</h2>${blocoMensagem(item)}${botaoContinuar(!!item.texto)}`;
       return;
     }
@@ -2241,8 +2241,7 @@
   const ICO_LAPIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
   function blocoMensagem(item) {
     return `<div class="legenda-est">
-      <span class="legenda-rotulo">Legenda</span>
-      <div class="wz-chips wz-chips--rolar" id="wzModelosTexto">${Object.entries(MODELOS_TEXTO).map(([k, m]) => `<button type="button" data-estilo="${k}"${(item.estiloTexto || "amiga") === k ? ' class="on"' : ""}>${m.nome}</button>`).join("")}</div>
+      <span class="legenda-rotulo">Legenda <small>(acompanha o modelo; toque no lápis para mudar)</small></span>
       <div class="balao-caixa">
         <div class="balao wz-balao" id="wzBalao">${formatarWhats(textoCanal(item.texto))}</div>
         <textarea id="wzTexto" class="balao-texto" hidden>${esc(item.texto || "")}</textarea>
@@ -2332,14 +2331,16 @@
     try { localStorage.setItem("miga_ult_estilo", k); } catch (e) { /* segue */ }
     return k;
   }
-  function usarModeloTexto(estilo) {
+  /** Mensagem pronta que acompanha o modelo (ou a campanha / título próprio) da arte. Para mudar, edite no lápis. */
+  function usarModeloTexto() {
     const it = wzItem(); if (!it) return;
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
-    const chamadaTema = !["achadinho", "top"].includes(wz.modelo) && LEGENDA_REELS[wz.modelo] ? LEGENDA_REELS[wz.modelo].varios(2).replace(/\s*[^.!?⏳💸]*:\s*$/, "") : "";
-    const abre = wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*` : campanha() ? campanha().chamada : chamadaTema;
-    let corpo = textoDoModelo(estilo, p);
-    if (abre && MODELOS_TEXTO[estilo] && MODELOS_TEXTO[estilo].abre) corpo = corpo.slice(corpo.indexOf("\n\n") + 2);
-    it.estiloTexto = estilo; it.texto = (abre ? abre + "\n\n" : "") + corpo; it.textoEditado = false; salvarFila();
+    const LG = LEGENDA_REELS[wz.modelo] || LEGENDA_REELS.achadinho;
+    const abre = wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*` : campanha() ? campanha().chamada : LG.um("").replace(/\s{2,}/g, " ").trim();
+    const preco = p.precoAntigo ? `~de ${brl(p.precoAntigo)}~ por *${brl(p.precoNovo)}*` : `por apenas *${brl(p.precoNovo)}*`;
+    const off = p.precoAntigo && p.precoAntigo > p.precoNovo ? ` (${Math.round((1 - p.precoNovo / p.precoAntigo) * 100)}% OFF)` : "";
+    const corpo = `✨ *${p.nome}*\n\n💸 ${preco}${off}${p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : ""}\n\n${FRASES[p.categoria] || FRASES.outros}\n\n${linkLoja(p.loja, p.link)}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
+    it.estiloTexto = "tema"; it.texto = comConvite(`${abre}\n\n${corpo}`); it.textoEditado = false; salvarFila();
   }
   async function registrarCompartilhado(canal, onde) {
     const it = wzItem(); if (!it) return;
@@ -2474,7 +2475,7 @@
     }
     if (wz.passo === "rodar") {
       const k = wz.lugares[wz.idx], L = LUGARES[k], n = wz.lugares.length;
-      if (L.texto && !item.texto) usarModeloTexto(item.estiloTexto || "amiga");
+      if (L.texto && !item.texto) usarModeloTexto();
       const barra = `<div class="rt-prog">${wz.lugares.map((x, i) => `<i class="${wz.res[x] === "feito" ? "ok" : wz.res[x] === "pulado" ? "pulo" : i === wz.idx ? "at" : ""}"></i>`).join("")}</div>
         <div class="rt-etapa">${wz.idx + 1} de ${n} · ${L.nome}</div>`;
       const pular = `<button type="button" class="btn btn--branco" id="rtPular">${wz.idx === n - 1 ? "Pular e ver o resumo" : "Pular este"}</button>`;
@@ -3079,15 +3080,19 @@
   let gradeReels = 0;
   const noTempo = (s) => gradeReels ? Math.round(s / gradeReels) * gradeReels : s;
   const ajustarGrade = (bpm) => { gradeReels = 60 / bpm / 2; return 60 / bpm; };
+  /** k batidas da música (as aparições e os toquinhos usam a mesma régua) */
+  const B = (k) => k * (gradeReels ? gradeReels * 2 : 0.45);
+  /** "Pulsa" junto com cada batida (1 no tempo, cai rápido) */
+  const naBatida = (t) => Math.exp(-((t % B(1)) / B(1)) * 5);
   const emTempos = (seg, batida) => Math.max(2, Math.round(seg / batida / 2) * 2) * batida; // duração com número par de tempos
   const entrada = (t, ini, dur = 0.5) => Math.max(0, Math.min(1, (t - noTempo(ini)) / dur));
   const pulo = (p) => p <= 0 ? 0 : p < 0.6 ? 0.6 + (1.08 - 0.6) * (p / 0.6) : 1.08 - 0.08 * ((p - 0.6) / 0.4);
   const suave = (p) => 1 - Math.pow(1 - p, 3);
-  function comPulo(ctx, t, ini, cx, cy, desenho, dur = 0.5) {
+  function comPulo(ctx, t, ini, cx, cy, desenho, dur = 0.34) {
     const p = entrada(t, ini, dur); if (p <= 0) return;
     ctx.save(); ctx.globalAlpha = Math.min(1, p * 2.5); ctx.translate(cx, cy); const s = pulo(p); ctx.scale(s, s); desenho(); ctx.restore();
   }
-  function comSubida(ctx, t, ini, desenho, dur = 0.55) {
+  function comSubida(ctx, t, ini, desenho, dur = 0.4) {
     const p = entrada(t, ini, dur); if (p <= 0) return;
     ctx.save(); ctx.globalAlpha = p; ctx.translate(0, 80 * (1 - suave(p))); desenho(); ctx.restore();
   }
@@ -4065,24 +4070,24 @@
   function etiquetaReels(ctx, texto, cx, cy, tam = 50, giro = -0.04) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(giro); pilulaReels(ctx, texto, 0, 0, "#ffd23f", "#1d1d1f", tam, true); ctx.restore(); }
   function introReels(ctx, t, M, C, cor, n, lojaUnica) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    comPulo(ctx, t, 0.1, 540, 360, () => { if (edMarca) ctx.drawImage(edMarca, -130, -130, 260, 260); });
-    comSubida(ctx, t, 0.35, () => tituloReels(ctx, M.titulo.replace("{n}", n > 1 ? n : ""), 760, C, 140));
-    comSubida(ctx, t, 0.85, () => { ctx.font = "600 60px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.9; ctx.fillText(M.sub(n), 540, 1080); });
-    comPulo(ctx, t, 1.25, 540, 1400, () => { const s = 1 + 0.06 * Math.sin(t * 6); ctx.scale(s, s); ctx.rotate(Math.sin(t * 3) * 0.06); iconeReels(ctx, M.icone, 330); });
+    comPulo(ctx, t, B(0), 540, 360, () => { if (edMarca) ctx.drawImage(edMarca, -130, -130, 260, 260); });
+    comSubida(ctx, t, B(1), () => tituloReels(ctx, M.titulo.replace("{n}", n > 1 ? n : ""), 760, C, 140));
+    comSubida(ctx, t, B(2), () => { ctx.font = "600 60px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.9; ctx.fillText(M.sub(n), 540, 1080); });
+    comPulo(ctx, t, B(3), 540, 1400, () => { const s = 1 + 0.07 * naBatida(t); ctx.scale(s, s); ctx.rotate(Math.sin(t * 3) * 0.06); iconeReels(ctx, M.icone, 330); });
   }
   function fimReels(ctx, t, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    comPulo(ctx, t, 0.1, 540, 620, () => { if (edMarca) ctx.drawImage(edMarca, -210, -210, 420, 420); }, 0.55);
-    comSubida(ctx, t, 0.5, () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 960); });
+    comPulo(ctx, t, B(0), 540, 620, () => { if (edMarca) ctx.drawImage(edMarca, -210, -210, 420, 420); }, 0.55);
+    comSubida(ctx, t, B(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 960); });
     const insta = arroba(config.instagram); let y = 1140;
-    if (insta) { const s = t > 1.6 ? 1 + 0.06 * Math.sin((t - 1.6) * Math.PI * 2) : 1; comPulo(ctx, t, 1.0, 540, y, () => { ctx.scale(s, s); pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 64); }); y += 190; }
-    comSubida(ctx, t, 1.5, () => etiquetaReels(ctx, "Link na bio", 540, y, 50, 0.03));
+    if (insta) { const s = t > B(3) ? 1 + 0.06 * naBatida(t) : 1; comPulo(ctx, t, B(2), 540, y, () => { ctx.scale(s, s); pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 64); }); y += 190; }
+    comSubida(ctx, t, B(3), () => etiquetaReels(ctx, "Link na bio", 540, y, 50, 0.03));
   }
   /** Um produto na tela (3,6 s). Mesma cor do começo ao fim; o modelo muda a animação. */
   function produtoReels(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor);
     // Marca da Miga sempre no canto de baixo, à direita
-    if (!semFundo && edMarca) comPulo(ctx, t, 0.3, 975, 1815, () => ctx.drawImage(edMarca, -75, -75, 150, 150));
+    if (!semFundo && edMarca) comPulo(ctx, t, B(1), 975, 1815, () => ctx.drawImage(edMarca, -75, -75, 150, 150));
   }
   /* ---------- Arte do produto: fundo limpo, título grande, foto sempre no mesmo lugar ---------- */
   // Estilos (todos centralizados, título solto, sem caixa): mudam a tipografia e o jeito do preço
@@ -4118,38 +4123,36 @@
     const preco = novo ? brl(novo) : "", off = antigo ? Math.round((1 - novo / antigo) * 100) : 0;
     // Alguns modelos invertem: nome e preço em cima, título embaixo da foto
     const cima = MODELOS_CIMA.has(D.chave);
-    comSubida(ctx, t, 0.05, () => tituloGrande(ctx, titulo, cima ? 1360 : 270, estilo === "grande" ? 128 : 124, C, estilo, icone));
+    comSubida(ctx, t, B(0), () => tituloGrande(ctx, titulo, cima ? 190 : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone));
     // Foto (sempre igual)
-    comPulo(ctx, t, 0.2, 540, FY, () => {
+    comPulo(ctx, t, B(1), 540, FY, () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
       if (bmp) { const s = Math.min((L - 80) / bmp.width, (L - 80) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.save(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.clip(); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); ctx.restore(); }
       else iconeReels(ctx, "bolsa", 300);
-    }, 0.55);
-    if (it.loja) comPulo(ctx, t, 0.45, 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
+    });
+    if (it.loja) comPulo(ctx, t, B(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
     // Selo de desconto liso no canto da foto
-    if (off >= 5) comPulo(ctx, t, 0.55, 540 + L / 2 - 30, FY - L / 2 + 62, () => {
+    if (off >= 5) comPulo(ctx, t, B(2), 540 + L / 2 - 30, FY - L / 2 + 62, () => {
       ctx.rotate(0.08); ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
       ctx.fillStyle = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
     if (cima) {
-      ctx.font = "700 46px Poppins"; const lc = quebrarTexto(ctx, nome, 920, 2);
-      comSubida(ctx, t, 0.6, () => { ctx.font = "700 46px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, 140 + j * 54)); });
-      let yc = 140 + lc.length * 54 + 14;
-      if (antigo) comSubida(ctx, t, 0.85, () => { ctx.font = "600 40px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, yc); ctx.fillRect(540 - w / 2 + ld, yc + 2, w - ld, 4); });
-      yc += antigo ? 80 : 50;
-      if (novo) comPulo(ctx, t, 1.1, 540, yc, () => { const tx = (antigo ? "por " : "") + preco; let f = 92; ctx.font = `900 ${f}px Poppins`; while (f > 60 && ctx.measureText(tx).width > 640) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, 1.5, () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1530, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1570); });
+      ctx.font = "700 44px Poppins"; const lc = quebrarTexto(ctx, nome, 920, 2);
+      comSubida(ctx, t, B(3), () => { ctx.font = "700 44px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 330 : 360) + j * 50)); });
+      if (antigo) comSubida(ctx, t, B(3.5), () => { ctx.font = "600 46px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1270); ctx.fillRect(540 - w / 2 + ld, 1272, w - ld, 5); });
+      if (novo) comPulo(ctx, t, B(4), 540, antigo ? 1370 : 1310, () => { const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (it.cupom) comSubida(ctx, t, B(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1460, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1500); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
     ctx.font = "700 52px Poppins"; const ln = quebrarTexto(ctx, nome, 920, 2);
-    comSubida(ctx, t, 0.6, () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 + j * 62)); });
+    comSubida(ctx, t, B(3), () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 + j * 62)); });
     let y = 1275 + ln.length * 62 + 30;
     const riscado = (tx, yy, tam) => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = corAntiga(C); ctx.fillText(tx, 540, yy); const w = ctx.measureText(tx).width, ld = ctx.measureText(tx.split(" ")[0] + " ").width; ctx.fillRect(540 - w / 2 + ld, yy + 2, w - ld, 5); };
-    if (antigo && estilo === "oferta") comSubida(ctx, t, 0.85, () => { ctx.font = "600 44px Poppins"; const a1 = "antes " + brl(antigo), a2 = `  ·  economize ${brl(antigo - novo)}`, w1 = ctx.measureText(a1).width, w2 = ctx.measureText(a2).width, x0 = 540 - (w1 + w2) / 2; ctx.textAlign = "left"; ctx.fillStyle = corAntiga(C); ctx.fillText(a1, x0, y); const ld = ctx.measureText("antes ").width; ctx.fillRect(x0 + ld, y + 2, w1 - ld, 5); ctx.fillStyle = C.texto; ctx.font = "800 44px Poppins"; ctx.fillText(a2, x0 + w1, y); ctx.textAlign = "center"; });
-    else if (antigo) comSubida(ctx, t, 0.85, () => riscado("de " + brl(antigo), y, 46));
+    if (antigo && estilo === "oferta") comSubida(ctx, t, B(3.5), () => { ctx.font = "600 44px Poppins"; const a1 = "antes " + brl(antigo), a2 = `  ·  economize ${brl(antigo - novo)}`, w1 = ctx.measureText(a1).width, w2 = ctx.measureText(a2).width, x0 = 540 - (w1 + w2) / 2; ctx.textAlign = "left"; ctx.fillStyle = corAntiga(C); ctx.fillText(a1, x0, y); const ld = ctx.measureText("antes ").width; ctx.fillRect(x0 + ld, y + 2, w1 - ld, 5); ctx.fillStyle = C.texto; ctx.font = "800 44px Poppins"; ctx.fillText(a2, x0 + w1, y); ctx.textAlign = "center"; });
+    else if (antigo) comSubida(ctx, t, B(3.5), () => riscado("de " + brl(antigo), y, 46));
     y += antigo ? 95 : 55;
-    if (novo) comPulo(ctx, t, 1.1, 540, y, () => {
+    if (novo) comPulo(ctx, t, B(4), 540, y, () => {
       const tx = (antigo ? "por " : "") + preco;
       if (estilo === "grande") { ctx.font = "900 88px Poppins"; const w = ctx.measureText(tx).width + 90; retArredondado(ctx, -w / 2, -64, w, 128, 64); ctx.fillStyle = C.pill; ctx.fill(); ctx.fillStyle = C.pillTexto; ctx.fillText(tx, 0, 4); return; }
       let f = estilo === "oferta" ? 124 : 108; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; }
@@ -4157,7 +4160,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom) comSubida(ctx, t, 1.5, () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1555, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1595); });
+    if (it.cupom) comSubida(ctx, t, B(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1555, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1595); });
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) {
@@ -4234,9 +4237,9 @@
     if (aba === "sugestoes") itens = Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => [k, m.nome, DECOR[k].frase, !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "temas") itens = Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => [k, m.nome, m.sub(), !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, R.camp === k && !R.titulo]);
-    folhaEst("Modelo", `<div class="tabs-mod">${tabs}</div>
-      <div class="lista-mod lista-mod--mini">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>
-      <div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="Escrever meu título" value="${esc(R.titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>`);
+    folhaEst("Modelo", `<div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="Escrever meu título" value="${esc(R.titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>
+      <div class="tabs-mod">${tabs}</div>
+      <div class="lista-mod lista-mod--mini">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
     pintarMinis(R);
   }
   async function pintarMinis(R) {
@@ -4346,15 +4349,14 @@
   }
   function efeitosReels(R, n) {
     temposDoModelo(R);
-    const pops = [0.1, 0.35, 0.85, 1.25].map(noTempo), whooshes = [], q = noTempo;
+    // Toquinhos exatamente nas batidas em que cada coisa aparece
+    const pops = [0, 1, 2, 3].map(B), whooshes = [], l = itensReels();
     for (let i = 0; i < n; i++) {
-      const b0 = T_INTRO + i * T_PROD; whooshes.push(b0 - 0.3);
-      pops.push(b0 + q(0.05), b0 + q(0.2), b0 + q(0.6), b0 + q(R.modelo === "baixou" ? 1.65 : 1.15));
-      if (R.modelo === "top") pops.push(b0 + q(0.55));
-      if (R.modelo === "vale") pops.push(b0 + q(1.4));
-      if (R.modelo === "cupom") pops.push(b0 + q(1.7));
+      const b0 = T_INTRO + i * T_PROD, it = l[i] || {}; whooshes.push(b0 - 0.25);
+      [0, 1, 2, 3, 4].forEach((k) => pops.push(b0 + B(k)));
+      if (it.cupom) pops.push(b0 + B(5));
     }
-    const f = T_INTRO + T_PROD * n; whooshes.push(f - 0.3); pops.push(f + q(0.1), f + q(0.5), f + q(1.5));
+    const f = T_INTRO + T_PROD * n; whooshes.push(f - 0.25); pops.push(f + B(0), f + B(1)); if (!arroba(config.instagram)) pops.push(f + B(3));
     return { pops: [...new Set(pops.map((p) => Math.round(p * 1000) / 1000))], whooshes };
   }
   /** Toca o Reels no quadro (prévia com som) ou grava o vídeo */
@@ -4380,7 +4382,7 @@
       dest = gravar ? ac.createMediaStreamDestination() : ac.destination;
       const { pops, whooshes } = efeitosReels(R, n);
       const f = T_INTRO + T_PROD * n;
-      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[musicaDe(R)], f + noTempo(arroba(config.instagram) ? 1.0 : 1.5));
+      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[musicaDe(R)], f + B(arroba(config.instagram) ? 2 : 3));
     } catch (e) { t0 = 0; }
     if (gravar) {
       fluxo = tela.captureStream(30);

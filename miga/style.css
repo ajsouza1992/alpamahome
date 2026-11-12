@@ -1030,3 +1030,37 @@ body.modo-selecao main { padding-bottom: 200px; }
 .balao-lapis { position: absolute; top: 8px; right: 8px; width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); cursor: pointer; }
 .balao-lapis svg { width: 18px; height: 18px; fill: none; stroke: var(--preto); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .balao-lapis.on { background: var(--rosa); } .balao-lapis.on svg { stroke: #fff; }
+
+/* =====================================================================
+   Computador (≥ 960px): menu no topo e telas largas, como um site.
+   No celular nada muda.
+   ===================================================================== */
+@media (min-width: 960px) {
+  .topo { position: sticky; top: 0; z-index: 40; padding: 14px 40px; min-height: 72px; box-sizing: border-box; background: rgba(255, 246, 214, .92); backdrop-filter: blur(10px); box-shadow: 0 1px 0 rgba(0,0,0,.05); }
+  .topo .marca { position: static; }
+  .barra { position: fixed; top: 14px; left: 50%; right: auto; bottom: auto; width: auto; transform: translateX(-50%); padding: 0; z-index: 41; background: none; pointer-events: auto; }
+  .abas { display: flex; gap: 4px; max-width: none; padding: 5px; border-radius: 999px; background: var(--branco); box-shadow: 0 2px 10px -4px rgba(0,0,0,.18); }
+  .abas button { flex-direction: row; justify-content: center; gap: 8px; height: 44px; padding: 0 22px; font-size: 15px; border-radius: 999px; }
+  .abas button svg { width: 20px; height: 20px; }
+  .abas b { position: static; margin-left: 2px; }
+  .conteudo { margin: 0 auto; width: 100%; max-width: 1440px; padding: 28px 40px 80px; box-sizing: border-box; grid-template-columns: minmax(0, 1fr); justify-content: stretch; }
+  .bloco { padding: 32px 40px; }
+  .wz { padding: 32px 40px; }
+  .dialogo.folha { width: min(760px, 92vw); max-width: 760px; }
+  /* Estúdio: prévia grande à esquerda, botões e legenda à direita */
+  .wz__corpo:has(> .estudio) { grid-template-columns: minmax(340px, 440px) minmax(0, 1fr); column-gap: 48px; row-gap: 16px; align-items: start; }
+  .wz__corpo:has(> .estudio) > .estudio { display: contents; }
+  .wz__corpo:has(> .estudio) .est-previa, .wz__corpo:has(> .estudio) .car-trilho { grid-column: 1; grid-row: 1 / span 30; width: 100%; max-width: 440px; justify-self: center; }
+  .wz__corpo:has(> .estudio) > :not(.estudio), .wz__corpo:has(> .estudio) .estudio > :not(.est-previa):not(.car-trilho) { grid-column: 2; }
+  .wz__corpo:has(> .estudio) .est-ctrl { align-self: start; }
+  .wz__corpo:has(> .estudio) .wz-rodape, .wz__corpo:has(> .estudio) > .wz-continuar { max-width: none !important; justify-self: stretch; }
+  .wz__corpo:has(> .estudio) .wz-balao, .balao-caixa .wz-balao { max-width: none; width: 100%; box-sizing: border-box; }
+  .est-btn { min-height: 84px; font-size: 15px; }
+  .car-trilho canvas { width: 86%; }
+}
+@media (min-width: 1280px) { .wz__corpo:has(> .estudio) { grid-template-columns: 460px minmax(0, 1fr); } }
+.balao-caixa .wz-balao { max-width: none; width: 100%; box-sizing: border-box; margin: 0; }
+@media (min-width: 960px) {
+  .wz__corpo:has(> .estudio) .est-previa, .wz__corpo:has(> .estudio) .est-previa--img { width: auto; max-width: 100%; height: min(74vh, 760px); aspect-ratio: 9 / 16; justify-self: center; }
+  .wz__corpo:has(> .estudio) .car-trilho { height: auto; }
+}
