@@ -1051,7 +1051,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=68"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=69"; });
     }
     edFoto = null;
     try {
@@ -1407,7 +1407,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=68"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=69"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1786,7 +1786,7 @@
   function passosDe(canal) {
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
-    if (canal === "reels") return ["canal", "rItens", "rModelo", "rPronto"];
+    if (canal === "reels") return ["canal", "rItens", "rModelo", ...((wz.reels && wz.reels.itens.length > 1) ? ["rOrdem"] : []), "rPronto"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "formato", "montagem", "cor", "postar"];
@@ -3201,7 +3201,7 @@
     baixou: { nome: "Baixou o preço", desc: "Trap", musica: "trap", tag: "Baixou o preço", titulo: "*Baixou*\no preço!", sub: () => "Olha esse precinho", icone: "etiqueta" },
     ultimas: { nome: "Últimas horas", desc: "Drill com relógio", musica: "drill", tag: "Últimas horas", titulo: "*Últimas*\nhoras!", sub: () => "Aproveita antes que acabe", icone: "relogio" },
     novidade: { nome: "Chegou novidade", desc: "Lo-fi delicado", musica: "lofi", tag: "Chegou novidade", titulo: "Chegou\n*novidade*", sub: () => "Fresquinho pra você", icone: "presente" },
-    top: { nome: "Top achadinhos", desc: "Funk", musica: "funk", tag: "Top achadinhos", titulo: "Top {n}\n*achadinhos*", sub: () => "da semana", icone: "trofeu" },
+    top: { nome: "Top 3 achadinhos", desc: "Funk · ranking do 3º ao 1º", musica: "funk", tag: "Top achadinhos", titulo: "Top {n}\n*achadinhos*", sub: () => "da semana", icone: "trofeu" },
     cupom: { nome: "Cupom liberado", desc: "Reggaeton", musica: "dembow", tag: "Cupom liberado", titulo: "*Cupom*\nliberado!", sub: () => "Desconto na mão", icone: "cupom" },
     amei: { nome: "Amei esse", desc: "Disco", musica: "disco", tag: "Amei esse", titulo: "Amei\n*esse aqui*", sub: () => "Precisava te mostrar", icone: "coracao" },
     vale: { nome: "Vale a pena", desc: "Boom bap", musica: "boombap", tag: "Vale muito a pena", titulo: "Vale\n*a pena?*", sub: () => "Olha só esse preço", icone: "check" },
@@ -3303,7 +3303,7 @@
   /** Um produto na tela (3,6 s). Mesma cor do começo ao fim; o modelo muda a animação. */
   function produtoReels(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const tag = mk === "top" ? `Top ${n}` : M.tag;
+    const tag = mk === "top" ? (idx === 0 ? "O mais amado!" : `Top ${n} achadinhos`) : M.tag;
     comPulo(ctx, t, 0.05, 540, 250, () => { if (mk === "relampago") ctx.rotate(Math.sin(t * 30) * 0.03 * Math.max(0, 1 - t)); etiquetaReels(ctx, tag, 0, 0, 46); });
     // Foto
     const L = 760, fy = 820;
@@ -3318,7 +3318,7 @@
       for (let s = 0; s < 6; s++) { const ang = s * 1.05 + t * 0.6, r = L * 0.62, br = Math.max(0, Math.sin(t * 4 + s * 1.7)); if (t > 0.8) { ctx.save(); ctx.globalAlpha = br; ctx.translate(540 + Math.cos(ang) * r, fy + Math.sin(ang) * r); iconeReels(ctx, "brilho", 80); ctx.restore(); } }
     } else comPulo(ctx, t, 0.2, 540, fy, foto, 0.55);
     if (mk === "top") comPulo(ctx, t, 0.55, 540 + L / 2 - 30, fy - L / 2 + 30, () => {
-      ctx.rotate(0.12); iconeReels(ctx, "trofeu", 200);
+      ctx.rotate(0.12); if (idx === 0) ctx.scale(1.25, 1.25); iconeReels(ctx, "trofeu", 200);
       ctx.font = "800 54px Poppins"; const tx = `Top ${idx + 1}`, w = ctx.measureText(tx).width + 50; retArredondado(ctx, -w / 2, 95, w, 76, 38); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.lineWidth = 7; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.fillStyle = "#fff"; ctx.fillText(tx, 0, 136);
     });
     if (mk === "ultimas") comPulo(ctx, t, 0.4, 160, fy - L / 2 + 20, () => {
@@ -3374,7 +3374,10 @@
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const M = MODELOS_REELS[R.modelo], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t;
     if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n);
-    else if (t < T_INTRO + T_PROD * n) { const i = Math.floor((t - T_INTRO) / T_PROD), it = l[i]; produtoReels(ctx, t - T_INTRO - i * T_PROD, it, fotos[it.id] && fotos[it.id].bmp, i, n, R.modelo, M, C, R.cor); }
+    else if (t < T_INTRO + T_PROD * n) {
+      const i = Math.floor((t - T_INTRO) / T_PROD), pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
+      produtoReels(ctx, t - T_INTRO - i * T_PROD, it, fotos[it.id] && fotos[it.id].bmp, pos, n, R.modelo, M, C, R.cor);
+    }
     else fimReels(ctx, t - T_INTRO - T_PROD * n, C, R.cor);
     ctx.restore();
   }
@@ -3455,9 +3458,9 @@
       if (!R.iniciado) { R.iniciado = true; if (wz.itemId && !R.itens.length) R.itens = [wz.itemId]; }
       const l = fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
       c.innerHTML = `<h2 class="wz-titulo">Quais produtos?</h2>
-        <p class="nota">Escolha de 1 a 5, na ordem que vão aparecer.</p>
+        <p class="nota">Marque de 1 a 5 produtos. Se marcar mais de um, depois você escolhe a ordem.</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${l.map((x) => { const i = R.itens.indexOf(x.id); return `<button type="button" class="wz-prod${i >= 0 ? " on" : ""}" data-r-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}${i >= 0 ? " · nº " + (i + 1) : ""}</small></span></button>`; }).join("") || '<p class="vazio-lista">Sua lista está vazia: adicione produtos na aba Lista.</p>'}</div>
+        <div class="wz-ops">${l.map((x) => { const i = R.itens.indexOf(x.id); return `<button type="button" class="wz-prod wz-flag${i >= 0 ? " on" : ""}" data-r-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span><i class="flag" aria-hidden="true"></i></button>`; }).join("") || '<p class="vazio-lista">Sua lista está vazia: adicione produtos na aba Lista.</p>'}</div>
         ${botaoContinuar(R.itens.length > 0, R.itens.length ? `Continuar (${R.itens.length} ${R.itens.length === 1 ? "produto" : "produtos"})` : "Continuar")}`;
       return;
     }
@@ -3468,6 +3471,15 @@
         <div class="campo"><span>Cor</span><div class="alternar">${Object.entries(CORES_VIDEO).map(([k, x]) => `<button type="button" role="radio" data-r-cor="${k}" aria-checked="${R.cor === k}">${x.nome}</button>`).join("")}</div></div>
         ${botaoContinuar(true)}`;
       pintarModelosReels();
+      return;
+    }
+    if (wz.passo === "rOrdem") {
+      const top = R.modelo === "top", l = itensReels();
+      c.innerHTML = `<h2 class="wz-titulo">${top ? "Qual é o ranking?" : "Em que ordem?"}</h2>
+        <p class="nota">${top ? "Use as setas. O primeiro da lista é o <b>Top 1</b>: no Reels ele aparece por último, como o grande final." : "Use as setas para arrumar. O primeiro da lista aparece primeiro no Reels."}</p>
+        <div class="r-ordem">${l.map((x, i) => `<div class="r-ordem__item"><b class="r-ordem__n">${top ? "Top " + (i + 1) : i + 1 + "º"}</b>${fotoMini(x)}<span>${esc(x.nome || "Sem nome")}</span>
+          <div class="r-ordem__setas"><button type="button" class="btn-seta" data-r-sobe="${i}" aria-label="Subir"${i === 0 ? " disabled" : ""}><svg><use href="#i-seta-baixo"/></svg></button><button type="button" class="btn-seta" data-r-desce="${i}" aria-label="Descer"${i === l.length - 1 ? " disabled" : ""}><svg><use href="#i-seta-baixo"/></svg></button></div></div>`).join("")}</div>
+        ${botaoContinuar(true)}`;
       return;
     }
     if (wz.passo === "rPronto") {
@@ -3500,6 +3512,12 @@
       const id = it.dataset.rItem, i = R.itens.indexOf(id);
       if (i >= 0) R.itens.splice(i, 1); else if (R.itens.length >= 5) { toast("No máximo 5 produtos por Reels"); return; } else R.itens.push(id);
       R.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
+    }
+    const sobe = t.closest("[data-r-sobe]"), desce = t.closest("[data-r-desce]");
+    if (sobe || desce) {
+      const i = +(sobe ? sobe.dataset.rSobe : desce.dataset.rDesce), j = sobe ? i - 1 : i + 1;
+      const ids = itensReels().map((x) => x.id); if (j < 0 || j >= ids.length) return;
+      [ids[i], ids[j]] = [ids[j], ids[i]]; R.itens = ids; R.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
     }
     const m = t.closest("[data-r-modelo]"); if (m) { R.modelo = m.dataset.rModelo; R.resultado = null; document.querySelectorAll("[data-r-modelo]").forEach((b) => b.classList.toggle("on", b === m)); return; }
     const co = t.closest("[data-r-cor]"); if (co) { R.cor = co.dataset.rCor; R.resultado = null; document.querySelectorAll("[data-r-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarModelosReels(); return; }
