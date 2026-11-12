@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=105"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=106"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=105"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=106"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3000,7 +3000,7 @@
         <p class="nota">Grave no celular ou use um vídeo da galeria. Ele vira um Reels em pé com o tema do Miga. Recomendo até 60 segundos. Sem vídeo? O app usa a foto do produto.</p>
         ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
         <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
-        <button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "✓ Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>
+        <button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>
         ${botaoContinuar(!!V.url || V.semVideo)}
         ${blocoFotoIA()}`;
       return;
@@ -3011,7 +3011,7 @@
         <div class="est-previa est-previa--img"><canvas id="vdEst" width="540" height="960"></canvas></div>
         <div class="est-ctrl">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || TEMAS_VIDEO[V.tema])}</div>
       </div>${botaoContinuar(true)}`;
-      carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((q) => { const cv = $("#vdEst"); if (!cv) return; const cx = cv.getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 2.6, V); else quadroVideo(cx, 540, 960, q, V); });
+      carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((q) => { const cv = $("#vdEst"); if (!cv) return; const cx = cv.getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 9, V); else quadroVideo(cx, 540, 960, q, V); });
       return;
     }
     if (wz.passo === "vPronto") {
@@ -3041,7 +3041,7 @@
           <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo</button>`}
         <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
-      if (!r) carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((v) => { const cx = $("#vdQuadro").getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 2.6, V); else quadroVideo(cx, 540, 960, v, V); });
+      if (!r) carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((v) => { const cx = $("#vdQuadro").getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 9, V); else quadroVideo(cx, 540, 960, v, V); });
     }
   }
   function primeiroQuadro() {
@@ -3062,7 +3062,7 @@
     document.querySelectorAll("[data-vd-tema]").forEach((b) => quadroVideo(b.querySelector("canvas").getContext("2d"), 270, 480, v, { ...V, tema: b.dataset.vdTema }));
   }
   /* ---------- Reels: abertura, final e a musiquinha do Miga ---------- */
-  const T_ABERTURA = 3.2, T_FINAL = 3.8, T_SO_FOTO = 5;
+  const T_ABERTURA = 3.8, T_FINAL = 3.8, T_SO_FOTO = 5;
   const duracaoMeio = () => { const V = vd(); return V.semVideo ? T_SO_FOTO : (V.duracao || 10); };
   const duracaoReels = () => { const V = vd(); return (V.abertura ? T_ABERTURA : 0) + duracaoMeio() + (V.final ? T_FINAL : 0); };
   async function fotoDoVideo() {
@@ -3119,46 +3119,16 @@
     ctx.fillStyle = cor; ctx.fillText(texto, cx, cy + 3);
   }
   /** Abertura (3,2 s): título, foto do produto e preço pulando na tela */
+  /** Abertura do vídeo = o mesmo modelo pronto das artes (título, foto, selo, preço), aparecendo no tempo da música */
   function quadroAbertura(ctx, W, t, V) {
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
-    const C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme, foto = V.fotoBmp;
-    ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920);
-    bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t);
-    if (V.modelo || V.camp) { relogioReels = t; desenharDecor(ctx, decorDe({ modelo: V.modelo || "achadinho", camp: V.camp })); }
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    comPulo(ctx, t, 0.1, 540, 270, () => { if (edMarca) ctx.drawImage(edMarca, -140, -140, 280, 280); });
-    const linhas = linhasTitulo(V.titulo || "Achadinho\n*do dia*"), tam = linhas.length > 2 ? 100 : 116;
-    comSubida(ctx, t, 0.35, () => {
-      ctx.font = `800 ${tam}px Poppins`;
-      linhas.forEach((partes, j) => {
-        const larg = partes.reduce((s, [x]) => s + ctx.measureText(x).width, 0); let x = (1080 - larg) / 2; ctx.textAlign = "left";
-        partes.forEach(([tx, d]) => { ctx.fillStyle = d ? C.destaque : C.texto; ctx.fillText(tx, x, 540 + j * tam * 1.05); x += ctx.measureText(tx).width; });
-      });
-      ctx.textAlign = "center";
-    });
-    const yFoto = 540 + linhas.length * tam * 1.05 + 300;
-    if (foto) comPulo(ctx, t, 0.9, 540, yFoto, () => {
-      const L = 600; ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
-      retArredondado(ctx, -L / 2, -L / 2, L, L, 60); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
-      const s = Math.min((L - 70) / foto.width, (L - 70) / foto.height); ctx.drawImage(foto, -foto.width * s / 2, -foto.height * s / 2, foto.width * s, foto.height * s);
-    });
-    const yPreco = foto ? yFoto + (V.cupom ? 440 : 480) : yFoto;
-    if (V.novo) {
-      if (V.antigo && V.antigo > V.novo) comSubida(ctx, t, 1.35, () => {
-        ctx.font = "600 48px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.8; const tx = "de " + brl(V.antigo); ctx.fillText(tx, 540, yPreco - 112);
-        const lw = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillRect(540 - lw / 2 + ld, yPreco - 110, lw - ld, 5);
-      });
-      comPulo(ctx, t, 1.6, 540, yPreco, () => { ctx.rotate(-0.04); pilulaReels(ctx, (V.antigo > V.novo ? "por " : "") + brl(V.novo), 0, 0, "#ffd23f", "#1d1d1f", 70, true); });
-    }
-    if (V.cupom) comSubida(ctx, t, 2.0, () => {
-      ctx.font = "800 46px Poppins"; const tx = "CUPOM " + String(V.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 80;
-      retArredondado(ctx, 540 - cw / 2, yPreco + 105, cw, 90, 45); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.setLineDash([14, 9]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, yPreco + 152);
-    });
-    if (V.loja && foto) comPulo(ctx, t, 1.1, 540 - 300 + 20, yFoto - 300 + 20, () => seloLojaCanvas(ctx, V.loja, 0, 0, 58));
+    const R = { modelo: V.modelo || "achadinho", camp: V.camp || "", cor: V.cor, titulo: V.tituloProp || "" };
+    const C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme, M = modeloEfetivo(R);
+    relogioReels = t; decorAtual = decorDe(R);
+    const it = { nome: V.nome, precoNovo: V.novo, precoAntigo: V.antigo, cupom: V.cupom, loja: V.loja };
+    produtoReels(ctx, t, it, V.fotoBmp, 0, 1, R.modelo, M, C, V.cor);
     ctx.restore();
   }
-  /** Final (3,8 s): logo, "Segue a Miga!", seu @ e o botão */
   function quadroFinal(ctx, W, t, V) {
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const C = CORES_VIDEO[V.cor] || CORES_VIDEO.rosa;
@@ -3285,7 +3255,7 @@
     // "Plim" na hora que aparece o seu @
     if (plim != null) { const tp = t0 + plim; [72, 76, 79].forEach((m, q) => corda(nota(m + 12), tp, 1.4, 0.16, (q - 1) * 0.3, "piano")); }
     // "Toc" macio quando algo aparece (no lugar do assobio)
-    pops.forEach((p) => { const o = osc("sine", 760, t0 + p, 0.09, 0.32, mestre); o.frequency.setValueAtTime(760, t0 + p); o.frequency.exponentialRampToValueAtTime(380, t0 + p + 0.08); const f = barulho(t0 + p, 0.02, 0.12, "bandpass", 3000, mestre); f.Q.value = 1.5; });
+    // As aparições não têm som próprio: acontecem no tempo da batida da música (pops fica só para marcar o tempo)
     whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.32, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
     return t0;
   }
@@ -3357,7 +3327,7 @@
     const blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
     // Capa: a abertura já montada (ou o primeiro quadro do tema)
     const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920;
-    if (V.abertura) quadroAbertura(tc.getContext("2d"), 1080, T_ABERTURA - 0.3, V); else quadroVideo(tc.getContext("2d"), 1080, 1920, v || (V.fotoBmp && fotoComZoom(V.fotoBmp, 0)), V);
+    if (V.abertura) quadroAbertura(tc.getContext("2d"), 1080, 9, V); else quadroVideo(tc.getContext("2d"), 1080, 1920, v || (V.fotoBmp && fotoComZoom(V.fotoBmp, 0)), V);
     const capa = await telaParaJpeg(tc, "miga-promo-capa.jpg");
     V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-video.${mp4 ? "mp4" : "webm"}`, capa };
     mostrarPasso();
@@ -4083,14 +4053,14 @@
     comPulo(ctx, t, B(0), 540, 360, () => { if (edMarca) ctx.drawImage(edMarca, -130, -130, 260, 260); });
     comSubida(ctx, t, B(1), () => tituloReels(ctx, M.titulo.replace("{n}", n > 1 ? n : ""), 760, C, 140));
     comSubida(ctx, t, B(2), () => { ctx.font = "600 60px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.9; ctx.fillText(M.sub(n), 540, 1080); });
-    comPulo(ctx, t, B(3), 540, 1400, () => { const s = 1 + 0.07 * naBatida(t); ctx.scale(s, s); ctx.rotate(Math.sin(t * 3) * 0.06); iconeReels(ctx, M.icone, 330); });
+    comPulo(ctx, t, B(3), 540, 1400, () => { ctx.rotate(Math.sin(t * 3) * 0.06); iconeReels(ctx, M.icone, 330); });
   }
   function fimReels(ctx, t, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
     comPulo(ctx, t, B(0), 540, 620, () => { if (edMarca) ctx.drawImage(edMarca, -210, -210, 420, 420); }, 0.55);
     comSubida(ctx, t, B(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 960); });
     const insta = arroba(config.instagram); let y = 1140;
-    if (insta) { const s = t > B(3) ? 1 + 0.06 * naBatida(t) : 1; comPulo(ctx, t, B(2), 540, y, () => { ctx.scale(s, s); pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 64); }); y += 190; }
+    if (insta) { const s = 1; comPulo(ctx, t, B(2), 540, y, () => { ctx.scale(s, s); pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 64); }); y += 190; }
     comSubida(ctx, t, B(3), () => etiquetaReels(ctx, "Link na bio", 540, y, 50, 0.03));
   }
   /** Um produto na tela (3,6 s). Mesma cor do começo ao fim; o modelo muda a animação. */
@@ -4177,7 +4147,7 @@
   function quadroReels0(ctx, W, t, R, l, fotos) {
     temposDoModelo(R);
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
-    const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t; decorAtual = decorDe(R); pulsoTela = naBatida(t);
+    const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t; decorAtual = decorDe(R);
     const M = modeloEfetivo(R);
     if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : "");
     else if (t < T_INTRO + T_PROD * n) {
