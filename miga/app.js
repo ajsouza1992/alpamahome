@@ -1082,7 +1082,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=79"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=80"; });
     }
     edFoto = null;
     try {
@@ -1455,7 +1455,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=79"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=80"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1765,8 +1765,12 @@
     for (const id of [...marcados]) if (!fila().some((i) => i.id === id)) marcados.delete(id);
     const n = marcados.size, b = $("#barraMarcados");
     b.hidden = !n || $("#aba-postar").hidden || !!ppAtual;
-    document.body.classList.toggle("com-marcados", !b.hidden);
-    $("#qtdMarcados").textContent = `${n} ${n === 1 ? "marcado" : "marcados"}`;
+    // Modo seleção: a barra de baixo vira os botões de criar
+    document.body.classList.toggle("modo-selecao", !b.hidden);
+    $("#qtdMarcados").textContent = `${n} ${n === 1 ? "selecionado" : "selecionados"}`;
+    $("#bsCampanha").textContent = CAMPANHAS[campanhaEscolhida] ? `${CAMPANHAS[campanhaEscolhida].nome} ▾` : "Campanha ▾";
+    $("#bsCampanha").classList.toggle("on", !!CAMPANHAS[campanhaEscolhida]);
+    document.querySelectorAll("#bsAcoes [data-criar]").forEach((x) => { const o = OPCOES_CRIAR.find((q) => q[0] === x.dataset.criar); x.classList.toggle("off", !(o && o[3](n))); });
   }
   $("#desmarcarTodos").addEventListener("click", () => { marcados.clear(); renderFila(); });
   $("#ppCupons").addEventListener("click", () => abrirPostarCupons());
@@ -1790,7 +1794,7 @@
     const l = SELECOES[op][1](base);
     if (!l.length) { toast("Nenhum produto nessa seleção"); return; }
     marcados.clear(); l.forEach((i) => marcados.add(i.id)); renderFila();
-    toast(`${l.length} ${l.length === 1 ? "produto marcado" : "produtos marcados"}: toque em “O que vou criar?”`);
+    toast(`${l.length} ${l.length === 1 ? "produto selecionado" : "produtos selecionados"}`);
   });
   $("#excluirMarcados").addEventListener("click", async () => {
     const l = itensMarcados(); if (!l.length) return;
@@ -1827,7 +1831,19 @@
     ["video", "Vídeo com tema", "Seu vídeo com abertura e final com música", (n) => n === 1, "Marque só 1 produto."],
     ["livre", "Criação livre", "Uma imagem com vários produtos", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."]
   ];
-  $("#oQueCriar").addEventListener("click", () => {
+  $("#bsAcoes").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-criar]"); if (!b) return;
+    const n = itensMarcados().length, o = OPCOES_CRIAR.find((q) => q[0] === b.dataset.criar);
+    if (!o[3](n)) { toast(`${o[1]}: ${o[4]}`); return; }
+    criarAPartirDaLista(b.dataset.criar, itensMarcados());
+  });
+  $("#bsCampanha").addEventListener("click", async () => {
+    const v = await escolherOpcao("Campanha", [["", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])], campanhaEscolhida);
+    if (v === null) return;
+    campanhaEscolhida = v; try { localStorage.setItem("miga_campanha", v); } catch (err) { /* segue */ }
+    pintarMarcados(); if (v) toast(`Campanha ${CAMPANHAS[v].nome}: título, cor e chamada vão combinar`);
+  });
+  if ($("#oQueCriar")) $("#oQueCriar").addEventListener("click", () => {
     const n = itensMarcados().length; if (!n) return;
     $("#folhaCriarTitulo").textContent = n === 1 ? "O que vou criar com este produto?" : `O que vou criar com ${n} produtos?`;
     $("#folhaCriarOps").innerHTML = OPCOES_CRIAR.map(([k, nome, desc, ok, aviso]) => { const v = CANAIS[k], pode = ok(n);
@@ -1860,7 +1876,7 @@
     const ph = e.target.closest("[data-ph]");
     if (ph) {
       if (ph.dataset.ph === "postar") { ocultarComp = !ocultarComp; guardarOcultar(); renderFila(); toast(ocultarComp ? "Mostrando só o que falta postar" : "Mostrando todos"); }
-      if (ph.dataset.ph === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); renderFila(); toast(`${l.length} parados marcados: escolha o que criar`); }
+      if (ph.dataset.ph === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); renderFila(); toast(`${l.length} parados selecionados`); }
       return;
     }
     const mc = e.target.closest("[data-marcar]");

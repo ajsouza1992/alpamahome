@@ -795,3 +795,20 @@ body.com-marcados main { padding-bottom: 90px; }
 .barra-marcados .bm-acoes .link { min-height: 28px; }
 #excluirMarcados { color: #ff9ab8; }
 .barra-marcados #oQueCriar { flex: none; padding: 0 18px; }
+
+/* Modo seleção (como a galeria): a barra de baixo vira os botões de criar */
+.barra-selecao { position: fixed; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 30; max-width: 496px; margin: 0 auto; padding: 8px 8px 8px; border-radius: 26px; background: var(--preto); color: #fff; box-shadow: 0 14px 34px -12px rgba(0,0,0,.6); }
+.barra-selecao[hidden] { display: none; }
+.bs-topo { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px; }
+.bs-topo b { font-size: 15px; white-space: nowrap; margin-right: auto; }
+.bs-fechar, .bs-lixo { width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; display: grid; place-items: center; font-size: 15px; cursor: pointer; flex: none; }
+.bs-lixo svg { width: 18px; height: 18px; fill: none; stroke: #ff9ab8; stroke-width: 2; }
+.bs-camp { min-height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: rgba(255,255,255,.12); color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 52%; }
+.bs-camp.on { background: #ffd23f; color: #1d1d1f; }
+.bs-acoes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.bs-acoes button { display: grid; justify-items: center; gap: 4px; min-height: 60px; padding: 8px 4px; border: 0; border-radius: 18px; background: var(--rosa); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.bs-acoes button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
+.bs-acoes button.off { background: rgba(255,255,255,.12); color: rgba(255,255,255,.5); }
+body.modo-selecao .barra { display: none; }
+body.modo-selecao main { padding-bottom: 150px; }
+@media (min-width: 960px) { body.modo-selecao .barra { display: block; } }

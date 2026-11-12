@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=79">
+  <link rel="manifest" href="manifest.json?v=80">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=79">
+  <link rel="stylesheet" href="style.css?v=80">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -55,7 +55,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=79" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=80" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -81,7 +81,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=79" alt="">
+    <img src="logo.png?v=80" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -363,9 +363,19 @@
 </main>
 
   <!-- Produtos marcados na Lista -->
-  <div class="barra-marcados" id="barraMarcados" hidden>
-    <span><b id="qtdMarcados">1 marcado</b><span class="bm-acoes"><button type="button" class="link" id="desmarcarTodos">Desmarcar</button><button type="button" class="link" id="excluirMarcados">Excluir</button></span></span>
-    <button type="button" class="btn btn--rosa" id="oQueCriar">O que vou criar?</button>
+  <div class="barra-selecao" id="barraMarcados" hidden>
+    <div class="bs-topo">
+      <button type="button" class="bs-fechar" id="desmarcarTodos" aria-label="Desmarcar todos">✕</button>
+      <b id="qtdMarcados">1 selecionado</b>
+      <button type="button" class="bs-camp" id="bsCampanha">Campanha ▾</button>
+      <button type="button" class="bs-lixo" id="excluirMarcados" aria-label="Excluir os selecionados"><svg><use href="#i-lixo"/></svg></button>
+    </div>
+    <div class="bs-acoes" id="bsAcoes">
+      <button type="button" data-criar="roteiro"><svg><use href="#i-lista"/></svg>Postar</button>
+      <button type="button" data-criar="reels"><svg><use href="#i-brilho"/></svg>Reels</button>
+      <button type="button" data-criar="video"><svg><use href="#i-rede-video"/></svg>Vídeo</button>
+      <button type="button" data-criar="livre"><svg><use href="#i-rede-grade"/></svg>Imagem</button>
+    </div>
   </div>
   <dialog id="folhaCriar" class="dialogo folha">
     <form method="dialog">
@@ -634,7 +644,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=79"></script>
-  <script src="app.js?v=79"></script>
+  <script src="firebase-config.js?v=80"></script>
+  <script src="app.js?v=80"></script>
 </body>
 </html>
