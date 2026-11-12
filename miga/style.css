@@ -760,3 +760,15 @@ body.com-marcados main { padding-bottom: 90px; }
 /* Aviso de produtos incompletos na Lista */
 .aviso-incompletos { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 8px; padding: 10px 10px 10px 14px; border-radius: 16px; background: #fff3c4; font-size: 13.5px; }
 .aviso-incompletos .btn { min-height: 44px; padding: 0 16px; font-size: 14px; }
+
+/* Postar cupons */
+.btn-cupons { width: 100%; margin-top: 8px; }
+.btn-cupons svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+.cup-item { display: grid; gap: 8px; }
+.cup-item.on { padding-bottom: 6px; }
+.cup-ic { width: 60px; height: 60px; border-radius: 50%; background: #fff; display: grid; place-items: center; font: 800 26px Poppins; color: var(--rosa); box-shadow: inset 0 0 0 1.5px var(--linha); }
+.cup-ic img { width: 70%; height: 70%; object-fit: contain; padding: 0 !important; background: none !important; }
+.cup-det { display: grid; gap: 8px; padding: 0 6px; }
+.cup-det input, .campo-cupom { width: 100%; min-height: 50px; padding: 0 14px; border: 1.5px solid var(--linha); border-radius: 14px; background: var(--branco); font: inherit; font-size: 15px; }
+.wz__corpo .aj-linha { display: flex; gap: 8px; }
+#cArte { width: 100%; height: auto; border-radius: 18px; }

@@ -247,8 +247,8 @@
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
       limpar: () => tx("readwrite", (s) => s.clear()),
-      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), instagram: ls.ler("miga_instagram") || "" }),
-      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_instagram", c.instagram || ""); },
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), cupomInfo: ls.lerJson("miga_cupom_info", {}), instagram: ls.ler("miga_instagram") || "" }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_cupom_info", JSON.stringify(c.cupomInfo || {})); ls.gravar("miga_instagram", c.instagram || ""); },
       lerFila: async () => ls.lerJson("miga_fila", []),
       gravarFila: async (l) => { ls.gravar("miga_fila", JSON.stringify(l)); }
     };
@@ -280,9 +280,9 @@
       lerConfig: async () => {
         const d = await fs.getDoc(docConfig());
         const x = d.exists() ? d.data() : {};
-        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], instagram: x.instagram || "", filaAntiga: x.fila || [] };
+        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], cupomInfo: x.cupomInfo || {}, instagram: x.instagram || "", filaAntiga: x.fila || [] };
       },
-      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], instagram: c.instagram || "", atualizadoEm: Date.now() }, { merge: true }),
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], cupomInfo: c.cupomInfo || {}, instagram: c.instagram || "", atualizadoEm: Date.now() }, { merge: true }),
       // Lista: um documento por produto em usuarios/{uid}/lista/{id} (as fotos não estouram o limite de 1 MB)
       lerFila: async () => {
         const snap = await fs.getDocs(colLista());
@@ -1082,7 +1082,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=77"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=78"; });
     }
     edFoto = null;
     try {
@@ -1454,7 +1454,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=77"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=78"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1744,6 +1744,7 @@
     $("#qtdMarcados").textContent = `${n} ${n === 1 ? "marcado" : "marcados"}`;
   }
   $("#desmarcarTodos").addEventListener("click", () => { marcados.clear(); renderFila(); });
+  $("#ppCupons").addEventListener("click", () => abrirPostarCupons());
   const OPCOES_CRIAR = [
     ["roteiro", "Postar um produto", "Story, Status, grupos, canal e feed, um depois do outro", (n) => n === 1, "Marque só 1 produto."],
     ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
@@ -1884,6 +1885,7 @@
     instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
     livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
+    cupons: { nome: "Postar cupons", cor: "#ffd23f", desc: "Status e grupos só com cupons", icone: "i-etiqueta" },
     reels: { nome: "Reels de produtos", cor: "#8e44ec", desc: "1 a 5 produtos, vários modelos, com música", icone: "i-brilho" },
     video: { nome: "Vídeo com tema", cor: "#f2a900", desc: "Seu vídeo com abertura e final com música", icone: "i-rede-video" }
   };
@@ -1899,6 +1901,7 @@
   function passosBase(canal) {
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
+    if (canal === "cupons") return ["cEscolher", "cPronto"];
     if (canal === "reels") return ["canal", "rItens", "rModelo", ...((wz.reels && wz.reels.itens.length > 1) ? ["rOrdem"] : []), "rPronto"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
@@ -1952,6 +1955,7 @@
     if (wz.canal === "roteiro" && item && telaRoteiro(c, item)) return;
     if (wz.canal === "video") { telaVideo(c); return; }
     if (wz.canal === "reels") { telaReels(c); return; }
+    if (wz.canal === "cupons") { telaCupons(c); return; }
     if (wz.passo === "produto") {
       const l2 = fila().filter((x) => !x.carregando && (wz.filtroCat === undefined || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
       c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2>
@@ -3302,6 +3306,113 @@
     iniciarCriar({ itemId: it.id });
     irPara("criar");
   }
+
+  /* ---------- Postar cupons (sem produto): arte para Status/Story + texto para os grupos ---------- */
+  const LOJAS_CUPOM = [["", "Geral"], ["shopee", "Shopee"], ["mercadolivre", "Mercado Livre"], ["amazon", "Amazon"]];
+  function cc() { if (!wz.cup) wz.cup = { sel: [], cor: "rosa", texto: null }; return wz.cup; }
+  const infoCupom = (cp) => { config.cupomInfo = config.cupomInfo || {}; return config.cupomInfo[cp] || (config.cupomInfo[cp] = { loja: "", desc: "" }); };
+  function abrirPostarCupons() {
+    wz = { canal: "cupons", passo: "cEscolher", veioDaLista: true, cup: { sel: (config.cupons || []).slice(0, 1), cor: "rosa", texto: null } };
+    marcados.clear(); irPara("criar"); mostrarPasso();
+  }
+  function textoCupons() {
+    const C = cc(), l = C.sel;
+    const linhas = [l.length > 1 ? "🎟️ *CUPONS DO DIA, MIGA!*" : "🎟️ *CUPOM LIBERADO, MIGA!*", ""];
+    l.forEach((cp) => { const i = infoCupom(cp); linhas.push(`${i.loja && LOJA_FIG[i.loja] ? LOJA_FIG[i.loja] + " " + NOME_LOJA[i.loja] + ": " : "👉 "}*${cp}*${i.desc ? " · " + i.desc : ""}`); });
+    linhas.push("", "Use na finalização da compra e economize 💖", "Corre que cupom bom acaba rápido! ⏳");
+    return comConvite(linhas.join("\n"));
+  }
+  /** Arte do cupom (1080×1920) com o ícone da loja em cada cupom */
+  function desenharCupons(tela, W = 1080) {
+    const C = cc(), P = CORES_VIDEO[C.cor] || CORES_VIDEO.rosa, l = C.sel.slice(0, 5), H = W * 16 / 9, k = W / 1080;
+    tela.width = W; tela.height = H; const ctx = tela.getContext("2d"); ctx.save(); ctx.scale(k, k);
+    ctx.fillStyle = P.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, P.bola, C.cor === "preto" ? "#e9e4d8" : "#ffffff", 0);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (edMarca) ctx.drawImage(edMarca, 540 - 110, 150, 220, 220);
+    ctx.save(); ctx.translate(540, 470); ctx.rotate(-0.04); pilulaReels(ctx, l.length > 1 ? "Cupons do dia" : "Cupom liberado", 0, 0, "#ffd23f", "#1d1d1f", 56, true); ctx.restore();
+    ctx.font = "800 104px Poppins"; ctx.fillStyle = P.texto; ctx.fillText(l.length > 1 ? "Economiza" : "Economiza", 540, 640); ctx.fillStyle = P.destaque; ctx.fillText("aí, miga!", 540, 750);
+    const alt = l.length > 3 ? 170 : 210, gap = 28, y0 = 870 + Math.max(0, (3 - l.length)) * 40;
+    l.forEach((cp, j) => {
+      const i = infoCupom(cp), y = y0 + j * (alt + gap), x = 90, w = 900;
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+      retArredondado(ctx, x, y, w, alt, 34); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
+      retArredondado(ctx, x + 10, y + 10, w - 20, alt - 20, 26); ctx.setLineDash([18, 12]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
+      const temLoja = !!LOGO_LOJA[i.loja], cx = x + 40 + alt * 0.32;
+      if (temLoja) seloLojaCanvas(ctx, i.loja, cx, y + alt / 2, alt * 0.3); else { ctx.save(); ctx.translate(cx, y + alt / 2); iconeReels(ctx, "cupom", alt * 0.55); ctx.restore(); }
+      const tx = cx + alt * 0.32 + 30; ctx.textAlign = "left";
+      ctx.font = `800 ${alt > 180 ? 76 : 64}px Poppins`; ctx.fillStyle = "#e8336d"; ctx.fillText(quebrarTexto(ctx, cp, x + w - tx - 30, 1)[0], tx, y + alt / 2 - (i.desc ? 24 : 0));
+      if (i.desc) { ctx.font = "600 38px Poppins"; ctx.fillStyle = "#1d1d1f"; ctx.fillText(quebrarTexto(ctx, i.desc, x + w - tx - 30, 1)[0], tx, y + alt / 2 + 44); }
+      ctx.textAlign = "center";
+    });
+    const yf = y0 + l.length * (alt + gap) + 70;
+    ctx.font = "600 42px Poppins"; ctx.fillStyle = P.texto; ctx.fillText("Use na finalização da compra", 540, Math.min(yf, 1780));
+    const insta = arroba(config.instagram); if (insta) { ctx.font = "700 40px Poppins"; ctx.fillText(insta, 540, Math.min(yf + 70, 1850)); }
+    ctx.restore();
+  }
+  function telaCupons(c) {
+    const C = cc(), todos = config.cupons || [];
+    if (wz.passo === "cEscolher") {
+      c.innerHTML = `<h2 class="wz-titulo">Quais cupons?</h2>
+        <p class="nota">Marque de 1 a 5. Para cada um, escolha a loja e, se quiser, o que ele dá.</p>
+        <div class="aj-linha"><input id="cNovo" class="campo-cupom" maxlength="30" placeholder="Novo cupom (ex.: MIGA10)" autocapitalize="characters"><button type="button" class="btn btn--rosa" id="cAdd">Adicionar</button></div>
+        <div class="wz-ops">${todos.map((cp) => { const on = C.sel.includes(cp), i = infoCupom(cp); return `<div class="cup-item${on ? " on" : ""}">
+          <button type="button" class="wz-prod wz-flag${on ? " on" : ""}" data-c-sel="${esc(cp)}"><span class="cup-ic">${LOGO_LOJA[i.loja] ? `<img src="${LOGO_LOJA[i.loja]}" alt="">` : "%"}</span><span><b>${esc(cp)}</b><small>${esc(i.desc || (i.loja ? NOME_LOJA[i.loja] : "Toque para marcar"))}</small></span><i class="flag" aria-hidden="true"></i></button>
+          ${on ? `<div class="cup-det"><div class="opcoes-texto">${LOJAS_CUPOM.map(([k, n]) => `<button type="button" data-c-loja="${k}" data-cp="${esc(cp)}" class="${i.loja === k ? "on" : ""}">${n}</button>`).join("")}</div>
+          <input data-c-desc="${esc(cp)}" maxlength="40" value="${esc(i.desc)}" placeholder="O que dá? Ex.: 10% OFF acima de R$ 50"></div>` : ""}</div>`; }).join("") || '<p class="vazio-lista">Você ainda não tem cupons salvos. Adicione acima.</p>'}</div>
+        ${botaoContinuar(C.sel.length > 0, C.sel.length ? `Continuar (${C.sel.length} ${C.sel.length === 1 ? "cupom" : "cupons"})` : "Continuar")}`;
+      return;
+    }
+    if (wz.passo === "cPronto") {
+      if (C.texto == null) C.texto = textoCupons();
+      c.innerHTML = `<h2 class="wz-titulo">Pronto para postar</h2>
+        <div class="wz-previa"><canvas id="cArte"></canvas></div>
+        ${barraCores("data-c-cor", C.cor, CORES_VIDEO)}
+        <div class="campo"><span>Texto para os grupos</span><textarea id="cTexto" rows="8">${esc(C.texto)}</textarea></div>
+        <button type="button" class="btn btn--rosa" id="cStatus">Postar no Status / Story</button>
+        <button type="button" class="btn btn--rosa" id="cGrupos">Enviar nos grupos</button>
+        <div class="duas"><button type="button" class="btn btn--branco" id="cCopiar">Copiar texto</button><button type="button" class="btn btn--branco" id="cBaixar">Baixar imagem</button></div>
+        <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
+      carregarMarca().then(() => desenharCupons($("#cArte"), 540));
+    }
+  }
+  async function arquivoCupons() {
+    const t = document.createElement("canvas"); await carregarMarca(); desenharCupons(t, 1080);
+    return telaParaArquivo(t, "cupons-miga.jpg");
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "cupons") return;
+    const t = e.target, C = cc();
+    if (t.closest("#cAdd")) {
+      const v = String($("#cNovo").value || "").trim().toUpperCase().replace(/\s+/g, "");
+      if (!v) { toast("Digite o cupom"); $("#cNovo").focus(); return; }
+      if (!(config.cupons || []).includes(v)) { config.cupons = [v, ...(config.cupons || [])].slice(0, 30); }
+      if (!C.sel.includes(v) && C.sel.length < 5) C.sel.push(v);
+      gravarConfig(); mostrarPasso(); return;
+    }
+    const s = t.closest("[data-c-sel]");
+    if (s) { const cp = s.dataset.cSel, i = C.sel.indexOf(cp); if (i >= 0) C.sel.splice(i, 1); else if (C.sel.length >= 5) { toast("No máximo 5 cupons"); return; } else C.sel.push(cp); C.texto = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const lj = t.closest("[data-c-loja]");
+    if (lj) { infoCupom(lj.dataset.cp).loja = lj.dataset.cLoja; C.texto = null; gravarConfig(); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const co = t.closest("[data-c-cor]");
+    if (co) { C.cor = co.dataset.cCor; document.querySelectorAll("[data-c-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); desenharCupons($("#cArte"), 540); return; }
+    if (t.closest("#cCopiar")) { if (await copiarTexto($("#cTexto").value)) toast("Texto copiado"); return; }
+    if (t.closest("#cBaixar")) { const arq = await arquivoCupons(); if (arq) { baixarBlob(arq, arq.name); toast("Imagem salva"); } return; }
+    if (t.closest("#cStatus")) {
+      const arq = await arquivoCupons(); await copiarTexto($("#cTexto").value.replace(/[*]/g, ""));
+      const r = await compartilharArquivo(arq, ""); if (r === "sem") { if (arq) baixarBlob(arq, arq.name); toast("Imagem salva: no Status, escolha da galeria"); } else toast("Texto copiado: cole no Status se quiser");
+      return;
+    }
+    if (t.closest("#cGrupos")) {
+      const arq = await arquivoCupons(), txt = $("#cTexto").value;
+      const r = await compartilharArquivo(arq, txt); if (r === "sem") { await copiarTexto(txt); abrirWhatsApp(txt); }
+      return;
+    }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal !== "cupons") return;
+    if (e.target.dataset && e.target.dataset.cDesc) { infoCupom(e.target.dataset.cDesc).desc = e.target.value.trim(); cc().texto = null; clearTimeout(cc().timer); cc().timer = setTimeout(gravarConfig, 700); }
+    if (e.target.id === "cTexto") cc().texto = e.target.value;
+  });
 
   /* ---------- Reels de produtos: um tema só, vários produtos, vários modelos e músicas ---------- */
   // Uma batida para cada modelo (16 passos por compasso: x = toca, r = rufada, o = chimbal aberto, - = segura a nota)
