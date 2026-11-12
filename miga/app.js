@@ -1097,7 +1097,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=114"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=115"; });
     }
     edFoto = null;
     try {
@@ -1470,7 +1470,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=114"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=115"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3161,7 +3161,7 @@
   }
   function barraEditor() {
     const V = vd(), cm = (V.camadas || []).find((x) => x.id === V.sel);
-    if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b>Aa</b>Texto</button><button type="button" data-ed-add="selo"><b>★</b>Selo</button><button type="button" data-ed-add="emoji"><b>✦</b>Figurinha</button></div>
+    if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button></div>
       <p class="nota ed-dica">Toque num texto da prévia para editar. Arraste para posicionar.</p>`;
     const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
     const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
@@ -3543,11 +3543,11 @@
       for (let i = 0; i < 64; i++) y[i] *= i / 64;
       return (cordas0[k] = b);
     };
-    const corda = (f, t, dur, vol, pan = 0, tipo = "violao") => {
+    const corda = (f, t, dur, vol, pan = 0, tipo = "violao", destino = bomba) => {
       const s = ac.createBufferSource(), g = ac.createGain(), fl = ac.createBiquadFilter(); s.buffer = cordaBuf(f, tipo);
       fl.type = "lowpass"; fl.frequency.value = tipo === "piano" ? 5200 : 3400;
       g.gain.setValueAtTime(vol, t); g.gain.setValueAtTime(vol, t + Math.max(0.05, dur)); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.05, dur) + 0.25);
-      s.connect(fl).connect(g); g.connect(lado(bomba, pan)); g.connect(sala); s.start(t); s.stop(t + dur + 0.3);
+      s.connect(fl).connect(g); g.connect(lado(destino, pan)); g.connect(sala); s.start(t); s.stop(t + dur + 0.3);
       if (tipo === "piano") { const s2 = ac.createBufferSource(); s2.buffer = cordaBuf(f * 1.0015, tipo); s2.connect(fl); s2.start(t); s2.stop(t + dur + 0.3); }
     };
     const rhodes = (f, t, dur, vol, pan = 0) => {
@@ -3596,7 +3596,14 @@
       if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.025, "highpass", 3000);
     }
     // "Plim" na hora que aparece o seu @
-    if (plim != null) { const tp = t0 + plim; [72, 76, 79].forEach((m, q) => corda(nota(m + 12), tp, 1.4, 0.16, (q - 1) * 0.3, "piano")); }
+    if (plim != null) {
+      const tp = t0 + plim;
+      // a música abaixa um instante para o toque do @ aparecer bem
+      musica.gain.setValueAtTime(1, tp - 0.03); musica.gain.linearRampToValueAtTime(0.4, tp + 0.04); musica.gain.setValueAtTime(0.4, tp + 0.7); musica.gain.linearRampToValueAtTime(1, tp + 1.4);
+      [72, 76, 79, 84].forEach((m, q) => corda(nota(m + 12), tp, 1.6, 0.6, (q - 1.5) * 0.3, "piano", mestre));
+      { const g = ac.createGain(); env(g, tp, 0.12, 1.4, 0.003); g.connect(mestre); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(96); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(96) * 3.5; mg.gain.setValueAtTime(nota(96), tp); mg.gain.exponentialRampToValueAtTime(1, tp + 0.9); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(tp); x.stop(tp + 1.5); }); }
+      guizo(tp, true);
+    }
     // "Toc" macio quando algo aparece (no lugar do assobio)
     // As aparições não têm som próprio: acontecem no tempo da batida da música (pops fica só para marcar o tempo)
     whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.32, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
@@ -4467,13 +4474,13 @@
   }
   function produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 760, cima = MODELOS_CIMA.has(D.chave), OY = cima ? 70 : 0, FY = 820 + OY;
+    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 760, cima = MODELOS_CIMA.has(D.chave), OY = cima ? 92 : 0, FY = 820 + OY;
     const nome = limparNome(it.nome || ""), novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
     const titulo = mk === "top" ? `Top ${idx + 1}\n*${n > 1 ? "da semana" : "achadinho"}*` : M.titulo.replace("{n}", n > 1 ? n : "");
     const icone = (D.ic && D.ic[0]) || M.icone || "brilho";
     const preco = novo ? brl(novo) : "", off = antigo ? Math.round((1 - novo / antigo) * 100) : 0;
     // Alguns modelos invertem: nome e preço em cima, título embaixo da foto
-    comSubida(ctx, t, A(0), () => tituloGrande(ctx, titulo, cima ? 190 + OY : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone));
+    comSubida(ctx, t, A(0), () => tituloGrande(ctx, titulo, cima ? 186 + OY : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone));
     // Foto (sempre igual)
     comPulo(ctx, t, A(1), 540, FY, () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
@@ -4487,11 +4494,11 @@
       ctx.fillStyle = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
     if (cima) {
-      ctx.font = "700 44px Poppins"; const lc = quebrarTexto(ctx, nome, 920, 2);
-      comSubida(ctx, t, A(3), () => { ctx.font = "700 44px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 330 : 360) + OY + j * 50)); });
-      if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 46px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1270 + OY); ctx.fillRect(540 - w / 2 + ld, 1272 + OY, w - ld, 5); });
-      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1370 : 1310) + OY, () => { { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, A(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1460 + OY, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1500 + OY); });
+      ctx.font = "700 42px Poppins"; const lc = quebrarTexto(ctx, nome, 900, 2);
+      comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
+      if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 + OY); ctx.fillRect(540 - w / 2 + ld, 1252 + OY, w - ld, 5); });
+      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) + OY, () => { { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (it.cupom) comSubida(ctx, t, A(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1418 + OY, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1458 + OY); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)

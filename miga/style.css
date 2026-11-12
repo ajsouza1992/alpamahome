@@ -1212,3 +1212,5 @@ body.modo-selecao main { padding-bottom: 200px; }
 .rp-voltar { justify-self: center; padding: 10px 16px; }
 .rp-voltar { margin: 0 auto !important; }
 .rp-tiles .est-btn b { white-space: nowrap; font-size: 13px; }
+.ed-add button b { width: 32px; height: 32px; }
+.ed-add button b svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
