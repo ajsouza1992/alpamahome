@@ -997,3 +997,5 @@ body.modo-selecao main { padding-bottom: 200px; }
 .car-trilho canvas { flex: none; width: 74%; height: auto; aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: center; box-shadow: 0 8px 22px rgba(0,0,0,.14); background: #fff; }
 .car-vazio { width: 100%; aspect-ratio: 4 / 5; max-height: 420px; display: grid; place-items: center; border-radius: 16px; background: var(--campo); color: var(--cinza); font-weight: 600; }
 .car-nota { margin: 0; text-align: center; }
+.titulo-proprio input { min-width: 0; width: auto; }
+.folha-est .titulo-proprio .btn { flex: 0 0 auto; width: auto; min-width: 0; margin: 0; }

@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=98"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=99"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=98"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=99"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2587,7 +2587,6 @@
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.bola1; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = C.bola2; ctx.beginPath(); ctx.arc(W - 40, H - 40, 200, 0, Math.PI * 2); ctx.fill();
-    if (L.modelo) { const D = decorDe({ modelo: L.modelo, camp: L.camp }); [[70, H * 0.3, 90, -0.2], [1010, H * 0.42, 90, 0.2], [80, H - 220, 80, 0.15], [960, 150, 80, -0.1]].forEach(([x, y2, s, r], i) => { ctx.save(); ctx.translate(x, y2); ctx.rotate(r); iconeReels(ctx, D.ic[i % D.ic.length], s); ctx.restore(); }); }
     // Título
     const linhas = linhasTitulo(op.titulo != null ? op.titulo : L.titulo);
     const FT = formato === "quadrado" ? 70 : 84;
@@ -3068,10 +3067,10 @@
     ctx.save(); ctx.globalAlpha = p; ctx.translate(0, 80 * (1 - suave(p))); desenho(); ctx.restore();
   }
   function bolinhas(ctx, cor1, cor2, T = 0) {
-    const r1 = 230 * (1 + 0.16 * Math.sin(T * 2.2)), r2 = 190 * (1 + 0.18 * Math.sin(T * 2.2 + 1.6));
-    ctx.fillStyle = cor1; ctx.beginPath(); ctx.arc(60, 60, r1, 0, Math.PI * 2); ctx.fill();
+    const r1 = 175 * (1 + 0.12 * Math.sin(T * 2.2)), r2 = 190 * (1 + 0.18 * Math.sin(T * 2.2 + 1.6));
+    ctx.fillStyle = cor1; ctx.beginPath(); ctx.arc(-10, -10, r1, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = cor2; ctx.beginPath(); ctx.arc(1020, 1860, r2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(1010, 300, 34 * (1 + 0.35 * Math.sin(T * 3 + 0.8)), 0, Math.PI * 2); ctx.fillStyle = cor1; ctx.globalAlpha *= 0.7; ctx.fill(); ctx.globalAlpha /= 0.7;
+    ctx.beginPath(); ctx.arc(1035, 1240, 30 * (1 + 0.35 * Math.sin(T * 3 + 0.8)), 0, Math.PI * 2); ctx.fillStyle = cor1; ctx.globalAlpha *= 0.7; ctx.fill(); ctx.globalAlpha /= 0.7;
     ctx.beginPath(); ctx.arc(70, 1560, 26 * (1 + 0.35 * Math.sin(T * 3 + 2.4)), 0, Math.PI * 2); ctx.fillStyle = cor2; ctx.fill();
   }
   function pilulaReels(ctx, texto, cx, cy, fundo, cor, tam, borda) {
@@ -3144,9 +3143,16 @@
   function tocarTrilha(ac, saida, total, pops, whooshes, meio, E = MUSICAS.house, plim = null) {
     const t0 = ac.currentTime + 0.05, SR = ac.sampleRate;
     const ruido = ac.createBuffer(1, SR, SR), d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    const mestre = ac.createGain(); mestre.connect(saida); mestre.gain.value = 0.6;
+    // Compressor no fim (som "cheio" de música pronta) e reverb para dar espaço
+    const comp = ac.createDynamicsCompressor(); comp.threshold.value = -18; comp.knee.value = 8; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.18; comp.connect(saida);
+    const mestre = ac.createGain(); mestre.connect(comp); mestre.gain.value = 0.6;
     const musica = ac.createGain(); musica.connect(mestre);
-    const bomba = ac.createGain(); bomba.connect(musica); // "respira" junto com o bumbo (eletrônica/house)
+    const eco = ac.createConvolver(), ir = ac.createBuffer(2, Math.floor(SR * 2.4), SR);
+    for (let ch = 0; ch < 2; ch++) { const q = ir.getChannelData(ch); for (let i = 0; i < q.length; i++) q[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / q.length, 3.5); }
+    eco.buffer = ir; const ecoVolta = ac.createGain(); ecoVolta.gain.value = E.eco ?? 0.32; eco.connect(ecoVolta).connect(musica);
+    const sala = ac.createGain(); sala.connect(eco);
+    const bomba = ac.createGain(); bomba.connect(musica); // "respira" junto com o bumbo
+    const lado = (no, p) => { if (!ac.createStereoPanner) return no; const s = ac.createStereoPanner(); s.pan.value = p; s.connect(no); return s; };
     if (meio) {
       const [ini, fim, vol] = meio;
       musica.gain.setValueAtTime(1, t0 + Math.max(0, ini - 0.3)); musica.gain.linearRampToValueAtTime(vol, t0 + ini);
@@ -3159,33 +3165,52 @@
     const nota = (m) => 440 * Math.pow(2, (m - 69) / 12);
     // 808 com leve distorção
     const dist = ac.createWaveShaper(); const curva = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curva[i] = Math.tanh(x * (E.sujo ? 4 : 1.8)); } dist.curve = curva; dist.connect(musica);
-    const kick = (t, longo) => { const o = osc("sine", 150, t, longo ? 0.5 : 0.3, 0.95, dist); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(longo ? 42 : 50, t + 0.1); };
-    const caixa = (t, palma) => { barulho(t, palma ? 0.16 : 0.13, palma ? 0.55 : 0.45, "bandpass", palma ? 1400 : 2200); if (!palma) osc("triangle", 190, t, 0.08, 0.3); else barulho(t + 0.012, 0.12, 0.35, "bandpass", 1200); };
-    const chimbal = (t, aberto, vol = 1) => barulho(t, aberto ? 0.22 : 0.035, (aberto ? 0.2 : 0.16) * vol, "highpass", 8000);
+    const kick = (t, longo) => { const o = osc("sine", 165, t, longo ? 0.55 : 0.32, 0.95, dist); o.frequency.setValueAtTime(165, t); o.frequency.exponentialRampToValueAtTime(longo ? 40 : 48, t + 0.09); barulho(t, 0.008, 0.35, "highpass", 2500); };
+    const caixa = (t, palma) => {
+      if (palma) { [0, 0.011, 0.023].forEach((d, q) => { const f = barulho(t + d, q === 2 ? 0.2 : 0.025, q === 2 ? 0.5 : 0.4, "bandpass", 1500); f.Q.value = 1.4; }); barulho(t + 0.02, 0.3, 0.22, "bandpass", 1300, sala); }
+      else { const o = osc("sine", 210, t, 0.11, 0.35); o.frequency.setValueAtTime(210, t); o.frequency.exponentialRampToValueAtTime(150, t + 0.08); barulho(t, 0.16, 0.42, "bandpass", 2600); barulho(t, 0.25, 0.18, "bandpass", 2200, sala); }
+    };
+    const chimbal = (t, aberto, vol = 1) => { const v = vol * (0.72 + Math.random() * 0.28); barulho(t, aberto ? 0.25 : 0.03, (aberto ? 0.14 : 0.13) * v, "highpass", 9500); };
+    const shaker = (t, forte) => { const f = barulho(t, 0.05, forte ? 0.1 : 0.06, "bandpass", 7200); f.Q.value = 1.6; };
+    const aro = (t) => { const f = barulho(t, 0.03, 0.22, "bandpass", 3200); f.Q.value = 4; osc("sine", 820, t, 0.02, 0.06); };
+    /** Pluck moderno: serra com filtro que fecha rápido (no lugar do "beep" de videogame) */
+    const pluck = (f, t, dur, vol, pan = 0, brilho = 3200, destino = bomba) => {
+      const fl = ac.createBiquadFilter(); fl.type = "lowpass"; fl.Q.value = 2; fl.frequency.setValueAtTime(brilho, t); fl.frequency.exponentialRampToValueAtTime(380, t + Math.min(0.35, dur));
+      const g = ac.createGain(); env(g, t, vol, Math.max(0.18, dur), 0.004); fl.connect(g); const sai = lado(destino, pan); g.connect(sai); g.connect(sala);
+      [-9, 9].forEach((dt) => { const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t + dur + 0.2); });
+    };
+    const rhodes = (f, t, dur, vol, pan = 0) => {
+      const g = ac.createGain(); env(g, t, vol, dur * 1.1, 0.006); const sai = lado(bomba, pan); g.connect(sai); g.connect(sala);
+      const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = f; o.connect(g); o.start(t); o.stop(t + dur * 1.2 + 0.1);
+      const m = ac.createOscillator(), mg = ac.createGain(); m.frequency.value = f * 2; mg.gain.setValueAtTime(f * 1.2, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.4); m.connect(mg).connect(o.frequency); m.start(t); m.stop(t + dur * 1.2 + 0.1);
+    };
     const baixo808 = (m, t, dur, prox) => { const o = osc("sine", nota(m), t, dur, 0.85, dist); if (prox && E.desliza) { o.frequency.setValueAtTime(nota(m), t + dur * 0.6); o.frequency.exponentialRampToValueAtTime(nota(prox), t + dur * 0.9); } };
     const baixoSaw = (m, t, dur) => { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 600; f.connect(bomba); osc("sawtooth", nota(m), t, dur, 0.3, f); osc("sine", nota(m - 12), t, dur, 0.35, bomba); };
     const acorde = (ms, t, dur, tipo) => ms.forEach((m) => {
-      if (tipo === "super") { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 3200; f.connect(bomba); [-14, 0, 14].forEach((dt) => osc("sawtooth", nota(m + 12), t, dur, 0.045, f, dt)); }
-      else if (tipo === "piano") { osc("triangle", nota(m + 12), t, dur, 0.09, bomba); osc("sine", nota(m + 24), t, dur * 0.5, 0.03, bomba); }
-      else if (tipo === "teclado") { osc("sine", nota(m + 12), t, dur, 0.07); osc("triangle", nota(m + 12), t, dur * 0.4, 0.03, musica, 6); }
-      else if (tipo === "cordas") { const g = ac.createGain(), o = ac.createOscillator(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1800; o.type = "sawtooth"; o.frequency.value = nota(m + 12); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.035, t + 0.15); g.gain.linearRampToValueAtTime(0.0001, t + dur); o.connect(f).connect(g).connect(musica); o.start(t); o.stop(t + dur + 0.05); }
-      else osc("triangle", nota(m + 12), t, dur, 0.07);
+      if (tipo === "super") { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 4200; f.connect(bomba); f.connect(sala); [[-24, -0.6], [-11, -0.3], [0, 0], [11, 0.3], [24, 0.6]].forEach(([dt, p]) => osc("sawtooth", nota(m + 12), t, dur, 0.03, lado(f, p), dt)); }
+      else if (tipo === "piano" || tipo === "teclado") rhodes(nota(m + 12), t, Math.max(dur, 0.5), tipo === "piano" ? 0.1 : 0.08, (m % 3 - 1) * 0.25);
+      else if (tipo === "violao") ms.length && pluck(nota(m + 12), t + ms.indexOf(m) * 0.018, 0.5, 0.07, (ms.indexOf(m) - 1) * 0.3, 2200);
+      else if (tipo === "cordas") { const g = ac.createGain(), o = ac.createOscillator(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1800; o.type = "sawtooth"; o.frequency.value = nota(m + 12); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.035, t + 0.15); g.gain.linearRampToValueAtTime(0.0001, t + dur); o.connect(f).connect(g); g.connect(lado(musica, (m % 2 ? 0.35 : -0.35))); g.connect(sala); o.start(t); o.stop(t + dur + 0.05); }
+      else pluck(nota(m + 12), t, Math.min(dur, 0.45), 0.06, (m % 3 - 1) * 0.3);
     });
     const lider = (m, t, dur) => {
       const tipo = E.lider || "triangle";
-      if (tipo === "sino") { osc("sine", nota(m), t, 0.5, 0.16); osc("sine", nota(m) * 2.76, t, 0.18, 0.05); }
+      if (tipo === "sino") { const g = ac.createGain(); env(g, t, 0.14, 0.9, 0.003); g.connect(musica); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(m); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(m) * 3.5; mg.gain.setValueAtTime(nota(m) * 2, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.6); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(t); x.stop(t + 1.1); }); }
       else if (tipo === "cowbell") { const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = nota(m) * 1.5; f.Q.value = 3; f.connect(musica); osc("square", nota(m), t, 0.12, 0.2, f); osc("square", nota(m) * 1.48, t, 0.12, 0.14, f); }
-      else osc(tipo, nota(m), t, dur, E.liderVol || 0.12);
+      else if (tipo === "sine") { const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime((E.liderVol || 0.12) * 0.8, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.25); g.connect(musica); g.connect(sala);
+        const o = ac.createOscillator(); o.frequency.value = nota(m); const v = ac.createOscillator(), vg = ac.createGain(); v.frequency.value = 5.2; vg.gain.value = nota(m) * 0.006; v.connect(vg).connect(o.frequency); o.connect(g); [o, v].forEach((x) => { x.start(t); x.stop(t + dur + 0.35); }); }
+      else pluck(nota(m), t, Math.max(0.3, dur), (E.liderVol || 0.12) * 0.75, 0.15, 4200, musica);
     };
     const passo = 60 / E.bpm / 4, fimMusica = total - 0.3, P = (s, i) => (s || "")[i % 16] || ".";
     let ultimoBaixo = null;
     for (let st = 0; st * passo < fimMusica; st++) {
       const i = st % 16, bar = Math.floor(st / 16) % 4, sw = (i % 2 ? (E.balanco || 0) * passo : 0), t = t0 + st * passo + sw;
-      if (P(E.k, i) === "x") { kick(t, E.k808); if (E.bomba) { bomba.gain.setValueAtTime(0.35, t); bomba.gain.linearRampToValueAtTime(1, t + passo * 3); } }
+      if (P(E.k, i) === "x") { kick(t, E.k808); const fundo = E.bomba ? 0.35 : 0.65; bomba.gain.setValueAtTime(fundo, t); bomba.gain.linearRampToValueAtTime(1, t + passo * 3); }
       if (P(E.s, i) === "x") caixa(t, E.palma);
       const h = P(E.h, i); if (h === "x") chimbal(t, false, E.chVol || 1); else if (h === "r") for (let q = 0; q < 3; q++) chimbal(t + q * passo / 3, false, 0.8);
       if (P(E.o, i) === "o") chimbal(t, true);
-      if (P(E.tique, i) === "x") osc("square", i % 8 ? 1300 : 1700, t, 0.025, 0.05);
+      if (P(E.tique, i) === "x") aro(t);
+      const sh = P(E.sh, i); if (sh === "x" || sh === "X") shaker(t, sh === "X");
       const bx = P(E.b, i);
       if (bx === "x" || bx === "X") {
         let len = 1; while (len < 16 && P(E.b, i + len) === "-") len++;
@@ -3195,7 +3220,7 @@
       }
       const cx = P(E.c, i); if (cx === "x") { let len = 1; while (len < 16 && P(E.c, i + len) === "-") len++; acorde(E.acordes[bar], t, passo * len * 0.95, E.acordeTipo); }
       if (E.melodia && st >= (E.entra ?? 32)) { const m = E.melodia[(st - (E.entra ?? 32)) % E.melodia.length]; if (m) lider(m, t, passo * 1.6); }
-      if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.04, "highpass", 3000);
+      if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.025, "highpass", 3000);
     }
     // "Plim" na hora que aparece o seu @
     if (plim != null) { const tp = t0 + plim; [84, 91, 96].forEach((m, q) => osc("sine", nota(m), tp, 1.1, [0.25, 0.12, 0.07][q], mestre)); osc("triangle", nota(96), tp, 0.4, 0.05, mestre); }
@@ -3714,6 +3739,16 @@
       lider: "triangle", liderVol: 0.13, entra: 16, melodia: [76, 0, 77, 76, 74, 0, 72, 0, 74, 0, 76, 0, 72, 0, 0, 0, 71, 0, 72, 71, 69, 0, 67, 0, 69, 0, 71, 0, 72, 0, 0, 0] },
     afrobeat: { bpm: 108, balanco: 0.08, k: "x.....x...x.....", s: "...x..x....x..x.", h: "x.xx.x.xx.x.x.xx", chVol: 0.8, b: "x--x--x-x--x--x-", baixo: "808", c: "..x...x...x...x.", acordeTipo: "piano", acordes: [[60, 64, 67], [57, 60, 64], [65, 69, 72], [55, 59, 62]], raiz: [24, 21, 29, 19],
       lider: "triangle", liderVol: 0.12, entra: 16, melodia: [79, 0, 79, 76, 0, 79, 0, 81, 79, 0, 76, 0, 74, 0, 0, 0, 76, 0, 76, 74, 0, 76, 0, 79, 76, 0, 74, 0, 72, 0, 0, 0] },
+    reggaetonmoderno: { bpm: 94, k: "x...x...x...x...", s: "...x..x....x..x.", palma: true, h: "x.x.x.x.x.x.x.x.", chVol: 0.7, sh: "..x...x...x...x.", b: "x-..x-..x-..x-..", baixo: "808", desliza: true, c: "x..x..x...x..x..", acordeTipo: "pluck",
+      acordes: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], raiz: [33, 29, 36, 31], lider: "sine", liderVol: 0.12, entra: 32, melodia: [76, 0, 0, 74, 0, 0, 72, 0, 74, 0, 76, 0, 0, 0, 0, 0, 72, 0, 0, 71, 0, 0, 69, 0, 71, 0, 72, 0, 0, 0, 0, 0] },
+    latinpop: { bpm: 102, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "..x...x...x...x.", sh: "xXxxxXxxxXxxxXxx", b: "x..x..x.x..x..x.", baixo: "808", c: "x..x..x.x..x..x.", acordeTipo: "violao",
+      acordes: [[59, 62, 66], [55, 59, 62], [50, 54, 57], [57, 61, 64]], raiz: [35, 31, 26, 33], lider: "pluck", liderVol: 0.11, entra: 32, melodia: [78, 0, 76, 0, 74, 0, 74, 76, 78, 0, 0, 0, 79, 0, 78, 0, 76, 0, 74, 0, 73, 0, 74, 76, 0, 0, 0, 0, 0, 0, 0, 0] },
+    moombahton: { bpm: 108, bomba: true, k: "x...x...x...x...", s: "...x..x....x..x.", palma: true, h: "x.x.x.x.x.x.x.x.", o: "..o...o...o...o.", b: "x-..x-..x-..x-..", baixo: "saw", c: "x.....x.....x...", acordeTipo: "super",
+      acordes: [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 55, 59]], raiz: [33, 31, 29, 28], lider: "pluck", liderVol: 0.1, entra: 32, melodia: [81, 0, 0, 79, 0, 0, 76, 0, 79, 0, 81, 0, 0, 0, 0, 0, 84, 0, 0, 81, 0, 0, 79, 0, 76, 0, 79, 0, 0, 0, 0, 0] },
+    cumbiapop: { bpm: 96, k: "x.......x.......", s: "....x.......x...", h: "..x...x...x...x.", sh: "xxXxxxXxxxXxxxXx", b: "x...x...x...x...", baixo: "808", c: "..x...x...x...x.", acordeTipo: "violao",
+      acordes: [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 56, 59]], raiz: [33, 31, 29, 28], lider: "pluck", liderVol: 0.11, entra: 16, melodia: [76, 0, 77, 0, 76, 0, 74, 0, 72, 0, 0, 0, 74, 0, 0, 0, 71, 0, 72, 0, 74, 0, 72, 0, 71, 0, 0, 0, 68, 0, 0, 0] },
+    latintrap: { bpm: 140, k808: true, desliza: true, k: "x.........x.....", s: "........x.......", palma: true, h: "x.x.x.x.x.x.xrx.", sh: "....x.......x...", b: "x---------x--x--", baixo: "808", c: "x---------------", acordeTipo: "teclado",
+      acordes: [[57, 60, 64, 67], [53, 57, 60, 64], [50, 53, 57, 60], [52, 56, 59, 62]], raiz: [33, 29, 26, 28], lider: "sine", liderVol: 0.13, entra: 16, melodia: [76, 0, 0, 0, 72, 0, 74, 0, 76, 0, 0, 0, 0, 0, 0, 0, 77, 0, 0, 0, 76, 0, 74, 0, 72, 0, 0, 0, 71, 0, 0, 0] },
     phonk: { bpm: 130, k808: true, sujo: true, k: "x.....x...x.....", s: "........x.......", h: "x.x.x.x.x.x.x.x.", b: "x-----x---x-----", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [56, 60, 63], [58, 62, 65]], raiz: [36, 36, 32, 34],
       lider: "cowbell", entra: 0, melodia: [72, 0, 72, 75, 0, 72, 0, 70, 72, 0, 72, 75, 0, 79, 0, 77, 72, 0, 72, 75, 0, 72, 0, 70, 68, 0, 68, 70, 0, 72, 0, 0] }
   };
@@ -3723,7 +3758,7 @@
     trap: ["Trap", "grave que desliza"], trappesado: ["Trap pesado", "grave com muita ênfase"], trapmelodico: ["Trap melódico", "grave e suave"],
     drill: ["Drill", "tenso, com tique-taque"], funk: ["Funk", "dançante"], funkmandela: ["Funk mandelão", "grave estourado"],
     phonk: ["Phonk", "grave sujo e sininho"],
-    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], perreosuave: ["Perreo suave", "romântico com cordas"], reggaetonpop: ["Reggaeton pop", "alegre e romântico"], reggaetonnoite: ["Reggaeton da noite", "lento e envolvente"], bachata: ["Bachata pop", "romântica e dançante"], afrobeat: ["Afrobeat", "suingado"],
+    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], perreosuave: ["Perreo suave", "romântico com cordas"], reggaetonpop: ["Reggaeton pop", "alegre e romântico"], reggaetonnoite: ["Reggaeton da noite", "lento e envolvente"], bachata: ["Bachata pop", "romântica e dançante"], reggaetonmoderno: ["Reggaeton moderno", "pluck e grave deslizando"], latinpop: ["Latin pop", "violão e shaker, alegre"], moombahton: ["Moombahton", "latino eletrônico"], cumbiapop: ["Cumbia pop", "dançante e leve"], latintrap: ["Trap latino", "grave e romântico"], afrobeat: ["Afrobeat", "suingado"],
     disco: ["Disco", "baixo saltitante"], boombap: ["Boom bap", "rap anos 90"], lofi: ["Lo-fi", "calmo e delicado"]
   };
   const MODELOS_REELS = {
@@ -3802,7 +3837,6 @@
     ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = C.bola; ctx.beginPath(); ctx.arc(60, 60, 200, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = R.cor === "preto" ? "#e9e4d8" : "#ffffff"; ctx.beginPath(); ctx.arc(W - 60, H - 60, 170, 0, Math.PI * 2); ctx.fill();
-    const D = decorAtual; if (D) [[95, H * 0.42, 100, -0.2], [985, H * 0.5, 100, 0.2], [110, H * 0.86, 90, 0.15]].forEach(([x, y, s, r], i) => { ctx.save(); ctx.translate(x, y); ctx.rotate(r); iconeReels(ctx, D.ic[i % D.ic.length], s); ctx.restore(); });
     const s = Math.min(1, (H - 30) / 1560), dw = 1080 * s;
     ctx.drawImage(telaArte, 0, 170, 1080, 1560, (W - dw) / 2, (H - 1560 * s) / 2, dw, 1560 * s);
     if (edMarca) ctx.drawImage(edMarca, W - 165, H - 160, 130, 130);
@@ -3810,32 +3844,32 @@
   let semFundo = false;
   /** A cara de cada modelo: figurinhas do tema, selo, frase, cor e faixa */
   const DECOR = {
-    achadinho: { ic: ["brilho", "bolsa"], selo: "Achadinho", frase: "Achei e já separei pra você", cor: "rosa" },
-    relampago: { ic: ["raio", "relogio"], selo: "Corre!", frase: "Por pouco tempo", cor: "preto" },
-    baixou: { ic: ["etiqueta", "cupom"], selo: "Baixou!", frase: "O menor preço que eu vi", cor: "creme" },
-    ultimas: { ic: ["relogio", "fogo"], frase: "Termina hoje", cor: "rosa" },
-    novidade: { ic: ["presente", "brilho"], selo: "Novidade", frase: "Acabou de chegar", cor: "branco" },
-    top: { ic: ["trofeu", "brilho"], frase: "Os mais amados da semana", cor: "creme" },
-    cupom: { ic: ["cupom", "etiqueta"], selo: "Com cupom", frase: "Use o cupom no carrinho", cor: "rosa" },
+    achadinho: { ic: ["brilho", "bolsa"], selo: "Achadinho", frase: "Achei e já separei pra você", cor: "rosa", lay: "polaroid" },
+    relampago: { ic: ["raio", "relogio"], selo: "Corre!", frase: "Por pouco tempo", cor: "preto", lay: "oferta" },
+    baixou: { ic: ["etiqueta", "cupom"], selo: "Baixou!", frase: "O menor preço que eu vi", cor: "creme", lay: "oferta" },
+    ultimas: { ic: ["relogio", "fogo"], frase: "Termina hoje", cor: "rosa", lay: "oferta" },
+    novidade: { ic: ["presente", "brilho"], selo: "Novidade", frase: "Acabou de chegar", cor: "branco", lay: "balao" },
+    top: { ic: ["trofeu", "brilho"], frase: "Os mais amados da semana", cor: "creme", lay: "revista" },
+    cupom: { ic: ["cupom", "etiqueta"], selo: "Com cupom", frase: "Use o cupom no carrinho", cor: "rosa", lay: "circulo" },
     amei: { ic: ["coracao", "brilho"], selo: "Amei", frase: "Precisava te mostrar", cor: "branco", lay: "balao" },
     vale: { ic: ["coracao", "brilho"], frase: "Bem avaliado e com preço bom", cor: "creme", lay: "balao" },
     sohoje: { ic: ["fogo", "relogio"], frase: "Amanhã pode voltar ao normal", cor: "preto", lay: "oferta" },
     cozinha: { ic: ["panela", "brilho"], selo: "Cozinha", frase: "Facilita o dia a dia na cozinha", cor: "creme", lay: "polaroid" },
     cheirosa: { ic: ["perfume", "brilho"], selo: "Cheirosa", frase: "Perfume com preço de amiga", cor: "rosa", lay: "circulo" },
-    linda: { ic: ["batom", "coracao"], selo: "Beleza", frase: "Pra ficar linda gastando pouco", cor: "rosa", lay: "circulo" },
-    casa: { ic: ["casa", "brilho"], selo: "Casa", frase: "Deixa a casa mais bonita", cor: "creme", lay: "polaroid" },
+    linda: { ic: ["batom", "coracao"], selo: "Beleza", frase: "Pra ficar linda gastando pouco", cor: "branco", lay: "revista" },
+    casa: { ic: ["casa", "brilho"], selo: "Casa", frase: "Deixa a casa mais bonita", cor: "branco", lay: "circulo" },
     look: { ic: ["cabide", "brilho"], selo: "Look", frase: "Combina com tudo", cor: "rosa", lay: "revista" },
     treino: { ic: ["haltere", "fogo"], selo: "Treino", frase: "Pra treinar com estilo", cor: "preto", lay: "revista" },
-    organiza: { ic: ["casa", "brilho"], selo: "Organiza", frase: "Tudo no lugar", cor: "branco", lay: "polaroid" },
-    autocuidado: { ic: ["coracao", "brilho"], selo: "Autocuidado", frase: "Um mimo pra você", cor: "rosa", lay: "circulo" },
+    organiza: { ic: ["casa", "brilho"], selo: "Organiza", frase: "Tudo no lugar", cor: "branco", lay: "balao" },
+    autocuidado: { ic: ["coracao", "brilho"], selo: "Autocuidado", frase: "Um mimo pra você", cor: "creme", lay: "polaroid" },
     bebe: { ic: ["mamadeira", "coracao"], selo: "Bebê", frase: "Pros pequenos", cor: "branco", lay: "balao" },
     pet: { ic: ["patinha", "coracao"], selo: "Pet", frase: "Mimo pro seu bichinho", cor: "creme", lay: "balao" },
     tech: { ic: ["fone", "raio"], selo: "Tech", frase: "Tecnologia com desconto", cor: "preto", lay: "revista" },
-    presentes: { ic: ["presente", "coracao"], selo: "Presente", frase: "Agrada sem gastar muito", cor: "rosa", lay: "polaroid" },
+    presentes: { ic: ["presente", "coracao"], selo: "Presente", frase: "Agrada sem gastar muito", cor: "rosa", lay: "balao" },
     ate50: { ic: ["etiqueta", "cupom"], selo: "Até R$ 50", frase: "Baratinho de verdade", cor: "creme", lay: "balao" },
-    viagem: { ic: ["aviao", "bolsa"], selo: "Viagem", frase: "Pra levar na mala", cor: "branco", lay: "polaroid" },
-    peleRica: { ic: ["batom", "brilho"], selo: "Skincare", frase: "Pele de rica gastando pouco", cor: "rosa", lay: "circulo" },
-    make: { ic: ["batom", "coracao"], selo: "Make", frase: "Make linda e baratinha", cor: "rosa", lay: "circulo" },
+    viagem: { ic: ["aviao", "bolsa"], selo: "Viagem", frase: "Pra levar na mala", cor: "branco", lay: "revista" },
+    peleRica: { ic: ["batom", "brilho"], selo: "Skincare", frase: "Pele de rica gastando pouco", cor: "creme", lay: "balao" },
+    make: { ic: ["batom", "coracao"], selo: "Make", frase: "Make linda e baratinha", cor: "preto", lay: "oferta" },
     cozinhaSonhos: { ic: ["panela", "coracao"], selo: "Cozinha", frase: "A cozinha dos sonhos", cor: "creme", lay: "polaroid" },
     looks50: { ic: ["cabide", "etiqueta"], selo: "Até R$ 50", frase: "Look completo gastando pouco", cor: "rosa", lay: "revista" },
     viral: { ic: ["fogo", "brilho"], selo: "Viral", frase: "Todo mundo está comprando", cor: "preto", lay: "revista" },
@@ -3853,15 +3887,7 @@
   const decorDe = (R) => (R.camp && DECOR["c_" + R.camp]) || DECOR[R.modelo] || DECOR.achadinho;
   let decorAtual = null;
   const POS_DECOR = [[95, 600, 110, -0.2], [985, 720, 105, 0.2], [90, 1060, 95, 0.15], [990, 1110, 100, -0.15], [140, 1810, 90, 0.1]];
-  function desenharDecor(ctx, D) {
-    if (!D) return; const T = relogioReels;
-    if (D.natal) for (let i = 0; i < 14; i++) { const x = (i * 157 + 60) % 1080, y = ((i * 263 + T * 90) % 2000) - 40; ctx.save(); ctx.globalAlpha = 0.35; ctx.translate(x, y); ctx.rotate(T + i); iconeReels(ctx, "floco", 50 + (i % 3) * 16); ctx.restore(); }
-    POS_DECOR.forEach(([x, y, s, r], i) => { const nome = D.ic[i % D.ic.length]; ctx.save(); ctx.translate(x, y + Math.sin(T * 2 + i) * 10); ctx.rotate(r + Math.sin(T * 1.5 + i) * 0.06); iconeReels(ctx, nome, s); ctx.restore(); });
-    if (D.faixa) {
-      ctx.save(); ctx.translate(540, 96); ctx.rotate(-0.04); ctx.fillStyle = "#ffd23f"; ctx.fillRect(-700, -40, 1400, 80); ctx.fillStyle = "#1d1d1f"; ctx.font = "800 44px Poppins"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      const txt = (D.faixa + "  •  ").repeat(8), w = ctx.measureText(D.faixa + "  •  ").width; ctx.fillText(txt, -700 - ((T * 120) % w), 3); ctx.restore();
-    }
-  }
+  function desenharDecor() { /* fundo limpo: o tema aparece no título, na cor e nos selos */ }
   let relogioReels = 0; // tempo total do Reels, para as bolinhas não "pularem" na troca de tela
   function fundoReels(ctx, C, cor) { if (semFundo) return; ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, cor === "preto" ? "#e9e4d8" : "#ffffff", relogioReels); desenharDecor(ctx, decorAtual); }
   /** Ícones desenhados com a cara do Miga (contorno preto, rosa e amarelo), no lugar de emojis */
@@ -3999,158 +4025,83 @@
   }
   /** Um produto na tela (3,6 s). Mesma cor do começo ao fim; o modelo muda a animação. */
   function produtoReels(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
-    produtoReelsBase(ctx, t, it, bmp, idx, n, mk, M, C, cor);
+    produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor);
     // Marca da Miga sempre no canto de baixo, à direita
     if (!semFundo && edMarca) comPulo(ctx, t, 0.3, 975, 1815, () => ctx.drawImage(edMarca, -75, -75, 150, 150));
   }
-  function produtoReelsBase(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
-    if (decorAtual && decorAtual.lay) return produtoLayout(ctx, t, it, bmp, mk, M, C, decorAtual);
+  /* ---------- Arte do produto: fundo limpo, título grande, foto sempre no mesmo lugar ---------- */
+  const ESTILO_LAY = { polaroid: "centro", circulo: "cartao", revista: "esquerda", balao: "contorno", oferta: "oferta" };
+  function tituloGrande(ctx, texto, x, y, tam, alinhar, C, modo) {
+    const linhas = linhasTitulo(String(texto).replace(/\p{Extended_Pictographic}/gu, "").trim()), larg = 960;
+    const medir = (l) => l.reduce((s, [tx]) => s + ctx.measureText(tx).width, 0);
+    ctx.font = `900 ${tam}px Poppins`; while (tam > 60 && linhas.some((l) => medir(l) > larg)) { tam -= 4; ctx.font = `900 ${tam}px Poppins`; }
+    const alto = tam * 1.0, y0 = y - ((linhas.length - 1) * alto) / 2;
+    ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+    linhas.forEach((partes, j) => {
+      let px = alinhar === "left" ? x : x - medir(partes) / 2;
+      partes.forEach(([tx, d]) => {
+        if (d && modo === "contorno") { ctx.lineWidth = Math.max(4, tam * 0.045); ctx.strokeStyle = C.destaque; ctx.strokeText(tx, px, y0 + j * alto); }
+        else { ctx.fillStyle = d ? (modo === "cartao" ? "#e8336d" : C.destaque) : (modo === "cartao" ? "#1d1d1f" : C.texto); ctx.fillText(tx, px, y0 + j * alto); }
+        px += ctx.measureText(tx).width;
+      });
+    });
+    ctx.textAlign = "center"; return linhas.length;
+  }
+  function textoEspacado(ctx, tx, x, y, tam, cor, alinhar = "center") {
+    ctx.font = `800 ${tam}px Poppins`; ctx.fillStyle = cor; ctx.textAlign = alinhar; ctx.textBaseline = "middle";
+    if ("letterSpacing" in ctx) ctx.letterSpacing = `${Math.round(tam * 0.16)}px`; ctx.fillText(tx.toUpperCase(), x, y); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.textAlign = "center";
+  }
+  function produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const tag = mk === "top" ? (idx === 0 ? "O mais amado!" : `Top ${n} achadinhos`) : M.tag;
-    comPulo(ctx, t, 0.05, 540, 250, () => { if (mk === "relampago") ctx.rotate(Math.sin(t * 30) * 0.03 * Math.max(0, 1 - t)); etiquetaReels(ctx, tag, 0, 0, 46); });
-    // Foto (menor quando tem cupom, para sobrar espaço)
-    const L = it.cupom ? 640 : 760, fy = it.cupom ? 790 : 820;
-    const foto = () => {
+    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 760, FY = 820;
+    const nome = limparNome(it.nome || ""), novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
+    const titulo = M.titulo.replace("{n}", n > 1 ? n : ""), kicker = mk === "top" ? `Top ${idx + 1}` : (D.selo || M.tag || "");
+    const preco = novo ? brl(novo) : "", off = antigo ? Math.round((1 - novo / antigo) * 100) : 0;
+    const escuro = C.fundo === "#1d1d1f";
+    // Título
+    if (estilo === "esquerda") {
+      comSubida(ctx, t, 0.0, () => textoEspacado(ctx, kicker, 84, 160, 32, C.destaque, "left"));
+      comSubida(ctx, t, 0.08, () => tituloGrande(ctx, titulo, 80, 295, 116, "left", C));
+    } else if (estilo === "cartao") {
+      comPulo(ctx, t, 0.05, 540, 280, () => { ctx.save(); ctx.shadowColor = "rgba(0,0,0,.18)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; retArredondado(ctx, -480, -135, 960, 270, 56); ctx.fillStyle = escuro ? "#ffd23f" : "#ffffff"; ctx.fill(); ctx.restore(); tituloGrande(ctx, titulo, 0, 0, 104, "center", C, "cartao"); });
+    } else if (estilo === "oferta") {
+      comPulo(ctx, t, 0.0, 540, 150, () => { ctx.font = "800 36px Poppins"; const w = ctx.measureText(kicker.toUpperCase()).width + 90; retArredondado(ctx, -w / 2, -34, w, 68, 34); ctx.fillStyle = C.pill; ctx.fill(); textoEspacado(ctx, kicker, 0, 2, 30, C.pillTexto); });
+      if (novo) comPulo(ctx, t, 0.15, 540, 305, () => { const s = 1 + 0.03 * Math.sin(t * 6); ctx.scale(s, s); ctx.font = "900 172px Poppins"; let f = 172; while (f > 90 && ctx.measureText(preco).width > 980) { f -= 6; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(preco, 0, 0); });
+    } else comSubida(ctx, t, 0.05, () => tituloGrande(ctx, titulo, 540, 270, 128, "center", C, estilo === "contorno" ? "contorno" : ""));
+    // Foto (sempre igual)
+    comPulo(ctx, t, 0.2, 540, FY, () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
       if (bmp) { const s = Math.min((L - 80) / bmp.width, (L - 80) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.save(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.clip(); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); ctx.restore(); }
       else iconeReels(ctx, "bolsa", 300);
-    };
-    if (mk === "novidade") {
-      const p = suave(entrada(t, 0.2, 0.8));
-      if (p > 0) { ctx.save(); ctx.beginPath(); ctx.arc(540, fy, p * L * 0.75, 0, Math.PI * 2); ctx.clip(); ctx.translate(540, fy); foto(); ctx.restore(); }
-      for (let s = 0; s < 6; s++) { const ang = s * 1.05 + t * 0.6, r = L * 0.62, br = Math.max(0, Math.sin(t * 4 + s * 1.7)); if (t > 0.8) { ctx.save(); ctx.globalAlpha = br; ctx.translate(540 + Math.cos(ang) * r, fy + Math.sin(ang) * r); iconeReels(ctx, "brilho", 80); ctx.restore(); } }
-    } else comPulo(ctx, t, 0.2, 540, fy, foto, 0.55);
-    if (it.loja) comPulo(ctx, t, 0.45, 540 - L / 2 + 22, fy - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
-    if (mk === "top") comPulo(ctx, t, 0.55, 540 + L / 2 - 30, fy - L / 2 + 30, () => {
-      ctx.rotate(0.12); if (idx === 0) ctx.scale(1.25, 1.25); iconeReels(ctx, "trofeu", 200);
-      ctx.font = "800 54px Poppins"; const tx = `Top ${idx + 1}`, w = ctx.measureText(tx).width + 50; retArredondado(ctx, -w / 2, 95, w, 76, 38); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.lineWidth = 7; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.fillStyle = "#fff"; ctx.fillText(tx, 0, 136);
+    }, 0.55);
+    if (it.loja) comPulo(ctx, t, 0.45, 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
+    // Selo de desconto: círculo liso no canto da foto
+    if (off >= 5) comPulo(ctx, t, 0.55, 540 + L / 2 - 30, FY - L / 2 + 30, () => {
+      ctx.rotate(0.08); ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
+      const ct = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.fillStyle = ct; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
-    if (mk === "ultimas") comPulo(ctx, t, 0.4, 540 + L / 2 - 20, fy - L / 2 + 20, () => {
-      ctx.beginPath(); ctx.arc(0, 0, 85, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.lineWidth = 10; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
-      ctx.lineCap = "round"; ctx.strokeStyle = "#e8336d"; ctx.lineWidth = 10; const ang = t * Math.PI * 2 - Math.PI / 2;
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ang) * 58, Math.sin(ang) * 58); ctx.stroke();
-      ctx.strokeStyle = "#1d1d1f"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -38); ctx.stroke();
-    });
-    if (mk === "amei") for (let s = 0; s < 7; s++) { const fase = (t * 0.55 + s / 7) % 1, x = 540 + (s % 2 ? 1 : -1) * (L / 2 + 20 + (s % 3) * 18) + Math.sin(t * 3 + s) * 20, yy = fy + L / 2 - fase * (L + 120); if (t > 0.7) { ctx.save(); ctx.globalAlpha = Math.sin(fase * Math.PI); ctx.translate(x, yy); iconeReels(ctx, "coracao", 60 + (s % 3) * 18); ctx.restore(); } }
-    if (mk === "vale") comPulo(ctx, t, 1.4, 540 + L / 2 - 70, fy + L / 2 - 70, () => {
-      ctx.rotate(-0.2); iconeReels(ctx, "coracao", 230);
-    }, 0.35);
-    if (mk === "sohoje" && t > 0.5) { ctx.save(); ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(t * 5)); retArredondado(ctx, 540 - L / 2 - 14, fy - L / 2 - 14, L + 28, L + 28, 74); ctx.lineWidth = 14; ctx.strokeStyle = "#ff7a00"; ctx.stroke(); ctx.restore();
-      comPulo(ctx, t, 0.5, 540 + L / 2 - 40, fy - L / 2 + 30, () => { const s = 1 + 0.08 * Math.sin(t * 9); ctx.scale(s, s); iconeReels(ctx, "fogo", 170); }); }
-    const D = decorAtual || {};
-    if (D.selo && !["top", "ultimas", "sohoje", "vale"].includes(mk)) comPulo(ctx, t, 0.5, 540 + L / 2 - 20, fy - L / 2 + 26, () => { ctx.rotate(0.12); pilulaReels(ctx, D.selo, 0, 0, "#ffd23f", "#1d1d1f", 38, true); });
     // Nome
-    const nome = limparNome(it.nome || ""), antigoTem = it.precoAntigo && it.precoAntigo > it.precoNovo;
-    let y = fy + L / 2 + 110;
-    comSubida(ctx, t, 0.6, () => { ctx.font = "700 54px Poppins"; ctx.fillStyle = C.texto; quebrarTexto(ctx, nome, 940, 2).forEach((l, j) => ctx.fillText(l, 540, y + j * 66)); });
-    ctx.font = "700 54px Poppins"; y += nome && quebrarTexto(ctx, nome, 940, 2).length > 1 ? 160 : 95;
-    if (D.frase && !it.cupom && !(antigoTem && quebrarTexto(ctx, nome, 940, 2).length > 1)) { comSubida(ctx, t, 0.75, () => { ctx.font = "italic 500 40px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.85; ctx.fillText(D.frase, 540, y - 22); }); y += 46; }
-    const novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
-    if (antigo) {
-      const ini = mk === "baixou" ? 0.8 : 0.85;
-      comSubida(ctx, t, ini, () => {
-        ctx.font = "600 52px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo); ctx.fillText(tx, 540, y);
-        const lw = ctx.measureText(tx).width, ld = ctx.measureText("de ").width, p = mk === "baixou" ? suave(entrada(t, 1.2, 0.45)) : 1;
-        ctx.fillRect(540 - lw / 2 + ld, y + 2, (lw - ld) * p, 6);
-      });
-      y += 100;
-    }
-    if (novo) {
-      const ini = mk === "baixou" ? 1.65 : 1.15;
-      if (mk === "baixou") {
-        const p = entrada(t, ini, 0.45); if (p > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, p * 2); ctx.translate(540, y + 40 - 160 * (1 - suave(p))); etiquetaReels(ctx, (antigo ? "por " : "") + brl(novo), 0, 0, 72, -0.03); ctx.restore(); }
-      } else comPulo(ctx, t, ini, 540, y + 40, () => { const s = mk === "relampago" && t > 1.7 ? 1 + 0.05 * Math.sin(t * 14) : 1; ctx.scale(s, s); etiquetaReels(ctx, (antigo ? "por " : "") + brl(novo), 0, 0, 72, -0.03); });
-      y += 200;
-    }
-    if (it.cupom && mk === "cupom") comPulo(ctx, t, 1.7, 540, y, () => {
-      ctx.rotate(Math.sin(t * 6) * 0.03); ctx.font = "800 62px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 110;
-      retArredondado(ctx, -cw / 2, -65, cw, 130, 30); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.setLineDash([18, 11]); ctx.lineWidth = 7; ctx.strokeStyle = "#e8336d"; ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = "#e8336d"; ctx.fillText(tx, 0, 4);
-    });
-    else if (it.cupom) comSubida(ctx, t, 1.7, () => {
-      ctx.font = "800 46px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 80;
-      retArredondado(ctx, 540 - cw / 2, y - 45, cw, 90, 45); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.setLineDash([14, 9]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, y + 2);
-    });
-  }
-  /* ---------- Layouts próprios de cada tema: foto, selo, balão e preço em lugares diferentes ---------- */
-  function formaEstrela(ctx, r, pts) { ctx.beginPath(); for (let i = 0; i < pts * 2; i++) { const a = (i * Math.PI) / pts - Math.PI / 2, q = i % 2 ? r * 0.8 : r; ctx.lineTo(Math.cos(a) * q, Math.sin(a) * q); } ctx.closePath(); }
-  function textoNoMeio(ctx, txt, larg, tam, cor, peso = 800, maxL = 2) {
-    let s = tam; ctx.font = `${peso} ${s}px Poppins`; let l = maxL === 1 ? [txt] : quebrarTexto(ctx, txt, larg, 2);
-    while (s > 22 && l.some((x) => ctx.measureText(x).width > larg)) { s -= 2; ctx.font = `${peso} ${s}px Poppins`; l = maxL === 1 ? [txt] : quebrarTexto(ctx, txt, larg, 2); }
-    ctx.fillStyle = cor; ctx.textAlign = "center"; ctx.textBaseline = "middle"; l.forEach((x, i) => ctx.fillText(x, 0, (i - (l.length - 1) / 2) * s * 1.1));
-  }
-  function seloForma(ctx, forma, txt, r) {
-    ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f";
-    if (forma === "estrela") { formaEstrela(ctx, r, 14); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.stroke(); textoNoMeio(ctx, txt, r * 1.35, r * 0.36, "#1d1d1f"); }
-    else if (forma === "carimbo") { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.strokeStyle = "#e8336d"; ctx.stroke(); ctx.setLineDash([12, 9]); ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, 0, r - 18, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); textoNoMeio(ctx, txt, r * 1.4, r * 0.34, "#e8336d"); }
-    else if (forma === "fita") { ctx.font = "800 44px Poppins"; const w = Math.max(260, ctx.measureText(txt).width + 110); ctx.beginPath(); ctx.moveTo(-w / 2, -42); ctx.lineTo(w / 2, -42); ctx.lineTo(w / 2 - 30, 0); ctx.lineTo(w / 2, 42); ctx.lineTo(-w / 2, 42); ctx.lineTo(-w / 2 + 30, 0); ctx.closePath(); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.stroke(); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, 0, 3); }
-    else pilulaReels(ctx, txt, 0, 0, "#ffd23f", "#1d1d1f", 40, true);
-  }
-  function balaoForma(ctx, w, h, cauda, fundo) {
-    const r = 46; ctx.beginPath(); ctx.moveTo(-w / 2 + r, -h / 2); ctx.arcTo(w / 2, -h / 2, w / 2, h / 2, r); ctx.arcTo(w / 2, h / 2, -w / 2, h / 2, r);
-    ctx.arcTo(-w / 2, h / 2, -w / 2, -h / 2, r); ctx.arcTo(-w / 2, -h / 2, w / 2, -h / 2, r); ctx.closePath();
-    ctx.fillStyle = fundo; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
-  }
-  function fotoNaForma(ctx, bmp, w, h, t, caminho) {
-    ctx.save(); caminho(); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.clip();
-    if (bmp) { const s = Math.min((w - 60) / bmp.width, (h - 60) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); } else iconeReels(ctx, "bolsa", 260);
-    ctx.restore();
-  }
-  function produtoLayout(ctx, t, it, bmp, mk, M, C, D) {
-    fundoReels(ctx, C, null); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const nome = limparNome(it.nome || ""), novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
-    const tag = M.tag, selo = D.selo || tag, frase = D.frase || "", preco = novo ? brl(novo) : "";
-    const linhasNome = (larg, tam, x, y, alinha = "center", cor = C.texto) => comSubida(ctx, t, 0.6, () => { ctx.font = `700 ${tam}px Poppins`; ctx.fillStyle = cor; ctx.textAlign = alinha; quebrarTexto(ctx, nome, larg, 2).forEach((l, j) => ctx.fillText(l, x, y + j * tam * 1.2)); ctx.textAlign = "center"; });
-    const antigoRiscado = (x, y, tam, cor = corAntiga(C)) => { if (!antigo) return; comSubida(ctx, t, 0.85, () => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = cor; const tx = "de " + brl(antigo); ctx.fillText(tx, x, y); const lw = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillRect(x - lw / 2 + ld, y + 2, lw - ld, 5); }); };
-    const sombra = () => { ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; };
-    // A foto fica sempre no mesmo lugar e tamanho; o que muda é o que está em volta dela
-    const L = 760, FY = 820;
-    const foto = (extra) => comPulo(ctx, t, 0.2, 540, FY, () => { if (extra) extra(); ctx.save(); sombra(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#fff"; ctx.fill(); ctx.restore(); fotoNaForma(ctx, bmp, L, L, t, () => retArredondado(ctx, -L / 2, -L / 2, L, L, 64)); }, 0.55);
-    const loja = () => { if (it.loja) comPulo(ctx, t, 0.45, 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62)); };
-    if (D.lay === "polaroid") {
-      // Caixa com o nome do modelo no alto, selo estrela no canto e preço numa caixa
-      comPulo(ctx, t, 0.05, 380, 250, () => { ctx.rotate(-0.04); balaoForma(ctx, 600, 130, 1, "#ffffff"); textoNoMeio(ctx, tag, 540, 50, "#1d1d1f"); });
-      foto(); loja();
-      comPulo(ctx, t, 0.5, 910, 460, () => { ctx.rotate(0.18 + Math.sin(t * 3) * 0.04); seloForma(ctx, "estrela", selo, 120); });
-      linhasNome(940, 50, 540, 1285);
-      antigoRiscado(540, 1425, 48);
-      if (novo) comPulo(ctx, t, 1.15, 540, 1530, () => { ctx.rotate(0.03); balaoForma(ctx, 580, 140, 0, C.pill); textoNoMeio(ctx, (antigo ? "por " : "") + preco, 540, 70, C.pillTexto, 800, 1); });
-    } else if (D.lay === "circulo") {
-      // Frase grande em cima, selo carimbo e preço numa bola sobre a foto
-      comPulo(ctx, t, 0.05, 540, 150, () => pilulaReels(ctx, tag, 0, 0, C.pill, C.pillTexto, 40, true));
-      comSubida(ctx, t, 0.2, () => { ctx.save(); ctx.translate(540, 315); textoNoMeio(ctx, frase || tag, 920, 66, C.texto); ctx.restore(); });
-      foto(); loja();
-      comPulo(ctx, t, 0.5, 880, 490, () => { ctx.rotate(0.2); seloForma(ctx, "carimbo", selo, 112); });
-      if (novo) comPulo(ctx, t, 1.1, 860, 1160, () => { const s = 1 + 0.04 * Math.sin(t * 5); ctx.scale(s, s); ctx.rotate(0.1); ctx.beginPath(); ctx.arc(0, 0, 165, 0, Math.PI * 2); ctx.fillStyle = C.pill; ctx.fill(); ctx.lineWidth = 9; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.font = "600 34px Poppins"; ctx.fillStyle = C.pillTexto; ctx.fillText(antigo ? "por apenas" : "só", 0, -62); ctx.save(); ctx.translate(0, 14); textoNoMeio(ctx, preco, 270, 64, C.pillTexto, 800, 1); ctx.restore(); });
-      linhasNome(940, 52, 540, 1300); antigoRiscado(540, 1440, 46);
-    } else if (D.lay === "revista") {
-      // Manchete grande à esquerda, bloco colorido atrás da foto, fita no canto e preço numa faixa
-      comSubida(ctx, t, 0.05, () => { ctx.font = "900 96px Poppins"; ctx.fillStyle = C.texto; ctx.textAlign = "left"; quebrarTexto(ctx, tag.toUpperCase(), 920, 2).forEach((l, j, arr) => ctx.fillText(l, 80, (arr.length > 1 ? 200 : 260) + j * 100)); ctx.textAlign = "center"; });
-      if (frase) comSubida(ctx, t, 0.3, () => { ctx.font = "italic 500 38px Poppins"; ctx.fillStyle = C.destaque; ctx.textAlign = "left"; ctx.fillText(frase, 84, 385); ctx.textAlign = "center"; });
-      foto(() => { ctx.fillStyle = C.destaque; retArredondado(ctx, -L / 2 + 34, -L / 2 + 34, L, L, 64); ctx.fill(); }); loja();
-      comPulo(ctx, t, 0.5, 850, 470, () => { ctx.rotate(0.3); seloForma(ctx, "fita", selo, 0); });
-      linhasNome(920, 50, 80, 1300, "left");
-      if (novo) comSubida(ctx, t, 1.1, () => { const esc0 = C.fundo === "#1d1d1f"; ctx.fillStyle = esc0 ? "#ffd23f" : "#1d1d1f"; ctx.fillRect(0, 1430, 1080, 150); ctx.fillStyle = esc0 ? "#1d1d1f" : "#ffd23f"; ctx.font = "900 84px Poppins"; ctx.textAlign = "left"; ctx.fillText(preco, 80, 1508); if (antigo) { ctx.font = "600 44px Poppins"; ctx.fillStyle = esc0 ? "rgba(29,29,31,.7)" : "rgba(255,255,255,.75)"; ctx.textAlign = "right"; const tx = brl(antigo), w = ctx.measureText(tx).width; ctx.fillText(tx, 1000, 1508); ctx.fillRect(1000 - w, 1510, w, 5); } ctx.textAlign = "center"; });
-    } else if (D.lay === "balao") {
-      // Frase numa caixa branca em cima, selo estrela rosa e etiqueta de preço
-      comPulo(ctx, t, 0.05, 540, 250, () => { balaoForma(ctx, 900, 160, 1, "#ffffff"); textoNoMeio(ctx, frase || tag, 820, 52, "#1d1d1f"); });
-      comPulo(ctx, t, 0.15, 220, 160, () => { ctx.rotate(-0.12); pilulaReels(ctx, tag, 0, 0, C.pill, C.pillTexto, 34, true); });
-      foto(); loja();
-      comPulo(ctx, t, 0.5, 905, 470, () => { ctx.rotate(0.15 + Math.sin(t * 3) * 0.05); formaEstrela(ctx, 115, 10); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); textoNoMeio(ctx, selo, 150, 40, "#fff"); });
-      linhasNome(940, 52, 540, 1290); antigoRiscado(540, 1420, 48);
-      if (novo) comPulo(ctx, t, 1.15, 540, 1525, () => etiquetaReels(ctx, (antigo ? "por " : "") + preco, 0, 0, 76, 0.03));
+    const alinhar = estilo === "esquerda" ? "left" : "center", xT = estilo === "esquerda" ? 84 : 540;
+    ctx.font = "700 52px Poppins"; const ln = quebrarTexto(ctx, nome, 920, 2);
+    comSubida(ctx, t, 0.6, () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ctx.textAlign = alinhar; ln.forEach((l, j) => ctx.fillText(l, xT, 1275 + j * 62)); ctx.textAlign = "center"; });
+    let y = 1275 + ln.length * 62 + 30;
+    const riscado = (tx, x, yy, tam, al = "center") => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = corAntiga(C); ctx.textAlign = al; ctx.fillText(tx, x, yy); const w = ctx.measureText(tx).width, ld = ctx.measureText(tx.startsWith("de ") ? "de " : tx.startsWith("antes ") ? "antes " : "").width, x0 = al === "left" ? x : x - w / 2; ctx.fillRect(x0 + ld, yy + 2, w - ld, 5); ctx.textAlign = "center"; };
+    if (estilo === "oferta") {
+      if (antigo) comSubida(ctx, t, 0.85, () => riscado("antes " + brl(antigo), 540, y, 46));
+      if (antigo) comPulo(ctx, t, 1.1, 540, y + 85, () => { ctx.font = "800 54px Poppins"; ctx.fillStyle = C.destaque; ctx.fillText(`Economia de ${brl(antigo - novo)}`, 0, 0); });
     } else {
-      // "oferta": o preço vem primeiro, enorme, com a porcentagem numa estrela
-      antigoRiscado(540, 205, 50);
-      if (novo) comPulo(ctx, t, 0.1, 540, 330, () => { const s = 1 + 0.04 * Math.sin(t * 8); ctx.scale(s, s); ctx.font = "900 150px Poppins"; ctx.lineWidth = 16; ctx.strokeStyle = "#1d1d1f"; ctx.lineJoin = "round"; ctx.strokeText(preco, 0, 0); ctx.fillStyle = "#ffd23f"; ctx.fillText(preco, 0, 0); });
-      foto(); loja();
-      if (antigo) comPulo(ctx, t, 0.4, 905, 470, () => { ctx.rotate(0.2); formaEstrela(ctx, 120, 16); ctx.fillStyle = "#e8336d"; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); textoNoMeio(ctx, `-${Math.round((1 - novo / antigo) * 100)}%`, 170, 64, "#fff", 900); });
-      comPulo(ctx, t, 0.6, 540, 1200, () => pilulaReels(ctx, selo.toUpperCase(), 0, 0, "#1d1d1f", "#ffd23f", 48, true));
-      linhasNome(940, 50, 540, 1340);
-      if (frase) comSubida(ctx, t, 0.9, () => { ctx.font = "italic 500 42px Poppins"; ctx.fillStyle = C.texto; ctx.fillText(frase, 540, 1480); });
+      if (antigo) comSubida(ctx, t, 0.85, () => riscado("de " + brl(antigo), xT, y, 46, alinhar));
+      y += antigo ? 95 : 55;
+      if (novo) comPulo(ctx, t, 1.1, xT, y, () => {
+        const tx = (antigo ? "por " : "") + preco;
+        if (estilo === "cartao") { ctx.font = "900 92px Poppins"; const w = ctx.measureText(tx).width + 90; retArredondado(ctx, -w / 2, -66, w, 132, 66); ctx.fillStyle = C.pill; ctx.fill(); ctx.fillStyle = C.pillTexto; ctx.fillText(tx, 0, 4); return; }
+        ctx.font = "900 108px Poppins"; let f = 108; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; }
+        const w = ctx.measureText(tx).width;
+        if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
+        ctx.fillStyle = C.destaque; ctx.textAlign = alinhar; ctx.fillText(tx, 0, 0); ctx.textAlign = "center";
+      });
     }
-    if (it.cupom) comSubida(ctx, t, 1.6, () => { ctx.font = "800 42px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1735, cw, 80, 40); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1777); });
+    if (it.cupom) comSubida(ctx, t, 1.5, () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1555, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1595); });
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) {
