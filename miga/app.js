@@ -1051,7 +1051,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=63"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=64"; });
     }
     edFoto = null;
     try {
@@ -1407,7 +1407,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=63"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=64"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1775,7 +1775,7 @@
     instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
     livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
-    video: { nome: "Vídeo com tema", cor: "#f2a900", desc: "Seu vídeo com a cara do Miga", icone: "i-rede-video" }
+    video: { nome: "Vídeo Reels", cor: "#f2a900", desc: "Abertura e final com música + seu vídeo ou a foto do produto", icone: "i-rede-video" }
   };
   const MONTAGENS = ["achadinho", "relampago", "baixou", "ultimas", "novidade", "enquete"];
   const NOME_MONTAGEM = { achadinho: "Achadinho do dia", relampago: "Oferta relâmpago", baixou: "Baixou o preço", ultimas: "Últimas horas", novidade: "Chegou novidade", enquete: "Você usaria?" };
@@ -2436,7 +2436,7 @@
     ["Mesa decorada", (n) => `Vídeo vertical 9:16 de 6 segundos, vista de cima: o produto da imagem anexada (${n}) sobre uma mesa clara com flores e objetos em tons de rosa e amarelo; a câmera se aproxima devagar até o produto. Estética delicada de loja. Produto igual ao da foto. Sem textos.`]
   ];
   function vd() {
-    if (!wz.video) wz.video = { arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
+    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
     return wz.video;
   }
   function formatoGravacao() {
@@ -2607,10 +2607,11 @@
     if (wz.passo === "vArquivo") {
       const nome = V.nome || "o produto";
       c.innerHTML = `<h2 class="wz-titulo">Escolha o vídeo</h2>
-        <p class="nota">Pode ser feito na IA ou gravado no celular. Ele vira um vídeo em pé (story e reels) com o tema do Miga. Recomendo até 60 segundos.</p>
+        <p class="nota">Pode ser feito na IA ou gravado no celular. Ele vira um Reels em pé com o tema do Miga. Recomendo até 60 segundos. Sem vídeo? O app usa a foto do produto.</p>
         ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
         <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
-        ${botaoContinuar(!!V.url)}
+        <button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "✓ Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>
+        ${botaoContinuar(!!V.url || V.semVideo)}
         <details class="mais"${V.url ? "" : " open"}><summary>Ainda não tem o vídeo? Prompts prontos para a IA</summary>
           <p class="nota">Use numa IA de vídeo (Veo no Gemini, Sora, Kling, Runway…): anexe a <b>foto do produto</b> e cole o prompt. Depois volte aqui e escolha o vídeo.</p>
           ${blocoFotoIA()}
@@ -2622,6 +2623,11 @@
       c.innerHTML = `<h2 class="wz-titulo">Tema do vídeo</h2>
         <div class="wz-miniaturas">${Object.entries(TEMAS_VIDEO).map(([k, t]) => `<button type="button" class="wz-mini${V.tema === k ? " on" : ""}" data-vd-tema="${k}"><canvas width="270" height="480"></canvas><span>${t}</span></button>`).join("")}</div>
         <div class="campo"><span>Cor</span><div class="alternar" id="vdCor">${Object.entries(CORES_VIDEO).map(([k, x]) => `<button type="button" role="radio" data-vd-cor="${k}" aria-checked="${V.cor === k}">${x.nome}</button>`).join("")}</div></div>
+        <div class="aj-bloco vd-extras">
+          <label class="aj-chave"><span><b>Abertura com música</b><small>3 segundos com título, foto e preço</small></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
+          <label class="aj-chave"><span><b>Final com música</b><small>Logo, seu @ e o botão</small></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
+          <label class="aj-chave"><span><b>Música durante o vídeo</b><small>Baixinha, por baixo do som do vídeo</small></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
+        </div>
         ${botaoContinuar(true)}`;
       pintarTemasVideo();
       return;
@@ -2635,15 +2641,16 @@
           <button type="button" class="btn btn--branco" id="vdBaixar">Baixar o vídeo</button>
           <button type="button" class="btn btn--branco" id="vdRefazer">Gravar de novo</button>`
         : `<div class="wz-previa"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
-          <p class="nota">O app toca o vídeo uma vez com o tema por cima e grava ao mesmo tempo: leva o tempo do próprio vídeo. Deixe o app aberto até terminar.</p>
+          <p class="nota">O app monta o Reels e grava em tempo real: leva o tempo do próprio Reels (${Math.round(duracaoReels())} segundos). Deixe o app aberto até terminar.</p>
           <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo</button>`}
         <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
-      if (!r) carregarMarca().then(primeiroQuadro).then((v) => quadroVideo($("#vdQuadro").getContext("2d"), 540, 960, v, V));
+      if (!r) carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((v) => { const cx = $("#vdQuadro").getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 2.6, V); else quadroVideo(cx, 540, 960, v, V); });
     }
   }
   function primeiroQuadro() {
     const V = vd();
+    if (V.semVideo) return fotoDoVideo().then((f) => f && fotoComZoom(f, 0));
     if (V.quadro) return Promise.resolve(V.quadro);
     if (!V.url) return Promise.resolve(null);
     return new Promise((ok) => {
@@ -2658,44 +2665,205 @@
     const v = await primeiroQuadro(), V = vd();
     document.querySelectorAll("[data-vd-tema]").forEach((b) => quadroVideo(b.querySelector("canvas").getContext("2d"), 270, 480, v, { ...V, tema: b.dataset.vdTema }));
   }
+  /* ---------- Reels: abertura, final e a musiquinha do Miga ---------- */
+  const T_ABERTURA = 3.2, T_FINAL = 3.8, T_SO_FOTO = 5;
+  const duracaoMeio = () => { const V = vd(); return V.semVideo ? T_SO_FOTO : (V.duracao || 10); };
+  const duracaoReels = () => { const V = vd(); return (V.abertura ? T_ABERTURA : 0) + duracaoMeio() + (V.final ? T_FINAL : 0); };
+  async function fotoDoVideo() {
+    const V = vd(), it = vdItem();
+    const src = it && it.imagem;
+    if (!src) return null;
+    if (V.fotoSrc === src && V.fotoBmp) return V.fotoBmp;
+    try { const arq = await arquivoDaImagem(src); V.fotoBmp = arq ? await createImageBitmap(arq) : null; V.fotoSrc = src; } catch (e) { V.fotoBmp = null; }
+    return V.fotoBmp;
+  }
+  /** Foto do produto em tela cheia, com zoom lento (para o Reels sem vídeo) */
+  let telaZoom = null;
+  function fotoComZoom(bmp, p) {
+    if (!telaZoom) { telaZoom = document.createElement("canvas"); telaZoom.width = 1080; telaZoom.height = 1920; }
+    const x = telaZoom.getContext("2d"), z = 1 + 0.12 * p;
+    x.fillStyle = "#ffffff"; x.fillRect(0, 0, 1080, 1920);
+    const s = Math.min(1000 / bmp.width, 1300 / bmp.height) * z, iw = bmp.width * s, ih = bmp.height * s;
+    x.drawImage(bmp, (1080 - iw) / 2, (1920 - ih) / 2 - 40, iw, ih);
+    return telaZoom;
+  }
+  // Animações: aparece "pulando" ou "subindo"
+  const entrada = (t, ini, dur = 0.5) => Math.max(0, Math.min(1, (t - ini) / dur));
+  const pulo = (p) => p <= 0 ? 0 : p < 0.6 ? 0.6 + (1.08 - 0.6) * (p / 0.6) : 1.08 - 0.08 * ((p - 0.6) / 0.4);
+  const suave = (p) => 1 - Math.pow(1 - p, 3);
+  function comPulo(ctx, t, ini, cx, cy, desenho, dur = 0.5) {
+    const p = entrada(t, ini, dur); if (p <= 0) return;
+    ctx.save(); ctx.globalAlpha = Math.min(1, p * 2.5); ctx.translate(cx, cy); const s = pulo(p); ctx.scale(s, s); desenho(); ctx.restore();
+  }
+  function comSubida(ctx, t, ini, desenho, dur = 0.55) {
+    const p = entrada(t, ini, dur); if (p <= 0) return;
+    ctx.save(); ctx.globalAlpha = p; ctx.translate(0, 80 * (1 - suave(p))); desenho(); ctx.restore();
+  }
+  function bolinhas(ctx, cor1, cor2) {
+    ctx.fillStyle = cor1; ctx.beginPath(); ctx.arc(60, 60, 230, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = cor2; ctx.beginPath(); ctx.arc(1020, 1860, 190, 0, Math.PI * 2); ctx.fill();
+  }
+  function pilulaReels(ctx, texto, cx, cy, fundo, cor, tam, borda) {
+    ctx.font = `800 ${tam}px Poppins`; const pw = Math.min(1000, ctx.measureText(texto).width + tam * 2), ph = tam * 2.1;
+    retArredondado(ctx, cx - pw / 2, cy - ph / 2, pw, ph, ph / 2); ctx.fillStyle = fundo; ctx.fill();
+    if (borda) { ctx.lineWidth = 8; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); }
+    ctx.fillStyle = cor; ctx.fillText(texto, cx, cy + 3);
+  }
+  /** Abertura (3,2 s): título, foto do produto e preço pulando na tela */
+  function quadroAbertura(ctx, W, t, V) {
+    const k = W / 1080; ctx.save(); ctx.scale(k, k);
+    const C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme, foto = V.fotoBmp;
+    ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920);
+    bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff");
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    comPulo(ctx, t, 0.1, 540, 270, () => { if (edMarca) ctx.drawImage(edMarca, -140, -140, 280, 280); });
+    const linhas = linhasTitulo(V.titulo || "Achadinho\n*do dia*"), tam = linhas.length > 2 ? 100 : 116;
+    comSubida(ctx, t, 0.35, () => {
+      ctx.font = `800 ${tam}px Poppins`;
+      linhas.forEach((partes, j) => {
+        const larg = partes.reduce((s, [x]) => s + ctx.measureText(x).width, 0); let x = (1080 - larg) / 2; ctx.textAlign = "left";
+        partes.forEach(([tx, d]) => { ctx.fillStyle = d ? C.destaque : C.texto; ctx.fillText(tx, x, 540 + j * tam * 1.05); x += ctx.measureText(tx).width; });
+      });
+      ctx.textAlign = "center";
+    });
+    const yFoto = 540 + linhas.length * tam * 1.05 + 300;
+    if (foto) comPulo(ctx, t, 0.9, 540, yFoto, () => {
+      const L = 600; ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+      retArredondado(ctx, -L / 2, -L / 2, L, L, 60); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
+      const s = Math.min((L - 70) / foto.width, (L - 70) / foto.height); ctx.drawImage(foto, -foto.width * s / 2, -foto.height * s / 2, foto.width * s, foto.height * s);
+    });
+    const yPreco = foto ? yFoto + 480 : yFoto;
+    if (V.novo) {
+      if (V.antigo && V.antigo > V.novo) comSubida(ctx, t, 1.35, () => {
+        ctx.font = "600 48px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.8; const tx = "de " + brl(V.antigo); ctx.fillText(tx, 540, yPreco - 112);
+        const lw = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillRect(540 - lw / 2 + ld, yPreco - 110, lw - ld, 5);
+      });
+      comPulo(ctx, t, 1.6, 540, yPreco, () => { ctx.rotate(-0.04); pilulaReels(ctx, (V.antigo > V.novo ? "por " : "") + brl(V.novo), 0, 0, "#ffd23f", "#1d1d1f", 70, true); });
+    }
+    ctx.restore();
+  }
+  /** Final (3,8 s): logo, "Segue a Miga!", seu @ e o botão */
+  function quadroFinal(ctx, W, t, V) {
+    const k = W / 1080; ctx.save(); ctx.scale(k, k);
+    ctx.fillStyle = "#e8336d"; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, "rgba(255,255,255,.95)", "rgba(255,255,255,.95)");
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    comPulo(ctx, t, 0.1, 540, 640, () => { if (edMarca) ctx.drawImage(edMarca, -220, -220, 440, 440); }, 0.55);
+    comSubida(ctx, t, 0.55, () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = "#ffffff"; ctx.fillText("Segue a Miga!", 540, 990); });
+    const insta = arroba(config.instagram);
+    let y = 1170;
+    if (insta) {
+      const pulsa = t > 1.7 ? 1 + 0.06 * Math.sin((t - 1.7) * Math.PI * 2) : 1;
+      comPulo(ctx, t, 1.05, 540, y, () => { ctx.scale(pulsa, pulsa); pilulaReels(ctx, insta, 0, 0, "#ffffff", "#e8336d", 66); });
+      y += 190;
+    }
+    const botao = String(V.botao || "Link na bio").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
+    if (botao) comSubida(ctx, t, 1.6, () => pilulaReels(ctx, botao, 540, y, "#ffd23f", "#1d1d1f", 52));
+    ctx.restore();
+  }
+  /** A musiquinha do Miga, tocada pelo próprio celular (Web Audio) e gravada junto com o vídeo */
+  function tocarTrilha(ac, saida, total, pops, whooshes, meio) {
+    const t0 = ac.currentTime + 0.05, SR = ac.sampleRate;
+    const ruido = ac.createBuffer(1, SR, SR), d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const mestre = ac.createGain(); mestre.connect(saida); mestre.gain.value = 0.6;
+    const musica = ac.createGain(); musica.connect(mestre);
+    // Durante o vídeo: música baixinha (ou sem música)
+    if (meio) {
+      const [ini, fim, vol] = meio;
+      musica.gain.setValueAtTime(1, t0 + Math.max(0, ini - 0.3)); musica.gain.linearRampToValueAtTime(vol, t0 + ini);
+      musica.gain.setValueAtTime(vol, t0 + Math.max(ini, fim - 0.3)); musica.gain.linearRampToValueAtTime(1, t0 + fim);
+    }
+    mestre.gain.setValueAtTime(0.6, t0 + total - 0.5); mestre.gain.linearRampToValueAtTime(0.0001, t0 + total);
+    const env = (g, t, pico, queda, ataque = 0.004) => { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(pico, t + ataque); g.gain.exponentialRampToValueAtTime(0.0001, t + ataque + queda); };
+    const osc = (tipo, f, t, dur, pico, destino = musica) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = tipo; o.frequency.value = f; env(g, t, pico, dur); o.connect(g).connect(destino); o.start(t); o.stop(t + dur + 0.1); return o; };
+    const barulho = (t, dur, pico, filtro, freq, destino = musica) => { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = ruido; f.type = filtro; f.frequency.value = freq; env(g, t, pico, dur, 0.002); s.connect(f).connect(g).connect(destino); s.start(t); s.stop(t + dur + 0.1); return f; };
+    const nota = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    const kick = (t) => { const o = osc("sine", 160, t, 0.32, 0.9); o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.12); };
+    const b = 0.5, acordes = [[60, 64, 67], [55, 59, 62, 67], [57, 60, 64], [53, 57, 60, 65]], raiz = [48, 43, 45, 41];
+    const melodia = [76, 0, 79, 76, 74, 0, 72, 74, 74, 0, 71, 74, 79, 0, 74, 0, 72, 0, 76, 72, 69, 0, 72, 76, 77, 0, 76, 74, 72, 0, 0, 0];
+    const fimMusica = total - 1.6;
+    for (let beat = 0; beat * b < fimMusica; beat++) {
+      const t = t0 + beat * b, c = Math.floor(beat / 4) % 4;
+      kick(t);
+      if (beat % 2 === 1) barulho(t, 0.18, 0.5, "bandpass", 1500);
+      barulho(t + b / 2, 0.05, 0.25, "highpass", 7000); barulho(t, 0.03, 0.12, "highpass", 8000);
+      if (beat % 4 === 3) barulho(t + b / 2, 0.16, 0.18, "highpass", 6000);
+      for (const k of [0, 1]) { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 700; f.connect(musica); osc("sawtooth", nota(raiz[c] + ((beat + k) % 4 === 2 ? 12 : 0)), t + k * b / 2, 0.18, 0.28, f); }
+      if (beat % 2 === 0 || beat % 4 === 3) acordes[c].forEach((m) => osc("triangle", nota(m + 12), t + (beat % 2 ? b / 2 : 0), 0.14, 0.07));
+      if (beat >= 8) for (const k of [0, 1]) { const m = melodia[((beat - 8) * 2 + k) % melodia.length]; if (m) osc("triangle", nota(m), t + k * b / 2, 0.16, 0.14); }
+    }
+    // Final: batida + "plim"
+    const tf = t0 + fimMusica; kick(tf);
+    [84, 91, 96].forEach((m, i) => osc("sine", nota(m), tf, 1.1, [0.25, 0.12, 0.07][i], mestre));
+    acordes[0].forEach((m) => osc("triangle", nota(m + 12), tf, 0.9, 0.08, mestre));
+    // Efeitos sincronizados com a tela
+    pops.forEach((p) => { const o = osc("sine", 1800, t0 + p, 0.1, 0.35, mestre); o.frequency.setValueAtTime(2200, t0 + p); o.frequency.exponentialRampToValueAtTime(520, t0 + p + 0.08); });
+    whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.35, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
+    return t0;
+  }
   async function gravarVideo() {
     const V = vd(), tipo = formatoGravacao();
     if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return; }
-    await carregarMarca();
+    // O som precisa ser ligado logo no toque do botão
+    let ac = null;
+    try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
+    await carregarMarca(); await fotoDoVideo();
+    if (V.semVideo && !V.fotoBmp) { if (ac) ac.close().catch(() => {}); toast("Este produto está sem foto: escolha um vídeo ou coloque uma foto no produto"); return; }
     const btn = $("#vdGerar"); btn.disabled = true; btn.textContent = "Gravando… 0%";
     const barra = $("#vdProgresso"); barra.hidden = false;
     const W = 1080, H = 1920, tela = document.createElement("canvas"); tela.width = W; tela.height = H;
     const ctx = tela.getContext("2d"), previa = $("#vdQuadro").getContext("2d");
-    const v = document.createElement("video"); v.src = V.url; v.playsInline = true;
-    await new Promise((ok) => v.addEventListener("loadedmetadata", ok, { once: true }));
+    let v = null;
+    if (!V.semVideo) {
+      v = document.createElement("video"); v.src = V.url; v.playsInline = true; v.preload = "auto";
+      await new Promise((ok) => v.addEventListener("loadedmetadata", ok, { once: true }));
+      V.duracao = v.duration || 10;
+    }
+    const tA = V.abertura ? T_ABERTURA : 0, tM = duracaoMeio(), tF = V.final ? T_FINAL : 0, total = tA + tM + tF;
     const fluxo = tela.captureStream(30);
-    let ac = null;
+    let t0 = 0;
     try {
-      ac = new (window.AudioContext || window.webkitAudioContext)();
-      const dest = ac.createMediaStreamDestination(); ac.createMediaElementSource(v).connect(dest);
+      if (!ac) throw new Error("sem som");
+      if (ac.state === "suspended") await ac.resume();
+      const dest = ac.createMediaStreamDestination();
+      if (v) ac.createMediaElementSource(v).connect(dest);
+      const pops = [], whooshes = [];
+      if (V.abertura) { pops.push(0.1, 0.35, 0.9, 1.6); if (V.antigo > V.novo) pops.push(1.35); }
+      if (V.final) { const f = tA + tM; pops.push(f + 0.1, f + 0.55, f + 1.05, f + 1.6); whooshes.push(f - 0.3); }
+      if (V.abertura) whooshes.push(tA - 0.3);
+      // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
+      const temTrilha = V.abertura || V.final || V.musica;
+      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001]);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
-    } catch (e) { v.muted = true; }
+    } catch (e) { if (v) v.muted = true; }
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
     const partes = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
     const fim = new Promise((ok) => { rec.onstop = ok; });
-    let rodando = true;
-    const desenhar = () => {
-      if (!rodando) return;
-      quadroVideo(ctx, W, H, v, V); previa.drawImage(tela, 0, 0, 540, 960);
-      const pct = Math.min(100, Math.round((v.currentTime / (v.duration || 1)) * 100));
-      btn.textContent = `Gravando… ${pct}%`; barra.querySelector("i").style.width = pct + "%";
-      requestAnimationFrame(desenhar);
-    };
-    quadroVideo(ctx, W, H, v, V);
+    const inicio = ac && t0 ? null : performance.now();
+    const agora = () => ac && t0 ? ac.currentTime - t0 : (performance.now() - inicio) / 1000;
+    let videoTocando = false;
     rec.start(500);
-    try { await v.play(); } catch (e) { v.muted = true; await v.play(); }
-    desenhar();
-    await new Promise((ok) => v.addEventListener("ended", ok, { once: true }));
-    rodando = false; rec.stop(); await fim;
+    await new Promise((ok) => {
+      const passo = async () => {
+        const t = agora();
+        if (t >= total) { ok(); return; }
+        if (t < tA) quadroAbertura(ctx, W, Math.max(0, t), V);
+        else if (t < tA + tM) {
+          if (v && !videoTocando) { videoTocando = true; try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) { /* segue */ } } }
+          quadroVideo(ctx, W, H, v || fotoComZoom(V.fotoBmp, (t - tA) / tM), V);
+        } else { if (v && !v.paused) v.pause(); quadroFinal(ctx, W, t - tA - tM, V); }
+        previa.drawImage(tela, 0, 0, 540, 960);
+        const pct = Math.min(100, Math.round((t / total) * 100));
+        btn.textContent = `Gravando… ${pct}%`; barra.querySelector("i").style.width = pct + "%";
+        requestAnimationFrame(passo);
+      };
+      passo();
+    });
+    rec.stop(); await fim;
+    if (v) v.pause();
     if (ac) ac.close().catch(() => {});
     const mp4 = tipo.startsWith("video/mp4");
     const blob = new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" });
-    V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-video.${mp4 ? "mp4" : "webm"}` };
+    V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-reels.${mp4 ? "mp4" : "webm"}` };
     mostrarPasso();
   }
   $("#wzCorpo").addEventListener("click", async (e) => {
@@ -2725,6 +2893,11 @@
       baixarBlob(arq, arq.name); toast("Foto salva: abra a IA e anexe a foto");
       return;
     }
+    if (t.closest("#vdSemVideo")) {
+      if (!V.semVideo && !(vdItem() && vdItem().imagem)) { toast("Escolha antes um produto com foto (passo anterior)"); return; }
+      V.semVideo = !V.semVideo; if (V.semVideo) V.tema = "moldura"; if (V.semVideo && V.url) { URL.revokeObjectURL(V.url); V.url = ""; V.quadro = null; }
+      V.resultado = null; mostrarPasso(); return;
+    }
     if (t.closest("#vdGerar")) { gravarVideo(); return; }
     if (t.closest("#vdRefazer")) { V.resultado = null; mostrarPasso(); return; }
     if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); toast("Vídeo salvo"); return; }
@@ -2745,6 +2918,7 @@
     if (id === "vdBotao") V.botao = v.trim();
   });
   $("#wzCorpo").addEventListener("change", async (e) => {
+    if (e.target.dataset && e.target.dataset.vdOp) { vd()[e.target.dataset.vdOp] = e.target.checked; vd().resultado = null; return; }
     if (e.target.id === "vdFotoNova") {
       const f = e.target.files && e.target.files[0]; const it = vdItem();
       if (!f) return;
@@ -2755,7 +2929,8 @@
     if (e.target.id !== "vdArquivo") return;
     const f = e.target.files && e.target.files[0]; if (!f) return;
     const V = vd(); if (V.url) URL.revokeObjectURL(V.url);
-    V.arquivo = f; V.url = URL.createObjectURL(f); V.quadro = null; V.resultado = null;
+    V.arquivo = f; V.url = URL.createObjectURL(f); V.quadro = null; V.resultado = null; V.semVideo = false;
+    const tmp = document.createElement("video"); tmp.preload = "metadata"; tmp.src = V.url; tmp.onloadedmetadata = () => { V.duracao = tmp.duration || 10; };
     mostrarPasso();
   });
 

@@ -683,3 +683,7 @@ body.travado { overflow: hidden; }
 /* ⋯ nos produtos do Criar */
 .wz-linha { position: relative; }
 .wz-linha .wz-prod { padding-right: 62px; }
+
+/* Vídeo Reels: abertura, final e música */
+.vd-extras { margin-top: 14px; gap: 14px; }
+.btn.on-borda { box-shadow: inset 0 0 0 2px var(--rosa); color: var(--rosa-escuro); }
