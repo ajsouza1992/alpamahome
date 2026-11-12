@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=89"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=90"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=89"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=90"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2970,8 +2970,8 @@
         ${r ? `<video class="vd-previa" src="${r.url}" controls playsinline></video>
           <p class="nota">Formato: <b>${r.mp4 ? "MP4" : "WebM"}</b>.${r.mp4 ? "" : " Este celular não grava MP4: o WhatsApp aceita, mas o Instagram pode recusar WebM."}</p>
           <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
-          <button type="button" class="btn btn--branco" id="vdBaixar">Baixar vídeo e capa</button>
-          ${r.capa ? `<img class="capa-previa" src="${URL.createObjectURL(r.capa)}" alt="Capa">` : ""}
+          <div class="duas"><button type="button" class="btn btn--branco" id="vdBaixar">Baixar vídeo</button>${r.capa ? '<button type="button" class="btn btn--branco" id="vdBaixarCapa">Baixar capa</button>' : ""}</div>
+          ${r.capa ? `<div class="capa-bloco"><span>Capa</span><img class="capa-previa" src="${URL.createObjectURL(r.capa)}" alt="Capa"></div>` : ""}
           <button type="button" class="btn btn--branco" id="vdRefazer">Gravar de novo</button>`
         : `<div class="wz-previa"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
           <p class="nota">O app monta o Reels e grava em tempo real: leva o tempo do próprio Reels (${Math.round(duracaoReels())} segundos). Deixe o app aberto até terminar.</p>
@@ -3278,7 +3278,8 @@
     }
     if (t.closest("#vdGerar")) { gravarVideo(); return; }
     if (t.closest("#vdRefazer")) { V.resultado = null; mostrarPasso(); return; }
-    if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); if (V.resultado.capa) setTimeout(() => baixarBlob(V.resultado.capa, V.resultado.capa.name), 700); toast("Vídeo e capa salvos"); return; }
+    if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); toast("Vídeo salvo"); return; }
+    if (t.closest("#vdBaixarCapa")) { baixarBlob(V.resultado.capa, V.resultado.capa.name); toast("Capa salva: use em Editar capa"); return; }
     if (t.closest("#vdPostar")) {
       const r = V.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
       if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
@@ -3948,7 +3949,7 @@
           <p class="nota">Formato: <b>${r.mp4 ? "MP4" : "WebM"}</b>.${r.mp4 ? "" : " Este celular não grava MP4: o WhatsApp aceita, mas o Instagram pode recusar WebM."}</p>
           <button type="button" class="btn btn--rosa" id="rPostar">Postar / compartilhar</button>
           ${blocoLegenda(R)}
-          <button type="button" class="btn btn--branco" id="rBaixar">Baixar vídeo e capa</button>
+          <div class="duas"><button type="button" class="btn btn--branco" id="rBaixar">Baixar vídeo</button>${r.capa ? '<button type="button" class="btn btn--branco" id="rBaixarCapa">Baixar capa</button>' : ""}</div>
           ${r.capa ? `<div class="capa-bloco"><span>Capa</span><img class="capa-previa" src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"></div>` : ""}
           <button type="button" class="btn btn--branco" id="rRefazer">Gravar de novo</button>`
         : `<p class="nota"><b>${esc(M.nome)}</b> · ${esc(CORES_VIDEO[R.cor].nome)} · ${itensReels().length} produto(s) · ${Math.round(duracaoReelsProdutos())} segundos</p>
@@ -4034,7 +4035,8 @@
     if (t.closest("#rPrevia")) { rodarReels(false); return; }
     if (t.closest("#rGerar")) { if (R.tocando) R.tocando.parar(); setTimeout(() => rodarReels(true), 50); return; }
     if (t.closest("#rRefazer")) { R.resultado = null; mostrarPasso(); return; }
-    if (t.closest("#rBaixar")) { baixarBlob(R.resultado.blob, R.resultado.nome); if (R.resultado.capa) setTimeout(() => baixarBlob(R.resultado.capa, R.resultado.capa.name), 700); toast("Vídeo e capa salvos: use a capa em Editar capa"); return; }
+    if (t.closest("#rBaixar")) { baixarBlob(R.resultado.blob, R.resultado.nome); toast("Vídeo salvo"); return; }
+    if (t.closest("#rBaixarCapa")) { baixarBlob(R.resultado.capa, R.resultado.capa.name); toast("Capa salva: use em Editar capa"); return; }
     if (t.closest("#rPostar")) {
       const r = R.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
       if (await copiarTexto(R.legenda || legendaReels())) toast("Legenda copiada: é só colar no Instagram");
