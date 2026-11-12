@@ -1082,7 +1082,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=86"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=87"; });
     }
     edFoto = null;
     try {
@@ -1455,7 +1455,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=86"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=87"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1667,7 +1667,7 @@
     renderCatsLista(); pintarMarcados();
     const l = ordenar(fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i))));
     $("#ppLista").innerHTML = painelHoje() + (l.length ? l.map((i) => `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
-        <span class="pp-mini">${fotoMini(i)}${seloLojaHtml(i.loja)}</span>
+        <span class="pp-mini">${fotoMini(i)}${i.link ? `<a class="selo-link" href="${esc(i.link)}" target="_blank" rel="noopener" data-abrir-link title="Abrir na ${esc(NOME_LOJA[i.loja] || "loja")}">${seloLojaHtml(i.loja)}</a>` : seloLojaHtml(i.loja)}</span>
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}${diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
           <span class="pp-tags">${tagsFeito(i)}</span>
@@ -1897,6 +1897,7 @@
       if (ph.dataset.ph === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); modoVarios = true; renderFila(); toast(`${l.length} parados selecionados`); }
       return;
     }
+    if (e.target.closest("[data-abrir-link]")) { e.stopPropagation(); return; } // o link abre sozinho
     const ed = e.target.closest("[data-editar]");
     if (ed) { const it = fila().find((i) => i.id === ed.dataset.editar); if (it) abrirItemFila(it); return; }
     const mc = e.target.closest("[data-marcar]");
