@@ -809,7 +809,7 @@ body.com-marcados main { padding-bottom: 90px; }
 .bs-acoes button { display: grid; justify-items: center; gap: 4px; min-height: 60px; padding: 8px 4px; border: 0; border-radius: 18px; background: var(--rosa); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .bs-acoes button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
 .bs-acoes button.off { background: rgba(255,255,255,.12); color: rgba(255,255,255,.5); }
-body.modo-selecao .barra { display: none; }
+
 body.modo-selecao main { padding-bottom: 150px; }
 @media (min-width: 960px) { body.modo-selecao .barra { display: block; } }
 
@@ -846,3 +846,19 @@ body.modo-selecao main { padding-bottom: 150px; }
 .bs-excluir { background: rgba(255,255,255,.12); color: #ff9ab8; }
 .bs-excluir svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
 .bs-continuar { background: var(--rosa); color: #fff; }
+
+/* Barra da seleção no tema do app, acima da navegação (sem cobrir) */
+.barra-selecao { bottom: calc(92px + env(safe-area-inset-bottom)); background: var(--branco); color: var(--preto); box-shadow: 0 10px 30px -12px rgba(0,0,0,.35); border: 1.5px solid var(--linha); padding: 10px; gap: 6px; z-index: 18; }
+.barra-selecao > b { font-size: 14px; color: var(--cinza); font-weight: 600; }
+.bs-excluir { background: var(--branco); color: var(--rosa-escuro); box-shadow: inset 0 0 0 1.5px var(--linha); font-weight: 600; }
+.bs-continuar { background: var(--rosa); color: #fff; box-shadow: var(--sombra-rosa); font-weight: 600; }
+.bs-excluir, .bs-continuar { min-height: 52px; font-size: 15px; }
+body.modo-selecao main { padding-bottom: 200px; }
+@media (min-width: 960px) { .barra-selecao { bottom: 20px; } }
+/* Selecionar / Filtrar / Marcar / Cancelar no mesmo padrão dos botões brancos do app */
+.barra-filtro .btn-filtrar, .barra-filtro .btn-filtrar.cancelar, .barra-filtro .btn-filtrar.ativo { background: var(--branco); color: var(--preto); box-shadow: inset 0 0 0 1.5px var(--linha); min-height: 46px; height: 46px; font-weight: 600; }
+.barra-filtro .btn-filtrar.ativo { box-shadow: inset 0 0 0 1.5px var(--rosa); color: var(--rosa-escuro); }
+.barra-filtro .btn-filtrar svg { width: 18px; height: 18px; }
+.bs-excluir { color: var(--preto); }
+.bs-excluir svg { stroke: var(--rosa); }
+#excluirMarcados.bs-excluir { color: var(--preto); }
