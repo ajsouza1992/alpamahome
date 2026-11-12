@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=106"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=107"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=106"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=107"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1788,6 +1788,7 @@
   }
   $("#desmarcarTodos").addEventListener("click", () => sairModoVarios());
   $("#ppCupons").addEventListener("click", () => abrirPostarCupons());
+  $("#ppVideoLivre").addEventListener("click", () => abrirVideoLivre());
   const SELECOES = {
     todos: ["Todos", (l) => l],
     nenhum: ["Desmarcar todos", () => []],
@@ -3000,7 +3001,7 @@
         <p class="nota">Grave no celular ou use um vídeo da galeria. Ele vira um Reels em pé com o tema do Miga. Recomendo até 60 segundos. Sem vídeo? O app usa a foto do produto.</p>
         ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
         <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
-        <button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>
+        ${V.itemId ? `<button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>` : ""}
         ${botaoContinuar(!!V.url || V.semVideo)}
         ${blocoFotoIA()}`;
       return;
@@ -3052,7 +3053,7 @@
     return new Promise((ok) => {
       const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.src = V.url;
       v.addEventListener("loadeddata", () => { v.currentTime = Math.min(1, (v.duration || 2) / 3); }, { once: true });
-      v.addEventListener("seeked", () => { V.quadro = v; ok(v); }, { once: true });
+      v.addEventListener("seeked", () => { V.quadro = v; try { const q = document.createElement("canvas"); q.width = v.videoWidth || 720; q.height = v.videoHeight || 1280; q.getContext("2d").drawImage(v, 0, 0, q.width, q.height); V.quadroImg = q; } catch (e) { /* segue */ } ok(v); }, { once: true });
       v.addEventListener("error", () => ok(null), { once: true });
     });
   }
@@ -3125,8 +3126,8 @@
     const R = { modelo: V.modelo || "achadinho", camp: V.camp || "", cor: V.cor, titulo: V.tituloProp || "" };
     const C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme, M = modeloEfetivo(R);
     relogioReels = t; decorAtual = decorDe(R);
-    const it = { nome: V.nome, precoNovo: V.novo, precoAntigo: V.antigo, cupom: V.cupom, loja: V.loja };
-    produtoReels(ctx, t, it, V.fotoBmp, 0, 1, R.modelo, M, C, V.cor);
+    const it = { nome: V.nome || (V.itemId ? "" : M.sub(1)), precoNovo: V.novo, precoAntigo: V.antigo, cupom: V.cupom, loja: V.loja };
+    produtoReels(ctx, t, it, V.fotoBmp || V.quadroImg, 0, 1, R.modelo, M, C, V.cor);
     ctx.restore();
   }
   function quadroFinal(ctx, W, t, V) {
@@ -3135,17 +3136,16 @@
     ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t + 30);
     if (V.modelo || V.camp) { relogioReels = t; desenharDecor(ctx, decorDe({ modelo: V.modelo || "achadinho", camp: V.camp })); }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    comPulo(ctx, t, 0.1, 540, 640, () => { if (edMarca) ctx.drawImage(edMarca, -220, -220, 440, 440); }, 0.55);
-    comSubida(ctx, t, 0.55, () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 990); });
+    comPulo(ctx, t, B(0), 540, 640, () => { if (edMarca) ctx.drawImage(edMarca, -220, -220, 440, 440); });
+    comSubida(ctx, t, B(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 990); });
     const insta = arroba(config.instagram);
     let y = 1170;
     if (insta) {
-      const pulsa = t > 1.7 ? 1 + 0.06 * Math.sin((t - 1.7) * Math.PI * 2) : 1;
-      comPulo(ctx, t, 1.05, 540, y, () => { ctx.scale(pulsa, pulsa); pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 66); });
+      comPulo(ctx, t, B(2), 540, y, () => { pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 66); });
       y += 190;
     }
     const botao = String(V.botao || "Link na bio").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
-    if (botao) comSubida(ctx, t, 1.6, () => pilulaReels(ctx, botao, 540, y, "#ffffff", "#1d1d1f", 52, true));
+    if (botao) comSubida(ctx, t, B(3), () => pilulaReels(ctx, botao, 540, y, "#ffffff", "#1d1d1f", 52, true));
     ctx.restore();
   }
   /** A musiquinha do Miga, tocada pelo próprio celular (Web Audio) e gravada junto com o vídeo */
@@ -3293,7 +3293,7 @@
       if (V.abertura) whooshes.push(tA - 0.3);
       // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
       const temTrilha = V.abertura || V.final || V.musica;
-      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + noTempo(arroba(config.instagram) ? 1.05 : 1.6) : null);
+      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + B(arroba(config.instagram) ? 2 : 3) : null);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
     } catch (e) { if (v) v.muted = true; }
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
@@ -3611,6 +3611,12 @@
   const LOJAS_CUPOM = [["", "Geral"], ["shopee", "Shopee"], ["mercadolivre", "Mercado Livre"], ["amazon", "Amazon"]];
   function cc() { if (!wz.cup) wz.cup = { sel: [], cor: "rosa", texto: null }; return wz.cup; }
   const infoCupom = (cp) => { config.cupomInfo = config.cupomInfo || {}; return config.cupomInfo[cp] || (config.cupomInfo[cp] = { loja: "", desc: "" }); };
+  /** Vídeo gravado no celular, com tema, sem precisar escolher um produto */
+  function abrirVideoLivre() {
+    wz = { canal: "video", passo: "vArquivo", veioDaLista: true, semProduto: true };
+    const V = vd(); V.iniciado = true; V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.modelo = "achadinho"; V.titulo = MODELOS_REELS.achadinho.titulo;
+    marcados.clear(); irPara("criar"); mostrarPasso();
+  }
   function abrirPostarCupons() {
     wz = { canal: "cupons", passo: "cEscolher", veioDaLista: true, cup: { sel: (config.cupons || []).slice(0, 1), cor: "rosa", texto: null } };
     marcados.clear(); irPara("criar"); mostrarPasso();
@@ -4230,6 +4236,7 @@
     const it = lista[0] || { nome: "Seu achadinho", precoNovo: 29.9, precoAntigo: 49.9, imagem: "", loja: "" };
     await carregarMarca(); let bmp = null;
     if (it.id && it.imagem) { await prepararFoto(it); bmp = ppFotos[it.id]; }
+    else if (wz.canal === "video") { const V = vd(); bmp = V.quadroImg || null; it.nome = ""; it.precoNovo = V.novo; it.precoAntigo = V.antigo; }
     const tmp = document.createElement("canvas");
     for (const cv of document.querySelectorAll("[data-mini]")) {
       const [aba, k] = cv.dataset.mini.split(":");

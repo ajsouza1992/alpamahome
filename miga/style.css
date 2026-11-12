@@ -1112,3 +1112,10 @@ body.modo-selecao main { padding-bottom: 200px; }
 .rt-rodape > .btn, .rt-rodape > .wz-continuar { flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; max-width: none !important; padding: 0 10px !important; white-space: nowrap; font-size: 15px !important; }
 .est-previa.est-previa--post { aspect-ratio: 4 / 5; height: auto; width: min(80vw, 340px); }
 @media (min-width: 960px) { .wz__corpo:has(> .estudio) .est-previa.est-previa--post { height: auto; width: 100%; max-width: 460px; aspect-ratio: 4 / 5; } }
+/* Atalhos da lista: Postar cupons e Vídeo com tema lado a lado */
+.lista-atalhos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lista-atalhos .btn { margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 10px; white-space: nowrap; }
+@media (min-width: 960px) {
+  #ppListaBloco > .lista-atalhos { grid-column: 3; display: flex; gap: 12px; }
+  #ppListaBloco > .lista-atalhos .btn { width: auto; padding: 0 24px; min-height: 56px; }
+}
