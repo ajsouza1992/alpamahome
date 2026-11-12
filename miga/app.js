@@ -31,21 +31,39 @@
   // Lojas com ícone padrão (as que você é afiliada)
   const LOJA_FIG = { shopee: "🧡", mercadolivre: "💛", amazon: "📦" };
   const LOJA_SIGLA = { shopee: "S", mercadolivre: "ML", amazon: "a" };
-  const seloLojaHtml = (loja) => LOJA_SIGLA[loja] ? `<span class="selo-loja selo-loja--${loja}" title="${NOME_LOJA[loja]}">${LOJA_SIGLA[loja]}</span>` : "";
+  const seloLojaHtml = (loja) => LOJA_SIGLA[loja] ? `<img class="selo-loja" src="${urlSeloLoja(loja)}" alt="${NOME_LOJA[loja]}" title="${NOME_LOJA[loja]}">` : "";
   const linhaLoja = (loja) => LOJA_FIG[loja] ? `${LOJA_FIG[loja]} ${NOME_LOJA[loja]}` : "";
-  /** Ícone padrão da loja (círculo com a cor e a sigla) desenhado nas artes, Reels e vídeos */
+  /** Ícones das lojas (Shopee e Amazon: desenho oficial do Simple Icons; Mercado Livre: aperto de mãos desenhado) */
+  const ICO_AMAZON="M.045 18.02c.072-.116.187-.124.348-.022 3.636 2.11 7.594 3.166 11.87 3.166 2.852 0 5.668-.533 8.447-1.595l.315-.14c.138-.06.234-.1.293-.13.226-.088.39-.046.525.13.12.174.09.336-.12.48-.256.19-.6.41-1.006.654-1.244.743-2.64 1.316-4.185 1.726a17.617 17.617 0 01-10.951-.577 17.88 17.88 0 01-5.43-3.35c-.1-.074-.151-.15-.151-.22 0-.047.021-.09.051-.13zm6.565-6.218c0-1.005.247-1.863.743-2.577.495-.71 1.17-1.25 2.04-1.615.796-.335 1.756-.575 2.912-.72.39-.046 1.033-.103 1.92-.174v-.37c0-.93-.105-1.558-.3-1.875-.302-.43-.78-.65-1.44-.65h-.182c-.48.046-.896.196-1.246.46-.35.27-.575.63-.675 1.096-.06.3-.206.465-.435.51l-2.52-.315c-.248-.06-.372-.18-.372-.39 0-.046.007-.09.022-.15.247-1.29.855-2.25 1.82-2.88.976-.616 2.1-.975 3.39-1.05h.54c1.65 0 2.957.434 3.888 1.29.135.15.27.3.405.48.12.165.224.314.283.45.075.134.15.33.195.57.06.254.105.42.135.51.03.104.062.3.076.615.01.313.02.493.02.553v5.28c0 .376.06.72.165 1.036.105.313.21.54.315.674l.51.674c.09.136.136.256.136.36 0 .12-.06.226-.18.314-1.2 1.05-1.86 1.62-1.963 1.71-.165.135-.375.15-.63.045a6.062 6.062 0 01-.526-.496l-.31-.347a9.391 9.391 0 01-.317-.42l-.3-.435c-.81.886-1.603 1.44-2.4 1.665-.494.15-1.093.227-1.83.227-1.11 0-2.04-.343-2.76-1.034-.72-.69-1.08-1.665-1.08-2.94l-.05-.076zm3.753-.438c0 .566.14 1.02.425 1.364.285.34.675.512 1.155.512.045 0 .106-.007.195-.02.09-.016.134-.023.166-.023.614-.16 1.08-.553 1.424-1.178.165-.28.285-.58.36-.91.09-.32.12-.59.135-.8.015-.195.015-.54.015-1.005v-.54c-.84 0-1.484.06-1.92.18-1.275.36-1.92 1.17-1.92 2.43l-.035-.02zm9.162 7.027c.03-.06.075-.11.132-.17.362-.243.714-.41 1.05-.5a8.094 8.094 0 011.612-.24c.14-.012.28 0 .41.03.65.06 1.05.168 1.172.33.063.09.099.228.099.39v.15c0 .51-.149 1.11-.424 1.8-.278.69-.664 1.248-1.156 1.68-.073.06-.14.09-.197.09-.03 0-.06 0-.09-.012-.09-.044-.107-.12-.064-.24.54-1.26.806-2.143.806-2.64 0-.15-.03-.27-.087-.344-.145-.166-.55-.257-1.224-.257-.243 0-.533.016-.87.046-.363.045-.7.09-1 .135-.09 0-.148-.014-.18-.044-.03-.03-.036-.047-.02-.077 0-.017.006-.03.02-.063v-.06z";
+  const ICO_SHOPEE="M15.9414 17.9633c.229-1.879-.981-3.077-4.1758-4.0969-1.548-.528-2.277-1.22-2.26-2.1719.065-1.056 1.048-1.825 2.352-1.85a5.2898 5.2898 0 0 1 2.8838.89c.116.072.197.06.263-.039.09-.145.315-.494.39-.62.051-.081.061-.187-.068-.281-.185-.1369-.704-.4149-.983-.5319a6.4697 6.4697 0 0 0-2.5118-.514c-1.909.008-3.4129 1.215-3.5389 2.826-.082 1.1629.494 2.1078 1.73 2.8278.262.152 1.6799.716 2.2438.892 1.774.552 2.695 1.5419 2.478 2.6969-.197 1.047-1.299 1.7239-2.818 1.7439-1.2039-.046-2.2878-.537-3.1278-1.19l-.141-.11c-.104-.08-.218-.075-.287.03-.05.077-.376.547-.458.67-.077.108-.035.168.045.234.35.293.817.613 1.134.775a6.7097 6.7097 0 0 0 2.8289.727 4.9048 4.9048 0 0 0 2.0759-.354c1.095-.465 1.8029-1.394 1.9449-2.554zM11.9986 1.4009c-2.068 0-3.7539 1.95-3.8329 4.3899h7.6657c-.08-2.44-1.765-4.3899-3.8328-4.3899zm7.8516 22.5981-.08.001-15.7843-.002c-1.074-.04-1.863-.91-1.971-1.991l-.01-.195L1.298 6.2858a.459.459 0 0 1 .45-.494h4.9748C6.8448 2.568 9.1607 0 11.9996 0c2.8388 0 5.1537 2.5689 5.2757 5.7898h4.9678a.459.459 0 0 1 .458.483l-.773 15.5883-.007.131c-.094 1.094-.979 1.9769-2.0709 2.0059z";
+  const ICO_ML_OVAL="M12 4.2C6.1 4.2 1.4 7.7 1.4 12s4.7 7.8 10.6 7.8 10.6-3.5 10.6-7.8S17.9 4.2 12 4.2z";
+  const ICO_ML_MAOS=["M3.4 11.6L6.6 9.4c.6-.4 1.3-.5 2-.2l1.6.7",
+ "M20.6 11.6l-3.2-2.2c-.6-.4-1.4-.5-2.1-.2l-3.9 1.8c-.6.3-.9 1-.6 1.6.3.6 1 .8 1.6.6l2.4-1",
+ "M6.4 12.6l1.6 1.4", "M8 14l1.1-1.1", "M8 14l1.7 1.4l1.1-1.1", "M9.7 15.4l1.5 1.2l1-1", "M11.2 16.6l.9.7c.4.3.9.2 1.2-.1l4.4-4.1"];
   function seloLojaCanvas(ctx, loja, cx, cy, r) {
     if (!LOJA_SIGLA[loja]) return;
-    const cor = { shopee: "#ee4d2d", mercadolivre: "#ffe600", amazon: "#232f3e" }[loja], letra = { shopee: "#ffffff", mercadolivre: "#2d3277", amazon: "#ffffff" }[loja];
+    ctx.save(); ctx.translate(cx, cy);
     ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = r * 0.35; ctx.shadowOffsetY = r * 0.1;
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
-    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r * 0.86, 0, Math.PI * 2); ctx.fillStyle = cor; ctx.fill();
-    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = letra;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, Math.PI * 2); ctx.fillStyle = { shopee: "#ee4d2d", mercadolivre: "#ffe600", amazon: "#ffffff" }[loja]; ctx.fill();
+    if (loja === "amazon") { ctx.lineWidth = r * 0.04; ctx.strokeStyle = "#e5e5e5"; ctx.stroke(); }
+    const k = r * 1.15 / 24; ctx.translate(-12 * k, -12 * k); ctx.scale(k, k);
+    if (loja === "shopee") { ctx.translate(2.4, 2.2); ctx.scale(0.8, 0.8); ctx.fillStyle = "#ffffff"; ctx.fill(new Path2D(ICO_SHOPEE)); }
     if (loja === "amazon") {
-      ctx.font = `800 ${r * 0.95}px Poppins, sans-serif`; ctx.fillText("a", cx, cy - r * 0.12);
-      ctx.strokeStyle = "#ff9900"; ctx.lineWidth = r * 0.11; ctx.lineCap = "round"; ctx.beginPath(); ctx.arc(cx, cy - r * 0.2, r * 0.5, Math.PI * 0.25, Math.PI * 0.75); ctx.stroke();
-    } else { ctx.font = `800 ${r * (loja === "mercadolivre" ? 0.62 : 0.9)}px Poppins, sans-serif`; ctx.fillText(LOJA_SIGLA[loja], cx, cy + r * 0.04); }
+      ctx.translate(2.2, 1.6); ctx.scale(0.82, 0.82); const p = new Path2D(ICO_AMAZON);
+      ctx.save(); ctx.beginPath(); ctx.rect(6, 0, 12.8, 19); ctx.clip(); ctx.fillStyle = "#111111"; ctx.fill(p); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, 24, 24); ctx.rect(6, 0, 12.8, 19); ctx.clip("evenodd"); ctx.fillStyle = "#ff9900"; ctx.fill(p); ctx.restore();
+    }
+    if (loja === "mercadolivre") {
+      const o = new Path2D(ICO_ML_OVAL); ctx.fillStyle = "#ffe600"; ctx.fill(o); ctx.lineWidth = 1.3; ctx.strokeStyle = "#2d3277"; ctx.stroke(o);
+      ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 1.05; ICO_ML_MAOS.forEach((m) => ctx.stroke(new Path2D(m)));
+    }
     ctx.restore();
+  }
+  const urlSelos = {};
+  function urlSeloLoja(loja) {
+    if (!urlSelos[loja]) { const c = document.createElement("canvas"); c.width = c.height = 96; seloLojaCanvas(c.getContext("2d"), loja, 48, 48, 44); urlSelos[loja] = c.toDataURL("image/png"); }
+    return urlSelos[loja];
   }
   /** Coloca a loja na legenda, logo antes da linha do link */
   function comLoja(texto, loja, link) {
@@ -1079,7 +1097,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=72"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=73"; });
     }
     edFoto = null;
     try {
@@ -1450,7 +1468,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=72"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=73"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3484,7 +3502,6 @@
       retArredondado(ctx, 540 - cw / 2, y - 45, cw, 90, 45); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.setLineDash([14, 9]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, y + 2);
     });
-    if (mk === "relampago") { const p = 1 - Math.min(1, t / T_PROD); retArredondado(ctx, 90, 1830, 900, 26, 13); ctx.fillStyle = "rgba(0,0,0,.15)"; ctx.fill(); if (p > 0.01) { retArredondado(ctx, 90, 1830, 900 * p, 26, 13); ctx.fillStyle = "#ffd23f"; ctx.fill(); } }
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) {

@@ -714,11 +714,7 @@ body.travado { overflow: hidden; }
 
 /* ===== Lista como início: marcar produtos, ⋯ no canto de cima e ícone da loja ===== */
 .pp-mini { position: relative; display: block; line-height: 0; }
-.selo-loja { position: absolute; left: -6px; top: -6px; width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid #fff; display: grid; place-items: center; font: 800 11px/1 Poppins, sans-serif; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-.selo-loja--shopee { background: #ee4d2d; }
-.selo-loja--mercadolivre { background: #ffe600; color: #2d3277; }
-.selo-loja--amazon { background: #232f3e; font-size: 13px; padding-bottom: 3px; }
-.selo-loja--amazon::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 4px; height: 4px; border-bottom: 2.5px solid #ff9900; border-radius: 0 0 50% 50%; }
+.pp-item img.selo-loja, .selo-loja { position: absolute; left: -7px; top: -7px; width: 32px; height: 32px; border-radius: 50%; padding: 0 !important; background: none !important; }
 .pp-linha .pp-item { padding-right: 52px; border: 2px solid transparent; }
 .pp-linha.marcado .pp-item { border-color: var(--rosa); background: #fff4f8; }
 .pp-linha .pp-lixo { top: 8px; right: 8px; transform: none; width: 36px; height: 36px; font-size: 18px; }
@@ -743,3 +739,12 @@ body.com-marcados main { padding-bottom: 90px; }
 .barra-cores button[aria-checked="true"] { box-shadow: 0 0 0 3px var(--branco), 0 0 0 5px var(--rosa); }
 .wz-rodape:has(.barra-cores) { display: block; }
 .wz__corpo:has(.barra-cores) { padding-bottom: 120px; }
+
+/* Barra de cores e Continuar do tamanho da tela (computador também) */
+.barra-cores button { min-height: 50px; font-size: 15px; }
+@media (min-width: 700px) {
+  .wz-rodape:has(.barra-cores) { position: static; display: block; padding: 14px 0 0; background: none; }
+  .wz-rodape:has(.barra-cores) .barra-cores { max-width: none; padding: 12px 14px; }
+  .wz-rodape:has(.barra-cores) .wz-continuar, .wz__corpo .wz-rodape:has(.barra-cores) .wz-continuar { max-width: none !important; width: 100%; min-height: 56px; font-size: 16px; justify-self: stretch; }
+  .wz__corpo:has(.barra-cores) { padding-bottom: 0; }
+}
