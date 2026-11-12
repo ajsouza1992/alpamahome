@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=122"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=123"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=122"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=123"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3365,7 +3365,7 @@
         <div class="rp-grade">
           <div class="rp-midia">
             <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
-            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa"><figcaption>Capa</figcaption></figure>` : ""}
+            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa"><figcaption>Capa</figcaption><div class="rp-capa-op"><button type="button" data-vd-capa="titulo" class="${(V.capaTipo || "titulo") === "titulo" ? "on" : ""}">Título</button><button type="button" data-vd-capa="quadro" class="${V.capaTipo === "quadro" ? "on" : ""}">Quadro</button></div></figure>` : ""}
           </div>
           <div class="rp-acoes">
             <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
@@ -3389,6 +3389,24 @@
         <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
       if (!r) carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((v) => { const cx = $("#vdQuadro").getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 9, V); else quadroVideo(cx, 540, 960, v, V); });
     }
+  }
+  /** Capa do vídeo: "titulo" = título grande na cor do modelo com um quadro do vídeo (como a capa do Reels); "quadro" = o vídeo com o estilo */
+  function capaDoVideo(tipo) {
+    const V = vd(), tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; const ctx = tc.getContext("2d");
+    const q = V.quadroImg || (V.fotoBmp && fotoComZoom(V.fotoBmp, 0));
+    if (tipo === "quadro") { quadroVideo(ctx, 1080, 1920, q, V); return tc; }
+    const R = { modelo: V.modelo || "achadinho", camp: V.camp || "", titulo: V.tituloProp || "" }, C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme, M = modeloEfetivo(R);
+    relogioReels = 0; decorAtual = decorDe(R); acentoCena = null; fundoReels(ctx, C, V.cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    tituloGrande(ctx, M.titulo.replace("{n}", ""), 300, 124, C, "", (decorAtual.ic && decorAtual.ic[0]) || "brilho");
+    const L = 760, H = 900, x = 160, y = 480;
+    ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, x, y, L, H, 56); ctx.fillStyle = "#fff"; ctx.fill(); ctx.restore();
+    if (q) { const w = q.videoWidth || q.width, h = q.videoHeight || q.height, s = Math.max((L - 28) / w, (H - 28) / h); ctx.save(); retArredondado(ctx, x + 14, y + 14, L - 28, H - 28, 44); ctx.clip(); ctx.drawImage(q, x + L / 2 - (w * s) / 2, y + H / 2 - (h * s) / 2, w * s, h * s); ctx.restore(); }
+    let yy = y + H + 90;
+    if (V.nome) { ctx.font = "700 50px Poppins"; ctx.fillStyle = C.texto; quebrarTexto(ctx, V.nome, 900, 2).forEach((l, j) => ctx.fillText(l, 540, yy + j * 60)); yy += quebrarTexto(ctx, V.nome, 900, 2).length * 60 + 50; }
+    if (V.novo) { ctx.save(); ctx.translate(540, yy + 20); ctx.rotate(-0.03); pilulaReels(ctx, (V.antigo > V.novo ? "por " : "") + brl(V.novo), 0, 0, "#ffd23f", "#1d1d1f", 70, true); ctx.restore(); }
+    else { const b = String(V.botao == null ? "Link na bio" : V.botao).trim(); if (b) { ctx.save(); ctx.translate(540, yy + 10); pilulaReels(ctx, b, 0, 0, C.pill, C.pillTexto, 52, true); ctx.restore(); } }
+    if (edMarca) ctx.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160);
+    return tc;
   }
   let previaLoop = 0;
   async function previaVideoViva() {
@@ -3503,12 +3521,13 @@
     relogioReels = t; decorAtual = decorDe(R); acentoCena = acentosDe(MUSICAS[V.batida || "house"], 0, 8);
     if (!V.itemId) {
       const q = V.quadroImg;
-      ctx.fillStyle = "#111"; ctx.fillRect(0, 0, 1080, 1920);
-      if (q) { const s = Math.max(1080 / q.width, 1920 / q.height) * 1.08; ctx.save(); ctx.filter = "blur(28px) brightness(.55)"; ctx.drawImage(q, (1080 - q.width * s) / 2, (1920 - q.height * s) / 2, q.width * s, q.height * s); ctx.restore(); }
-      const CB = { ...C, texto: "#ffffff", destaque: "#ffd23f" }, icone = (decorAtual.ic && decorAtual.ic[0]) || "brilho";
+      ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920);
+      if (q) { const s = Math.max(1080 / q.width, 1920 / q.height) * 1.08; ctx.save(); ctx.globalAlpha = 0.22; ctx.filter = "blur(28px)"; ctx.drawImage(q, (1080 - q.width * s) / 2, (1920 - q.height * s) / 2, q.width * s, q.height * s); ctx.restore(); }
+      bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t);
+      const CB = C, icone = (decorAtual.ic && decorAtual.ic[0]) || "brilho";
       comPulo(ctx, t, A(0), 540, 520, () => { if (edMarca) ctx.drawImage(edMarca, -110, -110, 220, 220); });
       comSubida(ctx, t, A(1), () => tituloGrande(ctx, M.titulo.replace("{n}", ""), 900, 140, CB, "", icone));
-      comSubida(ctx, t, A(2), () => { ctx.font = "600 56px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillText(M.sub(1), 540, 1180); });
+      comSubida(ctx, t, A(2), () => { ctx.font = "600 56px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.9; ctx.fillText(M.sub(1), 540, 1180); });
       ctx.restore(); return;
     }
     const it = { nome: V.nome, precoNovo: V.novo, precoAntigo: V.antigo, cupom: V.cupom, loja: V.loja };
@@ -3720,10 +3739,8 @@
     const mp4 = tipo.startsWith("video/mp4");
     let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
     blob = await somCompativel(blob, tipo, (m) => { btn.textContent = m; });
-    // Capa: a abertura já montada (ou o primeiro quadro do tema)
-    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920;
-    if (V.abertura) quadroAbertura(tc.getContext("2d"), 1080, 9, V); else quadroVideo(tc.getContext("2d"), 1080, 1920, v || (V.fotoBmp && fotoComZoom(V.fotoBmp, 0)), V);
-    const capa = await telaParaJpeg(tc, "miga-promo-capa.jpg");
+    // Capa no modelo e na cor escolhidos (dá para trocar na tela de pronto)
+    const capa = await telaParaJpeg(capaDoVideo(V.capaTipo || "titulo"), "miga-promo-capa.jpg");
     V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-video.${mp4 ? "mp4" : "webm"}`, capa };
     V.gravando = false; wz.passo = "vPronto"; mostrarPasso();
   }
@@ -3741,6 +3758,8 @@
     const vi = t.closest("[data-vd-item]"); if (vi) { const it = fila().find((x) => x.id === vi.dataset.vdItem); usarProdutoNoVideo(V.itemId === it.id ? null : it); mostrarPasso(); return; }
     const te = t.closest("[data-vd-tema]"); if (te) { V.tema = te.dataset.vdTema; document.querySelectorAll("[data-vd-tema]").forEach((b) => b.classList.toggle("on", b === te)); return; }
     const co = t.closest("[data-vd-cor]"); if (co) { V.cor = co.dataset.vdCor; document.querySelectorAll("[data-vd-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarTemasVideo(); return; }
+    const cp = t.closest("[data-vd-capa]");
+    if (cp && V.resultado) { V.capaTipo = cp.dataset.vdCapa; await carregarMarca(); await primeiroQuadro(); V.resultado.capa = await telaParaJpeg(capaDoVideo(V.capaTipo), "miga-promo-capa.jpg"); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const md = t.closest("[data-vd-modo]");
     if (md) { V.modo = md.dataset.vdModo; if (V.modo === "livre") { V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.semVideo = false; V.abertura = false; } else V.abertura = true; mostrarPasso(); return; }
     if (t.closest("#vdTrocarProd")) { V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.semVideo = false; V.fotoBmp = null; V.fotoSrc = ""; mostrarPasso(); return; }

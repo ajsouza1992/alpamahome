@@ -1230,3 +1230,13 @@ body.modo-selecao main { padding-bottom: 200px; }
 .hi-quando::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #25d366; }
 #aba-historico .barra-filtro { display: flex; align-items: center; gap: 10px; }
 #aba-historico .barra-filtro #hiSelecionar { margin-left: auto; }
+/* Botões do editor: ícone não espreme */
+.ed-add button { gap: 6px; padding: 0 8px; font-size: 14.5px; white-space: nowrap; min-width: 0; }
+.ed-add button b { flex: none; }
+@media (max-width: 380px) { .ed-add button { font-size: 13px; } .ed-add button b { width: 28px; height: 28px; } }
+/* Escolha da capa do vídeo */
+.rp-capa-op { display: flex; gap: 4px; justify-content: center; }
+.rp-capa-op button { min-height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--campo); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.rp-capa-op button.on { background: var(--rosa); color: #fff; }
+.ed-add button { flex-direction: column; gap: 4px; min-height: 70px; padding: 8px 4px; font-size: 14px; }
+.ed-add button b { width: 34px; height: 34px; }
