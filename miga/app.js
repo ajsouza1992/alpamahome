@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=111"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=112"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=111"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=112"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3090,40 +3090,122 @@
       if (V.botao) pilula(V.botao, w / 2, h - 200, C.pill, C.pillTexto, 40);
       marca(50, 60, 150, "#ffffff");
     }
-    // Selo pronto (Promoção, Black Friday, Natal...) e texto na lateral, em cima de qualquer estilo
-    if (V.selo && SELOS_VIDEO[V.selo]) {
-      const [fundo, cor] = SELOS_VIDEO[V.selo], txt = V.selo.toUpperCase();
-      ctx.save(); ctx.translate(215, 600); ctx.rotate(-0.14);
-      ctx.font = "900 46px Poppins"; const l = quebrarTexto(ctx, txt, 280, 2), lw = Math.max(...l.map((x) => ctx.measureText(x).width)) + 70, lh = l.length * 54 + 44;
-      ctx.shadowColor = "rgba(0,0,0,.3)"; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8; retArredondado(ctx, -lw / 2, -lh / 2, lw, lh, 22); ctx.fillStyle = fundo; ctx.fill(); ctx.shadowColor = "transparent";
-      ctx.lineWidth = 5; ctx.strokeStyle = cor; ctx.setLineDash([10, 8]); retArredondado(ctx, -lw / 2 + 10, -lh / 2 + 10, lw - 20, lh - 20, 16); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = cor; ctx.textAlign = "center"; ctx.textBaseline = "middle"; l.forEach((x, j) => ctx.fillText(x, 0, (j - (l.length - 1) / 2) * 54 + 2)); ctx.restore();
-    }
-    if (V.lateral && V.lateral.trim()) {
-      const txt = V.lateral.trim().toUpperCase();
-      ctx.save(); ctx.translate(w - 62, h * 0.52); ctx.rotate(-Math.PI / 2);
-      ctx.font = "800 38px Poppins"; if ("letterSpacing" in ctx) ctx.letterSpacing = "4px";
-      const tw = Math.min(1100, ctx.measureText(txt).width + 70); retArredondado(ctx, -tw / 2, -36, tw, 72, 36); ctx.fillStyle = C.pill; ctx.fill();
-      ctx.fillStyle = C.pillTexto; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, 0, 3); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.restore();
+    // Camadas do editor (textos, selos e emojis que você posiciona)
+    migrarCamadas(V); (V.camadas || []).forEach((cm) => desenharCamada(ctx, cm));
+    ctx.restore();
+  }
+  /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
+  const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
+  const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
+  const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
+  const FORMAS_SELO = { estrela: "Estrela", circulo: "Círculo", fita: "Fita", etiqueta: "Etiqueta" };
+  function migrarCamadas(V) {
+    if (!V.camadas) V.camadas = [];
+    if (V.selo) { V.camadas.push({ id: novoId(), tipo: "selo", txt: V.selo, x: 870, y: 560, tam: 54, cor: (SELOS_VIDEO[V.selo] && SELOS_VIDEO[V.selo][2]) || "rosa", forma: "estrela", fundo: true }); V.selo = ""; }
+    if (V.lateral) { V.camadas.push({ id: novoId(), tipo: "texto", txt: V.lateral, x: 540, y: 1100, tam: 60, cor: "amarelo", fundo: true }); V.lateral = ""; }
+  }
+  function formaSelo(ctx, forma, w, h) {
+    ctx.beginPath();
+    if (forma === "circulo") { ctx.arc(0, 0, Math.max(w, h) / 2, 0, Math.PI * 2); return; }
+    if (forma === "estrela") { const r = Math.max(w, h) / 2 + 20, n = 18; for (let i = 0; i < n * 2; i++) { const ang = (i * Math.PI) / n, q = i % 2 ? r * 0.86 : r; ctx.lineTo(Math.cos(ang) * q, Math.sin(ang) * q); } ctx.closePath(); return; }
+    if (forma === "fita") { const x = w / 2 + 30, y = h / 2; ctx.moveTo(-x, -y); ctx.lineTo(x, -y); ctx.lineTo(x - 34, 0); ctx.lineTo(x, y); ctx.lineTo(-x, y); ctx.lineTo(-x + 34, 0); ctx.closePath(); return; }
+    // etiqueta: ponta à esquerda com furinho
+    const x = w / 2 + 20, y = h / 2 + 6; ctx.moveTo(-x - 40, 0); ctx.lineTo(-x, -y); ctx.lineTo(x, -y); ctx.quadraticCurveTo(x + 14, -y, x + 14, -y + 14); ctx.lineTo(x + 14, y - 14); ctx.quadraticCurveTo(x + 14, y, x, y); ctx.lineTo(-x, y); ctx.closePath();
+  }
+  /** Desenha uma camada e guarda a área dela (para tocar e arrastar) */
+  function desenharCamada(ctx, cm) {
+    const cor = CORES_EDITOR[cm.cor] || "#ffffff", txt = String(cm.txt || "").trim(); if (!txt) { cm._box = null; return; }
+    ctx.save(); ctx.translate(cm.x, cm.y); ctx.rotate(cm.giro || 0); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (cm.tipo === "emoji") {
+      const s = cm.tam * 1.8; ctx.font = `${s}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; ctx.fillText(txt, 0, 4);
+      cm._box = [cm.x - s * 0.6, cm.y - s * 0.6, s * 1.2, s * 1.2];
+    } else {
+      const peso = cm.tipo === "selo" ? 900 : 800; ctx.font = `${peso} ${cm.tam}px Poppins`;
+      const linhas = quebrarTexto(ctx, cm.tipo === "selo" ? txt.toUpperCase() : txt, cm.tipo === "selo" ? Math.max(260, cm.tam * 6) : 920, 3), lh = cm.tam * 1.12;
+      const w = Math.max(...linhas.map((l) => ctx.measureText(l).width)), h = linhas.length * lh, px = cm.tipo === "selo" ? 34 : 30, py = cm.tipo === "selo" ? 22 : 16;
+      if (cm.tipo === "selo") {
+        ctx.save(); ctx.rotate(-0.12); ctx.shadowColor = "rgba(0,0,0,.28)"; ctx.shadowBlur = 22; ctx.shadowOffsetY = 8; formaSelo(ctx, cm.forma || "estrela", w + px * 2, h + py * 2); ctx.fillStyle = cor; ctx.fill(); ctx.restore();
+        ctx.rotate(-0.12); ctx.fillStyle = contraste(cor);
+      } else if (cm.fundo) {
+        ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 6; retArredondado(ctx, -w / 2 - px, -h / 2 - py, w + px * 2, h + py * 2, Math.min(36, (h + py * 2) / 2)); ctx.fillStyle = cor; ctx.fill(); ctx.restore();
+        ctx.fillStyle = contraste(cor);
+      } else {
+        ctx.lineJoin = "round"; ctx.lineWidth = Math.max(6, cm.tam * 0.14); ctx.strokeStyle = contraste(cor) === "#ffffff" ? "rgba(255,255,255,.9)" : "rgba(0,0,0,.55)"; linhas.forEach((l, j) => ctx.strokeText(l, 0, (j - (linhas.length - 1) / 2) * lh + 2));
+        ctx.fillStyle = cor;
+      }
+      linhas.forEach((l, j) => ctx.fillText(l, 0, (j - (linhas.length - 1) / 2) * lh + 2));
+      const bw = w + px * 2 + (cm.tipo === "selo" ? 50 : 0), bh = h + py * 2 + (cm.tipo === "selo" ? 50 : 0); cm._box = [cm.x - bw / 2, cm.y - bh / 2, bw, bh];
     }
     ctx.restore();
   }
-  // Selos prontos para pôr no vídeo: [fundo, letra]
-  const SELOS_VIDEO = { "Promoção": ["#e8336d", "#ffffff"], "Black Friday": ["#1d1d1f", "#ffd23f"], "Natal": ["#c8102e", "#ffffff"], "Oferta relâmpago": ["#ffd23f", "#1d1d1f"], "Frete grátis": ["#1f8a4c", "#ffffff"], "Só hoje": ["#ff7a00", "#ffffff"], "Últimas unidades": ["#1d1d1f", "#ffffff"], "Lançamento": ["#7b3fe4", "#ffffff"], "Cupom liberado": ["#ffffff", "#e8336d"] };
+  function barraEditor() {
+    const V = vd(), cm = (V.camadas || []).find((x) => x.id === V.sel);
+    if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b>Aa</b>Texto</button><button type="button" data-ed-add="selo"><b>★</b>Selo</button><button type="button" data-ed-add="emoji"><b>☺</b>Emoji</button></div>
+      <p class="nota ed-dica">Toque num texto da prévia para editar. Arraste para posicionar.</p>`;
+    const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
+    const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
+    const fim = `<button type="button" data-ed-del class="ed-del">Excluir</button><button type="button" data-ed-ok class="ed-ok">Pronto</button>`;
+    if (cm.tipo === "emoji") return `<div class="ed-sel"><div class="ed-emojis">${EMOJIS.map((e) => `<button type="button" data-ed-emoji="${e}" class="${cm.txt === e ? "on" : ""}">${e}</button>`).join("")}</div><div class="ed-linha">${tam}${fim}</div></div>`;
+    const selos = cm.tipo === "selo" ? `<div class="ed-chips">${Object.keys(SELOS_VIDEO).map((s) => `<button type="button" data-ed-selotxt="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+      <div class="ed-chips">${Object.entries(FORMAS_SELO).map(([k, n]) => `<button type="button" data-ed-forma="${k}" class="${(cm.forma || "estrela") === k ? "on" : ""}">${n}</button>`).join("")}</div>` : "";
+    return `<div class="ed-sel">
+      <input id="edTxt" maxlength="60" value="${esc(cm.txt)}" placeholder="Escreva aqui" autocomplete="off">
+      ${selos}${cores}
+      <div class="ed-linha">${cm.tipo === "texto" ? `<button type="button" data-ed-fundo class="${cm.fundo ? "on" : ""}">${cm.fundo ? "Com fundo" : "Sem fundo"}</button>` : ""}${tam}${fim}</div>
+    </div>`;
+  }
+  const atualizarBarraEditor = () => { const b = $("#edBarra"); if (b) b.innerHTML = barraEditor(); };
+  $("#wzCorpo").addEventListener("click", (e) => {
+    if (wz.canal !== "video" || wz.passo !== "vTema") return;
+    const t = e.target, V = vd(); if (!V.camadas) V.camadas = [];
+    const cm = V.camadas.find((x) => x.id === V.sel);
+    const ad = t.closest("[data-ed-add]");
+    if (ad) {
+      const tipo = ad.dataset.edAdd, n = { id: novoId(), tipo, x: 540, y: 960, tam: 64, cor: "amarelo", fundo: true };
+      if (tipo === "texto") Object.assign(n, { txt: "Seu texto aqui", y: 1080, cor: "branco", fundo: true });
+      if (tipo === "selo") Object.assign(n, { txt: "Promoção", x: 860, y: 560, tam: 50, cor: "rosa", forma: "estrela" });
+      if (tipo === "emoji") Object.assign(n, { txt: "🔥", x: 200, y: 560, tam: 70 });
+      V.camadas.push(n); V.sel = n.id; V.resultado = null; atualizarBarraEditor(); const i = $("#edTxt"); if (i && tipo === "texto") { i.focus(); i.select(); } return;
+    }
+    if (!cm) return;
+    const co = t.closest("[data-ed-cor]"); if (co) { cm.cor = co.dataset.edCor; atualizarBarraEditor(); return; }
+    const tm = t.closest("[data-ed-tam]"); if (tm) { cm.tam = Math.max(28, Math.min(180, cm.tam + (tm.dataset.edTam === "+" ? 8 : -8))); return; }
+    if (t.closest("[data-ed-fundo]")) { cm.fundo = !cm.fundo; atualizarBarraEditor(); return; }
+    const fo = t.closest("[data-ed-forma]"); if (fo) { cm.forma = fo.dataset.edForma; atualizarBarraEditor(); return; }
+    const st = t.closest("[data-ed-selotxt]"); if (st) { const s = SELOS_VIDEO[st.dataset.edSelotxt]; cm.txt = st.dataset.edSelotxt; if (s) { cm.cor = s[2]; cm.forma = s[3]; } atualizarBarraEditor(); return; }
+    const em = t.closest("[data-ed-emoji]"); if (em) { cm.txt = em.dataset.edEmoji; atualizarBarraEditor(); return; }
+    if (t.closest("[data-ed-del]")) { V.camadas = V.camadas.filter((x) => x !== cm); V.sel = null; V.resultado = null; atualizarBarraEditor(); return; }
+    if (t.closest("[data-ed-ok]")) { V.sel = null; atualizarBarraEditor(); return; }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id !== "edTxt") return; const V = vd(), cm = (V.camadas || []).find((x) => x.id === V.sel); if (cm) { cm.txt = e.target.value; V.resultado = null; } });
+  // Tocar e arrastar as camadas na prévia
+  let arrasto = null;
+  const pontoNaPrevia = (e, cv) => { const r = cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * 1080, ((e.clientY - r.top) / r.height) * 1920]; };
+  $("#wzCorpo").addEventListener("pointerdown", (e) => {
+    const cv = e.target.closest && e.target.closest("#vdQuadro"); if (!cv || wz.canal !== "video") return;
+    const V = vd(), [x, y] = pontoNaPrevia(e, cv);
+    const cm = [...(V.camadas || [])].reverse().find((c) => c._box && x >= c._box[0] && x <= c._box[0] + c._box[2] && y >= c._box[1] && y <= c._box[1] + c._box[3]);
+    if (!cm) { if (V.sel) { V.sel = null; atualizarBarraEditor(); } return; }
+    e.preventDefault(); if (V.sel !== cm.id) { V.sel = cm.id; atualizarBarraEditor(); }
+    arrasto = { cm, dx: x - cm.x, dy: y - cm.y, cv }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* segue */ }
+  });
+  $("#wzCorpo").addEventListener("pointermove", (e) => { if (!arrasto) return; const [x, y] = pontoNaPrevia(e, arrasto.cv); arrasto.cm.x = Math.max(40, Math.min(1040, x - arrasto.dx)); arrasto.cm.y = Math.max(60, Math.min(1860, y - arrasto.dy)); vd().resultado = null; });
+  ["pointerup", "pointercancel"].forEach((ev) => $("#wzCorpo").addEventListener(ev, () => { arrasto = null; }));
+  // Selos prontos para pôr no vídeo: [fundo, letra, cor do editor]
+  const SELOS_VIDEO = { "Promoção": ["#e8336d", "#ffffff", "rosa", "estrela"], "Black Friday": ["#1d1d1f", "#ffd23f", "preto", "fita"], "Natal": ["#c8102e", "#ffffff", "rosa", "circulo"], "Oferta relâmpago": ["#ffd23f", "#1d1d1f", "amarelo", "estrela"], "Frete grátis": ["#1f8a4c", "#ffffff", "verde", "etiqueta"], "Só hoje": ["#ff7a00", "#ffffff", "laranja", "circulo"], "Últimas unidades": ["#1d1d1f", "#ffffff", "preto", "etiqueta"], "Lançamento": ["#7b3fe4", "#ffffff", "roxo", "fita"], "Cupom liberado": ["#ffffff", "#e8336d", "branco", "etiqueta"], "-50%": ["#ffd23f", "#1d1d1f", "amarelo", "circulo"], "Achadinho": ["#e8336d", "#ffffff", "rosa", "fita"] };
   /** Janela "Textos": escrever em cima do vídeo (descrição, preços, cupom, lateral, selo e chamada) */
   function folhaTextosVideo() {
     const V = vd();
     folhaEst("Textos no vídeo", `<p class="nota">Tudo aparece já posicionado no estilo escolhido. Deixe em branco o que não quiser.</p>
       <label class="campo"><span>Descrição</span><input id="vtNome" maxlength="80" value="${esc(V.nome || "")}" placeholder="Ex.: Fone sem fio com cancelamento de ruído"></label>
       <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vtAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vtNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}" placeholder="opcional"></label></div>
-      <div class="duas"><label class="campo"><span>Cupom</span><input id="vtCupom" maxlength="20" value="${esc(V.cupom || "")}" placeholder="opcional"></label><label class="campo"><span>Texto na lateral</span><input id="vtLateral" maxlength="30" value="${esc(V.lateral || "")}" placeholder="Ex.: Achado do dia"></label></div>
+      <label class="campo"><span>Cupom</span><input id="vtCupom" maxlength="20" value="${esc(V.cupom || "")}" placeholder="opcional"></label>
       <label class="campo"><span>Chamada (final e botão)</span><input id="vtBotao" maxlength="40" value="${esc(V.botao == null ? "Link na legenda" : V.botao)}" placeholder="Ex.: Link na legenda · Link no carrinho"></label>
-      <span class="legenda-rotulo">Selo</span>
-      <div class="vt-selos"><button type="button" data-vt-selo="" class="${!V.selo ? "on" : ""}">Nenhum</button>${Object.entries(SELOS_VIDEO).map(([k, [f, c]]) => `<button type="button" data-vt-selo="${esc(k)}" class="${V.selo === k ? "on" : ""}"><i style="background:${f};box-shadow:inset 0 0 0 2px ${c}"></i>${esc(k)}</button>`).join("")}</div>`);
+      <p class="nota">Selos, emojis e outros textos: use “＋ Texto”, “＋ Selo” e “＋ Emoji” embaixo da prévia e arraste para onde quiser.</p>`);
   }
   $("#folhaEst").addEventListener("input", (e) => {
     const id = e.target.id; if (!id || !id.startsWith("vt")) return; const V = vd(), v = e.target.value; V.resultado = null;
-    if (id === "vtNome") V.nome = v; if (id === "vtCupom") V.cupom = v.trim(); if (id === "vtLateral") V.lateral = v; if (id === "vtBotao") V.botao = v.trim();
+    if (id === "vtNome") V.nome = v; if (id === "vtCupom") V.cupom = v.trim(); if (id === "vtBotao") V.botao = v.trim();
     if (id === "vtAntigo") V.antigo = lerPreco(v) || null; if (id === "vtNovo") V.novo = lerPreco(v) || null;
   });
   const vdItem = () => fila().find((i) => i.id === vd().itemId);
@@ -3194,8 +3276,9 @@
     if (wz.passo === "vTema") {
       const e = estLer(), nomeM = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
       c.innerHTML = `<div class="estudio">
-        <div class="est-previa est-previa--img"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
-        <div class="est-ctrl est-ctrl--6">${botaoEst("estiloVideo", "Estilo", TEMAS_VIDEO[V.tema])}${botaoEst("modelo", "Título", nomeM)}${botaoEst("textosVideo", "Textos", [V.novo && "preço", V.selo, V.cupom && "cupom", V.lateral && "lateral"].filter(Boolean).join(", ") || "escrever")}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || "sem abertura")}</div>
+        <div class="est-previa est-previa--img vd-editor"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
+        <div class="ed-barra" id="edBarra">${barraEditor()}</div>
+        <div class="est-ctrl est-ctrl--6">${botaoEst("estiloVideo", "Estilo", TEMAS_VIDEO[V.tema])}${botaoEst("modelo", "Título", nomeM)}${botaoEst("textosVideo", "Textos", [V.nome && "descrição", V.novo && "preço", V.cupom && "cupom"].filter(Boolean).join(", ") || "escrever")}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || "sem abertura")}</div>
         <div class="vd-criar">
           <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo · ${Math.round(duracaoReels())} s</button>
@@ -3247,7 +3330,10 @@
     const passo = () => {
       if (!cv.isConnected || V.gravando || wz.passo !== "vTema") { if (el) el.pause(); return; }
       const fonte = el && el.readyState >= 2 ? el : V.semVideo && V.fotoBmp ? fotoComZoom(V.fotoBmp, ((performance.now() - t0) / 1000 % 6) / 6) : V.quadroImg;
-      quadroVideo(cx, 540, 960, fonte, V); previaLoop = requestAnimationFrame(passo);
+      quadroVideo(cx, 540, 960, fonte, V);
+      const sel = (V.camadas || []).find((x) => x.id === V.sel);
+      if (sel && sel._box) { const [bx, by, bw, bh] = sel._box.map((n) => n / 2); cx.save(); cx.setLineDash([8, 6]); cx.lineWidth = 2.5; cx.strokeStyle = "#ffffff"; cx.shadowColor = "rgba(0,0,0,.6)"; cx.shadowBlur = 4; cx.strokeRect(bx - 6, by - 6, bw + 12, bh + 12); cx.restore(); }
+      previaLoop = requestAnimationFrame(passo);
     };
     passo();
   }
