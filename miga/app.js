@@ -1051,7 +1051,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=62"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=63"; });
     }
     edFoto = null;
     try {
@@ -1407,7 +1407,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=62"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=63"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1835,7 +1835,7 @@
         <div class="colar"><input id="wzLink" type="url" inputmode="url" placeholder="Cole um link novo" autocomplete="off"><button type="button" class="colar__btn" id="wzColar">Colar</button></div>
         <p class="nota">Ou escolha da sua lista:</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"} · ${esc(NOME_LOJA[x.loja] || "")}</small></span></button>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
+        <div class="wz-ops">${l2.map((x) => `<div class="wz-linha"><button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"} · ${esc(NOME_LOJA[x.loja] || "")}</small></span></button><button type="button" class="pp-lixo" data-wz-menu="${esc(x.id)}" aria-label="Opções de ${esc(x.nome || "produto")}">⋯</button></div>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
         ${botaoContinuar(!!item)}`;
       return;
     }
@@ -1928,6 +1928,20 @@
     const t = e.target;
     const wc = t.closest("[data-wz-cat]"); if (wc) { const v = await escolherOpcao("Categoria", [["todas", "Todas"], ...Object.entries(CATS_LISTA)], wz.filtroCat || "todas"); if (v) { wz.filtroCat = v; mostrarPasso(); } return; }
     const op = t.closest("[data-canal]"); if (op) { wz.canal = op.dataset.canal; wz.formato = "story"; wz.tipoWhats = "mensagem"; mostrarPasso(); return; }
+    const wm = t.closest("[data-wz-menu]");
+    if (wm) {
+      const it = fila().find((i) => i.id === wm.dataset.wzMenu); if (!it) return;
+      escolherOpcao(it.nome || "Produto", [["usar", "Usar este produto"], ["editar", "Editar"], ["excluir", "Excluir"]], "").then(async (op) => {
+        if (op === "usar") { wz.itemId = it.id; mostrarPasso(); }
+        if (op === "editar") { irPara("postar"); abrirItemFila(it); }
+        if (op === "excluir") {
+          if (!(await confirmar({ titulo: "Excluir da lista?", texto: `“${it.nome || "Produto"}” sai da sua lista.`, ok: "Excluir" }))) return;
+          config.fila = fila().filter((i) => i !== it); if (wz.itemId === it.id) wz.itemId = "";
+          salvarFila(true); contarFila(); mostrarPasso(); toast("Produto excluído da lista");
+        }
+      });
+      return;
+    }
     const pr = t.closest("[data-item]"); if (pr) { wz.itemId = pr.dataset.item; mostrarPasso(); return; }
     const tw = t.closest("[data-tipo-whats]"); if (tw) { wz.tipoWhats = tw.dataset.tipoWhats; if (wz.tipoWhats === "status") wz.formato = "story"; mostrarPasso(); return; }
     const fo = t.closest("[data-formato]"); if (fo) { wz.formato = fo.dataset.formato; mostrarPasso(); return; }

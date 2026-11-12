@@ -674,3 +674,12 @@ body.travado { overflow: hidden; }
 .aj-acoes .link { margin: 0; }
 .aj-chave, .aj-chave b { color: var(--preto); }
 .aj-cupom { color: var(--rosa-escuro) !important; }
+
+/* Voltar maior e fácil de tocar */
+.btn-voltar { display: inline-flex; align-items: center; gap: 6px; min-height: 46px; padding: 0 18px 0 10px; border: 0; border-radius: 999px; background: var(--rosa-claro); color: var(--rosa-escuro); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.btn-voltar svg { width: 24px; height: 24px; transform: rotate(90deg); fill: none; stroke: currentColor; }
+.btn-voltar[hidden] { display: none; }
+.wz__info { min-height: 46px; margin-top: 10px; }
+/* ⋯ nos produtos do Criar */
+.wz-linha { position: relative; }
+.wz-linha .wz-prod { padding-right: 62px; }
