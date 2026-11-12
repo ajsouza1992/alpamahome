@@ -748,3 +748,7 @@ body.com-marcados main { padding-bottom: 90px; }
   .wz-rodape:has(.barra-cores) .wz-continuar, .wz__corpo .wz-rodape:has(.barra-cores) .wz-continuar { max-width: none !important; width: 100%; min-height: 56px; font-size: 16px; justify-self: stretch; }
   .wz__corpo:has(.barra-cores) { padding-bottom: 0; }
 }
+
+/* Foto do produto na edição: a imagem fica sempre dentro da moldura */
+.pp-foto img, .pp-foto .sem-foto { box-sizing: border-box; padding: 6px; border: 1.5px solid var(--linha); box-shadow: none; overflow: hidden; max-width: 96px; max-height: 96px; }
+.pp-item img:not(.selo-loja), .wz-prod img, .r-ordem__item img { box-sizing: border-box; padding: 4px; overflow: hidden; }
