@@ -1083,7 +1083,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=90"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=91"; });
     }
     edFoto = null;
     try {
@@ -1456,7 +1456,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=90"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=91"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3839,6 +3839,38 @@
     else fimReels(ctx, t - T_INTRO - T_PROD * n, C, R.cor);
     ctx.restore();
   }
+  /** Capa do Reels com os produtos aparecendo (vitrine no perfil) */
+  function capaReels(ctx, R, l, fotos) {
+    temposDoModelo(R.modelo);
+    const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length;
+    const titulo = CP ? CP.titulo : M0.titulo.replace("{n}", n > 1 ? n : "");
+    relogioReels = 0; fundoReels(ctx, C, R.cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const nl = tituloReels(ctx, titulo, 300, C, 120);
+    const foto = (it, cx, cy, L, raio) => {
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16; retArredondado(ctx, cx - L / 2, cy - L / 2, L, L, raio); ctx.fillStyle = "#fff"; ctx.fill(); ctx.restore();
+      const b = fotos[it.id] && fotos[it.id].bmp;
+      if (b) { const s = Math.min((L - 50) / b.width, (L - 50) / b.height); ctx.save(); retArredondado(ctx, cx - L / 2, cy - L / 2, L, L, raio); ctx.clip(); ctx.drawImage(b, cx - b.width * s / 2, cy - b.height * s / 2, b.width * s, b.height * s); ctx.restore(); }
+      else { ctx.save(); ctx.translate(cx, cy); iconeReels(ctx, "bolsa", L * 0.4); ctx.restore(); }
+      if (LOGO_LOJA[it.loja]) seloLojaCanvas(ctx, it.loja, cx - L / 2 + 18, cy - L / 2 + 18, Math.max(36, L * 0.08));
+    };
+    const topo = 300 + nl * 126 + 40;
+    if (n === 1) {
+      const it = l[0], L = 760, cy = topo + L / 2 + 10; foto(it, 540, cy, L, 60);
+      let y = cy + L / 2 + 90;
+      ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; quebrarTexto(ctx, limparNome(it.nome || ""), 920, 2).forEach((t, j) => ctx.fillText(t, 540, y + j * 62));
+      y += quebrarTexto(ctx, limparNome(it.nome || ""), 920, 2).length > 1 ? 170 : 110;
+      if (it.precoNovo) { ctx.save(); ctx.translate(540, y); ctx.rotate(-0.03); pilulaReels(ctx, (it.precoAntigo > it.precoNovo ? "por " : "") + brl(it.precoNovo), 0, 0, "#ffd23f", "#1d1d1f", 74, true); ctx.restore(); }
+    } else {
+      const cols = n <= 2 ? 2 : n <= 4 ? 2 : 3, linhas = Math.ceil(n / cols), gap = 34;
+      const L = Math.min((960 - gap * (cols - 1)) / cols, (1580 - topo - gap * (linhas - 1)) / linhas);
+      l.forEach((it, i) => {
+        const r = Math.floor(i / cols), c = i % cols, naLinha = Math.min(cols, n - r * cols);
+        const x0 = 540 - (naLinha * L + (naLinha - 1) * gap) / 2;
+        foto(it, x0 + c * (L + gap) + L / 2, topo + 20 + r * (L + gap) + L / 2, L, 40);
+      });
+    }
+    if (edMarca) ctx.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160);
+  }
   function efeitosReels(R, n) {
     temposDoModelo(R.modelo);
     const pops = [0.1, 0.35, 0.85, 1.25].map(noTempo), whooshes = [], q = noTempo;
@@ -3907,7 +3939,7 @@
     if (!gravar) { if (btn) { btn.disabled = false; btn.textContent = "▶ Ver prévia com música"; } return; }
     const mp4 = tipo.startsWith("video/mp4"), blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
     // Capa: a abertura do Reels já montada
-    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; quadroReels(tc.getContext("2d"), 1080, Math.max(0.1, T_INTRO - 0.35), R, l, fotos);
+    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; capaReels(tc.getContext("2d"), R, l, fotos);
     const capa = await telaParaJpeg(tc, "miga-promo-reels-capa.jpg");
     R.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-reels.${mp4 ? "mp4" : "webm"}`, capa };
     l.forEach((it) => { it.feito = { ...(it.feito || {}), reels: true }; }); salvarFila(true);
