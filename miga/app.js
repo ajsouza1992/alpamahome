@@ -1097,7 +1097,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=120"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=121"; });
     }
     edFoto = null;
     try {
@@ -1470,7 +1470,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=120"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=121"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1896,9 +1896,9 @@
   function criarAPartirDaLista(canal, l, camp) {
     if (!l.length) return;
     const ids = l.map((x) => x.id), C = CAMPANHAS[camp === undefined ? campanhaEscolhida : camp] || null;
-    wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? C.cor : "auto", idx: 0, res: {}, lugares: lugaresSalvos() };
-    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? C.cor : "rosa", camp: wz.camp, resultado: null, iniciado: true }; wz.passo = "rModelo"; }
-    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? C.cor : "rosa", camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.passo = "kCarrossel"; }
+    wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? C.cor : proximaCor(), idx: 0, res: {}, lugares: lugaresSalvos() };
+    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? C.cor : proximaCor(), camp: wz.camp, resultado: null, iniciado: true }; wz.passo = "rModelo"; }
+    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? C.cor : proximaCor(), camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.passo = "kCarrossel"; }
     else if (canal === "video") { usarProdutoNoVideo(l[0]); const V = vd(); V.iniciado = true; if (C) { V.titulo = C.titulo; V.cor = C.cor; } if (!V.modelo) { V.modelo = "achadinho"; V.titulo = V.titulo || MODELOS_REELS.achadinho.titulo; } wz.passo = "vArquivo"; }
     else if (canal === "livre") {
       const L = livre(); L.itens = l.slice(0, 6).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
@@ -2353,7 +2353,13 @@
     const corpo = `✨ *${p.nome}*\n\n💸 ${preco}${off}${p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : ""}\n\n${FRASES[p.categoria] || FRASES.outros}\n\n${linkLoja(p.loja, p.link)}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
     it.estiloTexto = "tema"; it.texto = comConvite(`${abre}\n\n${corpo}`); it.textoEditado = false; salvarFila();
   }
+  /* Cores em sequência (Creme → Rosa → Branco → Preto): guarda a do último post e o próximo começa na seguinte */
+  const ORDEM_CORES = ["creme", "rosa", "branco", "preto"];
+  function guardarCorUsada(cor) { if (!ORDEM_CORES.includes(cor)) return; try { localStorage.setItem("miga_ult_cor", cor); } catch (e) { /* segue */ } }
+  function proximaCor() { let u = ""; try { u = localStorage.getItem("miga_ult_cor") || ""; } catch (e) { /* segue */ } const i = ORDEM_CORES.indexOf(u); return ORDEM_CORES[(i + 1) % ORDEM_CORES.length]; }
+  $("#wzCorpo").addEventListener("click", (e) => { if (e.target.closest("#rPostar, #rBaixar, #vdPostar, #vdBaixar, #kPostar, #kBaixar, #wzPostar, #wzBaixar, #rtPostar")) { try { guardarCorUsada(estLer().cor); } catch (er) { /* segue */ } } }, true);
   async function registrarCompartilhado(canal, onde) {
+    try { guardarCorUsada(estLer().cor); } catch (e) { /* segue */ }
     const it = wzItem(); if (!it) return;
     it.feito = { ...(it.feito || {}), [canal]: true }; salvarFila(true);
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
@@ -2531,7 +2537,7 @@
     wz.aguardando = false;
     if (wz.idx < wz.lugares.length - 1) { wz.idx++; mostrarPasso(); return; }
     const prox = proximoDaFila();
-    if (prox) { wz.itemId = prox.id; wz.idx = 0; wz.res = {}; wz.passo = "montagem"; toast(`Agora: ${limparNome(prox.nome || "próximo produto")} · escolha modelo e cor`); mostrarPasso(); scrollTo(0, 0); return; }
+    if (prox) { guardarCorUsada(wz.cor); wz.cor = proximaCor(); wz.itemId = prox.id; wz.idx = 0; wz.res = {}; wz.passo = "montagem"; toast(`Agora: ${limparNome(prox.nome || "próximo produto")} · escolha modelo e cor`); mostrarPasso(); scrollTo(0, 0); return; }
     wz.passo = "resumo"; mostrarPasso();
   }
   /** Depois do Reels, Carrossel ou Vídeo: posta os mesmos produtos no WhatsApp (canal e grupos), um por um */
@@ -2625,7 +2631,7 @@
     fitness: { nome: "Fitness", titulo: "Treino\n*em dia* 💪" }
   };
   function livre() {
-    if (!wz.livre) wz.livre = { n: 4, formato: "post", itens: [], tema: "mix", titulo: TEMAS_LIVRE.mix.titulo, cor: "creme" };
+    if (!wz.livre) wz.livre = { n: 4, formato: "post", itens: [], tema: "mix", titulo: TEMAS_LIVRE.mix.titulo, cor: proximaCor() };
     return wz.livre;
   }
   /** Desenha a grade de produtos com a cara do Miga */
@@ -2848,7 +2854,7 @@
     ["Mesa decorada", (n) => `Vídeo vertical 9:16 de 6 segundos, vista de cima: o produto da imagem anexada (${n}) sobre uma mesa clara com flores e objetos em tons de rosa e amarelo; a câmera se aproxima devagar até o produto. Estética delicada de loja. Produto igual ao da foto. Sem textos.`]
   ];
   function vd() {
-    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
+    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: proximaCor(), titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
     return wz.video;
   }
   /** O WebM gravado pelo celular vem sem a duração (a galeria mostra só uns segundos): grava a duração no arquivo */
@@ -3203,7 +3209,7 @@
       if (tipo === "texto") Object.assign(n, { txt: "Seu texto aqui", y: 1080, cor: "branco", fundo: true });
       if (tipo === "selo") Object.assign(n, { txt: "Promoção", x: 860, y: 560, tam: 50, cor: "rosa", forma: "estrela" });
       if (tipo === "emoji") Object.assign(n, { tipo: "figura", txt: "brilho", x: 200, y: 560, tam: 60 });
-      V.camadas.push(n); V.sel = n.id; V.resultado = null; atualizarBarraEditor(); const i = $("#edTxt"); if (i && tipo === "texto") { i.focus(); i.select(); } return;
+      V.camadas.push(n); V.sel = n.id; V.resultado = null; atualizarBarraEditor(); return;
     }
     if (!cm) return;
     const co = t.closest("[data-ed-cor]"); if (co) { cm.cor = co.dataset.edCor; atualizarBarraEditor(); return; }
@@ -3986,7 +3992,7 @@
 
   /* ---------- Postar cupons (sem produto): arte para Status/Story + texto para os grupos ---------- */
   const LOJAS_CUPOM = [["", "Geral"], ["shopee", "Shopee"], ["mercadolivre", "Mercado Livre"], ["amazon", "Amazon"]];
-  function cc() { if (!wz.cup) wz.cup = { sel: [], cor: "rosa", texto: null }; return wz.cup; }
+  function cc() { if (!wz.cup) wz.cup = { sel: [], cor: proximaCor(), texto: null }; return wz.cup; }
   const infoCupom = (cp) => { config.cupomInfo = config.cupomInfo || {}; return config.cupomInfo[cp] || (config.cupomInfo[cp] = { loja: "", desc: "" }); };
   /** Vídeo gravado no celular, com tema, sem precisar escolher um produto */
   function abrirVideoLivre() {
@@ -4629,6 +4635,8 @@
   function folhaEst(titulo, html) {
     $("#folhaEstTitulo").textContent = titulo; $("#folhaEstCorpo").innerHTML = html;
     const d = $("#folhaEst"); if (!d.open) d.showModal();
+    // não abre o teclado sozinho: o cursor só vai para um campo quando você tocar nele
+    if (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) document.activeElement.blur();
   }
   const TEMAS_POST = () => Object.entries(MODELOS_REELS).filter(([, m]) => m.cat);
   /** Modelo/campanha/título/cor de cada tela, num formato só */
@@ -4737,7 +4745,7 @@
     const em = t.closest("[data-escolhe-mod]");
     if (em) {
       const [aba, k] = em.dataset.escolheMod.split(":"), e = estLer();
-      e.titulo = ""; e.cor = aba === "campanhas" ? CAMPANHAS[k].cor : DECOR[k].cor;
+      e.titulo = ""; // a cor fica como está (sequência das 4 cores); para mudar, use o botão Cor
       if (aba === "campanhas") e.camp = k; else { e.camp = ""; e.modelo = k; }
       estGravar(e); $("#folhaEst").close(); aposMudarEstudio(); return;
     }
