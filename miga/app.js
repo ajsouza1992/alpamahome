@@ -1051,7 +1051,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=65"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=66"; });
     }
     edFoto = null;
     try {
@@ -1407,7 +1407,7 @@
     redesenharBanner();
   }
   async function carregarMarca() {
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=65"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=66"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2765,47 +2765,66 @@
     ctx.restore();
   }
   /** A musiquinha do Miga, tocada pelo próprio celular (Web Audio) e gravada junto com o vídeo */
-  function tocarTrilha(ac, saida, total, pops, whooshes, meio, E = MUSICAS.pop) {
+  function tocarTrilha(ac, saida, total, pops, whooshes, meio, E = MUSICAS.house, plim = null) {
     const t0 = ac.currentTime + 0.05, SR = ac.sampleRate;
     const ruido = ac.createBuffer(1, SR, SR), d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     const mestre = ac.createGain(); mestre.connect(saida); mestre.gain.value = 0.6;
     const musica = ac.createGain(); musica.connect(mestre);
-    // Durante o vídeo: música baixinha (ou sem música)
+    const bomba = ac.createGain(); bomba.connect(musica); // "respira" junto com o bumbo (eletrônica/house)
     if (meio) {
       const [ini, fim, vol] = meio;
       musica.gain.setValueAtTime(1, t0 + Math.max(0, ini - 0.3)); musica.gain.linearRampToValueAtTime(vol, t0 + ini);
       musica.gain.setValueAtTime(vol, t0 + Math.max(ini, fim - 0.3)); musica.gain.linearRampToValueAtTime(1, t0 + fim);
     }
-    mestre.gain.setValueAtTime(0.6, t0 + total - 0.5); mestre.gain.linearRampToValueAtTime(0.0001, t0 + total);
+    mestre.gain.setValueAtTime(0.6, t0 + total - 0.7); mestre.gain.linearRampToValueAtTime(0.0001, t0 + total);
     const env = (g, t, pico, queda, ataque = 0.004) => { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(pico, t + ataque); g.gain.exponentialRampToValueAtTime(0.0001, t + ataque + queda); };
-    const osc = (tipo, f, t, dur, pico, destino = musica) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = tipo; o.frequency.value = f; env(g, t, pico, dur); o.connect(g).connect(destino); o.start(t); o.stop(t + dur + 0.1); return o; };
-    const barulho = (t, dur, pico, filtro, freq, destino = musica) => { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = ruido; f.type = filtro; f.frequency.value = freq; env(g, t, pico, dur, 0.002); s.connect(f).connect(g).connect(destino); s.start(t); s.stop(t + dur + 0.1); return f; };
+    const osc = (tipo, f, t, dur, pico, destino = musica, det = 0) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = tipo; o.frequency.value = f; o.detune.value = det; env(g, t, pico, dur); o.connect(g).connect(destino); o.start(t); o.stop(t + dur + 0.1); return o; };
+    const barulho = (t, dur, pico, filtro, freq, destino = musica) => { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = ruido; s.loopStart = Math.random() * 0.5; f.type = filtro; f.frequency.value = freq; env(g, t, pico, dur, 0.002); s.connect(f).connect(g).connect(destino); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.1); return f; };
     const nota = (m) => 440 * Math.pow(2, (m - 69) / 12);
-    const kick = (t) => { const o = osc("sine", 160, t, 0.32, 0.9); o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.12); };
-    const b = 60 / E.bpm, acordes = E.acordes, raiz = E.raiz, melodia = E.melodia;
-    const fimMusica = total - 1.6;
-    const sino = (f, t, pico) => { osc("sine", f, t, 0.6, pico); osc("sine", f * 2.76, t, 0.25, pico * 0.25); };
-    for (let beat = 0; beat * b < fimMusica; beat++) {
-      const t = t0 + beat * b, c = Math.floor(beat / 4) % 4;
-      if (E.kick === "funk") { if (beat % 4 === 0 || beat % 4 === 2) kick(t); if (beat % 4 === 1) kick(t + b * 0.75); }
-      else if (E.kick === "leve") { if (beat % 2 === 0) kick(t); }
-      else kick(t);
-      if (beat % 2 === 1) barulho(t, 0.18, E.kick === "leve" ? 0.25 : 0.5, "bandpass", 1500);
-      const subdiv = E.hats || 2;
-      for (let s = 0; s < subdiv; s++) barulho(t + s * b / subdiv, s % 2 ? 0.05 : 0.03, s % 2 ? 0.22 : 0.1, "highpass", 7500);
-      if (E.tique) { osc("square", beat % 2 ? 1250 : 1600, t, 0.03, 0.06); }
-      for (const k of [0, 1]) { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 700; f.connect(musica); osc("sawtooth", nota(raiz[c] + ((beat + k) % 4 === 2 ? 12 : 0)), t + k * b / 2, b * 0.36, 0.28, f); }
-      if (beat % 2 === 0 || beat % 4 === 3) acordes[c].forEach((m) => osc(E.acordeOnda || "triangle", nota(m + 12), t + (beat % 2 ? b / 2 : 0), 0.14, E.acordeVol || 0.07));
-      if (E.sino && beat % 2 === 0) acordes[c].forEach((m, q) => sino(nota(m + 24), t + q * b / 4, 0.05));
-      if (beat >= (E.entraMelodia ?? 8)) for (const k of [0, 1]) { const m = melodia[((beat - (E.entraMelodia ?? 8)) * 2 + k) % melodia.length]; if (m) osc(E.lead || "triangle", nota(m), t + k * b / 2, b * 0.32, E.leadVol || 0.14); }
+    // 808 com leve distorção
+    const dist = ac.createWaveShaper(); const curva = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curva[i] = Math.tanh(x * (E.sujo ? 4 : 1.8)); } dist.curve = curva; dist.connect(musica);
+    const kick = (t, longo) => { const o = osc("sine", 150, t, longo ? 0.5 : 0.3, 0.95, dist); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(longo ? 42 : 50, t + 0.1); };
+    const caixa = (t, palma) => { barulho(t, palma ? 0.16 : 0.13, palma ? 0.55 : 0.45, "bandpass", palma ? 1400 : 2200); if (!palma) osc("triangle", 190, t, 0.08, 0.3); else barulho(t + 0.012, 0.12, 0.35, "bandpass", 1200); };
+    const chimbal = (t, aberto, vol = 1) => barulho(t, aberto ? 0.22 : 0.035, (aberto ? 0.2 : 0.16) * vol, "highpass", 8000);
+    const baixo808 = (m, t, dur, prox) => { const o = osc("sine", nota(m), t, dur, 0.85, dist); if (prox && E.desliza) { o.frequency.setValueAtTime(nota(m), t + dur * 0.6); o.frequency.exponentialRampToValueAtTime(nota(prox), t + dur * 0.9); } };
+    const baixoSaw = (m, t, dur) => { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 600; f.connect(bomba); osc("sawtooth", nota(m), t, dur, 0.3, f); osc("sine", nota(m - 12), t, dur, 0.35, bomba); };
+    const acorde = (ms, t, dur, tipo) => ms.forEach((m) => {
+      if (tipo === "super") { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 3200; f.connect(bomba); [-14, 0, 14].forEach((dt) => osc("sawtooth", nota(m + 12), t, dur, 0.045, f, dt)); }
+      else if (tipo === "piano") { osc("triangle", nota(m + 12), t, dur, 0.09, bomba); osc("sine", nota(m + 24), t, dur * 0.5, 0.03, bomba); }
+      else if (tipo === "teclado") { osc("sine", nota(m + 12), t, dur, 0.07); osc("triangle", nota(m + 12), t, dur * 0.4, 0.03, musica, 6); }
+      else if (tipo === "cordas") { const g = ac.createGain(), o = ac.createOscillator(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1800; o.type = "sawtooth"; o.frequency.value = nota(m + 12); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.035, t + 0.15); g.gain.linearRampToValueAtTime(0.0001, t + dur); o.connect(f).connect(g).connect(musica); o.start(t); o.stop(t + dur + 0.05); }
+      else osc("triangle", nota(m + 12), t, dur, 0.07);
+    });
+    const lider = (m, t, dur) => {
+      const tipo = E.lider || "triangle";
+      if (tipo === "sino") { osc("sine", nota(m), t, 0.5, 0.16); osc("sine", nota(m) * 2.76, t, 0.18, 0.05); }
+      else if (tipo === "cowbell") { const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = nota(m) * 1.5; f.Q.value = 3; f.connect(musica); osc("square", nota(m), t, 0.12, 0.2, f); osc("square", nota(m) * 1.48, t, 0.12, 0.14, f); }
+      else osc(tipo, nota(m), t, dur, E.liderVol || 0.12);
+    };
+    const passo = 60 / E.bpm / 4, fimMusica = total - 0.3, P = (s, i) => (s || "")[i % 16] || ".";
+    let ultimoBaixo = null;
+    for (let st = 0; st * passo < fimMusica; st++) {
+      const i = st % 16, bar = Math.floor(st / 16) % 4, sw = (i % 2 ? (E.balanco || 0) * passo : 0), t = t0 + st * passo + sw;
+      if (P(E.k, i) === "x") { kick(t, E.k808); if (E.bomba) { bomba.gain.setValueAtTime(0.35, t); bomba.gain.linearRampToValueAtTime(1, t + passo * 3); } }
+      if (P(E.s, i) === "x") caixa(t, E.palma);
+      const h = P(E.h, i); if (h === "x") chimbal(t, false, E.chVol || 1); else if (h === "r") for (let q = 0; q < 3; q++) chimbal(t + q * passo / 3, false, 0.8);
+      if (P(E.o, i) === "o") chimbal(t, true);
+      if (P(E.tique, i) === "x") osc("square", i % 8 ? 1300 : 1700, t, 0.025, 0.05);
+      const bx = P(E.b, i);
+      if (bx === "x" || bx === "X") {
+        let len = 1; while (len < 16 && P(E.b, i + len) === "-") len++;
+        const m = E.raiz[bar] + (bx === "X" ? 12 : 0), prox = E.raiz[(bar + (i + len >= 16 ? 1 : 0)) % 4];
+        if (E.baixo === "808") baixo808(m, t, passo * Math.max(len, 2) * 0.95, prox !== m ? prox : null); else baixoSaw(m, t, passo * Math.max(1, len) * 0.9);
+        ultimoBaixo = m;
+      }
+      const cx = P(E.c, i); if (cx === "x") { let len = 1; while (len < 16 && P(E.c, i + len) === "-") len++; acorde(E.acordes[bar], t, passo * len * 0.95, E.acordeTipo); }
+      if (E.melodia && st >= (E.entra ?? 32)) { const m = E.melodia[(st - (E.entra ?? 32)) % E.melodia.length]; if (m) lider(m, t, passo * 1.6); }
+      if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.04, "highpass", 3000);
     }
-    // Final: batida + "plim"
-    const tf = t0 + fimMusica; kick(tf);
-    [84, 91, 96].forEach((m, i) => osc("sine", nota(m), tf, 1.1, [0.25, 0.12, 0.07][i], mestre));
-    acordes[0].forEach((m) => osc("triangle", nota(m + 12), tf, 0.9, 0.08, mestre));
-    // Efeitos sincronizados com a tela
-    pops.forEach((p) => { const o = osc("sine", 1800, t0 + p, 0.1, 0.35, mestre); o.frequency.setValueAtTime(2200, t0 + p); o.frequency.exponentialRampToValueAtTime(520, t0 + p + 0.08); });
-    whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.35, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
+    // "Plim" na hora que aparece o seu @
+    if (plim != null) { const tp = t0 + plim; [84, 91, 96].forEach((m, q) => osc("sine", nota(m), tp, 1.1, [0.25, 0.12, 0.07][q], mestre)); osc("triangle", nota(96), tp, 0.4, 0.05, mestre); }
+    pops.forEach((p) => { const o = osc("sine", 1800, t0 + p, 0.1, 0.32, mestre); o.frequency.setValueAtTime(2200, t0 + p); o.frequency.exponentialRampToValueAtTime(520, t0 + p + 0.08); });
+    whooshes.forEach((w) => { const f = barulho(t0 + w, 0.45, 0.32, "bandpass", 400, mestre); f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3000, t0 + w + 0.4); f.Q.value = 1.5; });
     return t0;
   }
   async function gravarVideo() {
@@ -2840,7 +2859,7 @@
       if (V.abertura) whooshes.push(tA - 0.3);
       // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
       const temTrilha = V.abertura || V.final || V.musica;
-      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001]);
+      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS.house, V.final ? tA + tM + (arroba(config.instagram) ? 1.05 : 1.6) : null);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
     } catch (e) { if (v) v.muted = true; }
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
@@ -3145,21 +3164,45 @@
   }
 
   /* ---------- Reels de produtos: um tema só, vários produtos, vários modelos e músicas ---------- */
+  // Uma batida para cada modelo (16 passos por compasso: x = toca, r = rufada, o = chimbal aberto, - = segura a nota)
   const MUSICAS = {
-    pop: { bpm: 120, acordes: [[60, 64, 67], [55, 59, 62, 67], [57, 60, 64], [53, 57, 60, 65]], raiz: [48, 43, 45, 41], melodia: [76, 0, 79, 76, 74, 0, 72, 74, 74, 0, 71, 74, 79, 0, 74, 0, 72, 0, 76, 72, 69, 0, 72, 76, 77, 0, 76, 74, 72, 0, 0, 0] },
-    corrida: { bpm: 140, hats: 4, acordes: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], raiz: [45, 41, 48, 43], lead: "square", leadVol: 0.07, entraMelodia: 4, melodia: [81, 0, 79, 81, 84, 0, 81, 79, 77, 0, 76, 77, 81, 0, 77, 0, 79, 0, 76, 79, 84, 0, 83, 79, 79, 0, 81, 83, 86, 0, 0, 0] },
-    suingue: { bpm: 104, kick: "funk", acordes: [[62, 65, 69, 72], [55, 59, 62, 65], [62, 65, 69, 72], [57, 61, 64, 67]], raiz: [38, 43, 38, 45], lead: "sine", leadVol: 0.18, melodia: [74, 0, 77, 0, 79, 81, 0, 77, 74, 0, 72, 74, 0, 0, 69, 0, 74, 0, 77, 79, 81, 0, 84, 81, 79, 77, 0, 74, 76, 0, 0, 0] },
-    relogio: { bpm: 128, tique: true, acordes: [[64, 67, 71], [60, 64, 67], [55, 59, 62], [62, 66, 69]], raiz: [40, 36, 43, 38], lead: "triangle", leadVol: 0.16, melodia: [79, 0, 78, 79, 83, 0, 79, 0, 76, 0, 74, 76, 79, 0, 0, 0, 74, 0, 76, 78, 79, 0, 81, 0, 83, 0, 81, 79, 78, 0, 0, 0] },
-    sonho: { bpm: 96, kick: "leve", sino: true, acordes: [[65, 69, 72], [57, 60, 64], [62, 65, 69], [58, 62, 65]], raiz: [41, 45, 38, 46], lead: "sine", leadVol: 0.16, acordeVol: 0.05, melodia: [81, 0, 0, 79, 77, 0, 76, 0, 77, 0, 0, 0, 72, 0, 0, 0, 74, 0, 76, 77, 79, 0, 77, 0, 74, 0, 0, 72, 70, 0, 0, 0] },
-    festa: { bpm: 124, hats: 4, acordes: [[67, 71, 74], [62, 66, 69], [64, 67, 71], [60, 64, 67]], raiz: [43, 38, 40, 36], lead: "square", leadVol: 0.06, acordeOnda: "square", acordeVol: 0.035, melodia: [79, 81, 83, 0, 86, 0, 83, 0, 81, 0, 79, 81, 83, 0, 0, 0, 79, 81, 83, 0, 88, 0, 86, 83, 81, 0, 83, 0, 79, 0, 0, 0] }
+    house: { bpm: 124, bomba: true, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "..x...x...x...x.", o: "", b: "..x-..x-..x-..x-", baixo: "saw", c: "..x...x..x....x.", acordeTipo: "piano",
+      acordes: [[57, 60, 64], [57, 60, 65], [55, 60, 64], [55, 59, 62]], raiz: [45, 41, 48, 43], lider: "triangle", liderVol: 0.1, entra: 32,
+      melodia: [76, 0, 0, 79, 0, 0, 76, 0, 74, 0, 72, 0, 74, 0, 0, 0, 72, 0, 0, 76, 0, 0, 72, 0, 71, 0, 67, 0, 71, 0, 74, 0] },
+    eletronica: { bpm: 128, bomba: true, k: "x...x...x...x...", s: "....x.......x...", palma: true, h: "x.x.x.x.x.x.x.x.", o: "..o...o...o...o.", b: "x.x.x.x.x.x.x.x.", baixo: "saw", c: "x.x.x.x.x.x.x.x.", acordeTipo: "super",
+      acordes: [[53, 57, 60], [55, 59, 62], [57, 60, 64], [55, 60, 64]], raiz: [41, 43, 45, 48], lider: "square", liderVol: 0.06, entra: 16,
+      melodia: [81, 0, 84, 0, 88, 0, 84, 0, 81, 0, 84, 0, 88, 0, 89, 0, 83, 0, 86, 0, 88, 0, 86, 0, 83, 0, 86, 0, 91, 0, 88, 0] },
+    trap: { bpm: 140, k808: true, desliza: true, k: "x.........x..x..", s: "........x.......", palma: true, h: "x.x.x.x.xrx.x.rr", b: "x---------x--x--", baixo: "808", c: "", acordes: [[60, 63, 67], [56, 60, 63], [53, 56, 60], [55, 59, 62]], raiz: [36, 32, 29, 31],
+      lider: "sino", entra: 0, melodia: [79, 0, 0, 75, 0, 0, 72, 0, 0, 0, 75, 0, 79, 0, 0, 0, 80, 0, 0, 79, 0, 0, 75, 0, 0, 0, 74, 0, 72, 0, 0, 0] },
+    drill: { bpm: 142, k808: true, desliza: true, k: "x......x..x.....", s: "........x.....x.", h: "x..x..x.x..x.rx.", tique: "x...x...x...x...", b: "x------x--x-----", baixo: "808", c: "", acordes: [[62, 65, 69], [58, 62, 65], [55, 58, 62], [57, 61, 64]], raiz: [38, 34, 31, 33],
+      lider: "triangle", liderVol: 0.11, entra: 16, melodia: [74, 0, 77, 0, 0, 74, 0, 0, 73, 0, 74, 0, 0, 0, 0, 0, 70, 0, 74, 0, 0, 77, 0, 0, 76, 0, 73, 0, 0, 0, 0, 0] },
+    lofi: { bpm: 84, balanco: 0.18, k: "x......x..x.....", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", chVol: 0.6, chiado: true, b: "x-------x-------", baixo: "saw", c: "x---------------", acordeTipo: "teclado",
+      acordes: [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]], raiz: [41, 40, 38, 36], lider: "sine", liderVol: 0.12, entra: 16,
+      melodia: [76, 0, 0, 0, 74, 0, 72, 0, 0, 0, 0, 0, 69, 0, 0, 0, 72, 0, 0, 74, 0, 0, 76, 0, 79, 0, 0, 0, 77, 0, 0, 0] },
+    funk: { bpm: 130, k: "x..x....x..x....", s: "...x..x....x..x.", palma: true, h: "x.x.x.x.x.x.x.x.", b: "x..x....x..x....", baixo: "808", c: "", acordes: [[64, 67, 71], [64, 67, 71], [67, 71, 74], [62, 66, 69]], raiz: [40, 40, 43, 38],
+      lider: "square", liderVol: 0.07, entra: 16, melodia: [76, 76, 0, 79, 0, 76, 0, 0, 74, 0, 76, 0, 0, 0, 0, 0, 76, 76, 0, 79, 0, 81, 0, 0, 79, 0, 76, 0, 0, 0, 0, 0] },
+    dembow: { bpm: 96, k: "x...x...x...x...", s: "...x..x....x..x.", h: "x.x.x.x.x.x.x.x.", b: "x-..x-..x-..x-..", baixo: "808", c: "x.....x.....x...", acordeTipo: "piano", acordes: [[57, 60, 64], [53, 57, 60], [55, 60, 64], [55, 59, 62]], raiz: [45, 41, 48, 43],
+      lider: "triangle", liderVol: 0.12, entra: 16, melodia: [76, 0, 76, 0, 77, 0, 76, 0, 74, 0, 72, 0, 0, 0, 0, 0, 72, 0, 74, 0, 76, 0, 79, 0, 76, 0, 74, 0, 72, 0, 0, 0] },
+    disco: { bpm: 116, bomba: true, k: "x...x...x...x...", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", o: "..o...o...o...o.", b: "x.X.x.X.x.X.x.X.", baixo: "saw", c: "x-------x-------", acordeTipo: "cordas",
+      acordes: [[62, 65, 69, 72], [55, 59, 62, 65], [60, 64, 67, 71], [57, 60, 64, 67]], raiz: [38, 43, 36, 45], lider: "square", liderVol: 0.06, entra: 16,
+      melodia: [81, 0, 79, 81, 0, 84, 0, 81, 79, 0, 77, 0, 76, 0, 0, 0, 79, 0, 77, 79, 0, 81, 0, 79, 77, 0, 76, 0, 74, 0, 0, 0] },
+    boombap: { bpm: 90, balanco: 0.15, k: "x......x.x......", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", chVol: 0.8, chiado: true, b: "x------x.x------", baixo: "saw", c: "x-------x-------", acordeTipo: "teclado",
+      acordes: [[57, 60, 64, 67], [50, 53, 57, 60], [55, 59, 62, 65], [48, 52, 55, 59]], raiz: [45, 38, 43, 36], lider: "sine", liderVol: 0.12, entra: 16,
+      melodia: [72, 0, 0, 74, 0, 76, 0, 0, 79, 0, 76, 0, 74, 0, 0, 0, 72, 0, 0, 69, 0, 72, 0, 0, 74, 0, 0, 0, 0, 0, 0, 0] },
+    phonk: { bpm: 130, k808: true, sujo: true, k: "x.....x...x.....", s: "........x.......", h: "x.x.x.x.x.x.x.x.", b: "x-----x---x-----", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [56, 60, 63], [58, 62, 65]], raiz: [36, 36, 32, 34],
+      lider: "cowbell", entra: 0, melodia: [72, 0, 72, 75, 0, 72, 0, 70, 72, 0, 72, 75, 0, 79, 0, 77, 72, 0, 72, 75, 0, 72, 0, 70, 68, 0, 68, 70, 0, 72, 0, 0] }
   };
   const MODELOS_REELS = {
-    achadinho: { nome: "Achadinho do dia", desc: "Alegre, com o preço pulando", musica: "pop", tag: "Achadinho do dia ✨", titulo: "Achadinho\n*do dia*", sub: (n) => n > 1 ? `${n} achadinhos pra você` : "Olha o que eu achei", emoji: "✨" },
-    relampago: { nome: "Oferta relâmpago", desc: "Rápido, com contagem acabando", musica: "corrida", tag: "⚡ Oferta relâmpago", titulo: "Oferta\n*relâmpago*", sub: () => "Corre que acaba rápido!", emoji: "⚡" },
-    baixou: { nome: "Baixou o preço", desc: "Risca o preço antigo e mostra o novo", musica: "suingue", tag: "Baixou o preço", titulo: "*Baixou*\no preço!", sub: () => "Olha esse precinho", emoji: "💸" },
-    ultimas: { nome: "Últimas horas", desc: "Com relógio e clima de urgência", musica: "relogio", tag: "⏰ Últimas horas", titulo: "*Últimas*\nhoras!", sub: () => "Aproveita antes que acabe", emoji: "⏰" },
-    novidade: { nome: "Chegou novidade", desc: "Delicado, com brilhinhos", musica: "sonho", tag: "Chegou novidade 🎁", titulo: "Chegou\n*novidade*", sub: () => "Fresquinho pra você", emoji: "🎁" },
-    top: { nome: "Top achadinhos", desc: "Ranking com número em cada produto", musica: "festa", tag: "Top achadinhos", titulo: "Top {n}\n*achadinhos*", sub: () => "da semana", emoji: "🏆" }
+    achadinho: { nome: "Achadinho do dia", desc: "Batida house", musica: "house", tag: "Achadinho do dia ✨", titulo: "Achadinho\n*do dia*", sub: (n) => n > 1 ? `${n} achadinhos pra você` : "Olha o que eu achei", emoji: "✨" },
+    relampago: { nome: "Oferta relâmpago", desc: "Eletrônica", musica: "eletronica", tag: "⚡ Oferta relâmpago", titulo: "Oferta\n*relâmpago*", sub: () => "Corre que acaba rápido!", emoji: "⚡" },
+    baixou: { nome: "Baixou o preço", desc: "Trap", musica: "trap", tag: "Baixou o preço", titulo: "*Baixou*\no preço!", sub: () => "Olha esse precinho", emoji: "💸" },
+    ultimas: { nome: "Últimas horas", desc: "Drill com relógio", musica: "drill", tag: "⏰ Últimas horas", titulo: "*Últimas*\nhoras!", sub: () => "Aproveita antes que acabe", emoji: "⏰" },
+    novidade: { nome: "Chegou novidade", desc: "Lo-fi delicado", musica: "lofi", tag: "Chegou novidade 🎁", titulo: "Chegou\n*novidade*", sub: () => "Fresquinho pra você", emoji: "🎁" },
+    top: { nome: "Top achadinhos", desc: "Funk", musica: "funk", tag: "Top achadinhos", titulo: "Top {n}\n*achadinhos*", sub: () => "da semana", emoji: "🏆" },
+    cupom: { nome: "Cupom liberado", desc: "Reggaeton", musica: "dembow", tag: "🎟️ Cupom liberado", titulo: "*Cupom*\nliberado!", sub: () => "Desconto na mão", emoji: "🎟️" },
+    amei: { nome: "Amei esse", desc: "Disco", musica: "disco", tag: "Amei esse 💖", titulo: "Amei\n*esse aqui*", sub: () => "Precisava te mostrar", emoji: "💖" },
+    vale: { nome: "Vale a pena", desc: "Boom bap", musica: "boombap", tag: "Vale muito a pena ✅", titulo: "Vale\n*a pena?*", sub: () => "Olha só esse preço", emoji: "🤔" },
+    sohoje: { nome: "Só hoje", desc: "Phonk", musica: "phonk", tag: "🔥 Só hoje", titulo: "*Só hoje*\nnesse preço", sub: () => "Amanhã pode voltar", emoji: "🔥" }
   };
   const T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 3.4;
   function rr() { if (!wz.reels) wz.reels = { itens: [], modelo: "achadinho", cor: "rosa", resultado: null }; return wz.reels; }
@@ -3227,6 +3270,13 @@
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ang) * 58, Math.sin(ang) * 58); ctx.stroke();
       ctx.strokeStyle = "#1d1d1f"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -38); ctx.stroke();
     });
+    if (mk === "amei") for (let s = 0; s < 7; s++) { const fase = (t * 0.55 + s / 7) % 1, x = 540 + (s % 2 ? 1 : -1) * (L / 2 + 20 + (s % 3) * 18) + Math.sin(t * 3 + s) * 20, yy = fy + L / 2 - fase * (L + 120); if (t > 0.7) { ctx.save(); ctx.globalAlpha = Math.sin(fase * Math.PI); ctx.font = `${50 + (s % 3) * 14}px sans-serif`; ctx.fillText("💖", x, yy); ctx.restore(); } }
+    if (mk === "vale") comPulo(ctx, t, 1.4, 540 + L / 2 - 70, fy + L / 2 - 70, () => {
+      ctx.rotate(-0.2); ctx.beginPath(); ctx.arc(0, 0, 110, 0, Math.PI * 2); ctx.fillStyle = "#1fa463"; ctx.fill(); ctx.lineWidth = 10; ctx.strokeStyle = "#ffffff"; ctx.stroke();
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 18; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(-45, 0); ctx.lineTo(-10, 35); ctx.lineTo(50, -35); ctx.stroke();
+    }, 0.35);
+    if (mk === "sohoje" && t > 0.5) { ctx.save(); ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(t * 5)); retArredondado(ctx, 540 - L / 2 - 14, fy - L / 2 - 14, L + 28, L + 28, 74); ctx.lineWidth = 14; ctx.strokeStyle = "#ff7a00"; ctx.stroke(); ctx.restore();
+      comPulo(ctx, t, 0.5, 540 - L / 2 + 40, fy - L / 2 + 30, () => { const s = 1 + 0.08 * Math.sin(t * 9); ctx.scale(s, s); ctx.font = "150px sans-serif"; ctx.fillText("🔥", 0, 0); }); }
     // Nome
     const nome = limparNome(it.nome || "");
     let y = fy + L / 2 + 110;
@@ -3250,7 +3300,12 @@
       } else comPulo(ctx, t, ini, 540, y + 40, () => { const s = mk === "relampago" && t > 1.7 ? 1 + 0.05 * Math.sin(t * 14) : 1; ctx.scale(s, s); etiquetaReels(ctx, (antigo ? "por " : "") + brl(novo), 0, 0, 72, -0.03); });
       y += 200;
     }
-    if (it.cupom) comSubida(ctx, t, 1.7, () => {
+    if (it.cupom && mk === "cupom") comPulo(ctx, t, 1.7, 540, y, () => {
+      ctx.rotate(Math.sin(t * 6) * 0.03); ctx.font = "800 62px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 110;
+      retArredondado(ctx, -cw / 2, -65, cw, 130, 30); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.setLineDash([18, 11]); ctx.lineWidth = 7; ctx.strokeStyle = "#e8336d"; ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "#e8336d"; ctx.fillText(tx, 0, 4);
+    });
+    else if (it.cupom) comSubida(ctx, t, 1.7, () => {
       ctx.font = "800 46px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 80;
       retArredondado(ctx, 540 - cw / 2, y - 45, cw, 90, 45); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.setLineDash([14, 9]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, y + 2);
@@ -3272,8 +3327,9 @@
       const b0 = T_INTRO + i * T_PROD; whooshes.push(b0 - 0.3);
       pops.push(b0 + 0.05, b0 + 0.2, b0 + 0.6, b0 + (R.modelo === "baixou" ? 1.65 : 1.15));
       if (R.modelo === "top") pops.push(b0 + 0.55);
+      if (R.modelo === "vale") pops.push(b0 + 1.4);
     }
-    const f = T_INTRO + T_PROD * n; whooshes.push(f - 0.3); pops.push(f + 0.1, f + 0.5, f + 1.0, f + 1.5);
+    const f = T_INTRO + T_PROD * n; whooshes.push(f - 0.3); pops.push(f + 0.1, f + 0.5, f + 1.5);
     return { pops, whooshes };
   }
   /** Toca o Reels no quadro (prévia com som) ou grava o vídeo */
@@ -3298,7 +3354,8 @@
       if (ac.state === "suspended") await ac.resume();
       dest = gravar ? ac.createMediaStreamDestination() : ac.destination;
       const { pops, whooshes } = efeitosReels(R, n);
-      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[MODELOS_REELS[R.modelo].musica]);
+      const f = T_INTRO + T_PROD * n;
+      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[MODELOS_REELS[R.modelo].musica], f + (arroba(config.instagram) ? 1.0 : 1.5));
     } catch (e) { t0 = 0; }
     if (gravar) {
       fluxo = tela.captureStream(30);
@@ -3347,8 +3404,8 @@
     }
     if (wz.passo === "rModelo") {
       c.innerHTML = `<h2 class="wz-titulo">Modelo do Reels</h2>
-        <p class="nota">Cada modelo tem a sua animação e a sua musiquinha. A cor vale para o vídeo inteiro.</p>
-        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}</span></button>`).join("")}</div>
+        <p class="nota">Cada modelo tem a sua animação e a sua batida. A cor vale para o vídeo inteiro.</p>
+        <div class="wz-miniaturas">${Object.entries(MODELOS_REELS).map(([k, m]) => `<button type="button" class="wz-mini${R.modelo === k ? " on" : ""}" data-r-modelo="${k}"><canvas width="270" height="480"></canvas><span>${esc(m.nome)}<small>${esc(m.desc)}</small></span></button>`).join("")}</div>
         <div class="campo"><span>Cor</span><div class="alternar">${Object.entries(CORES_VIDEO).map(([k, x]) => `<button type="button" role="radio" data-r-cor="${k}" aria-checked="${R.cor === k}">${x.nome}</button>`).join("")}</div></div>
         ${botaoContinuar(true)}`;
       pintarModelosReels();
