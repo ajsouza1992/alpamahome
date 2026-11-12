@@ -1097,7 +1097,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=115"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=116"; });
     }
     edFoto = null;
     try {
@@ -1470,7 +1470,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=115"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=116"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3166,7 +3166,7 @@
     const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
     const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
     const fim = `<button type="button" data-ed-del class="ed-del">Excluir</button><button type="button" data-ed-ok class="ed-ok">Pronto</button>`;
-    const girar = `<button type="button" data-ed-giro="-" aria-label="Girar para a esquerda">⟲</button><button type="button" data-ed-giro="+" aria-label="Girar para a direita">⟳</button>`;
+    const girar = `<button type="button" class="ed-ico" data-ed-giro="-" aria-label="Girar para a esquerda"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button><button type="button" class="ed-ico" data-ed-giro="+" aria-label="Girar para a direita"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>`;
     const anim = `<button type="button" data-ed-anim class="${cm.anim === "batida" ? "on" : ""}">${cm.anim === "batida" ? "Entra na batida" : "Fixo"}</button>`;
     if (cm.tipo === "figura" || cm.tipo === "emoji") return `<div class="ed-sel"><div class="ed-figuras">${FIGURAS.map((f) => `<button type="button" data-ed-fig="${f}" class="${cm.txt === f ? "on" : ""}" aria-label="${f}"><canvas width="88" height="88" data-fig="${f}"></canvas></button>`).join("")}</div><div class="ed-linha">${tam}${girar}${anim}${fim}</div></div>`;
     const selos = cm.tipo === "selo" ? `<div class="ed-chips">${Object.keys(SELOS_VIDEO).map((s) => `<button type="button" data-ed-selotxt="${esc(s)}">${esc(s)}</button>`).join("")}</div>
