@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=110"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=111"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=110"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=111"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1537,7 +1537,7 @@
     } else {
       // Post do feed: link não é clicável na legenda, então vai a legenda pronta com "link na bio"
       const base = atual && atual.texto ? atual.texto : [$("#bnNome").value.trim(), $("#bnTexto").value.trim()].filter(Boolean).join("\n\n");
-      const legenda = (urlOk(link) ? base.split(link).join("💬 Comenta EU QUERO que eu te mando o link no direct") : base).replace(/[*~_]/g, "").trim(); // Instagram não usa a formatação do WhatsApp
+      const legenda = base.replace(/[*~_]/g, "").trim(); // Instagram não usa a formatação do WhatsApp
       if (legenda && await copiarTexto(legenda)) toast("Legenda copiada: no Instagram, cole na legenda do post");
     }
     compartilharTela(telaFinal(), nomeBanner(bnModelo.valor(), bnFormato.valor()));
@@ -2159,7 +2159,7 @@
     if (wz.passo === "formato") {
       c.innerHTML = `<h2 class="wz-titulo">Story ou post?</h2>
         <div class="wz-duas wz-formatos">${opcaoCard("data-formato", "story", "Story", "Tela cheia, em pé", wz.formato === "story", '<canvas data-forma="story"></canvas>')}${opcaoCard("data-formato", "post", "Post", "No feed, 4:5", wz.formato === "post", '<canvas data-forma="post"></canvas>')}</div>
-        <p class="nota">No story o link fica clicável pelo adesivo de Link. No post, a legenda pede para comentarem EU QUERO.</p>
+        <p class="nota">No story o link fica clicável pelo adesivo de Link. No post, o link vai na legenda.</p>
         ${botaoContinuar(true)}`;
       const pintar = () => document.querySelectorAll("[data-forma]").forEach((cv) => desenharMontagem(cv, false, wz.modelo, wz.cor, cv.dataset.forma));
       pintar(); prepararFoto(item).then(() => { if (wz.passo === "formato") pintar(); });
@@ -2201,7 +2201,7 @@
           <input id="wzLinkCopiar" readonly value="${esc(item.link)}" aria-label="Link do produto">
           <button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button>
         </div>
-        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "No story, toque no adesivo de Link e cole. Se o link sumir da memória, volte aqui e toque em “Copiar link”." : "A legenda já vai copiada, pedindo para comentarem EU QUERO: mande o link no direct (use “Copiar link”)."}</p>`;
+        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "No story, toque no adesivo de Link e cole. Se o link sumir da memória, volte aqui e toque em “Copiar link”." : "A legenda já vai copiada, com o link."}</p>`;
       prepararFoto(item).then(() => desenharMontagem($("#wzTela"), true));
       desenharMontagem($("#wzTela"), true);
       return;
@@ -2438,7 +2438,7 @@
     if (wz.formato === "story") { if (await copiarTexto(it.link)) toast("Link copiado: no story, toque no adesivo de Link e cole"); }
     else {
       const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`;
-      if (await copiarTexto(base.split(it.link).join("💬 Comenta EU QUERO que eu te mando o link no direct").replace(/[*~_]/g, "").trim())) toast("Legenda copiada: cole na legenda do post");
+      if (await copiarTexto(base.replace(/[*~_]/g, "").trim())) toast("Legenda copiada: cole na legenda do post");
     }
     const tela = document.createElement("canvas"); desenharMontagem(tela, false);
     compartilharTela(tela, nomeArquivo(it.nome));
@@ -2486,7 +2486,7 @@
         meio = `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`;
         if (k === "story") { botao = "Postar no Instagram"; dica = "O link já vai copiado: no story, toque no adesivo de Link e cole."; }
         if (k === "status") { botao = "Postar no Status"; dica = "Escolha o WhatsApp com “B” e depois Meu status. O texto com o link vai junto."; }
-        if (k === "feed") { botao = "Postar no feed"; dica = "A legenda já vai copiada, pedindo para comentarem EU QUERO: mande o link no direct."; }
+        if (k === "feed") { botao = "Postar no feed"; dica = "A legenda já vai copiada, com o link."; }
         meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
       } else {
         const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
@@ -2545,7 +2545,7 @@
       let texto = "";
       if (k === "story") await copiarTexto(it.link);
       if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
-      if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(base.split(it.link).join("💬 Comenta EU QUERO que eu te mando o link no direct").replace(/[*~_]/g, "").trim()); }
+      if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(base.replace(/[*~_]/g, "").trim()); }
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { if (arq) baixarBlob(arq, arq.name); if (texto) await copiarTexto(texto); toast("Imagem salva: abra o app e escolha da galeria"); }
     } else if (k === "telegram") {
@@ -2803,7 +2803,7 @@
     faixa: "Vídeo inteiro com uma faixa de preço embaixo",
     dividido: "Título em cima, vídeo no meio e preço embaixo",
     selo: "Vídeo inteiro com uma etiqueta de preço no canto",
-    minimal: "Só o vídeo, com selo de preço e o Comenta EU QUERO"
+    minimal: "Só o vídeo, com selo de preço e a chamada"
   };
   const TEMAS_VIDEO = {
     cheia: "Tela cheia", desfoque: "Desfoque", legenda: "Legenda", manchete: "Manchete", contagem: "Contagem", neon: "Neon", quadrado: "Quadrado", story: "Story", gradiente: "Gradiente", faixa: "Faixa", selo: "Etiqueta", cinema: "Cinema", moldura: "Moldura", polaroid: "Polaroid", circulo: "Círculo", dividido: "Dividido", minimal: "Mínimo"
@@ -2823,7 +2823,7 @@
     ["Mesa decorada", (n) => `Vídeo vertical 9:16 de 6 segundos, vista de cima: o produto da imagem anexada (${n}) sobre uma mesa clara com flores e objetos em tons de rosa e amarelo; a câmera se aproxima devagar até o produto. Estética delicada de loja. Produto igual ao da foto. Sem textos.`]
   ];
   function vd() {
-    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Comenta EU QUERO", itemId: null, resultado: null };
+    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na legenda", itemId: null, resultado: null };
     return wz.video;
   }
   /** O WebM gravado pelo celular vem sem a duração (a galeria mostra só uns segundos): grava a duração no arquivo */
@@ -3033,15 +3033,15 @@
       const tt = V.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " "); ctx.font = "900 72px Poppins"; const tl = quebrarTexto(ctx, tt, 760, 2), tw = Math.max(...tl.map((x) => ctx.measureText(x).width)) + 90, th = tl.length * 86 + 60;
       retArredondado(ctx, -tw / 2, -th / 2, tw, th, 30); ctx.fillStyle = C.fundo; ctx.fill(); ctx.fillStyle = C.destaque === "#e8336d" && V.cor !== "creme" && V.cor !== "branco" ? "#fff" : C.texto; tl.forEach((x, j) => ctx.fillText(x, 0, -((tl.length - 1) * 43) + j * 86 + 4)); ctx.restore();
       if (V.novo) { ctx.save(); ctx.translate(w / 2, h * 0.58 + 220); ctx.rotate(0.04); ctx.font = "900 70px Poppins"; const t = (V.antigo > V.novo ? "por " : "") + brl(V.novo), qw = ctx.measureText(t).width + 80; retArredondado(ctx, -qw / 2, -58, qw, 116, 24); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore(); }
-      ctx.font = "800 44px Poppins"; const lk = (String(V.botao || "Comenta EU QUERO").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim() || "Comenta EU QUERO").toUpperCase(), lw = ctx.measureText(lk).width + 80;
-      retArredondado(ctx, w / 2 - lw / 2, h - 330, lw, 100, 20); ctx.fillStyle = "#fff"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(lk, w / 2, h - 278);
+      ctx.font = "800 44px Poppins"; const lk = String(V.botao == null ? "Link na legenda" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim().toUpperCase(), lw = ctx.measureText(lk).width + 80;
+      if (lk) { retArredondado(ctx, w / 2 - lw / 2, h - 330, lw, 100, 20); ctx.fillStyle = "#fff"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(lk, w / 2, h - 278); }
     } else if (V.tema === "desfoque") { // o próprio vídeo desfocado no fundo e o vídeo nítido num cartão
       if (vw) { ctx.save(); ctx.filter = "blur(30px) brightness(.7)"; pintar(-60, -60, w + 120, h + 120); ctx.restore(); } else pintar(0, 0, w, h);
       titulo(180, "#ffffff", "#ffd23f", 92, true);
-      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18; retArredondado(ctx, 120, 400, w - 240, 1000, 46); ctx.fillStyle = "#000"; ctx.fill(); ctx.restore();
-      ctx.save(); retArredondado(ctx, 120, 400, w - 240, 1000, 46); ctx.clip(); pintar(120, 400, w - 240, 1000); ctx.restore();
-      const y2 = 1440 + infos(1440, "#ffffff", "#ffd23f", "rgba(255,255,255,.8)", true, 84);
-      if (V.botao) pilula(V.botao, w / 2, Math.min(y2 + 50, h - 110), C.pill, C.pillTexto, 38);
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18; retArredondado(ctx, 150, 390, w - 300, 880, 46); ctx.fillStyle = "#000"; ctx.fill(); ctx.restore();
+      ctx.save(); retArredondado(ctx, 150, 390, w - 300, 880, 46); ctx.clip(); pintar(150, 390, w - 300, 880); ctx.restore();
+      const y2 = 1300 + infos(1300, "#ffffff", "#ffd23f", "rgba(255,255,255,.8)", true, 84);
+      if (V.botao) pilula(V.botao, w / 2, Math.min(y2 + 60, h - 110), C.pill, C.pillTexto, 38);
       marca(w - 170, 50, 120);
     } else if (V.tema === "quadrado") { // vídeo quadrado no meio, título em cima e preço embaixo
       ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, w, h); bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", 0);
@@ -3090,8 +3090,42 @@
       if (V.botao) pilula(V.botao, w / 2, h - 200, C.pill, C.pillTexto, 40);
       marca(50, 60, 150, "#ffffff");
     }
+    // Selo pronto (Promoção, Black Friday, Natal...) e texto na lateral, em cima de qualquer estilo
+    if (V.selo && SELOS_VIDEO[V.selo]) {
+      const [fundo, cor] = SELOS_VIDEO[V.selo], txt = V.selo.toUpperCase();
+      ctx.save(); ctx.translate(215, 600); ctx.rotate(-0.14);
+      ctx.font = "900 46px Poppins"; const l = quebrarTexto(ctx, txt, 280, 2), lw = Math.max(...l.map((x) => ctx.measureText(x).width)) + 70, lh = l.length * 54 + 44;
+      ctx.shadowColor = "rgba(0,0,0,.3)"; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8; retArredondado(ctx, -lw / 2, -lh / 2, lw, lh, 22); ctx.fillStyle = fundo; ctx.fill(); ctx.shadowColor = "transparent";
+      ctx.lineWidth = 5; ctx.strokeStyle = cor; ctx.setLineDash([10, 8]); retArredondado(ctx, -lw / 2 + 10, -lh / 2 + 10, lw - 20, lh - 20, 16); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = cor; ctx.textAlign = "center"; ctx.textBaseline = "middle"; l.forEach((x, j) => ctx.fillText(x, 0, (j - (l.length - 1) / 2) * 54 + 2)); ctx.restore();
+    }
+    if (V.lateral && V.lateral.trim()) {
+      const txt = V.lateral.trim().toUpperCase();
+      ctx.save(); ctx.translate(w - 62, h * 0.52); ctx.rotate(-Math.PI / 2);
+      ctx.font = "800 38px Poppins"; if ("letterSpacing" in ctx) ctx.letterSpacing = "4px";
+      const tw = Math.min(1100, ctx.measureText(txt).width + 70); retArredondado(ctx, -tw / 2, -36, tw, 72, 36); ctx.fillStyle = C.pill; ctx.fill();
+      ctx.fillStyle = C.pillTexto; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, 0, 3); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.restore();
+    }
     ctx.restore();
   }
+  // Selos prontos para pôr no vídeo: [fundo, letra]
+  const SELOS_VIDEO = { "Promoção": ["#e8336d", "#ffffff"], "Black Friday": ["#1d1d1f", "#ffd23f"], "Natal": ["#c8102e", "#ffffff"], "Oferta relâmpago": ["#ffd23f", "#1d1d1f"], "Frete grátis": ["#1f8a4c", "#ffffff"], "Só hoje": ["#ff7a00", "#ffffff"], "Últimas unidades": ["#1d1d1f", "#ffffff"], "Lançamento": ["#7b3fe4", "#ffffff"], "Cupom liberado": ["#ffffff", "#e8336d"] };
+  /** Janela "Textos": escrever em cima do vídeo (descrição, preços, cupom, lateral, selo e chamada) */
+  function folhaTextosVideo() {
+    const V = vd();
+    folhaEst("Textos no vídeo", `<p class="nota">Tudo aparece já posicionado no estilo escolhido. Deixe em branco o que não quiser.</p>
+      <label class="campo"><span>Descrição</span><input id="vtNome" maxlength="80" value="${esc(V.nome || "")}" placeholder="Ex.: Fone sem fio com cancelamento de ruído"></label>
+      <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vtAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vtNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}" placeholder="opcional"></label></div>
+      <div class="duas"><label class="campo"><span>Cupom</span><input id="vtCupom" maxlength="20" value="${esc(V.cupom || "")}" placeholder="opcional"></label><label class="campo"><span>Texto na lateral</span><input id="vtLateral" maxlength="30" value="${esc(V.lateral || "")}" placeholder="Ex.: Achado do dia"></label></div>
+      <label class="campo"><span>Chamada (final e botão)</span><input id="vtBotao" maxlength="40" value="${esc(V.botao == null ? "Link na legenda" : V.botao)}" placeholder="Ex.: Link na legenda · Link no carrinho"></label>
+      <span class="legenda-rotulo">Selo</span>
+      <div class="vt-selos"><button type="button" data-vt-selo="" class="${!V.selo ? "on" : ""}">Nenhum</button>${Object.entries(SELOS_VIDEO).map(([k, [f, c]]) => `<button type="button" data-vt-selo="${esc(k)}" class="${V.selo === k ? "on" : ""}"><i style="background:${f};box-shadow:inset 0 0 0 2px ${c}"></i>${esc(k)}</button>`).join("")}</div>`);
+  }
+  $("#folhaEst").addEventListener("input", (e) => {
+    const id = e.target.id; if (!id || !id.startsWith("vt")) return; const V = vd(), v = e.target.value; V.resultado = null;
+    if (id === "vtNome") V.nome = v; if (id === "vtCupom") V.cupom = v.trim(); if (id === "vtLateral") V.lateral = v; if (id === "vtBotao") V.botao = v.trim();
+    if (id === "vtAntigo") V.antigo = lerPreco(v) || null; if (id === "vtNovo") V.novo = lerPreco(v) || null;
+  });
   const vdItem = () => fila().find((i) => i.id === vd().itemId);
   function usarProdutoNoVideo(it) {
     const V = vd(); V.itemId = it ? it.id : null; V.loja = it ? it.loja || "" : "";
@@ -3124,7 +3158,7 @@
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
         <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
         <label class="campo"><span>Cupom (opcional)</span><input id="vdCupom" value="${esc(V.cupom)}" maxlength="20"></label>
-        <label class="campo"><span>Texto do botão</span><input id="vdBotao" value="${esc(V.botao)}" maxlength="40" placeholder="Ex.: Comenta EU QUERO"></label>
+        <label class="campo"><span>Texto do botão</span><input id="vdBotao" value="${esc(V.botao)}" maxlength="40" placeholder="Ex.: Link na legenda"></label>
         ${botaoContinuar(true)}`;
       return;
     }
@@ -3161,7 +3195,7 @@
       const e = estLer(), nomeM = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
       c.innerHTML = `<div class="estudio">
         <div class="est-previa est-previa--img"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
-        <div class="est-ctrl est-ctrl--5">${botaoEst("estiloVideo", "Estilo", TEMAS_VIDEO[V.tema])}${botaoEst("modelo", "Título", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || "sem abertura")}</div>
+        <div class="est-ctrl est-ctrl--6">${botaoEst("estiloVideo", "Estilo", TEMAS_VIDEO[V.tema])}${botaoEst("modelo", "Título", nomeM)}${botaoEst("textosVideo", "Textos", [V.novo && "preço", V.selo, V.cupom && "cupom", V.lateral && "lateral"].filter(Boolean).join(", ") || "escrever")}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || "sem abertura")}</div>
         <div class="vd-criar">
           <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo · ${Math.round(duracaoReels())} s</button>
@@ -3265,7 +3299,7 @@
   const B = (k) => k * (gradeReels ? gradeReels * 2 : 0.45);
   /** "Pulsa" junto com cada batida (1 no tempo, cai rápido) */
   /** Momentos dos toques fortes (bumbo e palma/caixa) da música, a partir de "ini" segundos: cada aparição cai num deles */
-  let acentoCena = null;
+  let acentoCena = null, ctaReels = "Link na legenda"; // chamada no fim do Reels (editável; vazia = sem chamada)
   function acentosDe(E, ini, n) {
     const p = 60 / E.bpm / 4, out = [], ch = (s, i) => (s || "")[i % 16] || ".";
     for (let st = Math.ceil(ini / p - 0.001); out.length < n && st * p < ini + 30; st++) {
@@ -3339,7 +3373,7 @@
       comPulo(ctx, t, A(2), 540, y, () => { pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 66); });
       y += 190;
     }
-    const botao = String(V.botao || "Comenta EU QUERO").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
+    const botao = String(V.botao == null ? "Link na legenda" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
     if (botao) comSubida(ctx, t, A(3), () => pilulaReels(ctx, botao, 540, y, "#ffffff", "#1d1d1f", 52, true));
     ctx.restore();
   }
@@ -3578,6 +3612,7 @@
   $("#wzCorpo").addEventListener("input", (e) => {
     if (e.target.id === "wzTituloArte") { wz.tituloArte = e.target.value.trim(); const it = wzItem(); if (it && !it.textoEditado) it.texto = ""; clearTimeout(wz.tt); wz.tt = setTimeout(() => { document.querySelectorAll("[data-modelo]").forEach((b) => { b.querySelector("span").textContent = wz.tituloArte || campanha() ? ESTILO_MONTAGEM[b.dataset.modelo] : NOME_MONTAGEM[b.dataset.modelo]; }); desenharMiniaturas(false); }, 400); return; }
     if (wz.canal === "reels" && e.target.id === "rLegenda") { rr().legenda = e.target.value; return; }
+    if (wz.canal === "reels" && e.target.id === "rCta") { const R = rr(); R.cta = e.target.value.trim(); R.resultado = null; return; }
     if (wz.canal === "reels" && e.target.id === "rTitulo") { const R = rr(); R.titulo = e.target.value.trim(); document.querySelectorAll("[data-r-titulo]").forEach((b) => b.classList.toggle("on", b.dataset.rTitulo === R.titulo)); R.legenda = null; R.resultado = null; clearTimeout(R.tt); R.tt = setTimeout(() => { document.querySelectorAll("[data-r-modelo]").forEach((b) => { const m = MODELOS_REELS[b.dataset.rModelo]; b.querySelector("span").innerHTML = R.titulo || CAMPANHAS[R.camp] ? `${esc(m.desc)}<small>animação ${esc(m.nome)}</small>` : `${esc(m.nome)}<small>${esc(m.desc)}</small>`; }); pintarModelosReels(); }, 400); return; }
     if (wz.canal !== "video") return;
     const V = vd(), id = e.target.id, v = e.target.value;
@@ -4267,7 +4302,7 @@
     comSubida(ctx, t, A(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 960); });
     const insta = arroba(config.instagram); let y = 1140;
     if (insta) { const s = 1; comPulo(ctx, t, A(2), 540, y, () => { ctx.scale(s, s); pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 64); }); y += 190; }
-    comSubida(ctx, t, A(3), () => etiquetaReels(ctx, "Comenta EU QUERO", 540, y, 50, 0.03));
+    if (ctaReels) comSubida(ctx, t, A(3), () => etiquetaReels(ctx, ctaReels, 540, y, 50, 0.03));
   }
   /** Um produto na tela (3,6 s). Mesma cor do começo ao fim; o modelo muda a animação. */
   function produtoReels(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
@@ -4355,7 +4390,7 @@
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t; decorAtual = decorDe(R);
     const M = modeloEfetivo(R);
-    const E = MUSICAS[musicaDe(R)];
+    const E = MUSICAS[musicaDe(R)]; ctaReels = String(R.cta == null ? "Link na legenda" : R.cta).trim();
     if (t < T_INTRO) { acentoCena = acentosDe(E, 0, 8); introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : ""); }
     else if (t < T_INTRO + T_PROD * n) {
       const i = Math.floor((t - T_INTRO) / T_PROD); acentoCena = acentosDe(E, T_INTRO + i * T_PROD, 8); const pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
@@ -4378,6 +4413,7 @@
     cor: '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.6-.9 1.6-1.6 0-1.4-1.2-1.6-1.2-2.8 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.5" cy="7" r="1"/>',
     musica: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     cupons: '<path d="M3 8a2 2 0 0 0 0 4v4h18v-4a2 2 0 0 1 0-4V4H3z" transform="translate(0 2)"/><path d="M14 6v12" stroke-dasharray="2 2"/>',
+    textosVideo: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
     estiloVideo: '<rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8 6h8M8 17h5"/><path d="M10.5 10v4l3.5-2z"/>',
     ajustesVideo: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
     formato: '<rect x="7" y="3" width="10" height="18" rx="2"/><rect x="3" y="7" width="6" height="8" rx="1.5"/>',
@@ -4494,9 +4530,10 @@
       if (k === "musica" && wz.canal === "video") { folhaMusica(); return; }
       if (k === "ajustesVideo") { folhaAjustesVideo(); return; }
       if (k === "estiloVideo") { folhaEstiloVideo(); return; }
+      if (k === "textosVideo") { folhaTextosVideo(); return; }
       if (k === "enquadrar") { const V = vd(); const v = await escolherOpcao("Enquadramento do vídeo", Object.entries(TEMAS_VIDEO), V.tema); if (v) { V.tema = v; V.resultado = null; aposMudarEstudio(); } }
       if (k === "cupons") { wz.passo = "cEscolher"; mostrarPasso(); }
-      if (k === "formato") { const v = await escolherOpcao("Story ou post?", [["story", "Story · tela cheia, em pé (link pelo adesivo)"], ["post", "Post · no feed, 4:5 (link no direct: Comenta EU QUERO)"]], wz.formato === "post" ? "post" : "story"); if (v) { wz.formato = v; aposMudarEstudio(); } }
+      if (k === "formato") { const v = await escolherOpcao("Story ou post?", [["story", "Story · tela cheia, em pé (link pelo adesivo)"], ["post", "Post · no feed, 4:5 (o link vai na legenda)"]], wz.formato === "post" ? "post" : "story"); if (v) { wz.formato = v; aposMudarEstudio(); } }
       if (k === "produtosLivre") { wz.passo = "itens"; mostrarPasso(); }
       if (k === "grade") { wz.passo = "grade"; mostrarPasso(); }
       return;
@@ -4518,6 +4555,7 @@
       $("#folhaEst").close(); aposMudarEstudio(); return;
     }
     const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; }
+    const vs = t.closest("[data-vt-selo]"); if (vs) { const V = vd(); V.selo = vs.dataset.vtSelo; V.resultado = null; document.querySelectorAll("[data-vt-selo]").forEach((b) => b.classList.toggle("on", b === vs)); return; }
     const ve = t.closest("[data-vd-estilo]"); if (ve) { const V = vd(); V.tema = ve.dataset.vdEstilo; V.resultado = null; $("#folhaEst").close(); return; }
     const enq = t.closest("[data-vd-enq]"); if (enq) { const V = vd(); V.tema = enq.dataset.vdEnq; V.resultado = null; folhaAjustesVideo(); return; }
     const mu = t.closest("[data-escolhe-mus]"); if (mu) { if (wz.canal === "video") { const V = vd(); V.batida = mu.dataset.escolheMus; V.resultado = null; } else R.musica = mu.dataset.escolheMus; tocarAmostra(""); $("#folhaEst").close(); aposMudarEstudio(); return; }
@@ -4664,6 +4702,7 @@
         <div class="est-ctrl">
           ${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_VIDEO[R.cor].nome)}${botaoEst("musica", "Música", mu[0])}${botaoEst("produtos", "Produtos", String(n))}
         </div>
+        <label class="campo campo-cta"><span>Chamada no final do vídeo (opcional)</span><input id="rCta" maxlength="40" value="${esc(R.cta == null ? "Link na legenda" : R.cta)}" placeholder="Ex.: Link na legenda · Link no carrinho"></label>
       </div>
       ${botaoContinuar(n > 0)}`;
       carregarMarca().then(fotosReels).then((f) => { const cv = $("#rQuadro"); if (cv) quadroReels(cv.getContext("2d"), 540, T_INTRO + 2.6, R, itensReels(), f); });
@@ -4808,7 +4847,6 @@
       });
       if (linhas[linhas.length - 1] === "") linhas.pop();
     }
-    linhas.push("", `💬 Comenta EU QUERO que eu te mando ${l.length > 1 ? "os links" : "o link"}`);
     if (insta) linhas.push(`👉 Segue a ${insta} pra não perder nenhum achadinho`);
     // Instagram: no máximo 5 hashtags (a #migapromo sempre vai)
     const tags = [...new Set(`${CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].tags + " #achadinhos" : L.tags}`.split(/\s+/).filter((x) => x.startsWith("#") && x !== "#migapromo"))].slice(0, 4);
@@ -4818,7 +4856,7 @@
   const blocoLegenda = (R) => `<div class="campo"><span>Legenda pronta</span>
       <textarea id="rLegenda" rows="9">${esc(R.legenda || (R.legenda = legendaReels()))}</textarea></div>
       <div class="duas"><button type="button" class="btn btn--branco" id="rCopiarLegenda">Copiar legenda</button><button type="button" class="btn btn--branco" id="rRefazerLegenda">Refazer legenda</button></div>
-      <p class="nota">No Instagram o link não fica clicável na legenda: a legenda pede para comentarem EU QUERO e você manda o link no direct. No WhatsApp o link funciona.</p>`;
+      <p class="nota">A legenda já vai com o link. No WhatsApp ele fica clicável.</p>`;
   async function pintarModelosReels() {
     await carregarMarca(); const f = await fotosReels(), R = rr(), l = itensReels();
     document.querySelectorAll("[data-r-modelo]").forEach((b) => quadroReels(b.querySelector("canvas").getContext("2d"), 270, T_INTRO + 2.4, { ...R, modelo: b.dataset.rModelo }, l, f));
