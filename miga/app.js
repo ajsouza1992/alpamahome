@@ -1082,7 +1082,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=75"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=76"; });
     }
     edFoto = null;
     try {
@@ -1454,7 +1454,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=75"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=76"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1634,17 +1634,21 @@
     if (k === "cat") filtroLista = "todas"; if (k === "comp") { ocultarComp = false; guardarOcultar(); } if (k === "nova") catNova = "auto";
     renderFila();
   });
+  const incompletos = () => fila().filter((i) => !i.carregando && (!i.imagem || !i.precoNovo || !i.nome));
+  let modoCompletar = false;
   function renderFila() {
     renderCatsLista(); pintarMarcados();
     const l = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && !(ocultarComp && foiCompartilhado(i)));
-    $("#ppLista").innerHTML = l.length ? l.map((i) => `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
+    const falta = incompletos().length;
+    const avisoFalta = falta ? `<div class="aviso-incompletos"><span><b>${falta}</b> ${falta === 1 ? "produto precisa" : "produtos precisam"} de foto, nome ou preço</span><button type="button" class="btn btn--branco" data-completar>Completar</button></div>` : "";
+    $("#ppLista").innerHTML = avisoFalta + (l.length ? l.map((i) => `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         <span class="pp-mini">${fotoMini(i)}${seloLojaHtml(i.loja)}</span>
         <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}</span>
           <span class="pp-tags">${tagsFeito(i)}</span>
         </span>
         <span class="seta">›</span>
-      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button>${i.carregando ? "" : `<button type="button" class="pp-marcar" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`;
+      </button><button type="button" class="pp-lixo" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}">⋯</button>${i.carregando ? "" : `<button type="button" class="pp-marcar" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().length ? (ocultarComp ? "Nada para mostrar: os compartilhados estão ocultos." : "Nenhum produto nessa categoria.") : "Cole aqui os links dos produtos que você vai divulgar."}</p>`);
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
   function chaveLink(u) {
@@ -1699,17 +1703,27 @@
     delete item.carregando;
     renderFila(); salvarFila(true);
     // Faltou foto, nome ou preço (comum na Shopee e na Amazon): abre o produto e pede o que falta
-    if (naLista && (!item.imagem || !item.precoNovo || !item.nome) && !ppAtual) abrirItemFila(item, true);
+    if (naLista === true && (!item.imagem || !item.precoNovo || !item.nome) && !ppAtual) abrirItemFila(item, true);
     return item;
   }
-  $("#ppAdicionar").addEventListener("click", () => adicionarNaFila($("#ppLink").value, true));
-  $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); adicionarNaFila($("#ppLink").value, true); } });
+  /** Um link: adiciona e, se faltar algo, abre para completar. Vários links colados juntos: adiciona todos de uma vez. */
+  async function adicionarTexto(texto) {
+    const links = [...new Set((String(texto || "").match(/https?:\/\/[^\s<>"']+/g) || []))];
+    if (links.length <= 1) return adicionarNaFila(texto, true);
+    $("#ppLink").value = ""; toast(`Adicionando ${links.length} produtos…`);
+    let n = 0;
+    for (const l of links) { if (await adicionarNaFila(l, "lote")) n++; }
+    const falta = incompletos().length;
+    toast(`${n} ${n === 1 ? "produto adicionado" : "produtos adicionados"}${falta ? ` · ${falta} para completar` : ""}`);
+  }
+  $("#ppAdicionar").addEventListener("click", () => adicionarTexto($("#ppLink").value));
+  $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); adicionarTexto($("#ppLink").value); } });
   $("#ppLink").addEventListener("paste", (e) => {
     const t = (e.clipboardData && e.clipboardData.getData("text")) || "";
-    if (/https?:\/\//.test(t)) { e.preventDefault(); adicionarNaFila(t, true); }
+    if (/https?:\/\//.test(t)) { e.preventDefault(); adicionarTexto(t); }
   });
   $("#ppColar").addEventListener("click", async () => {
-    try { adicionarNaFila((await navigator.clipboard.readText()).trim(), true); }
+    try { adicionarTexto((await navigator.clipboard.readText()).trim()); }
     catch (e) { $("#ppLink").focus(); toast("Toque e segure no campo para colar"); }
   });
   $("#ppLimpar").addEventListener("click", async () => {
@@ -1731,7 +1745,7 @@
   }
   $("#desmarcarTodos").addEventListener("click", () => { marcados.clear(); renderFila(); });
   const OPCOES_CRIAR = [
-    ["roteiro", "Postar um produto", "Story, Status, grupos, canal e Telegram", (n) => n === 1, "Marque só 1 produto."],
+    ["roteiro", "Postar um produto", "Story, Status, grupos, canal e feed, um depois do outro", (n) => n === 1, "Marque só 1 produto."],
     ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
     ["video", "Vídeo com tema", "Seu vídeo com abertura e final com música", (n) => n === 1, "Marque só 1 produto."],
     ["livre", "Criação livre", "Uma imagem com vários produtos", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."]
@@ -1762,13 +1776,14 @@
     irPara("criar"); mostrarPasso();
   }
   $("#ppLista").addEventListener("click", async (e) => {
+    if (e.target.closest("[data-completar]")) { const p = incompletos()[0]; if (p) { modoCompletar = true; abrirItemFila(p, true); } return; }
     const mc = e.target.closest("[data-marcar]");
     if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); mc.setAttribute("aria-pressed", String(marcados.has(id))); mc.parentElement.classList.toggle("marcado", marcados.has(id)); pintarMarcados(); return; }
     const menu = e.target.closest("[data-menu-item]");
     if (menu) {
       const it = fila().find((i) => i.id === menu.dataset.menuItem);
       if (!it) return;
-      const op = await escolherOpcao(it.nome || "Produto", [["editar", "Editar"], ["compartilhar", "Compartilhar"], ["excluir", "Excluir"]], "");
+      const op = await escolherOpcao(it.nome || "Produto", [["compartilhar", "Postar este produto"], ["editar", "Editar"], ["excluir", "Excluir"]], "");
       if (op === "editar") abrirItemFila(it);
       if (op === "compartilhar") { iniciarCriar({ itemId: it.id }); irPara("criar"); }
       if (op === "excluir") {
@@ -1812,7 +1827,8 @@
     $("#ppFotoBtn").firstChild.textContent = it.imagem ? "Trocar foto" : "Escolher foto";
     if (destacar && !it.precoNovo && it.imagem) setTimeout(() => $("#ppNovo").focus(), 300);
   }
-  function fecharItemFila() {
+  function fecharItemFila(sair) {
+    if (sair) modoCompletar = false;
     ppAtual = null;
     $("#ppItem").hidden = true; $("#ppListaBloco").hidden = false;
     renderFila();
@@ -1849,6 +1865,8 @@
     try { await dados.gravarFila(fila().filter((i) => !i.carregando).map(({ carregando, ...i }) => i)); toast("Produto salvo"); }
     catch (e) { toast("Não consegui salvar na nuvem: " + (e.code || e.message)); return; }
     contarFila(); fecharItemFila();
+    // Completando vários: já abre o próximo que falta
+    if (modoCompletar) { const p = incompletos().find((x) => x !== it); if (p) { abrirItemFila(p, true); toast("Salvo. Próximo para completar"); } else { modoCompletar = false; toast("Pronto! Todos completos"); } }
   });
   $("#ppCompartilhar").addEventListener("click", () => {
     if (!ppAtual) return;
@@ -1861,7 +1879,7 @@
 
   /* =========================== Criar (passo a passo, uma pergunta por tela) =========================== */
   const CANAIS = {
-    roteiro: { nome: "Postar um produto", cor: "#e8336d", desc: "Story, Status, grupos, canal e Telegram, um depois do outro", icone: "i-lista" },
+    roteiro: { nome: "Postar um produto", cor: "#e8336d", desc: "Story, Status, grupos, canal e feed, um depois do outro", icone: "i-lista" },
     whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem para os grupos ou imagem para o Status", icone: "i-rede-whats" },
     instagram: { nome: "Instagram", cor: "#e8336d", desc: "Montagem para story ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
@@ -2012,7 +2030,7 @@
         <p class="nota">Com foto, o WhatsApp abre com a imagem do produto e o texto juntos.</p>
         <button type="button" class="btn btn--rosa wz-zap" data-enviar-op="foto">Enviar com foto</button>
         <button type="button" class="btn btn--branco" data-enviar-op="texto">Enviar só o texto</button>
-<button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+<button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
       return;
     }
     if (wz.passo === "telegram") {
@@ -2021,7 +2039,7 @@
         <p class="nota">No Telegram o link fica clicável no texto.</p>
         <button type="button" class="btn btn--rosa wz-tg" id="wzTelegram">Abrir no Telegram</button>
         <button type="button" class="btn btn--branco" id="wzCopiarTg">Copiar o texto</button>
-        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+        <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
     }
   }
   // Telegram não usa *negrito* do WhatsApp do mesmo jeito: vai o texto limpo
@@ -2202,7 +2220,6 @@
     status: { nome: "Status do WhatsApp", desc: "arte em pé + texto", arte: "story", canal: "whatsapp" },
     grupo: { nome: "Grupos do WhatsApp", desc: "foto + mensagem", texto: true, canal: "whatsapp" },
     canal: { nome: "Canal do WhatsApp", desc: "foto + mensagem", texto: true, canal: "whatsapp" },
-    telegram: { nome: "Telegram", desc: "mensagem com link", texto: true, canal: "telegram" },
     feed: { nome: "Post do feed", desc: "arte + legenda", arte: "post", canal: "instagram" }
   };
   function lugaresSalvos() {
@@ -2445,7 +2462,7 @@
       const escolhidos = L.itens;
       c.innerHTML = `<h2 class="wz-titulo">Escolha os produtos</h2><p class="nota">${escolhidos.length} de ${L.n}. Toque para marcar da sua lista, ou adicione uma foto da galeria.</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat)).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}${on ? " · nº " + (escolhidos.findIndex((e) => e.itemId === x.id) + 1) : ""}</small></span></button>`; }).join("")}</div>
+        <div class="wz-ops">${fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat)).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod wz-flag${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${fotoMini(x)}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span><i class="flag" aria-hidden="true"></i></button>`; }).join("")}</div>
         ${escolhidos.filter((e) => !e.itemId).map((e) => `<div class="lv-galeria" data-lv-gal="${e.id}"><img src="${e.url}" alt=""><div class="lv-campos"><input data-lv-campo="nome" value="${esc(e.nome)}" placeholder="Nome (opcional)"><input data-lv-campo="preco" value="${e.preco ? paraCampo(e.preco) : ""}" inputmode="decimal" placeholder="Preço (opcional)"><input data-lv-campo="link" value="${esc(e.link)}" inputmode="url" placeholder="Link (vai na legenda)"></div><button type="button" class="icone-btn" data-lv-tirar="${e.id}" aria-label="Tirar"><svg><use href="#i-x"/></svg></button></div>`).join("")}
         <label class="btn btn--branco">Adicionar foto da galeria<input type="file" id="lvArquivo" accept="image/*,.webp,image/webp" multiple hidden></label>
         ${botaoContinuar(escolhidos.length > 0)}`;
@@ -2471,8 +2488,8 @@
         <button type="button" class="btn btn--branco" id="lvCopiarTexto">Copiar só o texto</button>
         <button type="button" class="btn btn--rosa" id="lvPostar">Postar com a legenda</button>
         <button type="button" class="btn btn--branco" id="lvBaixar">Baixar imagem</button>
-        <p class="nota">No WhatsApp e no Telegram os links da legenda ficam clicáveis. No Instagram, link na legenda não abre: use o adesivo no story ou a bio.</p>
-        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+        <p class="nota">No WhatsApp os links da legenda ficam clicáveis. No Instagram, link na legenda não abre: use o adesivo no story ou a bio.</p>
+        <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
       desenharGrade($("#lvTela")); fotosDaLista().then(() => desenharGrade($("#lvTela")));
     }
   }
@@ -2752,7 +2769,7 @@
           <p class="nota">O app monta o Reels e grava em tempo real: leva o tempo do próprio Reels (${Math.round(duracaoReels())} segundos). Deixe o app aberto até terminar.</p>
           <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo</button>`}
-        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+        <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
       if (!r) carregarMarca().then(fotoDoVideo).then(primeiroQuadro).then((v) => { const cx = $("#vdQuadro").getContext("2d"); if (V.abertura) quadroAbertura(cx, 540, 2.6, V); else quadroVideo(cx, 540, 960, v, V); });
     }
   }
@@ -3618,7 +3635,7 @@
           <button type="button" class="btn btn--rosa" id="rGerar">Criar o vídeo</button>
           <p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>
           ${blocoLegenda(R)}`}
-        <button type="button" class="btn btn--branco" id="wzNovo">Criar outra postagem</button>`;
+        <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
       if (!r) carregarMarca().then(fotosReels).then((f) => quadroReels($("#rQuadro").getContext("2d"), 540, T_INTRO + 2.2, R, itensReels(), f));
     }
   }
@@ -3665,7 +3682,7 @@
   const blocoLegenda = (R) => `<div class="campo"><span>Legenda pronta</span>
       <textarea id="rLegenda" rows="9">${esc(R.legenda || (R.legenda = legendaReels()))}</textarea></div>
       <div class="duas"><button type="button" class="btn btn--branco" id="rCopiarLegenda">Copiar legenda</button><button type="button" class="btn btn--branco" id="rRefazerLegenda">Refazer legenda</button></div>
-      <p class="nota">No Instagram o link não fica clicável na legenda: use o “Link na bio” ou mande no direct de quem comentar. No WhatsApp e no Telegram o link funciona.</p>`;
+      <p class="nota">No Instagram o link não fica clicável na legenda: use o “Link na bio” ou mande no direct de quem comentar. No WhatsApp o link funciona.</p>`;
   async function pintarModelosReels() {
     await carregarMarca(); const f = await fotosReels(), R = rr(), l = itensReels();
     document.querySelectorAll("[data-r-modelo]").forEach((b) => quadroReels(b.querySelector("canvas").getContext("2d"), 270, T_INTRO + 2.4, { ...R, modelo: b.dataset.rModelo }, l, f));

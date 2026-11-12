@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=75">
+  <link rel="manifest" href="manifest.json?v=76">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=75">
+  <link rel="stylesheet" href="style.css?v=76">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -55,9 +55,9 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=75" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=76" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
-      <p class="entrada__texto">Cole o link do produto e o app monta a postagem para o WhatsApp, o Instagram e o Telegram.</p>
+      <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
         <button type="button" class="btn btn--rosa btn--gerar" id="entrarGoogleEntrada">Entrar com Google</button>
         <span class="entrada__nota">Só as contas autorizadas acessam. A lista e o histórico ficam iguais no celular e no computador.</span>
@@ -81,7 +81,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=75" alt="">
+    <img src="logo.png?v=76" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -232,7 +232,7 @@
       </div>
       <div class="tags-filtro" id="ppTags"></div>
       <div class="pp-lista" id="ppLista"></div>
-      <p class="nota">Toque num produto para editar foto, nome e preço, e depois compartilhar.</p>
+      <p class="nota">Marque um ou mais produtos na bolinha para criar posts, Reels ou vídeos. Toque no produto para editar.</p>
     </section>
 
     <section class="bloco" id="ppItem" hidden>
@@ -263,7 +263,7 @@
       </div>
       <label class="campo"><span>Link do produto</span><input id="ppLinkItem" type="url" inputmode="url"></label>
       <button type="button" class="btn btn--rosa" id="ppSalvar">Salvar alterações</button>
-      <button type="button" class="btn btn--branco" id="ppCompartilhar">Compartilhar este produto</button>
+      <button type="button" class="btn btn--branco" id="ppCompartilhar">Postar este produto</button>
     </section>
   </div>
 
@@ -387,7 +387,7 @@
 
   <!-- Configurações -->
   <dialog id="config" class="dialogo folha">
-    <form method="dialog" class="ajustes">
+    <form method="dialog" class="aj-form">
       <h2>Ajustes</h2>
 
       <section class="aj-bloco">
@@ -630,7 +630,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=75"></script>
-  <script src="app.js?v=75"></script>
+  <script src="firebase-config.js?v=76"></script>
+  <script src="app.js?v=76"></script>
 </body>
 </html>
