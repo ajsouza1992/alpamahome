@@ -1087,7 +1087,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=109"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=110"; });
     }
     edFoto = null;
     try {
@@ -1460,7 +1460,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=109"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=110"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1537,7 +1537,7 @@
     } else {
       // Post do feed: link não é clicável na legenda, então vai a legenda pronta com "link na bio"
       const base = atual && atual.texto ? atual.texto : [$("#bnNome").value.trim(), $("#bnTexto").value.trim()].filter(Boolean).join("\n\n");
-      const legenda = (urlOk(link) ? base.split(link).join("🔗 link na bio") : base).replace(/[*~_]/g, "").trim(); // Instagram não usa a formatação do WhatsApp
+      const legenda = (urlOk(link) ? base.split(link).join("💬 Comenta EU QUERO que eu te mando o link no direct") : base).replace(/[*~_]/g, "").trim(); // Instagram não usa a formatação do WhatsApp
       if (legenda && await copiarTexto(legenda)) toast("Legenda copiada: no Instagram, cole na legenda do post");
     }
     compartilharTela(telaFinal(), nomeBanner(bnModelo.valor(), bnFormato.valor()));
@@ -1853,7 +1853,6 @@
   const OPCOES_CRIAR = [
     ["roteiro", "Postar um produto", "Story, Status, grupos, canal e feed, um depois do outro", (n) => n === 1, "Marque só 1 produto."],
     ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
-    ["video", "Vídeo com tema", "Seu vídeo com abertura e final com música", (n) => n === 1, "Marque só 1 produto."],
     ["livre", "Imagem", "Arte com o produto, ou montagem com vários", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."],
     ["carrossel", "Carrossel de preços", "Capa no tema e um slide de preço para cada produto", (n) => n >= 1 && n <= 8, "Marque de 1 a 8 produtos."]
   ];
@@ -2038,7 +2037,7 @@
     livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
     cupons: { nome: "Postar cupons", cor: "#ffd23f", desc: "Status e grupos só com cupons", icone: "i-etiqueta" },
     reels: { nome: "Reels de produtos", cor: "#8e44ec", desc: "1 a 5 produtos, vários modelos, com música", icone: "i-brilho" },
-    video: { nome: "Vídeo com tema", cor: "#f2a900", desc: "Seu vídeo com abertura e final com música", icone: "i-rede-video" }
+    video: { nome: "Publicar vídeo", cor: "#f2a900", desc: "Seu vídeo com abertura e final com música", icone: "i-rede-video" }
   };
   const MONTAGENS = ["achadinho", "relampago", "baixou", "ultimas", "novidade", "enquete"];
   // Quando o título é seu (tema ou campanha), a legenda da miniatura mostra o estilo da arte
@@ -2160,7 +2159,7 @@
     if (wz.passo === "formato") {
       c.innerHTML = `<h2 class="wz-titulo">Story ou post?</h2>
         <div class="wz-duas wz-formatos">${opcaoCard("data-formato", "story", "Story", "Tela cheia, em pé", wz.formato === "story", '<canvas data-forma="story"></canvas>')}${opcaoCard("data-formato", "post", "Post", "No feed, 4:5", wz.formato === "post", '<canvas data-forma="post"></canvas>')}</div>
-        <p class="nota">No story o link fica clicável pelo adesivo de Link. No post, use “link na bio”.</p>
+        <p class="nota">No story o link fica clicável pelo adesivo de Link. No post, a legenda pede para comentarem EU QUERO.</p>
         ${botaoContinuar(true)}`;
       const pintar = () => document.querySelectorAll("[data-forma]").forEach((cv) => desenharMontagem(cv, false, wz.modelo, wz.cor, cv.dataset.forma));
       pintar(); prepararFoto(item).then(() => { if (wz.passo === "formato") pintar(); });
@@ -2202,7 +2201,7 @@
           <input id="wzLinkCopiar" readonly value="${esc(item.link)}" aria-label="Link do produto">
           <button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button>
         </div>
-        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "No story, toque no adesivo de Link e cole. Se o link sumir da memória, volte aqui e toque em “Copiar link”." : "A legenda já vai copiada, com “link na bio”. Use “Copiar link” para colocar o produto na bio."}</p>`;
+        <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "No story, toque no adesivo de Link e cole. Se o link sumir da memória, volte aqui e toque em “Copiar link”." : "A legenda já vai copiada, pedindo para comentarem EU QUERO: mande o link no direct (use “Copiar link”)."}</p>`;
       prepararFoto(item).then(() => desenharMontagem($("#wzTela"), true));
       desenharMontagem($("#wzTela"), true);
       return;
@@ -2439,7 +2438,7 @@
     if (wz.formato === "story") { if (await copiarTexto(it.link)) toast("Link copiado: no story, toque no adesivo de Link e cole"); }
     else {
       const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`;
-      if (await copiarTexto(base.split(it.link).join("🔗 link na bio").replace(/[*~_]/g, "").trim())) toast("Legenda copiada: cole na legenda do post");
+      if (await copiarTexto(base.split(it.link).join("💬 Comenta EU QUERO que eu te mando o link no direct").replace(/[*~_]/g, "").trim())) toast("Legenda copiada: cole na legenda do post");
     }
     const tela = document.createElement("canvas"); desenharMontagem(tela, false);
     compartilharTela(tela, nomeArquivo(it.nome));
@@ -2487,7 +2486,7 @@
         meio = `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`;
         if (k === "story") { botao = "Postar no Instagram"; dica = "O link já vai copiado: no story, toque no adesivo de Link e cole."; }
         if (k === "status") { botao = "Postar no Status"; dica = "Escolha o WhatsApp com “B” e depois Meu status. O texto com o link vai junto."; }
-        if (k === "feed") { botao = "Postar no feed"; dica = "A legenda já vai copiada, com “link na bio”."; }
+        if (k === "feed") { botao = "Postar no feed"; dica = "A legenda já vai copiada, pedindo para comentarem EU QUERO: mande o link no direct."; }
         meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
       } else {
         const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
@@ -2546,7 +2545,7 @@
       let texto = "";
       if (k === "story") await copiarTexto(it.link);
       if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
-      if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(base.split(it.link).join("🔗 link na bio").replace(/[*~_]/g, "").trim()); }
+      if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(base.split(it.link).join("💬 Comenta EU QUERO que eu te mando o link no direct").replace(/[*~_]/g, "").trim()); }
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { if (arq) baixarBlob(arq, arq.name); if (texto) await copiarTexto(texto); toast("Imagem salva: abra o app e escolha da galeria"); }
     } else if (k === "telegram") {
@@ -2788,6 +2787,11 @@
 
   /* ---------- Vídeo com o tema do Miga ---------- */
   const DESC_TEMAS_VIDEO = {
+    desfoque: "O próprio vídeo desfocado no fundo e ele nítido num cartão",
+    quadrado: "Vídeo quadrado no meio, título em cima e preço embaixo",
+    neon: "Fundo escuro com o vídeo numa borda brilhante",
+    manchete: "Faixa de manchete grande no topo e o vídeo inteiro",
+    contagem: "Barra de “termina hoje” correndo: ideal para oferta relâmpago",
     legenda: "Vídeo inteiro com os textos em caixinhas, como legenda",
     story: "Cara de story: seu perfil em cima, figurinha do título e adesivo de link",
     gradiente: "Vídeo inteiro com a cor do tema subindo por baixo dos textos",
@@ -2799,10 +2803,10 @@
     faixa: "Vídeo inteiro com uma faixa de preço embaixo",
     dividido: "Título em cima, vídeo no meio e preço embaixo",
     selo: "Vídeo inteiro com uma etiqueta de preço no canto",
-    minimal: "Só o vídeo, com título pequeno e o link na bio"
+    minimal: "Só o vídeo, com selo de preço e o Comenta EU QUERO"
   };
   const TEMAS_VIDEO = {
-    cheia: "Tela cheia", legenda: "Legenda", story: "Story", gradiente: "Gradiente", faixa: "Faixa", selo: "Etiqueta", cinema: "Cinema", moldura: "Moldura", polaroid: "Polaroid", circulo: "Círculo", dividido: "Dividido", minimal: "Mínimo"
+    cheia: "Tela cheia", desfoque: "Desfoque", legenda: "Legenda", manchete: "Manchete", contagem: "Contagem", neon: "Neon", quadrado: "Quadrado", story: "Story", gradiente: "Gradiente", faixa: "Faixa", selo: "Etiqueta", cinema: "Cinema", moldura: "Moldura", polaroid: "Polaroid", circulo: "Círculo", dividido: "Dividido", minimal: "Mínimo"
   };
   const CORES_VIDEO = {
     creme: { nome: "Creme", antigo: "#8a817b", fundo: "#fff3c4", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff", bola: "rgba(255,210,63,.45)" },
@@ -2819,7 +2823,7 @@
     ["Mesa decorada", (n) => `Vídeo vertical 9:16 de 6 segundos, vista de cima: o produto da imagem anexada (${n}) sobre uma mesa clara com flores e objetos em tons de rosa e amarelo; a câmera se aproxima devagar até o produto. Estética delicada de loja. Produto igual ao da foto. Sem textos.`]
   ];
   function vd() {
-    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
+    if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: "creme", titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Comenta EU QUERO", itemId: null, resultado: null };
     return wz.video;
   }
   /** O WebM gravado pelo celular vem sem a duração (a galeria mostra só uns segundos): grava a duração no arquivo */
@@ -2849,6 +2853,24 @@
     try { if (sim && navigator.wakeLock) travaTela = await navigator.wakeLock.request("screen"); else if (!sim && travaTela) { await travaTela.release(); travaTela = null; } } catch (e) { /* segue */ }
   }
   const telaParaJpeg = (tela, nome) => new Promise((ok) => tela.toBlob((b) => ok(b ? new File([b], nome, { type: "image/jpeg" }) : null), "image/jpeg", 0.93));
+  /**
+   * Alguns navegadores gravam o MP4 com o som em Opus, que iPhone, Windows e às vezes Instagram/WhatsApp
+   * não tocam (o vídeo fica mudo). Nesse caso converte só o áudio para AAC, no próprio navegador.
+   */
+  const FF_CDN = "https://cdn.jsdelivr.net/npm/";
+  async function somCompativel(blob, tipo, aviso) {
+    if (!/mp4/.test(tipo) || /mp4a/.test(tipo)) return blob;
+    try {
+      if (aviso) aviso("Ajustando o som para tocar em qualquer celular…");
+      const { FFmpeg } = await import(FF_CDN + "@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js");
+      const ff = new FFmpeg();
+      await ff.load({ classWorkerURL: new URL("ffmpeg-worker.js", location.href).href, coreURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js", wasmURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" });
+      await ff.writeFile("entrada.mp4", new Uint8Array(await blob.arrayBuffer()));
+      await ff.exec(["-i", "entrada.mp4", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", "saida.mp4"]);
+      const dados = await ff.readFile("saida.mp4"); ff.terminate();
+      return dados && dados.length > 1000 ? new Blob([dados.buffer], { type: "video/mp4" }) : blob;
+    } catch (e) { return blob; }
+  }
   function formatoGravacao() {
     if (typeof MediaRecorder === "undefined") return null;
     return ['video/mp4;codecs="avc1.42E01E,mp4a.40.2"', "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) || null;
@@ -3011,8 +3033,52 @@
       const tt = V.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " "); ctx.font = "900 72px Poppins"; const tl = quebrarTexto(ctx, tt, 760, 2), tw = Math.max(...tl.map((x) => ctx.measureText(x).width)) + 90, th = tl.length * 86 + 60;
       retArredondado(ctx, -tw / 2, -th / 2, tw, th, 30); ctx.fillStyle = C.fundo; ctx.fill(); ctx.fillStyle = C.destaque === "#e8336d" && V.cor !== "creme" && V.cor !== "branco" ? "#fff" : C.texto; tl.forEach((x, j) => ctx.fillText(x, 0, -((tl.length - 1) * 43) + j * 86 + 4)); ctx.restore();
       if (V.novo) { ctx.save(); ctx.translate(w / 2, h * 0.58 + 220); ctx.rotate(0.04); ctx.font = "900 70px Poppins"; const t = (V.antigo > V.novo ? "por " : "") + brl(V.novo), qw = ctx.measureText(t).width + 80; retArredondado(ctx, -qw / 2, -58, qw, 116, 24); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore(); }
-      ctx.font = "800 44px Poppins"; const lk = (String(V.botao || "Link na bio").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim() || "Link na bio").toUpperCase(), lw = ctx.measureText(lk).width + 80;
+      ctx.font = "800 44px Poppins"; const lk = (String(V.botao || "Comenta EU QUERO").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim() || "Comenta EU QUERO").toUpperCase(), lw = ctx.measureText(lk).width + 80;
       retArredondado(ctx, w / 2 - lw / 2, h - 330, lw, 100, 20); ctx.fillStyle = "#fff"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(lk, w / 2, h - 278);
+    } else if (V.tema === "desfoque") { // o próprio vídeo desfocado no fundo e o vídeo nítido num cartão
+      if (vw) { ctx.save(); ctx.filter = "blur(30px) brightness(.7)"; pintar(-60, -60, w + 120, h + 120); ctx.restore(); } else pintar(0, 0, w, h);
+      titulo(180, "#ffffff", "#ffd23f", 92, true);
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18; retArredondado(ctx, 120, 400, w - 240, 1000, 46); ctx.fillStyle = "#000"; ctx.fill(); ctx.restore();
+      ctx.save(); retArredondado(ctx, 120, 400, w - 240, 1000, 46); ctx.clip(); pintar(120, 400, w - 240, 1000); ctx.restore();
+      const y2 = 1440 + infos(1440, "#ffffff", "#ffd23f", "rgba(255,255,255,.8)", true, 84);
+      if (V.botao) pilula(V.botao, w / 2, Math.min(y2 + 50, h - 110), C.pill, C.pillTexto, 38);
+      marca(w - 170, 50, 120);
+    } else if (V.tema === "quadrado") { // vídeo quadrado no meio, título em cima e preço embaixo
+      ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, w, h); bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", 0);
+      titulo(220, C.texto, C.destaque, 100);
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14; retArredondado(ctx, 90, 480, 900, 900, 40); ctx.fillStyle = "#fff"; ctx.fill(); ctx.restore();
+      ctx.save(); retArredondado(ctx, 105, 495, 870, 870, 30); ctx.clip(); pintar(105, 495, 870, 870); ctx.restore();
+      const y2 = 1420 + infos(1420, C.texto, C.destaque, C.antigo);
+      if (V.botao) pilula(V.botao, w / 2, Math.min(y2 + 50, h - 150), C.pill, C.pillTexto, 40);
+      marca(w - 180, h - 175, 140);
+    } else if (V.tema === "neon") { // fundo escuro, vídeo com borda brilhante
+      ctx.fillStyle = "#0e0b16"; ctx.fillRect(0, 0, w, h);
+      titulo(190, "#ffffff", "#ff4fa0", 96);
+      const cor = V.cor === "creme" ? "#ffd23f" : "#ff4fa0";
+      ctx.save(); ctx.shadowColor = cor; ctx.shadowBlur = 60; retArredondado(ctx, 110, 420, w - 220, 960, 40); ctx.lineWidth = 12; ctx.strokeStyle = cor; ctx.stroke(); ctx.restore();
+      ctx.save(); retArredondado(ctx, 116, 426, w - 232, 948, 36); ctx.clip(); pintar(116, 426, w - 232, 948); ctx.restore();
+      const y2 = 1440 + infos(1440, "#ffffff", cor, "rgba(255,255,255,.7)", false, 90);
+      if (V.botao) pilula(V.botao, w / 2, Math.min(y2 + 50, h - 120), cor, "#0e0b16", 40);
+      marca(w - 175, 45, 120);
+    } else if (V.tema === "manchete") { // faixa de manchete grande no topo, vídeo inteiro embaixo
+      pintar(0, 0, w, h);
+      const fh = 140 + nl * 104; ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, w, fh);
+      ctx.fillStyle = C.pill; ctx.fillRect(0, fh, w, 16);
+      titulo(110 + 30, C.texto, C.destaque, 100);
+      const g = ctx.createLinearGradient(0, h - 700, 0, h); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.75)"); ctx.fillStyle = g; ctx.fillRect(0, h - 700, w, 700);
+      const y2 = h - 560 + infos(h - 560, "#ffffff", "#ffd23f", "rgba(255,255,255,.85)", true);
+      if (V.botao) pilula(V.botao, w / 2, Math.min(y2 + 40, h - 130), C.pill, C.pillTexto, 40);
+      marca(w - 170, fh + 40, 120, "#ffffff");
+    } else if (V.tema === "contagem") { // barra de "termina hoje" correndo, para ofertas com pressa
+      pintar(0, 0, w, h);
+      ctx.fillStyle = "#1d1d1f"; ctx.fillRect(0, 0, w, 150);
+      ctx.font = "800 46px Poppins"; ctx.fillStyle = "#ffd23f"; ctx.fillText("TERMINA HOJE · CORRE!", w / 2, 78);
+      const prog = ((performance.now() / 1000) % 8) / 8; ctx.fillStyle = "#e8336d"; ctx.fillRect(0, 140, w * (1 - prog), 10);
+      titulo(300, "#ffffff", "#ffd23f", 96, true);
+      const g = ctx.createLinearGradient(0, h - 760, 0, h); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.75)"); ctx.fillStyle = g; ctx.fillRect(0, h - 760, w, 760);
+      const y2 = h - 600 + infos(h - 600, "#ffffff", "#ffd23f", "rgba(255,255,255,.85)", true, 104);
+      if (V.botao) pilula(V.botao, w / 2, Math.min(y2 + 40, h - 130), C.pill, C.pillTexto, 40);
+      marca(w - 170, h - 170, 120);
     } else { // mínimo: só o selo de preço e a marca
       pintar(0, 0, w, h);
       if (V.novo) {
@@ -3058,19 +3124,37 @@
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
         <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
         <label class="campo"><span>Cupom (opcional)</span><input id="vdCupom" value="${esc(V.cupom)}" maxlength="20"></label>
-        <label class="campo"><span>Texto do botão</span><input id="vdBotao" value="${esc(V.botao)}" maxlength="40" placeholder="Ex.: Link na bio"></label>
+        <label class="campo"><span>Texto do botão</span><input id="vdBotao" value="${esc(V.botao)}" maxlength="40" placeholder="Ex.: Comenta EU QUERO"></label>
         ${botaoContinuar(true)}`;
       return;
     }
     if (wz.passo === "vArquivo") {
-      const nome = V.nome || "o produto";
-      c.innerHTML = `<h2 class="wz-titulo">Escolha o vídeo</h2>
-        <p class="nota">Grave no celular ou use um vídeo da galeria. Ele vira um Reels em pé com o tema do Miga. Recomendo até 60 segundos. Sem vídeo? O app usa a foto do produto.</p>
-        ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
-        <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
-        ${V.itemId ? `<button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>` : ""}
-        ${botaoContinuar(!!V.url || V.semVideo)}
-        ${blocoFotoIA()}`;
+      // Uma tela só: com produto (nome, preço, foto e prompts de IA) ou só o seu vídeo pronto
+      const modo = V.modo, it = vdItem();
+      const seg = `<div class="vd-modo">
+          <button type="button" class="${modo === "produto" ? "on" : ""}" data-vd-modo="produto"><b>Com produto</b><small>Nome, preço e foto vêm da sua lista</small></button>
+          <button type="button" class="${modo === "livre" ? "on" : ""}" data-vd-modo="livre"><b>Só o meu vídeo</b><small>Vídeo pronto com título e tema</small></button>
+        </div>`;
+      let corpo = "";
+      if (modo === "produto" && !it) {
+        const l2 = fila().filter((x) => !x.carregando);
+        corpo = `<p class="nota">Escolha o produto do vídeo:</p><div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod" data-vd-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("") || '<p class="nota">Sua lista está vazia.</p>'}</div>`;
+      } else if (modo) {
+        const prod = modo === "produto" ? `<div class="vd-prod">${miniLoja(it, fotoMini(it))}<span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small></span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
+        const video = `<div class="vd-arquivo">
+            ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
+            <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher o vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
+            ${modo === "produto" && it.imagem ? `<button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>` : ""}
+          </div>`;
+        const ia = modo === "produto" ? `<details class="vd-ia"><summary>Não tem vídeo? Crie com IA</summary>
+            ${blocoFotoIA()}
+            <p class="nota">Copie um prompt e cole na IA de vídeo (Gemini, ChatGPT…) junto com a foto:</p>
+            <div class="vd-prompts">${PROMPTS_VIDEO.map(([n], k) => `<button type="button" data-vd-prompt="${k}">${esc(n)}</button>`).join("")}</div>
+            <button type="button" class="btn btn--branco" id="vdFotoEnviar">Enviar a foto e o prompt para a IA</button>
+          </details>` : "";
+        corpo = prod + video + ia;
+      }
+      c.innerHTML = `<h2 class="wz-titulo">Publicar vídeo</h2>${seg}${corpo}${modo ? botaoContinuar(!!V.url || V.semVideo) : ""}`;
       return;
     }
     if (wz.passo === "vTema") {
@@ -3180,6 +3264,17 @@
   /** k batidas da música (as aparições e os toquinhos usam a mesma régua) */
   const B = (k) => k * (gradeReels ? gradeReels * 2 : 0.45);
   /** "Pulsa" junto com cada batida (1 no tempo, cai rápido) */
+  /** Momentos dos toques fortes (bumbo e palma/caixa) da música, a partir de "ini" segundos: cada aparição cai num deles */
+  let acentoCena = null;
+  function acentosDe(E, ini, n) {
+    const p = 60 / E.bpm / 4, out = [], ch = (s, i) => (s || "")[i % 16] || ".";
+    for (let st = Math.ceil(ini / p - 0.001); out.length < n && st * p < ini + 30; st++) {
+      const i = st % 16; if (ch(E.k, i) === "x" || ch(E.s, i) === "x") { const tt = st * p; if (!out.length || tt - out[out.length - 1] >= 0.24) out.push(tt); }
+    }
+    return out.map((x) => x - ini);
+  }
+  /** k-ésimo toque forte da cena (sem música definida, cai na batida) */
+  const A = (k) => (acentoCena && acentoCena[k] != null ? acentoCena[k] : B(k));
   const naBatida = (t) => Math.exp(-((t % B(1)) / B(1)) * 5);
   let pulsoTela = 0; // 1 no tempo da batida (só nos vídeos; na imagem parada fica 0)
   const emTempos = (seg, batida) => Math.max(2, Math.round(seg / batida / 2) * 2) * batida; // duração com número par de tempos
@@ -3209,41 +3304,43 @@
   }
   /** Abertura (3,2 s): título, foto do produto e preço pulando na tela */
   /** Abertura do vídeo = o mesmo modelo pronto das artes (título, foto, selo, preço), aparecendo no tempo da música */
-  function quadroAbertura(ctx, W, t, V) {
+  function quadroAbertura(ctx, W, t, V) { try { quadroAbertura0(ctx, W, t, V); } finally { acentoCena = null; } }
+  function quadroAbertura0(ctx, W, t, V) {
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const R = { modelo: V.modelo || "achadinho", camp: V.camp || "", cor: V.cor, titulo: V.tituloProp || "" };
     const C = CORES_VIDEO[V.cor] || CORES_VIDEO.creme, M = modeloEfetivo(R);
-    relogioReels = t; decorAtual = decorDe(R);
+    relogioReels = t; decorAtual = decorDe(R); acentoCena = acentosDe(MUSICAS[V.batida || "house"], 0, 8);
     if (!V.itemId) {
       const q = V.quadroImg;
       ctx.fillStyle = "#111"; ctx.fillRect(0, 0, 1080, 1920);
       if (q) { const s = Math.max(1080 / q.width, 1920 / q.height) * 1.08; ctx.save(); ctx.filter = "blur(28px) brightness(.55)"; ctx.drawImage(q, (1080 - q.width * s) / 2, (1920 - q.height * s) / 2, q.width * s, q.height * s); ctx.restore(); }
       const CB = { ...C, texto: "#ffffff", destaque: "#ffd23f" }, icone = (decorAtual.ic && decorAtual.ic[0]) || "brilho";
-      comPulo(ctx, t, B(0), 540, 520, () => { if (edMarca) ctx.drawImage(edMarca, -110, -110, 220, 220); });
-      comSubida(ctx, t, B(1), () => tituloGrande(ctx, M.titulo.replace("{n}", ""), 900, 140, CB, "", icone));
-      comSubida(ctx, t, B(2), () => { ctx.font = "600 56px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillText(M.sub(1), 540, 1180); });
+      comPulo(ctx, t, A(0), 540, 520, () => { if (edMarca) ctx.drawImage(edMarca, -110, -110, 220, 220); });
+      comSubida(ctx, t, A(1), () => tituloGrande(ctx, M.titulo.replace("{n}", ""), 900, 140, CB, "", icone));
+      comSubida(ctx, t, A(2), () => { ctx.font = "600 56px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillText(M.sub(1), 540, 1180); });
       ctx.restore(); return;
     }
     const it = { nome: V.nome, precoNovo: V.novo, precoAntigo: V.antigo, cupom: V.cupom, loja: V.loja };
     produtoReels(ctx, t, it, V.fotoBmp || V.quadroImg, 0, 1, R.modelo, M, C, V.cor);
     ctx.restore();
   }
-  function quadroFinal(ctx, W, t, V) {
+  function quadroFinal(ctx, W, t, V) { try { acentoCena = acentosDe(MUSICAS[V.batida || "house"], V.iniFinal || 0, 8); quadroFinal0(ctx, W, t, V); } finally { acentoCena = null; } }
+  function quadroFinal0(ctx, W, t, V) {
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const C = CORES_VIDEO[V.cor] || CORES_VIDEO.rosa;
     ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t + 30);
     if (V.modelo || V.camp) { relogioReels = t; desenharDecor(ctx, decorDe({ modelo: V.modelo || "achadinho", camp: V.camp })); }
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    comPulo(ctx, t, B(0), 540, 640, () => { if (edMarca) ctx.drawImage(edMarca, -220, -220, 440, 440); });
-    comSubida(ctx, t, B(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 990); });
+    comPulo(ctx, t, A(0), 540, 640, () => { if (edMarca) ctx.drawImage(edMarca, -220, -220, 440, 440); });
+    comSubida(ctx, t, A(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 990); });
     const insta = arroba(config.instagram);
     let y = 1170;
     if (insta) {
-      comPulo(ctx, t, B(2), 540, y, () => { pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 66); });
+      comPulo(ctx, t, A(2), 540, y, () => { pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 66); });
       y += 190;
     }
-    const botao = String(V.botao || "Link na bio").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
-    if (botao) comSubida(ctx, t, B(3), () => pilulaReels(ctx, botao, 540, y, "#ffffff", "#1d1d1f", 52, true));
+    const botao = String(V.botao || "Comenta EU QUERO").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
+    if (botao) comSubida(ctx, t, A(3), () => pilulaReels(ctx, botao, 540, y, "#ffffff", "#1d1d1f", 52, true));
     ctx.restore();
   }
   /** A musiquinha do Miga, tocada pelo próprio celular (Web Audio) e gravada junto com o vídeo */
@@ -3378,6 +3475,7 @@
     const bt = ajustarGrade(MUSICAS[V.batida || "house"].bpm);
     const tA = V.abertura ? emTempos(T_ABERTURA, bt) : 0, tF = V.final ? emTempos(T_FINAL, bt) : 0;
     const tM = Math.ceil((tA + duracaoMeio()) / bt) * bt - tA, total = tA + tM + tF; // o final começa num tempo da música
+    V.iniFinal = tA + tM;
     const fluxo = tela.captureStream(30);
     let t0 = 0;
     try {
@@ -3391,7 +3489,7 @@
       if (V.abertura) whooshes.push(tA - 0.3);
       // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
       const temTrilha = V.abertura || V.final || V.musica;
-      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + B(arroba(config.instagram) ? 2 : 3) : null);
+      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + acentosDe(MUSICAS[V.batida || "house"], tA + tM, 8)[arroba(config.instagram) ? 2 : 3] : null);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
     } catch (e) { if (v) v.muted = true; }
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
@@ -3422,7 +3520,8 @@
     if (v) v.pause();
     if (ac) ac.close().catch(() => {});
     const mp4 = tipo.startsWith("video/mp4");
-    const blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
+    let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
+    blob = await somCompativel(blob, tipo, (m) => { btn.textContent = m; });
     // Capa: a abertura já montada (ou o primeiro quadro do tema)
     const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920;
     if (V.abertura) quadroAbertura(tc.getContext("2d"), 1080, 9, V); else quadroVideo(tc.getContext("2d"), 1080, 1920, v || (V.fotoBmp && fotoComZoom(V.fotoBmp, 0)), V);
@@ -3444,6 +3543,9 @@
     const vi = t.closest("[data-vd-item]"); if (vi) { const it = fila().find((x) => x.id === vi.dataset.vdItem); usarProdutoNoVideo(V.itemId === it.id ? null : it); mostrarPasso(); return; }
     const te = t.closest("[data-vd-tema]"); if (te) { V.tema = te.dataset.vdTema; document.querySelectorAll("[data-vd-tema]").forEach((b) => b.classList.toggle("on", b === te)); return; }
     const co = t.closest("[data-vd-cor]"); if (co) { V.cor = co.dataset.vdCor; document.querySelectorAll("[data-vd-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarTemasVideo(); return; }
+    const md = t.closest("[data-vd-modo]");
+    if (md) { V.modo = md.dataset.vdModo; if (V.modo === "livre") { V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.semVideo = false; V.abertura = false; } else V.abertura = true; mostrarPasso(); return; }
+    if (t.closest("#vdTrocarProd")) { V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.semVideo = false; V.fotoBmp = null; V.fotoSrc = ""; mostrarPasso(); return; }
     const pr = t.closest("[data-vd-prompt]"); if (pr) { if (await copiarTexto(PROMPTS_VIDEO[+pr.dataset.vdPrompt][1](V.nome || "o produto"))) toast("Prompt copiado: cole na IA de vídeo junto com a foto"); return; }
     if (t.closest("#vdFoto")) { const arq = await fotoParaIA(); if (arq) { baixarBlob(arq, arq.name); toast("Foto salva na galeria"); } else toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
     if (t.closest("#vdFotoEnviar")) {
@@ -3712,7 +3814,7 @@
   /** Vídeo gravado no celular, com tema, sem precisar escolher um produto */
   function abrirVideoLivre() {
     wz = { canal: "video", passo: "vArquivo", veioDaLista: true, semProduto: true };
-    const V = vd(); V.iniciado = true; V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.modelo = "achadinho"; V.titulo = MODELOS_REELS.achadinho.titulo; V.abertura = false; V.tema = "cheia";
+    const V = vd(); V.iniciado = true; V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.modelo = "achadinho"; V.titulo = MODELOS_REELS.achadinho.titulo; V.abertura = false; V.tema = "cheia"; V.modo = null;
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
   function abrirPostarCupons() {
@@ -4154,24 +4256,24 @@
   function etiquetaReels(ctx, texto, cx, cy, tam = 50, giro = -0.04) { ctx.save(); ctx.translate(cx, cy); ctx.rotate(giro); pilulaReels(ctx, texto, 0, 0, "#ffd23f", "#1d1d1f", tam, true); ctx.restore(); }
   function introReels(ctx, t, M, C, cor, n, lojaUnica) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    comPulo(ctx, t, B(0), 540, 360, () => { if (edMarca) ctx.drawImage(edMarca, -130, -130, 260, 260); });
-    comSubida(ctx, t, B(1), () => tituloReels(ctx, M.titulo.replace("{n}", n > 1 ? n : ""), 760, C, 140));
-    comSubida(ctx, t, B(2), () => { ctx.font = "600 60px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.9; ctx.fillText(M.sub(n), 540, 1080); });
-    comPulo(ctx, t, B(3), 540, 1400, () => { ctx.rotate(Math.sin(t * 3) * 0.06); iconeReels(ctx, M.icone, 330); });
+    comPulo(ctx, t, A(0), 540, 360, () => { if (edMarca) ctx.drawImage(edMarca, -130, -130, 260, 260); });
+    comSubida(ctx, t, A(1), () => tituloReels(ctx, M.titulo.replace("{n}", n > 1 ? n : ""), 760, C, 140));
+    comSubida(ctx, t, A(2), () => { ctx.font = "600 60px Poppins"; ctx.fillStyle = C.texto; ctx.globalAlpha *= 0.9; ctx.fillText(M.sub(n), 540, 1080); });
+    comPulo(ctx, t, A(3), 540, 1400, () => { ctx.rotate(Math.sin(t * 3) * 0.06); iconeReels(ctx, M.icone, 330); });
   }
   function fimReels(ctx, t, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    comPulo(ctx, t, B(0), 540, 620, () => { if (edMarca) ctx.drawImage(edMarca, -210, -210, 420, 420); }, 0.55);
-    comSubida(ctx, t, B(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 960); });
+    comPulo(ctx, t, A(0), 540, 620, () => { if (edMarca) ctx.drawImage(edMarca, -210, -210, 420, 420); }, 0.55);
+    comSubida(ctx, t, A(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 960); });
     const insta = arroba(config.instagram); let y = 1140;
-    if (insta) { const s = 1; comPulo(ctx, t, B(2), 540, y, () => { ctx.scale(s, s); pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 64); }); y += 190; }
-    comSubida(ctx, t, B(3), () => etiquetaReels(ctx, "Link na bio", 540, y, 50, 0.03));
+    if (insta) { const s = 1; comPulo(ctx, t, A(2), 540, y, () => { ctx.scale(s, s); pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 64); }); y += 190; }
+    comSubida(ctx, t, A(3), () => etiquetaReels(ctx, "Comenta EU QUERO", 540, y, 50, 0.03));
   }
   /** Um produto na tela (3,6 s). Mesma cor do começo ao fim; o modelo muda a animação. */
   function produtoReels(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor);
     // Marca da Miga sempre no canto de baixo, à direita
-    if (!semFundo && edMarca) comPulo(ctx, t, B(1), 975, 1815, () => ctx.drawImage(edMarca, -75, -75, 150, 150));
+    if (!semFundo && edMarca) comPulo(ctx, t, A(1), 975, 1815, () => ctx.drawImage(edMarca, -75, -75, 150, 150));
   }
   /* ---------- Arte do produto: fundo limpo, título grande, foto sempre no mesmo lugar ---------- */
   // Estilos (todos centralizados, título solto, sem caixa): mudam a tipografia e o jeito do preço
@@ -4206,36 +4308,36 @@
     const icone = (D.ic && D.ic[0]) || M.icone || "brilho";
     const preco = novo ? brl(novo) : "", off = antigo ? Math.round((1 - novo / antigo) * 100) : 0;
     // Alguns modelos invertem: nome e preço em cima, título embaixo da foto
-    comSubida(ctx, t, B(0), () => tituloGrande(ctx, titulo, cima ? 190 + OY : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone));
+    comSubida(ctx, t, A(0), () => tituloGrande(ctx, titulo, cima ? 190 + OY : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone));
     // Foto (sempre igual)
-    comPulo(ctx, t, B(1), 540, FY, () => {
+    comPulo(ctx, t, A(1), 540, FY, () => {
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
       if (bmp) { const s = Math.min((L - 80) / bmp.width, (L - 80) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.save(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.clip(); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); ctx.restore(); }
       else iconeReels(ctx, "bolsa", 300);
     });
-    if (it.loja) comPulo(ctx, t, B(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
+    if (it.loja) comPulo(ctx, t, A(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
     // Selo de desconto liso no canto da foto
-    if (off >= 5) comPulo(ctx, t, B(2), 540 + L / 2 - 30, FY - L / 2 + 62, () => {
+    if (off >= 5) comPulo(ctx, t, A(2), 540 + L / 2 - 30, FY - L / 2 + 62, () => {
       ctx.rotate(0.08); { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
       ctx.fillStyle = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
     if (cima) {
       ctx.font = "700 44px Poppins"; const lc = quebrarTexto(ctx, nome, 920, 2);
-      comSubida(ctx, t, B(3), () => { ctx.font = "700 44px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 330 : 360) + OY + j * 50)); });
-      if (antigo) comSubida(ctx, t, B(3.5), () => { ctx.font = "600 46px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1270 + OY); ctx.fillRect(540 - w / 2 + ld, 1272 + OY, w - ld, 5); });
-      if (novo) comPulo(ctx, t, B(4), 540, (antigo ? 1370 : 1310) + OY, () => { { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, B(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1460 + OY, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1500 + OY); });
+      comSubida(ctx, t, A(3), () => { ctx.font = "700 44px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 330 : 360) + OY + j * 50)); });
+      if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 46px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1270 + OY); ctx.fillRect(540 - w / 2 + ld, 1272 + OY, w - ld, 5); });
+      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1370 : 1310) + OY, () => { { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (it.cupom) comSubida(ctx, t, A(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1460 + OY, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1500 + OY); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
     ctx.font = "700 52px Poppins"; const ln = quebrarTexto(ctx, nome, 920, 2);
-    comSubida(ctx, t, B(3), () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 + j * 62)); });
+    comSubida(ctx, t, A(3), () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 + j * 62)); });
     let y = 1275 + ln.length * 62 + 30;
     const riscado = (tx, yy, tam) => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = corAntiga(C); ctx.fillText(tx, 540, yy); const w = ctx.measureText(tx).width, ld = ctx.measureText(tx.split(" ")[0] + " ").width; ctx.fillRect(540 - w / 2 + ld, yy + 2, w - ld, 5); };
-    if (antigo && estilo === "oferta") comSubida(ctx, t, B(3.5), () => riscado("antes " + brl(antigo), y, 46));
-    else if (antigo) comSubida(ctx, t, B(3.5), () => riscado("de " + brl(antigo), y, 46));
+    if (antigo && estilo === "oferta") comSubida(ctx, t, A(3.5), () => riscado("antes " + brl(antigo), y, 46));
+    else if (antigo) comSubida(ctx, t, A(3.5), () => riscado("de " + brl(antigo), y, 46));
     y += antigo ? 95 : 55;
-    if (novo) comPulo(ctx, t, B(4), 540, y, () => {
+    if (novo) comPulo(ctx, t, A(4), 540, y, () => {
       { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); }
       const tx = (antigo ? "por " : "") + preco;
       if (estilo === "grande") { ctx.font = "900 88px Poppins"; const w = ctx.measureText(tx).width + 90; retArredondado(ctx, -w / 2, -64, w, 128, 64); ctx.fillStyle = C.pill; ctx.fill(); ctx.fillStyle = C.pillTexto; ctx.fillText(tx, 0, 4); return; }
@@ -4244,21 +4346,22 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom) comSubida(ctx, t, B(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1555, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1595); });
+    if (it.cupom) comSubida(ctx, t, A(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1555, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1595); });
   }
   /** Quadro do Reels no tempo t */
-  function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; } }
+  function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; acentoCena = null; } }
   function quadroReels0(ctx, W, t, R, l, fotos) {
     temposDoModelo(R);
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
     const M0 = MODELOS_REELS[R.modelo], CP = CAMPANHAS[R.camp], C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, n = l.length; relogioReels = t; decorAtual = decorDe(R);
     const M = modeloEfetivo(R);
-    if (t < T_INTRO) introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : "");
+    const E = MUSICAS[musicaDe(R)];
+    if (t < T_INTRO) { acentoCena = acentosDe(E, 0, 8); introReels(ctx, t, M, C, R.cor, n, l.every((x) => x.loja === l[0].loja) ? l[0].loja : ""); }
     else if (t < T_INTRO + T_PROD * n) {
-      const i = Math.floor((t - T_INTRO) / T_PROD), pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
+      const i = Math.floor((t - T_INTRO) / T_PROD); acentoCena = acentosDe(E, T_INTRO + i * T_PROD, 8); const pos = R.modelo === "top" ? n - 1 - i : i, it = l[pos]; // no Top, o 1º colocado aparece por último
       produtoReels(ctx, t - T_INTRO - i * T_PROD, it, fotos[it.id] && fotos[it.id].bmp, pos, n, R.modelo, M, C, R.cor);
     }
-    else fimReels(ctx, t - T_INTRO - T_PROD * n, C, R.cor);
+    else { acentoCena = acentosDe(E, T_INTRO + T_PROD * n, 8); fimReels(ctx, t - T_INTRO - T_PROD * n, C, R.cor); }
     ctx.restore();
   }
   const TITULOS_REELS = [
@@ -4393,7 +4496,7 @@
       if (k === "estiloVideo") { folhaEstiloVideo(); return; }
       if (k === "enquadrar") { const V = vd(); const v = await escolherOpcao("Enquadramento do vídeo", Object.entries(TEMAS_VIDEO), V.tema); if (v) { V.tema = v; V.resultado = null; aposMudarEstudio(); } }
       if (k === "cupons") { wz.passo = "cEscolher"; mostrarPasso(); }
-      if (k === "formato") { const v = await escolherOpcao("Story ou post?", [["story", "Story · tela cheia, em pé (link pelo adesivo)"], ["post", "Post · no feed, 4:5 (use “link na bio”)"]], wz.formato === "post" ? "post" : "story"); if (v) { wz.formato = v; aposMudarEstudio(); } }
+      if (k === "formato") { const v = await escolherOpcao("Story ou post?", [["story", "Story · tela cheia, em pé (link pelo adesivo)"], ["post", "Post · no feed, 4:5 (link no direct: Comenta EU QUERO)"]], wz.formato === "post" ? "post" : "story"); if (v) { wz.formato = v; aposMudarEstudio(); } }
       if (k === "produtosLivre") { wz.passo = "itens"; mostrarPasso(); }
       if (k === "grade") { wz.passo = "grade"; mostrarPasso(); }
       return;
@@ -4498,7 +4601,7 @@
       dest = gravar ? ac.createMediaStreamDestination() : ac.destination;
       const { pops, whooshes } = efeitosReels(R, n);
       const f = T_INTRO + T_PROD * n;
-      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[musicaDe(R)], f + B(arroba(config.instagram) ? 2 : 3));
+      t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[musicaDe(R)], f + acentosDe(MUSICAS[musicaDe(R)], f, 8)[arroba(config.instagram) ? 2 : 3]);
     } catch (e) { t0 = 0; }
     if (gravar) {
       fluxo = tela.captureStream(30);
@@ -4531,7 +4634,8 @@
     if (rec) { rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); }
     if (ac) ac.close().catch(() => {});
     if (!gravar) { if (btn) { btn.disabled = false; btn.textContent = "▶ Ver prévia com música"; } return; }
-    const mp4 = tipo.startsWith("video/mp4"), blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
+    const mp4 = tipo.startsWith("video/mp4"); let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
+    blob = await somCompativel(blob, tipo, (m) => { if (btn) btn.textContent = m; });
     // Capa: a abertura do Reels já montada
     const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; capaReels(tc.getContext("2d"), R, l, fotos);
     const capa = await telaParaJpeg(tc, "miga-promo-reels-capa.jpg");
@@ -4714,7 +4818,7 @@
   const blocoLegenda = (R) => `<div class="campo"><span>Legenda pronta</span>
       <textarea id="rLegenda" rows="9">${esc(R.legenda || (R.legenda = legendaReels()))}</textarea></div>
       <div class="duas"><button type="button" class="btn btn--branco" id="rCopiarLegenda">Copiar legenda</button><button type="button" class="btn btn--branco" id="rRefazerLegenda">Refazer legenda</button></div>
-      <p class="nota">No Instagram o link não fica clicável na legenda: use o “Link na bio” ou mande no direct de quem comentar. No WhatsApp o link funciona.</p>`;
+      <p class="nota">No Instagram o link não fica clicável na legenda: a legenda pede para comentarem EU QUERO e você manda o link no direct. No WhatsApp o link funciona.</p>`;
   async function pintarModelosReels() {
     await carregarMarca(); const f = await fotosReels(), R = rr(), l = itensReels();
     document.querySelectorAll("[data-r-modelo]").forEach((b) => quadroReels(b.querySelector("canvas").getContext("2d"), 270, T_INTRO + 2.4, { ...R, modelo: b.dataset.rModelo }, l, f));

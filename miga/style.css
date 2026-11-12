@@ -1128,3 +1128,20 @@ body.modo-selecao main { padding-bottom: 200px; }
 .vd-criar .btn { margin: 0; min-height: 54px; font-size: 16px; }
 .vd-criar .nota { margin: 0; text-align: center; }
 @media (min-width: 960px) { .wz__corpo:has(> .estudio) .vd-criar { grid-column: 2; } }
+#ppAcoes { grid-template-columns: repeat(3, 1fr); }
+/* Publicar vídeo: escolha do modo, produto, vídeo e IA numa tela só */
+.vd-modo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.vd-modo button { display: grid; gap: 4px; text-align: left; padding: 16px; border: 0; border-radius: 20px; background: var(--campo); font: inherit; color: var(--preto); cursor: pointer; }
+.vd-modo button b { font-size: 16px; } .vd-modo button small { font-size: 12.5px; color: var(--cinza); }
+.vd-modo button.on { background: var(--rosa-claro); box-shadow: inset 0 0 0 2px var(--rosa); }
+.vd-prod { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: var(--campo); }
+.vd-prod img, .vd-prod .sem-foto { width: 56px; height: 56px; border-radius: 12px; object-fit: contain; background: #fff; }
+.vd-prod span { display: grid; gap: 2px; min-width: 0; } .vd-prod b { font-size: 14.5px; overflow-wrap: anywhere; } .vd-prod small { color: var(--rosa); font-weight: 700; }
+.vd-arquivo { display: grid; gap: 10px; }
+.vd-arquivo .vd-previa { max-height: 46vh; width: 100%; border-radius: 18px; background: #000; }
+.vd-ia { border-radius: 18px; background: var(--campo); padding: 4px 14px 14px; }
+.vd-ia summary { cursor: pointer; padding: 12px 0; font-weight: 700; }
+.vd-ia[open] { display: grid; gap: 10px; }
+.vd-prompts { display: flex; flex-wrap: wrap; gap: 6px; }
+.vd-prompts button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--linha); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+@media (min-width: 960px) { .vd-modo button { padding: 22px; } .vd-modo button b { font-size: 18px; } }
