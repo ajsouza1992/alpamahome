@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=148">
+  <link rel="manifest" href="manifest.json?v=149">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=148">
+  <link rel="stylesheet" href="style.css?v=149">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -56,7 +56,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=148" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=149" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -82,7 +82,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=148" alt="">
+    <img src="logo.png?v=149" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -218,18 +218,25 @@
   <div class="aba" id="aba-postar">
     <section class="bloco" id="ppListaBloco">
       <div class="cabecalho-aba">
-        <h2 class="passo">Minha lista</h2>
+        <h2 class="passo">Produtos</h2>
         <button type="button" class="link" id="ppLimpar" hidden>Tirar os prontos</button>
       </div>
       <div class="colar">
-        <input id="ppLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off" aria-label="Link do produto">
+        <svg class="colar__lupa" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="ppLink" type="search" enterkeyhint="search" placeholder="Buscar ou colar link…" autocomplete="off" aria-label="Buscar produto ou colar link">
         <button type="button" id="ppColar" class="colar__btn">Colar</button>
       </div>
 
-      <button type="button" class="btn btn--rosa" id="ppAdicionar">Adicionar à lista</button>
+      <div id="ppNovoLink" hidden></div>
+      <button type="button" id="ppAdicionar" hidden></button>
       <div class="lista-atalhos">
         <button type="button" class="btn btn--branco btn-cupons" id="ppCupons"><svg><use href="#i-etiqueta"/></svg>Postar cupons</button>
         <button type="button" class="btn btn--branco btn-cupons" id="ppVideoLivre"><svg><use href="#i-rede-video"/></svg>Publicar vídeo</button>
+      </div>
+      <div class="pp-visao" id="ppVisao" role="tablist">
+        <button type="button" data-visao="postar">Para postar <i id="vqPostar"></i></button>
+        <button type="button" data-visao="postados">Postados <i id="vqPostados"></i></button>
+        <button type="button" data-visao="todos">Todos <i id="vqTodos"></i></button>
       </div>
       <div class="barra-filtro">
         <button type="button" class="sel-todos" id="ppTodos" hidden><span class="pp-caixa-mini" id="ppTodosCx"></span>Todos</button>
@@ -240,7 +247,7 @@
       </div>
       <div class="tags-filtro" id="ppTags"></div>
       <div class="pp-lista" id="ppLista"></div>
-      <p class="nota">Toque no produto (ou no lápis) para editar e criar. Para juntar vários produtos ou excluir de uma vez, toque em “Selecionar”.</p>
+      <p class="nota" id="ppDica">Toque no produto para editar e criar. A lixeira tira da lista; para vários de uma vez, toque em “Selecionar”.</p>
     </section>
 
     <section class="bloco" id="ppItem" hidden>
@@ -422,7 +429,7 @@
     </div>
     <nav class="abas" aria-label="Seções">
       <button type="button" data-aba="postar" aria-current="page"><svg><use href="#i-lista"/></svg>Lista <b id="contPostar" hidden></b></button>
-      <button type="button" data-aba="historico"><svg><use href="#i-historico"/></svg>Histórico <b id="contHistorico" hidden></b></button>
+      <button type="button" data-aba="historico" hidden><svg><use href="#i-historico"/></svg>Histórico <b id="contHistorico" hidden></b></button>
       <button type="button" data-aba="achados"><svg><use href="#i-etiqueta"/></svg>Achados</button>
     </nav>
   </div>
@@ -673,7 +680,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=148"></script>
-  <script src="app.js?v=148"></script>
+  <script src="firebase-config.js?v=149"></script>
+  <script src="app.js?v=149"></script>
 </body>
 </html>

@@ -85,8 +85,14 @@
     const n = Number(s);
     return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
   }
+  /** Aviso com botão (ex.: "Desfazer") */
+  function toastAcao(msg, rotulo, acao) {
+    const t = $("#toast"); t.innerHTML = ""; const s = document.createElement("span"); s.textContent = msg; const b = document.createElement("button"); b.type = "button"; b.className = "toast__bt"; b.textContent = rotulo;
+    b.addEventListener("click", () => { t.classList.remove("show"); acao(); }, { once: true }); t.append(s, b); t.classList.add("show", "com-bt");
+    clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove("show", "com-bt"), 5000);
+  }
   function toast(msg) {
-    const t = $("#toast");
+    const t = $("#toast"); t.classList.remove("com-bt");
     t.textContent = msg;
     t.classList.add("show");
     clearTimeout(toast.timer);
@@ -467,7 +473,7 @@
       if (b.dataset.aba === aba) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
     $("#barraGerar").hidden = true;
-    if (aba === "historico") renderHistorico();
+    if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
     if (aba === "postar" && !ppAtual) renderFila();
@@ -1098,7 +1104,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=148"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=149"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1477,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=148"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=149"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1682,18 +1688,56 @@
   }
   const incompletos = () => fila().filter((i) => !i.carregando && (!i.imagem || !i.precoNovo || !i.nome));
   let modoCompletar = false;
+  /* ---------- Produtos: Lista e Histórico numa tela só, com busca ---------- */
+  let visaoLista = (() => { try { return localStorage.getItem("miga_visao") || "postar"; } catch (e) { return "postar"; } })();
+  let termoBusca = "", abaBusca = null;
+  const ehLink = (t) => /https?:\/\//.test(String(t || ""));
+  const semAcento = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  function textoBusca(i) {
+    return semAcento([i.nome, i.link, i.urlFinal, NOME_LOJA[i.loja], i.loja, i.precoNovo && brl(i.precoNovo), i.precoAntigo && brl(i.precoAntigo), i.cupom, NOME_CAT[i.categoria] || i.categoria,
+      ...(i.ondePostou || []), i.postadoEm && dataCurta(i.postadoEm), foiCompartilhado(i) ? "postado" : "para postar"].filter(Boolean).join(" "));
+  }
+  function bateBusca(i) {
+    const t = termoBusca.trim(); if (!t) return true;
+    if (ehLink(t)) { const us = t.match(/https?:\/\/[^\s<>"']+/g) || [t]; return us.some((u) => mesmoProduto(i, u)); }
+    const h = textoBusca(i), h2 = h.replace(/[.\s]/g, "");
+    return semAcento(t).split(/\s+/).filter(Boolean).every((p) => h.includes(p) || h2.includes(p.replace(/[.,\s]/g, "")));
+  }
+  const marcaBusca = (txt) => { const s = esc(txt); const t = termoBusca.trim(); if (!t || ehLink(t)) return s; let out = s;
+    semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
+  const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   function renderFila() {
     renderCatsLista(); pintarMarcados();
-    const l = ordenar(fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && !foiCompartilhado(i)));
-    $("#ppLista").innerHTML = painelHoje() + (l.length ? l.map((i) => `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
+    const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && bateBusca(i));
+    const qt = { postar: base.filter((i) => naVisao(i, "postar")).length, postados: base.filter((i) => naVisao(i, "postados")).length, todos: base.length };
+    let v = termoBusca.trim() ? abaBusca || "todos" : visaoLista; // buscando: mostra tudo (Lista e postados), a não ser que você escolha outra aba
+    document.querySelectorAll("#ppVisao [data-visao]").forEach((b) => { b.classList.toggle("on", b.dataset.visao === v); b.setAttribute("aria-selected", String(b.dataset.visao === v)); });
+    [["#vqPostar", qt.postar], ["#vqPostados", qt.postados], ["#vqTodos", qt.todos]].forEach(([s, n]) => { $(s).textContent = n; $(s).hidden = !n; });
+    pintarNovoLink();
+    const l = ordenar(base.filter((i) => naVisao(i, v)));
+    $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${l.length} produto${l.length === 1 ? "" : "s"}`;
+    const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
+      return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
-        <span><strong>${esc(i.nome || (i.carregando ? "Buscando o produto…" : "Toque para completar o nome"))}</strong>
-          <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${esc(NOME_LOJA[i.loja] || "")}${diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
-          <span class="pp-tags">${tagsFeito(i)}</span>
+        <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
+          <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
+          ${post ? `<span class="hi-quando">Postado ${dataCurta(i.postadoEm || i.criadoEm)}${onde.length ? ` · ${esc(onde.join(", "))}` : ""}</span>` : ""}
         </span>
         <span class="seta">›</span>
-      </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>` : `<button type="button" class="pp-lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button>`}</div>`).join("") : `<p class="vazio-lista">${fila().some((i) => !foiCompartilhado(i)) ? "Nenhum produto nessa categoria." : fila().length ? "Tudo postado! O que você já postou está no Histórico." : "Cole aqui os links dos produtos que você vai divulgar."}</p>`);
+      </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`
+        : `<div class="pp-acoes-linha">${post ? `<button type="button" class="pp-mini-bt" data-restaurar="${esc(i.id)}" aria-label="Voltar para Para postar" title="Postar de novo"><svg><use href="#i-restaurar"/></svg></button>` : `<button type="button" class="pp-mini-bt pp-lixo-bt" data-excluir="${esc(i.id)}" aria-label="Tirar ${esc(i.nome || "produto")} da lista" title="Tirar da lista"><svg><use href="#i-lixo"/></svg></button>`}<button type="button" class="pp-mini-bt" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button></div>`}</div>`; };
+    const vazio = termoBusca.trim() ? (ehLink(termoBusca) ? "" : "Nada encontrado com essa busca.") : v === "postados" ? "O que você postar aparece aqui, com a data e onde foi postado." : fila().some((i) => !foiCompartilhado(i)) ? "Nenhum produto nessa categoria." : fila().length ? "Tudo postado! Veja na aba “Postados”." : "Cole aqui os links dos produtos que você vai divulgar.";
+    $("#ppLista").innerHTML = (v === "postar" && !termoBusca.trim() ? painelHoje() : "") + (l.length ? l.map(linha).join("") : vazio ? `<p class="vazio-lista">${vazio}</p>` : "");
     pintarMarcados();
+  }
+  /** Colou um link novo: cartão "Produto novo" com o botão de adicionar */
+  function pintarNovoLink() {
+    const t = termoBusca.trim(), box = $("#ppNovoLink"); if (!box) return;
+    const links = ehLink(t) ? [...new Set(t.match(/https?:\/\/[^\s<>"']+/g) || [])] : [];
+    const novos = links.filter((u) => !fila().some((i) => mesmoProduto(i, u)));
+    box.hidden = !novos.length;
+    box.innerHTML = novos.length ? `<div class="pp-novo"><span class="pp-novo__mais">+</span><span><b>${novos.length > 1 ? `${novos.length} produtos novos` : "Produto novo"}</b><small>${novos.length > 1 ? "Esses links ainda não estão nos seus produtos" : "Esse link ainda não está nos seus produtos"}</small></span></div>
+      <button type="button" class="btn btn--rosa" id="ppAdicionarNovo">${novos.length > 1 ? `Adicionar ${novos.length} produtos` : "Adicionar este produto"}</button>` : "";
   }
   /** Mesma página = mesmo produto (ignora www, barra no fim e parâmetros de rastreio) */
   function chaveLink(u) {
@@ -1718,7 +1762,7 @@
     if (!urlOk(lido.link)) { toast("Cola um link começando com https://"); return null; }
     const ja = fila().find((i) => mesmoProduto(i, lido.link));
     if (ja) {
-      if (naLista) { toast("Esse produto já está na sua lista"); $("#ppLink").value = ""; return null; }
+      if (naLista) { toast(foiCompartilhado(ja) ? "Esse produto já foi postado: está na aba “Postados”" : "Esse produto já está na sua lista"); termoBusca = lido.link; $("#ppLink").value = lido.link; pintarBotaoColar(); renderFila(); return null; }
       toast("Esse produto já estava na lista"); return ja;
     }
     const item = { id: novoId(), link: lido.link, loja: detectarLoja(lido.link) || "mercadolivre", nome: lido.nome || "", precoNovo: lido.preco || null, precoAntigo: null, imagem: "", cupom: "", categoria: "outros", texto: "", feito: {}, criadoEm: Date.now(), carregando: true };
@@ -1761,16 +1805,19 @@
     const falta = incompletos().length;
     toast(`${n} ${n === 1 ? "produto adicionado" : "produtos adicionados"}${falta ? ` · ${falta} para completar` : ""}`);
   }
-  $("#ppAdicionar").addEventListener("click", () => adicionarTexto($("#ppLink").value));
-  $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); adicionarTexto($("#ppLink").value); } });
-  $("#ppLink").addEventListener("paste", (e) => {
-    const t = (e.clipboardData && e.clipboardData.getData("text")) || "";
-    if (/https?:\/\//.test(t)) { e.preventDefault(); adicionarTexto(t); }
-  });
+  const pintarBotaoColar = () => { $("#ppColar").textContent = $("#ppLink").value ? "Limpar" : "Colar"; };
+  const limparBusca = () => { termoBusca = ""; abaBusca = null; $("#ppLink").value = ""; pintarBotaoColar(); };
+  async function adicionarDaBusca() { const t = $("#ppLink").value; limparBusca(); renderFila(); await adicionarTexto(t); renderFila(); }
+  $("#ppLink").addEventListener("input", () => { termoBusca = $("#ppLink").value; if (!termoBusca.trim()) abaBusca = null; pintarBotaoColar(); clearTimeout(renderFila.t); renderFila.t = setTimeout(renderFila, 120); });
+  $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (!$("#ppNovoLink").hidden) adicionarDaBusca(); else $("#ppLink").blur(); } });
+  $("#ppNovoLink").addEventListener("click", (e) => { if (e.target.closest("#ppAdicionarNovo")) adicionarDaBusca(); });
   $("#ppColar").addEventListener("click", async () => {
-    try { adicionarTexto((await navigator.clipboard.readText()).trim()); }
+    if ($("#ppLink").value) { limparBusca(); renderFila(); return; }
+    try { const t = (await navigator.clipboard.readText()).trim(); if (!t) { toast("Não tem nada copiado"); return; } $("#ppLink").value = t; termoBusca = t; pintarBotaoColar(); renderFila();
+      if (ehLink(t) && $("#ppNovoLink").hidden) toast("Esse produto já está nos seus produtos"); }
     catch (e) { $("#ppLink").focus(); toast("Toque e segure no campo para colar"); }
   });
+  $("#ppVisao").addEventListener("click", (e) => { const b = e.target.closest("[data-visao]"); if (!b) return; if (termoBusca.trim()) { abaBusca = b.dataset.visao; renderFila(); return; } visaoLista = b.dataset.visao; try { localStorage.setItem("miga_visao", visaoLista); } catch (er) { /* segue */ } if (modoVarios) marcados.clear(); renderFila(); });
   $("#ppLimpar").addEventListener("click", async () => {
     const prontos = fila().filter((i) => Object.values(i.feito || {}).some(Boolean));
     if (!prontos.length) { toast("Nenhum produto compartilhado ainda"); return; }
@@ -1793,7 +1840,7 @@
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
-    const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
+    const noHist = !$("#aba-historico").hidden || (!$("#aba-postar").hidden && visaoLista !== "postar"); $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
     const visH = [...document.querySelectorAll("#historico [data-marcar]")].map((x) => x.dataset.marcar);
     $("#hiTodosCx").classList.toggle("on", !!visH.length && visH.every((id) => marcados.has(id)));
     $("#ppTodos").hidden = !modoVarios; $("#ppTotal").hidden = modoVarios; $("#ppFiltrar").hidden = modoVarios;
@@ -1932,6 +1979,13 @@
     if (e.target.closest("[data-abrir-link]")) { e.stopPropagation(); return; } // o link abre sozinho
     const ed = e.target.closest("[data-editar]");
     if (ed) { const it = fila().find((i) => i.id === ed.dataset.editar); if (it) abrirItemFila(it); return; }
+    const rs = e.target.closest("[data-restaurar]"); if (rs) { restaurarNaLista([rs.dataset.restaurar]); return; }
+    const ex = e.target.closest("[data-excluir]");
+    if (ex) { const it = fila().find((i) => i.id === ex.dataset.excluir); if (!it) return;
+      const linha = ex.closest(".pp-linha"); if (linha) linha.classList.add("saindo");
+      config.fila = fila().filter((i) => i !== it); setTimeout(() => { renderFila(); contarFila(); }, 180); salvarFila(true);
+      toastAcao(`“${limparNome(it.nome || "Produto").slice(0, 28)}” saiu da lista`, "Desfazer", () => { if (!fila().includes(it)) { fila().unshift(it); salvarFila(true); renderFila(); contarFila(); toast("Voltou para a lista"); } });
+      return; }
     const mc = e.target.closest("[data-marcar]");
     if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); mc.setAttribute("aria-pressed", String(marcados.has(id))); mc.parentElement.classList.toggle("marcado", marcados.has(id)); pintarMarcados(); return; }
     const menu = e.target.closest("[data-menu-item]");
@@ -4409,8 +4463,8 @@
   function restaurarNaLista(ids) {
     const l = fila().filter((i) => ids.includes(i.id)); if (!l.length) return;
     l.forEach((it) => { it.feito = {}; delete it.postadoEm; it.ondePostou = []; });
-    salvarFila(true); contarFila(); renderHistorico();
-    toast(l.length === 1 ? "Voltou para a Lista" : `${l.length} produtos voltaram para a Lista`);
+    salvarFila(true); contarFila(); renderFila(); if (!$("#aba-historico").hidden) renderHistorico();
+    toast(l.length === 1 ? "Voltou para “Para postar”" : `${l.length} produtos voltaram para “Para postar”`);
   }
   $("#historico").addEventListener("click", (e) => {
     if (e.target.closest("[data-abrir-link]")) return;
