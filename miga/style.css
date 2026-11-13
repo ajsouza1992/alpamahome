@@ -1242,3 +1242,5 @@ body.modo-selecao main { padding-bottom: 200px; }
 .ed-add button b { width: 34px; height: 34px; }
 .rp-capa-momento { display: grid; gap: 4px; width: 100%; font-size: 12px; font-weight: 700; color: var(--cinza); text-align: center; }
 .rp-capa-momento input { width: 100%; accent-color: var(--rosa); }
+.vd-baixar-foto { justify-self: start; display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; min-height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--linha); font: inherit; font-size: 13px; font-weight: 700; color: var(--preto); cursor: pointer; }
+.vd-baixar-foto svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }

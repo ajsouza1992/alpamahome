@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=126"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=127"; });
     }
     edFoto = null;
     try {
@@ -1156,7 +1156,7 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
-  const nomeArquivo = (t) => "miga-promo-" + String(t || "imagem").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) + ".jpg";
+  const nomeArquivo = (t) => "miga-promo-" + String(t || "imagem").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) + ".jpg";
   $("#compartilharCard").addEventListener("click", () => compartilharTela($("#telaCard"), nomeArquivo(atual && atual.produto.nome)));
   $("#baixarCard").addEventListener("click", () => {
     $("#telaCard").toBlob((blob) => {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=126"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=127"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3325,7 +3325,7 @@
         const l2 = fila().filter((x) => !x.carregando);
         corpo = `<p class="nota">Escolha o produto do vídeo:</p><div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod" data-vd-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("") || '<p class="nota">Sua lista está vazia.</p>'}</div>`;
       } else if (modo) {
-        const prod = modo === "produto" ? `<div class="vd-prod">${miniLoja(it, fotoMini(it))}<span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small></span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
+        const prod = modo === "produto" ? `<div class="vd-prod"><span class="pp-mini">${fotoMini(it)}</span><span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${it.imagem ? `<button type="button" class="vd-baixar-foto" id="vdBaixarFoto"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar foto</button>` : ""}</span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
         const video = `<div class="vd-arquivo">
             ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
             <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher o vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
@@ -3793,7 +3793,7 @@
     if (md) { V.modo = md.dataset.vdModo; if (V.modo === "livre") { V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.semVideo = false; V.abertura = false; } else V.abertura = true; mostrarPasso(); return; }
     if (t.closest("#vdTrocarProd")) { V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.semVideo = false; V.fotoBmp = null; V.fotoSrc = ""; mostrarPasso(); return; }
     const pr = t.closest("[data-vd-prompt]"); if (pr) { if (await copiarTexto(PROMPTS_VIDEO[+pr.dataset.vdPrompt][1](V.nome || "o produto"))) toast("Prompt copiado: cole na IA de vídeo junto com a foto"); return; }
-    if (t.closest("#vdFoto")) { const arq = await fotoParaIA(); if (arq) { baixarBlob(arq, arq.name); toast("Foto salva na galeria"); } else toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
+    if (t.closest("#vdFoto") || t.closest("#vdBaixarFoto")) { const arq = await fotoParaIA(); if (arq) { baixarBlob(arq, arq.name); toast("Foto salva na galeria"); } else toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
     if (t.closest("#vdFotoEnviar")) {
       const arq = await fotoParaIA();
       if (!arq) { toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
