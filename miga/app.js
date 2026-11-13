@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=188"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=190"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=188"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=190"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -5633,24 +5633,16 @@
       for (let i = 0; i < 10; i++) { const g = (i / 10) * Math.PI * 2; ctx.save(); ctx.rotate(g); poli([[-14, -64], [14, -64], [0, -98]], AMAR); ctx.restore(); }
       bola(0, 0, 56, AMAR); brilhoBranco(-20, -22, 12, 7);
     }
-    else if (nome === "pincel") { // pincel de blush: cabo afinando, aro dourado e cerdas em degradê com pó rosa
+    else if (nome === "pincel") { // pincel de maquiagem (traço padrão: cores lisas)
       ctx.rotate(0.62);
-      // cabo
-      ctx.beginPath(); ctx.moveTo(-17, 18); ctx.lineTo(17, 18); ctx.lineTo(9, 104); ctx.quadraticCurveTo(0, 112, -9, 104); ctx.closePath();
-      { const g = ctx.createLinearGradient(-17, 0, 17, 0); g.addColorStop(0, "#ff7aa6"); g.addColorStop(0.55, "#e8336d"); g.addColorStop(1, "#b81c52"); contorno(g); }
-      ctx.beginPath(); ctx.moveTo(-8, 28); ctx.lineTo(-4, 92); ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineCap = "round"; ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
-      // aro
-      retArredondado(ctx, -22, -14, 44, 36, 6); { const g = ctx.createLinearGradient(-22, 0, 22, 0); g.addColorStop(0, "#fff1b0"); g.addColorStop(0.45, "#ffd23f"); g.addColorStop(1, "#d99a12"); contorno(g); }
-      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-22, 2); ctx.lineTo(22, 2); ctx.stroke(); ctx.lineWidth = 11;
-      // cerdas
+      ctx.beginPath(); ctx.moveTo(-17, 18); ctx.lineTo(17, 18); ctx.lineTo(9, 104); ctx.quadraticCurveTo(0, 112, -9, 104); ctx.closePath(); contorno(ROSA);
+      ctx.save(); ctx.beginPath(); ctx.moveTo(-7, 30); ctx.lineTo(-4, 90); ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.stroke(); ctx.restore();
+      retArredondado(ctx, -22, -14, 44, 36, 6); contorno(AMAR); ctx.save(); ctx.beginPath(); ctx.moveTo(-22, 4); ctx.lineTo(22, 4); ctx.lineWidth = 5; ctx.stroke(); ctx.restore();
       const cerdas = () => { ctx.beginPath(); ctx.moveTo(-22, -12); ctx.bezierCurveTo(-34, -40, -52, -76, -38, -96); ctx.quadraticCurveTo(0, -122, 38, -96); ctx.bezierCurveTo(52, -76, 34, -40, 22, -12); ctx.closePath(); };
-      cerdas(); { const g = ctx.createLinearGradient(0, -12, 0, -112); g.addColorStop(0, "#3b2a2e"); g.addColorStop(0.45, "#7a4a58"); g.addColorStop(0.75, "#f08cb0"); g.addColorStop(1, "#ffc2d6"); contorno(g); }
-      ctx.save(); cerdas(); ctx.clip(); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.28)";
-      [-26, -14, -2, 10, 22].forEach((x) => { ctx.beginPath(); ctx.moveTo(x * 0.6, -12); ctx.quadraticCurveTo(x * 1.2, -60, x, -108); ctx.stroke(); }); ctx.restore();
-      cerdas(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO; ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(-16, -84, 6, 14, -0.4, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fill();
-      // pozinho rosa saindo
-      ctx.fillStyle = "#f59ab8"; [[40, -112, 7], [56, -96, 5], [30, -128, 4.5], [62, -118, 3.5]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
+      cerdas(); contorno("#5d3f49");
+      ctx.save(); cerdas(); ctx.clip(); ctx.beginPath(); ctx.moveTo(-60, -66); ctx.quadraticCurveTo(-30, -78, 0, -70); ctx.quadraticCurveTo(30, -62, 60, -74); ctx.lineTo(60, -130); ctx.lineTo(-60, -130); ctx.closePath(); ctx.fillStyle = "#f59ab8"; ctx.fill(); ctx.restore();
+      cerdas(); ctx.stroke(); brilhoBranco(-16, -84, 6, 14, -0.4);
+      ctx.fillStyle = "#f59ab8"; [[40, -112, 7], [56, -96, 5], [30, -128, 4.5]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
     }
     else if (nome === "balao") {
       poli([[-46, 40], [-66, 92], [-4, 46]], BRANCO);
@@ -5894,8 +5886,8 @@
     const C = CORES_CARTA[tela.cor] || CORES_CARTA.branco, x = ctx; x.save(); x.scale(S / 1080, S / 1080);
     if (C.grad) { const g = x.createRadialGradient(540, 378, 0, 540, 378, 800); g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6"); x.fillStyle = g; } else x.fillStyle = C.fundo;
     x.fillRect(0, 0, 1080, 1080);
-    x.fillStyle = C.b1; x.beginPath(); x.arc(30, 30, 180, 0, 7); x.fill();
-    x.fillStyle = C.b2; x.beginPath(); x.arc(1030, 1040, 150, 0, 7); x.fill();
+    x.fillStyle = C.b1; x.beginPath(); x.arc(60, 60, 200, 0, 7); x.fill(); // mesmos cantos das artes do app
+    x.fillStyle = C.b2; x.beginPath(); x.arc(1020, 1020, 170, 0, 7); x.fill();
     x.fillStyle = C.b3; x.beginPath(); x.arc(995, 135, 25, 0, 7); x.fill();
     // medir o bloco para centralizar
     x.font = "800 86px Poppins"; const lt = quebrarCarta(x, tela.titulo, 860);
@@ -5908,7 +5900,7 @@
     lt.forEach((l) => { linhaRica(l, y + 45, "800 86px Poppins"); y += 91; });
     if (lp.length) { y += 30; lp.forEach((l) => { x.globalAlpha = 0.95; linhaRica(l, y + 29, "500 44px Poppins"); x.globalAlpha = 1; y += 58; }); }
     if (tela.botao) { y += 40; x.save(); x.translate(540, y + 54); x.rotate(-0.052); x.font = "800 42px Poppins"; const w = x.measureText(tela.botao).width + 100, h = 96; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = "#ffd23f"; x.fill(); x.lineWidth = 6; x.strokeStyle = "#1d1d1f"; x.stroke(); x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.fillText(tela.botao, 0, 2); x.restore(); }
-    if (edMarca) x.drawImage(edMarca, 1080 - 48 - 130, 1080 - 40 - 130, 130, 130);
+    if (edMarca) x.drawImage(edMarca, 1080 - 165, 1080 - 160, 130, 130);
     x.restore();
   }
   /** Prompt para pedir o carrossel a uma IA (Gemini, ChatGPT…) e colar a resposta aqui */
@@ -5980,7 +5972,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="ch-campo"><span>Do que vai falar?</span><input id="kaAssunto" maxlength="120" placeholder="Ex.: como achar cupom na Shopee" value="${esc(K.assunto || "")}"></label>
         <div class="duas"><button type="button" class="btn btn--branco" id="kaPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="kaColar">Colar resposta da IA</button></div></div>
       <div class="ka-previa"><canvas id="kaQuadro" width="540" height="540"></canvas></div>
-      <div class="ka-alt"><span>Texto alternativo da tela ${K.sel + 1}</span><p>${esc(s.alt || altCarta(s, K.sel, T.length))}</p><button type="button" class="link-sel" id="kaCopiarAlt">Copiar</button></div>
+      <div class="ka-alt" id="kaCopiarAlt" role="button" tabindex="0" title="Toque para copiar"><span>Texto alternativo da tela ${K.sel + 1} · toque para copiar</span><p>${esc(s.alt || altCarta(s, K.sel, T.length))}</p></div>
       <div class="ka-telas">${T.map((t, i) => `<button type="button" class="ka-mini${i === K.sel ? " on" : ""}" data-ka-sel="${i}"><canvas width="120" height="120" data-ka-mini="${i}"></canvas><i>${i + 1}</i></button>`).join("")}${T.length < 10 ? '<button type="button" class="ka-mini ka-mais" data-ka-add>＋<small>Nova tela</small></button>' : ""}</div>
       <div class="ka-ops"><button type="button" class="btn btn--branco" data-ka-mover="-1" ${K.sel === 0 ? "disabled" : ""}>← Mover</button><button type="button" class="btn btn--branco" data-ka-mover="1" ${K.sel === T.length - 1 ? "disabled" : ""}>Mover →</button><button type="button" class="btn btn--branco" data-ka-dup>Duplicar</button><button type="button" class="btn btn--branco ka-del" data-ka-del ${T.length <= 1 ? "disabled" : ""}>Excluir</button></div>
       <h3 class="ch-tela">Tela ${K.sel + 1}</h3>
@@ -6012,7 +6004,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const mv = t.closest("[data-ka-mover]"); if (mv) { const d = +mv.dataset.kaMover, j = K.sel + d; if (j < 0 || j >= T.length) return; [T[K.sel], T[j]] = [T[j], T[K.sel]]; K.sel = j; redesenhar(); return; }
     if (t.closest("[data-ka-dup]")) { if (T.length >= 10) { toast("O Instagram aceita até 10 telas (no app vou até 10)"); return; } T.splice(K.sel + 1, 0, { ...s }); K.sel++; redesenhar(); return; }
     if (t.closest("[data-ka-del]")) { if (T.length <= 1) return; T.splice(K.sel, 1); K.sel = Math.max(0, K.sel - 1); redesenhar(); return; }
-    const co = t.closest("[data-ka-cor]"); if (co) { s.cor = co.dataset.kaCor; redesenhar(); return; }
+    const co = t.closest("[data-ka-cor]"); if (co) {
+      s.cor = co.dataset.kaCor;
+      // mudou a cor da capa: as outras telas seguem a sequência branco → rosa → creme → preto
+      if (K.sel === 0) { const seq = ["branco", "rosa", "creme", "preto"], ini = seq.indexOf(s.cor); T.forEach((x, i) => { x.cor = seq[(ini + i) % 4]; }); toast("As outras telas seguiram a sequência das cores"); }
+      redesenhar(); return; }
     const ic = t.closest("[data-ka-ic]"); if (ic) { s.ic = ic.dataset.kaIc; document.querySelectorAll("[data-ka-ic]").forEach((b) => b.classList.toggle("on", b === ic)); guardarCartas(); pintarCartas(true); return; }
     const em = t.closest("[data-ka-emoji]"); if (em) { const campo = K.campo || "titulo", el = document.querySelector(`[data-ka-campo="${campo}"]`); if (!el) return;
       const p = el.selectionStart ?? el.value.length; el.value = el.value.slice(0, p) + em.dataset.kaEmoji + el.value.slice(el.selectionEnd ?? p); s[campo] = el.value; guardarCartas(); pintarCartas(true); return; }
@@ -6025,10 +6021,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#kaZerar")) { try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } abrirCartas(); return; }
     if (t.closest("#kaBaixar") || t.closest("#kaZip")) {
       const zip = !!t.closest("#kaZip") || ehComputador(), b = t.closest("button"); const txt0 = b.textContent; b.disabled = true; b.textContent = "Preparando…"; await carregarMarca(); const arqs = [];
-      for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, `${String(i + 1).padStart(2, "0")}-miga-carrossel.jpg`)); }
+      for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, i === 0 ? "00-capa.jpg" : `${String(i).padStart(2, "0")}.jpg`)); }
       b.disabled = false; b.textContent = txt0; K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas();
       if (zip) {
-        const txt = `LEGENDA\n\n${K.legenda || ""}\n\n\nTEXTO ALTERNATIVO DE CADA IMAGEM\n\n` + T.map((x, i) => x.alt ? `Imagem ${i + 1}: ${x.alt}` : altCarta(x, i, T.length)).join("\n\n");
+        const txt = `LEGENDA\n\n${K.legenda || ""}\n\n\nTEXTO ALTERNATIVO DE CADA IMAGEM\n\n` + T.map((x, i) => `${i === 0 ? "Capa" : "Imagem " + i}: ${x.alt || altCarta(x, i, T.length)}`).join("\n\n");
         const z = await montarZip([...arqs, new File([txt], "legenda-e-texto-alternativo.txt", { type: "text/plain" })]);
         baixarBlob(z, "miga-carrossel.zip"); toast("Carrossel salvo em .zip (imagens + legenda + textos alternativos)"); return;
       }
