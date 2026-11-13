@@ -1702,3 +1702,7 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 /* Botão com ícone de traço (sem cor) */
 .btn-ic { display: flex; align-items: center; justify-content: center; gap: 10px; }
 svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* Item "Editar" na lista de modelos */
+.mod-editar__ic { flex: none; display: grid; place-items: center; width: 54px; height: 96px; border-radius: 8px; background: var(--campo); color: var(--preto); }
+.folha-est .mod-editar__ic { width: 78px; height: 139px; }
+.mod-editar__ic svg.ic-mono { width: 28px; height: 28px; }

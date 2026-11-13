@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=181"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=182"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=181"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=182"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1818,6 +1818,7 @@
   const marcaBusca = (txt) => { const s = esc(txt); const t = termoBusca.trim(); if (!t || ehLink(t)) return s; let out = s;
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
+  $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value); config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos ✓"); });
   $("#ajOcultarPostados").addEventListener("change", (e) => { config.ocultarPostados = e.target.checked; gravarConfig(); renderFila(); toast(e.target.checked ? "Postados ocultos da Lista" : "Postados de volta na Lista"); });
   function renderFila() {
     migrarCategorias(); renderCatsLista(); pintarMarcados();
@@ -5610,6 +5611,21 @@
   });
 
 
+  /** Monta um .zip (sem compressão) com vários arquivos: no computador baixa tudo de uma vez */
+  const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const ehComputador = () => !window.matchMedia("(pointer: coarse)").matches;
+  async function montarZip(arquivos) {
+    const partes = [], central = []; let pos = 0; const enc = new TextEncoder();
+    for (const f of arquivos) {
+      const dados = new Uint8Array(await f.arrayBuffer()), nome = enc.encode(f.name); let crc = 0xffffffff; for (let i = 0; i < dados.length; i++) crc = CRC_T[(crc ^ dados[i]) & 0xff] ^ (crc >>> 8); crc = (crc ^ 0xffffffff) >>> 0;
+      const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 23585, true); h.setUint32(14, crc, true); h.setUint32(18, dados.length, true); h.setUint32(22, dados.length, true); h.setUint16(26, nome.length, true);
+      const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 23585, true); c.setUint32(16, crc, true); c.setUint32(20, dados.length, true); c.setUint32(24, dados.length, true); c.setUint16(28, nome.length, true); c.setUint32(42, pos, true);
+      partes.push(h.buffer, nome, dados); central.push(c.buffer, nome); pos += 30 + nome.length + dados.length;
+    }
+    const tam = central.reduce((s, x) => s + (x.byteLength || x.length), 0), fim = new DataView(new ArrayBuffer(22));
+    fim.setUint32(0, 0x06054b50, true); fim.setUint16(8, arquivos.length, true); fim.setUint16(10, arquivos.length, true); fim.setUint32(12, tam, true); fim.setUint32(16, pos, true);
+    return new Blob([...partes, ...central, fim.buffer], { type: "application/zip" });
+  }
   /* ===================== Carrossel livre (dicas, sem produtos), no padrão das artes da Miga ===================== */
   const CORES_CARTA = {
     branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", em: "#e8336d", b1: "rgba(255,210,63,.45)", b2: "#efeae0", b3: "rgba(255,210,63,.45)", circ: "#fff8e4" },
@@ -5626,10 +5642,10 @@
       { cor: "branco", ic: "porcento", titulo: "Pague *menos*\nnas compras online", texto: "5 truques que eu uso todo dia", botao: "Arrasta pro lado →" },
       { cor: "rosa", ic: "carrinho", titulo: "*1.* Seu título aqui", texto: "Escreva a dica aqui.", botao: "" },
       { cor: "preto", ic: "coracao", titulo: "Entra no meu\n*canal*", texto: "Achadinho conferido todo dia no canal do WhatsApp. O link tá na bio!", botao: at ? `Segue a ${at}` : "Segue a gente 💖" }];
-    wz = { canal: "cartas", passo: "kaEditar", veioDaLista: true, car: { telas: salvo && Array.isArray(salvo.telas) && salvo.telas.length ? salvo.telas : padrao, sel: 0, campo: "titulo" } };
+    wz = { canal: "cartas", passo: "kaEditar", veioDaLista: true, car: { telas: salvo && Array.isArray(salvo.telas) && salvo.telas.length ? salvo.telas : padrao, legenda: (salvo && salvo.legenda) || "", assunto: (salvo && salvo.assunto) || "", sel: 0, campo: "titulo" } };
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
-  const guardarCartas = () => { try { localStorage.setItem("miga_carrossel", JSON.stringify({ telas: car().telas })); } catch (e) { /* segue */ } };
+  const guardarCartas = () => { try { localStorage.setItem("miga_carrossel", JSON.stringify({ telas: car().telas, legenda: car().legenda || "", assunto: car().assunto || "" })); } catch (e) { /* segue */ } };
   function quebrarCarta(ctx, txt, larg) {
     const saida = [];
     String(txt || "").split("\n").forEach((par) => { let linha = ""; par.split(" ").forEach((p) => { const t = linha ? linha + " " + p : p; if (ctx.measureText(t.replace(/\*/g, "")).width > larg && linha) { saida.push(linha); linha = p; } else linha = t; }); saida.push(linha); });
@@ -5658,14 +5674,14 @@
     x.restore();
   }
   /** Prompt para pedir o carrossel a uma IA (Gemini, ChatGPT…) e colar a resposta aqui */
-  const promptCartas = () => `Você vai criar o texto de um carrossel para o Instagram da Miga Promo: perfil de achadinhos e promoções da Shopee, Mercado Livre e Amazon, para mulheres. Tom de amiga, alegre e direto, frases curtas, português do Brasil.
+  const promptCartas = (assunto) => `Você vai criar um carrossel para o Instagram da Miga Promo: perfil de achadinhos e promoções da Shopee, Mercado Livre e Amazon, para mulheres. Tom de amiga, alegre e direto, frases curtas, português do Brasil.
 
-TEMA: [ESCREVA AQUI O TEMA]
-QUANTIDADE DE TELAS: [de 3 a 10]
+ASSUNTO DO CARROSSEL: ${assunto}
+QUANTIDADE DE TELAS: de 5 a 8 (você decide)
 
 Regras:
 - A tela 1 é a capa: um gancho forte que dá vontade de arrastar para o lado.
-- As telas do meio ensinam (uma dica por tela).
+- As telas do meio ensinam (uma dica por tela, numeradas: *1.*, *2.*...).
 - A última tela chama para seguir o perfil e entrar no canal do WhatsApp (link na bio).
 - Comece pela cor "branco" e depois alterne entre "rosa", "creme" e "preto".
 
@@ -5675,27 +5691,39 @@ Campos de cada tela:
 - titulo: até 40 letras. Coloque *asteriscos* em volta de 1 palavra para destacar. Use \\n para quebrar a linha.
 - texto: até 140 letras (pode ser "")
 - botao: até 30 letras, só se fizer sentido (ex.: "Arrasta pro lado →"); senão ""
+- alt: texto alternativo da imagem (descreva a imagem para quem não enxerga: cor do fundo, figurinha e o que está escrito), até 250 letras
 - Pode usar emojis.
 
+Crie também:
+- legenda: a legenda do post (gancho + resumo das dicas + chamada para salvar e comentar) e no final exatamente 5 hashtags relacionadas ao assunto.
+
 Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
-[
-  {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →"},
-  {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": ""}
-]`;
+{"legenda": "Texto da legenda...\\n\\n#tag1 #tag2 #tag3 #tag4 #tag5",
+ "telas": [
+  {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →", "alt": "Fundo branco com um ícone de porcentagem e o título Pague menos nas compras online..."},
+  {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": "", "alt": "Fundo rosa com um carrinho de compras..."}
+ ]}`;
   /** Lê a resposta da IA (o bloco [ ... ]) e monta as telas */
   function lerRespostaCartas(txt) {
-    const i = txt.indexOf("["), j = txt.lastIndexOf("]"); if (i < 0 || j < i) return null;
-    let l; try { l = JSON.parse(txt.slice(i, j + 1).replace(/[“”]/g, '"')); } catch (e) { return null; }
+    const lim = (s) => s.replace(/[“”]/g, '"'); let l = null, legenda = "";
+    const i0 = txt.indexOf("{"), j0 = txt.lastIndexOf("}");
+    if (i0 >= 0 && (txt.indexOf("[") < 0 || i0 < txt.indexOf("["))) { try { const o = JSON.parse(lim(txt.slice(i0, j0 + 1))); l = o.telas; legenda = String(o.legenda || ""); } catch (e) { l = null; } }
+    if (!l) { const i = txt.indexOf("["), j = txt.lastIndexOf("]"); if (i < 0 || j < i) return null; try { l = JSON.parse(lim(txt.slice(i, j + 1))); } catch (e) { return null; } }
     if (!Array.isArray(l) || !l.length) return null;
-    return l.slice(0, 10).map((o) => ({ cor: CORES_CARTA[String(o.cor || "").toLowerCase()] ? String(o.cor).toLowerCase() : "branco", ic: FIGURAS.includes(o.figurinha) ? o.figurinha : "",
+    const telas = l.slice(0, 10).map((o) => ({ alt: String(o.alt || "").slice(0, 400), cor: CORES_CARTA[String(o.cor || "").toLowerCase()] ? String(o.cor).toLowerCase() : "branco", ic: FIGURAS.includes(o.figurinha) ? o.figurinha : "",
       titulo: String(o.titulo || "").slice(0, 80), texto: String(o.texto || "").slice(0, 200), botao: String(o.botao || "").slice(0, 34) }));
+    return { telas, legenda };
   }
   function telaCartas(c) {
     const K = car(), T = K.telas, s = T[K.sel] || T[0];
     const chips = (attr, lista, atual) => `<div class="ed-chips ch-chips">${lista.map(([k, n]) => `<button type="button" ${attr}="${k}" class="${k === atual ? "on" : ""}">${n}</button>`).join("")}</div>`;
     c.innerHTML = `<h2 class="wz-titulo">Carrossel</h2>
       <p class="nota">Monte as telas do seu jeito: cor, figurinha, textos e emojis. A primeira e a última já vêm prontas. Use *asteriscos* para destacar uma palavra.</p>
+      <div class="ka-ia"><b class="ch-rot">Montar com IA (Gemini, ChatGPT…)</b>
+        <label class="ch-campo"><span>Do que vai falar?</span><input id="kaAssunto" maxlength="120" placeholder="Ex.: como achar cupom na Shopee" value="${esc(K.assunto || "")}"></label>
+        <div class="duas"><button type="button" class="btn btn--branco" id="kaPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="kaColar">Colar resposta da IA</button></div></div>
       <div class="ka-previa"><canvas id="kaQuadro" width="540" height="540"></canvas></div>
+      <div class="ka-alt"><span>Texto alternativo da tela ${K.sel + 1}</span><p>${esc(s.alt || "Ainda sem texto alternativo (a IA cria, ou escreva no campo abaixo).")}</p>${s.alt ? '<button type="button" class="link-sel" id="kaCopiarAlt">Copiar</button>' : ""}</div>
       <div class="ka-telas">${T.map((t, i) => `<button type="button" class="ka-mini${i === K.sel ? " on" : ""}" data-ka-sel="${i}"><canvas width="120" height="120" data-ka-mini="${i}"></canvas><i>${i + 1}</i></button>`).join("")}${T.length < 10 ? '<button type="button" class="ka-mini ka-mais" data-ka-add>＋<small>Nova tela</small></button>' : ""}</div>
       <div class="ka-ops"><button type="button" class="btn btn--branco" data-ka-mover="-1" ${K.sel === 0 ? "disabled" : ""}>← Mover</button><button type="button" class="btn btn--branco" data-ka-mover="1" ${K.sel === T.length - 1 ? "disabled" : ""}>Mover →</button><button type="button" class="btn btn--branco" data-ka-dup>Duplicar</button><button type="button" class="btn btn--branco ka-del" data-ka-del ${T.length <= 1 ? "disabled" : ""}>Excluir</button></div>
       <h3 class="ch-tela">Tela ${K.sel + 1}</h3>
@@ -5705,8 +5733,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       <label class="ch-campo"><span>Texto</span><textarea data-ka-campo="texto" rows="3" maxlength="200">${esc(s.texto || "")}</textarea></label>
       <label class="ch-campo"><span>Botão amarelo (deixe vazio para não ter)</span><input data-ka-campo="botao" maxlength="34" value="${esc(s.botao || "")}"></label>
       <b class="ch-rot">Emojis (entram no campo que você tocou por último)</b><div class="ka-emojis">${EMOJIS_CARTA.map((e) => `<button type="button" data-ka-emoji="${e}">${e}</button>`).join("")}</div>
-      <div class="duas"><button type="button" class="btn btn--branco" id="kaPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="kaColar">Colar resposta da IA</button></div>
-      <button type="button" class="btn btn--rosa" id="kaBaixar">Salvar as ${T.length} imagens</button>
+      <label class="ch-campo"><span>Texto alternativo desta tela</span><textarea data-ka-campo="alt" rows="2" maxlength="400">${esc(s.alt || "")}</textarea></label>
+      <label class="ch-campo"><span>Legenda do post</span><textarea id="kaLegenda" rows="6" maxlength="2200" placeholder="A IA cria a legenda com 5 hashtags, ou escreva aqui">${esc(K.legenda || "")}</textarea></label>
+      <div class="duas"><button type="button" class="btn btn--branco" id="kaCopiarLeg">Copiar legenda</button><button type="button" class="btn btn--rosa" id="kaSalvarTudo">Salvar alterações</button></div>
+      <button type="button" class="btn btn--rosa" id="kaBaixar">${ehComputador() ? `Baixar as ${T.length} imagens (.zip)` : `Salvar as ${T.length} imagens`}</button>
+      ${ehComputador() ? "" : '<button type="button" class="btn btn--branco" id="kaZip">Baixar tudo em .zip</button>'}
       <button type="button" class="btn btn--branco" id="kaZerar">Começar um carrossel novo</button>
       <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>`;
     carregarMarca().then(pintarCartas);
@@ -5728,25 +5759,33 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const ic = t.closest("[data-ka-ic]"); if (ic) { s.ic = ic.dataset.kaIc; document.querySelectorAll("[data-ka-ic]").forEach((b) => b.classList.toggle("on", b === ic)); guardarCartas(); pintarCartas(true); return; }
     const em = t.closest("[data-ka-emoji]"); if (em) { const campo = K.campo || "titulo", el = document.querySelector(`[data-ka-campo="${campo}"]`); if (!el) return;
       const p = el.selectionStart ?? el.value.length; el.value = el.value.slice(0, p) + em.dataset.kaEmoji + el.value.slice(el.selectionEnd ?? p); s[campo] = el.value; guardarCartas(); pintarCartas(true); return; }
-    if (t.closest("#kaPrompt")) { if (await copiarTexto(promptCartas())) toast("Prompt copiado: cole no Gemini ou no ChatGPT, troque o TEMA e envie"); return; }
+    if (t.closest("#kaPrompt")) { const as = ($("#kaAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#kaAssunto").focus(); return; } K.assunto = as; guardarCartas(); if (await copiarTexto(promptCartas(as))) toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie"); return; }
+    if (t.closest("#kaCopiarAlt")) { if (await copiarTexto(s.alt || "")) toast("Texto alternativo copiado"); return; }
+    if (t.closest("#kaCopiarLeg")) { if (await copiarTexto($("#kaLegenda").value || "")) toast("Legenda copiada"); return; }
+    if (t.closest("#kaSalvarTudo")) { K.legenda = $("#kaLegenda").value; K.assunto = ($("#kaAssunto").value || "").trim(); guardarCartas(); toast("Carrossel salvo ✓"); return; }
     if (t.closest("#kaColar")) { folhaEst("Colar resposta da IA", `<p class="nota">Cole aqui a resposta inteira da IA (o bloco que começa com [ ). As telas atuais serão trocadas.</p>
       <label class="ch-campo"><span>Resposta</span><textarea id="kaResp" rows="9"></textarea></label><button type="button" class="btn btn--rosa" id="kaAplicar">Montar o carrossel</button>`); return; }
     if (t.closest("#kaZerar")) { try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } abrirCartas(); return; }
-    if (t.closest("#kaBaixar")) {
-      const b = $("#kaBaixar"); b.disabled = true; b.textContent = "Preparando…"; await carregarMarca(); const arqs = [];
+    if (t.closest("#kaBaixar") || t.closest("#kaZip")) {
+      const zip = !!t.closest("#kaZip") || ehComputador(), b = t.closest("button"); const txt0 = b.textContent; b.disabled = true; b.textContent = "Preparando…"; await carregarMarca(); const arqs = [];
       for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, `miga-carrossel-${String(i + 1).padStart(2, "0")}.jpg`)); }
-      b.disabled = false; b.textContent = `Salvar as ${T.length} imagens`;
+      b.disabled = false; b.textContent = txt0; K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas();
+      if (zip) {
+        const txt = `LEGENDA\n\n${K.legenda || ""}\n\n\nTEXTO ALTERNATIVO DE CADA IMAGEM\n\n` + T.map((x, i) => `Imagem ${i + 1}: ${x.alt || ""}`).join("\n\n");
+        const z = await montarZip([...arqs, new File([txt], "legenda-e-texto-alternativo.txt", { type: "text/plain" })]);
+        baixarBlob(z, "miga-carrossel.zip"); toast("Carrossel salvo em .zip (imagens + legenda + textos alternativos)"); return;
+      }
       if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs }); return; } catch (err) { if (err.name === "AbortError") return; } }
       arqs.forEach((f, i) => setTimeout(() => baixarBlob(f, f.name), i * 350)); toast("Imagens salvas: no Instagram, escolha várias na ordem");
     }
   });
   $("#folhaEst").addEventListener("click", (e) => {
     if (wz.canal !== "cartas" || !e.target.closest("#kaAplicar")) return;
-    const l = lerRespostaCartas($("#kaResp").value || ""); if (!l) { toast("Não consegui ler a resposta: copie o bloco inteiro, do [ até o ]"); return; }
-    car().telas = l; car().sel = 0; guardarCartas(); $("#folhaEst").close(); mostrarPasso(); toast(`${l.length} telas montadas`);
+    const r = lerRespostaCartas($("#kaResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; }
+    car().telas = r.telas; car().sel = 0; if (r.legenda) car().legenda = r.legenda; guardarCartas(); $("#folhaEst").close(); mostrarPasso(); toast(`${r.telas.length} telas montadas${r.legenda ? " com legenda" : ""}`);
   });
   $("#wzCorpo").addEventListener("focusin", (e) => { if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.kaCampo) car().campo = e.target.dataset.kaCampo; });
-  $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal !== "cartas" || !e.target.dataset || !e.target.dataset.kaCampo) return; const K = car(); K.telas[K.sel][e.target.dataset.kaCampo] = e.target.value; guardarCartas(); pintarCartas(true); });
+  $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal === "cartas" && e.target.id === "kaLegenda") { car().legenda = e.target.value; return; } if (wz.canal === "cartas" && e.target.id === "kaAssunto") { car().assunto = e.target.value; guardarCartas(); return; } if (wz.canal !== "cartas" || !e.target.dataset || !e.target.dataset.kaCampo) return; const K = car(); K.telas[K.sel][e.target.dataset.kaCampo] = e.target.value; guardarCartas(); pintarCartas(true); });
   /* ===================== Tema pronto: "Corre pros Stories" (Reels chamando pros stories) ===================== */
   const NICHOS_CHAMADA = {
     perfumes: { palavra: "PERFUME", ic: ["perfume", "brilho"], frase: [["Tem perfume", ""], ["de ", "rica"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Body splash", "Perfume árabe", "Kits pra presente", "Importados"], ic2: ["presente", "coracao"] },
@@ -5853,7 +5892,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       return;
     }
     if (wz.passo === "chPronto") {
-      const r = CH.resultado; if (CH.legenda == null) CH.legenda = legendaChamada(CH);
+      const r = CH.resultado; if (CH.legenda == null) CH.legenda = CH.legendaIA || legendaChamada(CH);
       c.innerHTML = `<h2 class="wz-titulo">Reels pronto</h2>
         <div class="rp-grade"><div class="rp-midia">
           <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
@@ -5867,14 +5906,16 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
           </div>
           <div class="campo"><span>Legenda pronta</span><textarea id="chLegenda" rows="9">${esc(CH.legenda)}</textarea></div>
           <button type="button" class="btn btn--branco" id="chCopiar">Copiar legenda</button>
+          <div class="campo"><span>Texto alternativo</span><textarea id="chAlt" rows="4" placeholder="A IA cria, ou escreva aqui">${esc(CH.alt || "")}</textarea></div>
+          <button type="button" class="btn btn--branco" id="chCopiarAlt">Copiar texto alternativo</button>
           ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
           <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
         </div></div>`;
     }
   }
-  const promptChamada = () => `Você vai escrever os textos de um Reels da Miga Promo (perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels chama as seguidoras para ver as promoções que acabei de postar nos stories.
+  const promptChamada = (assunto) => `Você vai escrever os textos de um Reels da Miga Promo (perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels chama as seguidoras para ver as promoções que acabei de postar nos stories.
 
-NICHO / ASSUNTO: [ESCREVA AQUI, ex.: perfumes, moda fitness, maquiagem]
+ASSUNTO: ${assunto}
 
 O vídeo tem 4 telas. Preencha os campos (frases curtas; pode usar emojis; use *asteriscos* em volta de 1 palavra para destacar):
 Tela 1 (capa): etiqueta (até 22 letras, ex.: "ATUALIZEI OS STORIES"), linha1 (até 14 letras), linha2 (até 14 letras), palavra (1 palavra grande, em maiúsculas), frase_baixo (até 24 letras)
@@ -5884,8 +5925,13 @@ Tela 4 (final): cta1 (até 16 letras), cta2 (1 palavra grande, ex.: "STORIES"), 
 Figurinhas (escolha desta lista): ${FIGURAS.join(", ")}
 - capa_esquerda, capa_direita, frase_figurinha, lista_esquerda, lista_direita
 
+Crie também:
+- legenda: a legenda do Reels (gancho + o que tem nos stories + chamada para ir ver os stories e comentar) e no final exatamente 5 hashtags relacionadas ao assunto.
+- alt: texto alternativo do vídeo (descreva o que aparece nas 4 telas para quem não enxerga), até 300 letras.
+
 Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
-{"etiqueta": "ATUALIZEI OS STORIES", "linha1": "Enchi meus", "linha2": "stories de", "palavra": "PERFUME", "frase_baixo": "com preço de amiga",
+{"legenda": "Texto da legenda...\\n\\n#tag1 #tag2 #tag3 #tag4 #tag5", "alt": "Vídeo com fundo preto...",
+ "etiqueta": "ATUALIZEI OS STORIES", "linha1": "Enchi meus", "linha2": "stories de", "palavra": "PERFUME", "frase_baixo": "com preço de amiga",
  "frase": ["Tem perfume", "de *rica*", "com preço", "de *amiga*"],
  "lista_titulo": "Tem de tudo:", "itens": ["Body splash", "Perfume árabe", "Kits pra presente", "Importados"],
  "cta1": "Corre nos meus", "cta2": "STORIES", "toque": "toca na minha foto",
@@ -5897,12 +5943,14 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const tx = { etiqueta: s(o.etiqueta, 30), t1: s(o.linha1, 30), t2: s(o.linha2, 30), palavra: s(o.palavra, 20), sub: s(o.frase_baixo, 34), lista: s(o.lista_titulo, 24), cta1: s(o.cta1, 24), cta2: s(o.cta2, 16), toque: s(o.toque, 30),
       ic: [f(o.capa_esquerda), f(o.capa_direita)], icFrase: f(o.frase_figurinha), ic2: [f(o.lista_esquerda), f(o.lista_direita)] };
     const fr = arr(o.frase, 30), it = arr(o.itens, 26); if (fr.length) tx.frase = fr; if (it.length) tx.itens = it;
-    Object.keys(tx).forEach((k) => { if (tx[k] === "") delete tx[k]; }); return tx;
+    Object.keys(tx).forEach((k) => { if (tx[k] === "") delete tx[k]; });
+    return { tx, legenda: String(o.legenda || ""), alt: String(o.alt || "") };
   }
   function folhaTextosChamada() {
     const D = dadosChamada(ch()), campo = (k, rot, v, i) => `<label class="ch-campo"><span>${rot}</span><input data-ch-tx="${k}"${i != null ? ` data-i="${i}"` : ""} maxlength="40" value="${esc(v || "")}"></label>`;
     const figs = (k, atual, i) => `<div class="ch-figs">${["", ...FIGURAS].map((f) => `<button type="button" data-ch-ic="${k}"${i != null ? ` data-i="${i}"` : ""} data-v="${f}" class="${f === atual ? "on" : ""}" aria-label="${f || "sem figurinha"}">${f ? `<canvas width="60" height="60" data-fig-ch="${f}"></canvas>` : "✕"}</button>`).join("")}</div>`;
-    folhaEst("Textos e figurinhas", `<div class="duas"><button type="button" class="btn btn--branco" id="chPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="chColar">Colar resposta da IA</button></div>
+    folhaEst("Textos e figurinhas", `<label class="ch-campo"><span>Do que vai falar? (vai junto no prompt)</span><input id="chAssunto" maxlength="120" value="${esc(ch().assunto || (ch().nicho === "geral" ? "promoções variadas" : (NOME_CAT[ch().nicho] || "")))}"></label>
+      <div class="duas"><button type="button" class="btn btn--branco" id="chPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="chColar">Colar resposta da IA</button></div>
       <div id="chColarBox" hidden><label class="ch-campo"><span>Cole aqui a resposta inteira da IA (o bloco que começa com { )</span><textarea id="chResp" rows="7"></textarea></label><button type="button" class="btn btn--rosa" id="chAplicar">Usar estes textos</button></div>
       <p class="nota">Mude o que quiser. Use *asteriscos* para destacar uma palavra na cor de destaque. Dá para colocar emojis.</p>
       <h3 class="ch-tela">Tela 1 · Capa</h3>${campo("etiqueta", "Etiqueta", D.etiqueta)}${campo("t1", "Linha 1", D.t1)}${campo("t2", "Linha 2", D.t2)}${campo("palavra", "Palavra grande", D.palavra)}${campo("sub", "Frase de baixo", D.sub)}
@@ -5911,6 +5959,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       <h3 class="ch-tela">Tela 3 · Lista</h3>${campo("lista", "Título", D.lista)}${D.itens.map((s, i) => campo("itens", "Item " + (i + 1), s, i)).join("")}
       <b class="ch-rot">Figurinha da esquerda</b>${figs("ic2", D.ic2[0], 0)}<b class="ch-rot">Figurinha da direita</b>${figs("ic2", D.ic2[1], 1)}
       <h3 class="ch-tela">Tela 4 · Final</h3>${campo("cta1", "Linha 1", D.cta1)}${campo("cta2", "Palavra grande", D.cta2)}${campo("arroba", "Seu @ (ou deixe vazio)", D.arroba)}${campo("toque", "Frase de baixo", D.toque)}
+      <button type="button" class="btn btn--rosa" id="chSalvarTx">Salvar alterações</button>
       <button type="button" class="btn btn--branco" id="chPadrao">Voltar aos textos do nicho</button>`);
     document.querySelectorAll("[data-fig-ch]").forEach((c) => { const x = c.getContext("2d"); x.translate(30, 30); iconeReels(x, c.dataset.figCh, 46); });
   }
@@ -5921,9 +5970,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   $("#folhaEst").addEventListener("click", (e) => {
     if (wz.canal !== "chamada") return; const CH = ch();
     if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast("Textos do nicho de volta"); return; }
-    if (e.target.closest("#chPrompt")) { copiarTexto(promptChamada()).then((ok) => ok && toast("Prompt copiado: cole no Gemini ou no ChatGPT, troque o NICHO e envie")); return; }
+    if (e.target.closest("#chPrompt")) { const as = ($("#chAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#chAssunto").focus(); return; } CH.assunto = as; copiarTexto(promptChamada(as)).then((ok) => ok && toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie")); return; }
+    if (e.target.closest("#chSalvarTx")) { $("#folhaEst").close(); toast("Textos salvos ✓"); return; }
     if (e.target.closest("#chColar")) { $("#chColarBox").hidden = false; $("#chResp").focus(); return; }
-    if (e.target.closest("#chAplicar")) { const tx = lerRespostaChamada($("#chResp").value || ""); if (!tx) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } CH.tx = tx; folhaTextosChamada(); toast("Textos da IA aplicados"); return; }
+    if (e.target.closest("#chAplicar")) { const r = lerRespostaChamada($("#chResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } CH.tx = r.tx; if (r.legenda) CH.legendaIA = r.legenda; if (r.alt) CH.alt = r.alt; CH.legenda = null; folhaTextosChamada(); toast("Textos da IA aplicados" + (r.legenda ? " (com legenda)" : "")); return; }
     const b = e.target.closest("[data-ch-ic]"); if (!b) return; const k = b.dataset.chIc; CH.tx = CH.tx || {};
     if (b.dataset.i != null) { const D = dadosChamada(CH); CH.tx[k] = D[k].slice(); CH.tx[k][+b.dataset.i] = b.dataset.v; } else CH.tx[k] = b.dataset.v;
     b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
@@ -5985,6 +6035,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#chRefazer")) { wz.passo = "chEditar"; mostrarPasso(); return; }
     if (t.closest("#chBaixar")) { baixarBlob(CH.resultado.blob, CH.resultado.nome); toast("Vídeo salvo"); return; }
     if (t.closest("#chBaixarCapa")) { baixarBlob(CH.resultado.capa, CH.resultado.capa.name); toast("Capa salva: use em Editar capa"); return; }
+    if (t.closest("#chCopiarAlt")) { CH.alt = $("#chAlt").value; if (await copiarTexto(CH.alt)) toast("Texto alternativo copiado"); return; }
     if (t.closest("#chCopiar")) { if (await copiarTexto($("#chLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#chPostar")) { const r = CH.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
       if (await copiarTexto($("#chLegenda").value)) toast("Legenda copiada: é só colar no Instagram");
@@ -6043,9 +6094,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (aba === "sugestoes") itens = Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => [k, m.nome, DECOR[k].frase, !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "temas") itens = Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => [k, m.nome, m.sub(), !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, R.camp === k && !R.titulo]);
-    folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<button type="button" class="btn btn--branco btn-ic" id="estEditarTit"><svg class="ic-mono"><use href="#i-lapis"/></svg>Editar título e figurinha</button>
-      <div class="tabs-mod">${tabs}</div>
-      <div class="lista-mod lista-mod--mini">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${aba !== "campanhas" && ICONE_MODELO[k] ? icSelo("f_" + ICONE_MODELO[k], " ic-selo--mini") : ""}${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
+    folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<div class="tabs-mod">${tabs}</div>
+      <div class="lista-mod lista-mod--mini"><button type="button" class="mod-editar${R.titulo || R.icone ? " on" : ""}" id="estEditarTit"><span class="mod-editar__ic"><svg class="ic-mono"><use href="#i-lapis"/></svg></span><span><b>Editar</b><small>${R.titulo || R.icone ? "Seu título: " + esc(String(R.titulo || "").replace(/\*/g, "").replace(/\n/g, " ") || "figurinha trocada") : "Escreva o título e escolha a figurinha"}</small></span>${R.titulo || R.icone ? "<i>✓</i>" : ""}</button>${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${aba !== "campanhas" && ICONE_MODELO[k] ? icSelo("f_" + ICONE_MODELO[k], " ic-selo--mini") : ""}${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
     pintarMinis(R);
   }
   async function pintarMinis(R) {
