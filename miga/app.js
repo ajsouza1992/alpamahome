@@ -74,7 +74,7 @@
   const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
   // Categorias (nicho feminino), na ordem dos destaques do Instagram
   const NOME_CAT = { looks: "Looks", fitness: "Moda fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
-  const ICONE_CAT = { looks: '<path d="M9 3h6l-1 4 4 13H6l4-13z"/><path d="M10 7h4"/>', fitness: '<path d="M7 3c0 3 2 4 5 4s5-1 5-4"/><path d="M7 3 5 9l3 1v11h8V10l3-1-2-6"/>', calcados: '<path d="M3 16v-5l4 1 3-4 3 3c2 2 5 3 8 3v2z"/><path d="M3 16v2h18v-2"/>', acessorios: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', perfumes: '<rect x="6" y="9" width="12" height="12" rx="3"/><path d="M10 9V6h4v3M12 6V3M9 3h6"/>', maquiagem: '<path d="M9 21V11h6v10z"/><path d="M10 11V6l4-3v8"/>', skincare: '<path d="M8 10h8v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/><path d="M10 10V7h4v3M11 7V4h4"/><path d="M10 15h4"/>', cabelo: '<path d="M4 9a5 5 0 0 1 10 0v1H4z"/><path d="M14 8h6v3h-6"/><path d="M8 10v6a2 2 0 0 0 4 0v-6"/>', suplementos: '<rect x="3" y="9" width="18" height="7" rx="3.5" transform="rotate(-35 12 12.5)"/><path d="M10 7.5 14 14"/>', eletronicos: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>', casa: '<path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>', outros: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>' };
+  const ICONE_CAT = { looks: '<path d="M9 3h6l-1 4 4 13H6l4-13z"/><path d="M10 7h4"/>', fitness: '<path d="M7 3h10l.6 4-1.6 14h-3.4L12 11l-.6 10H8L6.4 7z"/><path d="M6.8 6.2h10.4"/>', calcados: '<path d="M3 16.5c0-2.2.4-6 1.6-8.5l3 1.4 1.6-1.9 2.4 3.6c1.9 1.6 4.6 2.2 7.1 2.6a2.6 2.6 0 0 1 2.3 2.6v.2H3z"/><path d="M3 16.5v1.6a.9.9 0 0 0 .9.9h16.2a.9.9 0 0 0 .9-.9v-1.6"/><path d="M9.6 12.4l1.4-1M11.4 14.1l1.5-1"/>', acessorios: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', perfumes: '<rect x="6" y="9" width="12" height="12" rx="3"/><path d="M10 9V6h4v3M12 6V3M9 3h6"/>', maquiagem: '<path d="M9 21V11h6v10z"/><path d="M10 11V6l4-3v8"/>', skincare: '<path d="M8 10h8v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/><path d="M10 10V7h4v3M11 7V4h4"/><path d="M10 15h4"/>', cabelo: '<path d="M4 9a5 5 0 0 1 10 0v1H4z"/><path d="M14 8h6v3h-6"/><path d="M8 10v6a2 2 0 0 0 4 0v-6"/>', suplementos: '<rect x="3" y="9" width="18" height="7" rx="3.5" transform="rotate(-35 12 12.5)"/><path d="M10 7.5 14 14"/>', eletronicos: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>', casa: '<path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>', outros: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>' };
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
   const limparNome = (t) => String(t || "").replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "").replace(/\s{2,}/g, " ").trim();
   const viaServidor = (u) => "api/imagem?url=" + encodeURIComponent(u);
@@ -484,6 +484,12 @@
       c.includes("network") ? "Sem internet. Tente de novo." : "Não consegui conectar à sua conta agora. Tente de novo.";
   }
   async function bloquear(msg) {
+    // Já entrou com o Google mas o servidor recusou: não desconecta (senão pede login toda hora), só avisa o que falta
+    const u = conta.fb && conta.fb.a && conta.fb.a.currentUser;
+    if (msg && u && !u.isAnonymous) {
+      toastAcao(`A conta ${u.email} entrou, mas o servidor ainda não liberou ela. No Cloudflare, coloque esse e-mail em MIGA_EMAILS e publique de novo.`, "Ok", () => {});
+      return;
+    }
     atual = null;
     $("#resultado").hidden = true;
     if (conta.fb) { try { await conta.fb.auth.signOut(conta.fb.a); } catch (e) { /* segue */ } }
@@ -1175,7 +1181,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=153"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=155"; });
     }
     edFoto = null;
     try {
@@ -1548,7 +1554,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=153"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=155"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1723,7 +1729,6 @@
   const contarCat = (k) => fila().filter((i) => k === "todas" || (i.categoria || "outros") === k).length;
   function renderCatsLista() {
     const tags = [];
-    if (filtroLista !== "todas") tags.push(["cat", CATS_LISTA[filtroLista]]);
     if (ocultarComp) tags.push(["comp", "Sem compartilhados"]);
     if (catNova !== "auto") tags.push(["nova", "Colando em: " + CATS_LISTA[catNova]]);
     if (ordemLista !== "recentes") tags.push(["ordem", ORDENS[ordemLista]]);
@@ -1823,10 +1828,13 @@
   /** Lista: categorias numa fileira (chips) */
   function pintarCats() {
     const box = $("#ppCats"); if (!box) return;
-    box.innerHTML = `<button type="button" class="chip-cat${filtroLista === "todas" ? " on" : ""}" data-cat="todas">Todas <i>${faltamCat("todas")}</i></button>` +
-      Object.entries(NOME_CAT).map(([k, n]) => { const q = faltamCat(k); return `<button type="button" class="chip-cat${filtroLista === k ? " on" : ""}" data-cat="${k}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k]}</svg>${esc(n)}${q ? ` <i>${q}</i>` : ""}</button>`; }).join("");
-    const on = box.querySelector(".on"); if (on && on.dataset.cat !== "todas") on.scrollIntoView({ block: "nearest", inline: "center" });
+    const k = filtroLista, nome = k === "todas" ? "Todas" : NOME_CAT[k] || "Todas", q = faltamCat(k);
+    const ic = k === "todas" ? '<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>' : ICONE_CAT[k];
+    box.innerHTML = `<button type="button" class="cat-sel${k !== "todas" ? " on" : ""}" data-cat-abrir><svg class="cat-sel__ic" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><span>Categoria: <b>${esc(nome)}</b>${q ? ` <i>${q}</i>` : ""}</span><svg class="cat-sel__seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>${k !== "todas" ? '<button type="button" class="cat-limpar" data-cat="todas" aria-label="Ver todas as categorias">Ver todas</button>' : ""}` +
+      `<div class="pp-chips-pc"><button type="button" class="chip-cat${k === "todas" ? " on" : ""}" data-cat="todas">Todas <i>${faltamCat("todas")}</i></button>` +
+      Object.entries(NOME_CAT).map(([c, n]) => { const qq = faltamCat(c); return `<button type="button" class="chip-cat${k === c ? " on" : ""}" data-cat="${c}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[c]}</svg>${esc(n)}${qq ? ` <i>${qq}</i>` : ""}</button>`; }).join("") + "</div>";
   }
+
 
   /** Colou um link novo: cartão "Produto novo" com o botão de adicionar */
   function pintarNovoLink() {
@@ -1920,7 +1928,9 @@
       if (ehLink(t) && $("#ppNovoLink").hidden) toast("Esse produto já está nos seus produtos"); }
     catch (e) { $("#ppLink").focus(); toast("Toque e segure no campo para colar"); }
   });
-  $("#ppCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; renderFila(); });
+  $("#ppCats").addEventListener("click", async (e) => {
+    if (e.target.closest("[data-cat-abrir]")) { const c = await escolherCategoria({ sugestao: filtroLista, titulo: "Ver qual categoria?", acao: "Ver", todas: true }); if (c) { filtroLista = c; renderFila(); } return; }
+    const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; renderFila(); });
   $("#ppOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar", Object.entries(ORDENS), ordemLista); if (!v) return; ordemLista = v; try { localStorage.setItem("miga_ordem", v); } catch (e) { /* segue */ } renderFila(); });
   $("#ppVisao").addEventListener("click", (e) => { const b = e.target.closest("[data-visao]"); if (!b) return; if (termoBusca.trim()) { abaBusca = b.dataset.visao; renderFila(); return; } visaoLista = b.dataset.visao; try { localStorage.setItem("miga_visao", visaoLista); } catch (er) { /* segue */ } if (modoVarios) marcados.clear(); renderFila(); });
   $("#ppLimpar").addEventListener("click", async () => {
@@ -2134,10 +2144,13 @@
     criarAPartirDaLista(k === "livre" ? "instagram" : k, [it]);
   });
   /* ---------- Popup: qual a categoria? ---------- */
-  function escolherCategoria({ sugestao = "outros", nome = "", titulo = "Qual a categoria?", acao = "Adicionar em" } = {}) {
-    const d = $("#folhaCat"); let sel = NOME_CAT[sugestao] ? sugestao : "outros";
+  function escolherCategoria({ sugestao = "outros", nome = "", titulo = "Qual a categoria?", acao = "Adicionar em", todas = false } = {}) {
+    const d = $("#folhaCat"); let sel = NOME_CAT[sugestao] || (todas && sugestao === "todas") ? sugestao : "outros";
     $("#folhaCatTitulo").textContent = titulo; $("#folhaCatSub").textContent = nome ? `“${limparNome(nome).slice(0, 60)}” · sugestão já marcada` : "";
-    const pintar = () => { $("#folhaCatGrade").innerHTML = Object.entries(NOME_CAT).map(([k, n]) => blocoCat(k, n, 0, k === sel).replace(" vazia", "")).join(""); $("#folhaCatOk").textContent = `${acao} ${NOME_CAT[sel]}`; };
+    const pintar = () => {
+      $("#folhaCatGrade").innerHTML = (todas ? `<button type="button" class="pp-cat${sel === "todas" ? " on" : ""}" data-cat="todas"><svg class="pp-cat__ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><b>Todas</b>${faltamCat("todas") ? `<i>${faltamCat("todas")}</i>` : ""}</button>` : "")
+        + Object.entries(NOME_CAT).map(([k, n]) => blocoCat(k, n, todas ? faltamCat(k) : 0, k === sel).replace(" vazia", "")).join("");
+      $("#folhaCatOk").textContent = `${acao} ${sel === "todas" ? "todas" : NOME_CAT[sel]}`; };
     pintar(); d.returnValue = ""; d.showModal();
     return new Promise((ok) => {
       const clique = (e) => { const b = e.target.closest("[data-cat]"); if (b) { sel = b.dataset.cat; pintar(); } };

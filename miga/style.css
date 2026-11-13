@@ -1462,3 +1462,21 @@ body.modo-selecao main { padding-bottom: 200px; }
 @media (min-width: 960px) {
   .pp-item .pp-mini, .pp-item .pp-mini > img, .pp-item .pp-mini .sem-foto { width: 72px !important; height: 72px !important; }
 }
+/* Computador: categorias da Lista quebram em linhas (sem precisar rolar de lado) */
+@media (min-width: 960px) { .pp-chips { flex-wrap: wrap; overflow: visible; } }
+/* Celular: menu de baixo com as 3 abas numa linha só */
+@media (max-width: 959px) { .abas { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; } }
+/* Lista: categoria num botão bem visível (celular) e chips em linhas (computador) */
+#ppCats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; overflow: visible; }
+.cat-sel { flex: 1; display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 0 14px; border: 0; border-radius: 16px; background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); font: inherit; font-size: 14.5px; color: var(--preto); cursor: pointer; text-align: left; }
+.cat-sel span { flex: 1; } .cat-sel b { font-weight: 700; } .cat-sel i { font-style: normal; font-size: 12px; font-weight: 700; color: #fff; background: var(--rosa); border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+.cat-sel__ic { width: 22px; height: 22px; fill: none; stroke: var(--rosa); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.cat-sel__seta { width: 18px; height: 18px; fill: none; stroke: var(--rosa); stroke-width: 2.2; flex: none; }
+.cat-sel.on { box-shadow: inset 0 0 0 2px var(--rosa); background: #fff5f8; }
+.cat-limpar { flex: none; height: 50px; padding: 0 14px; border: 0; border-radius: 16px; background: var(--campo); font: inherit; font-size: 13px; font-weight: 600; color: var(--rosa); cursor: pointer; }
+.pp-chips-pc { display: none; }
+@media (min-width: 960px) {
+  .cat-sel, .cat-limpar { display: none; }
+  .pp-chips-pc { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+}
+#ppListaBloco .barra-filtro #ppSelecionar { margin-right: 0; padding-left: 0; }
