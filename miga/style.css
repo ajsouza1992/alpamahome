@@ -1596,3 +1596,5 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 .abas button[aria-current="page"] svg { background: rgba(255,255,255,.22); stroke: #fff; }
 .abas button[aria-current="page"] b { background: #fff; color: var(--rosa-escuro); }
 .abas button:focus:not(:focus-visible) { outline: none; }
+/* Continuar igual aos outros botões (sem destaque) */
+.in-acao.in-acao--destaque { background: var(--branco); box-shadow: inset 0 0 0 1px var(--linha); }
