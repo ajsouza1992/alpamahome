@@ -1188,7 +1188,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=171"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=172"; });
     }
     edFoto = null;
     try {
@@ -1562,7 +1562,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=171"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=172"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2147,7 +2147,7 @@
   $("#folhaItem").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-fi]"); const it = itemMenu; if (!b || !it) return;
     const k = b.dataset.fi; $("#folhaItem").close();
-    if (k === "editar") { irPara("postar"); abrirItemFila(it); return; }
+    if (k === "editar") { irPara("postar"); abrirItemFila(it); ppEditando = true; $("#ppSalvar").hidden = false; $("#ppSalvar").textContent = "Salvar alterações"; return; }
     if (k === "excluir") { excluirProduto(it); return; }
     if (k === "restaurar") { restaurarNaLista([it.id]); return; }
     if (k === "link") { if (it.link) window.open(it.link, "_blank", "noopener"); return; }
@@ -2233,7 +2233,7 @@
     $("#ppLinkItem").value = item.link || "";
     ppCategoria.marcar(item.categoria || "outros"); pintarCatPp(item.categoria || "outros");
     mostrarFalta(pedirFalta);
-    $("#ppSalvar").hidden = !modoCompletar && !ppNovo; if (!ppNovo) { $("#ppNovoTopo").hidden = true; $("#ppSalvar").textContent = "Próximo para completar →"; } pintarCampanhaBotoes(); pintarMarcados();
+    ppEditando = false; $("#ppSalvar").hidden = !modoCompletar && !ppNovo; if (!ppNovo) { $("#ppNovoTopo").hidden = true; $("#ppSalvar").textContent = "Próximo para completar →"; } pintarCampanhaBotoes(); pintarMarcados();
     if (!ehPC()) window.scrollTo({ top: 0 });
   }
   function mostrarFalta(destacar) {
@@ -2248,7 +2248,7 @@
     if (destacar && !it.precoNovo && it.imagem) setTimeout(() => $("#ppNovo").focus(), 300);
   }
   function fecharItemFila(sair) {
-    if (sair) { modoCompletar = false; ppNovo = false; $("#ppNovoTopo").hidden = true; }
+    if (sair) { modoCompletar = false; ppNovo = false; ppEditando = false; $("#ppNovoTopo").hidden = true; }
     ppAtual = null;
     $("#ppItem").hidden = true; $("#ppListaBloco").hidden = false;
     renderFila();
@@ -2287,13 +2287,14 @@
   $("#ppCategoria").addEventListener("click", () => setTimeout(() => aplicarCamposPp(), 0));
   // Completando vários: vai para o próximo que falta
   /** Produto novo: abre a mesma tela de editar para conferir foto, preços, cupom e categoria antes de salvar */
-  let ppNovo = false;
+  let ppNovo = false, ppEditando = false;
   function abrirNovoProduto(item) {
     ppNovo = true; irPara("postar"); abrirItemFila(item, true);
     $("#ppNovoTopo").hidden = false; $("#ppSalvar").hidden = false; $("#ppSalvar").textContent = "Salvar produto";
   }
   $("#ppSalvar").addEventListener("click", () => {
     const it = ppAtual; if (!it) return; aplicarCamposPp(true);
+    if (ppEditando) { ppEditando = false; fecharItemFila(true); toast("Alterações salvas ✓"); return; }
     if (ppNovo) { ppNovo = false; $("#ppNovoTopo").hidden = true; fecharItemFila(true); toast(`Salvo em ${NOME_CAT[it.categoria] || "Outros"}`); return; }
     const p = incompletos().find((x) => x !== it);
     if (p) { abrirItemFila(p, true); toast("Próximo para completar"); } else { modoCompletar = false; fecharItemFila(); toast("Pronto! Todos completos"); }
@@ -3569,7 +3570,7 @@
   }
   function barraEditor() {
     const V = vd(), cm = (V.camadas || []).find((x) => x.id === V.sel);
-    if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button></div>
+    if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases prontas</button></div>
       <p class="nota ed-dica">Toque num texto da prévia para editar. Arraste para posicionar.</p>`;
     const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
     const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
@@ -3590,6 +3591,7 @@
     if (wz.canal !== "video" || wz.passo !== "vTema") return;
     const t = e.target, V = vd(); if (!V.camadas) V.camadas = [];
     const cm = V.camadas.find((x) => x.id === V.sel);
+    if (t.closest("[data-ed-frases]")) { folhaFrases(); return; }
     const ad = t.closest("[data-ed-add]");
     if (ad) {
       const tipo = ad.dataset.edAdd, n = { id: novoId(), tipo, x: 540, y: 960, tam: 64, cor: "amarelo", fundo: true };
@@ -5523,6 +5525,36 @@
       carregarSons(ac, MUSICAS[k]).then(() => { if (amostra === ac) tocarTrilha(ac, ac.destination, 8, [], [], null, MUSICAS[k], null); }); amostraT = setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } parar(); }, 8300); } catch (e) { parar(); }
   }
   /** Folha genérica do estúdio */
+  /* Frases prontas para escrever em cima dos vídeos, por nicho (até 60 letras cada) */
+  const FRASES_VIDEO = {
+    geral: ["Oi miga, corre nos stories! 🏃‍♀️", "Achadinho do dia chegou 💖", "Olha o que eu achei pra você 👀", "Preço de amiga, mas corre! ⏳", "Link nos stories 🔗", "Cupom liberado, aproveita! 🎟️", "Esse vai esgotar rapidinho 🔥", "Salva pra não perder 📌", "Comenta EU QUERO que eu te mando 💬", "Baixou o preço! Corre ⬇️"],
+    perfumes: ["Oi miga, corre nos stories que tem muito perfume! 🌸", "Cheirosa gastando pouco 💐", "Perfume que gruda na pele ✨", "Fixação absurda por esse preço 😱", "Todo mundo vai perguntar qual é 👀", "Perfume de rica, preço de amiga 💸"],
+    looks: ["Look do dia com preço de amiga 👗", "Esse vestido é tudo! 😍", "Achei o look perfeito pro fim de semana ✨", "Moda boa e baratinha, corre! 🏃‍♀️", "Vista e arrase gastando pouco 💃"],
+    fitness: ["Treino lindo gastando pouco 💪", "Conjunto fitness que valoriza tudo 🔥", "Bora treinar com estilo! 🏋️‍♀️", "Legging que não fica transparente ✅", "Academia nunca foi tão estilosa 💖"],
+    calcados: ["Tênis lindo e confortável 👟", "Salto que não machuca? Achei! 👠", "Pra andar o dia todo sem dor ✨", "Calçado lindo com preço de amiga 💸"],
+    acessorios: ["Bolsa linda por menos do que você imagina 👜", "Acessório que muda o look ✨", "Achadinho pra completar o visual 💍", "Bolsa de blogueira, preço de amiga 💖"],
+    maquiagem: ["Make baratinha que entrega tudo 💄", "Base que não derrete o dia todo ✨", "Batom que não sai nem com café ☕", "Make de rica gastando pouco 💸"],
+    skincare: ["Pele de rica gastando pouco ✨", "Skincare que funciona de verdade 🧴", "Glow sem gastar muito 💧", "Sua pele vai agradecer 💖"],
+    cabelo: ["Cabelo de salão em casa 💇‍♀️", "Adeus frizz! ✨", "Finalizador que deixa o cabelo um sonho 💖", "Cabelo brilhando gastando pouco 💸"],
+    suplementos: ["Suplemento com preço que cabe no bolso 💪", "Foco no shape, gastando pouco 🔥", "Whey em promoção, corre! 🏃‍♀️", "Creatina baratinha chegou ⚡"],
+    eletronicos: ["Achado tech que vale muito a pena 🎧", "Fone bom e baratinho? Tem! 🎶", "Gadget que facilita a vida ⚡", "Tecnologia com preço de amiga 💸"],
+    casa: ["Casa arrumadinha gastando pouco 🏡", "Achadinho que facilita a rotina ✨", "Organização que dá até gosto 😍", "Sua cozinha vai amar 🍳"],
+    outros: ["Achadinho que eu precisava te mostrar 💖", "Olha que útil isso! 😍", "Barato e muito útil ✨", "Você vai querer um também 👀"]
+  };
+  function folhaFrases(cat) {
+    const it = vdItem(); cat = cat || (it && FRASES_VIDEO[it.categoria] ? it.categoria : "geral");
+    const nomes = { geral: "Para tudo", ...NOME_CAT };
+    folhaEst("Frases prontas", `<p class="nota">Toque numa frase para colocar no vídeo. Depois dá para mudar o texto, a cor e o lugar.</p>
+      <div class="ed-chips frases-cats">${Object.keys(FRASES_VIDEO).map((k) => `<button type="button" data-frase-cat="${k}" class="${k === cat ? "on" : ""}">${esc(nomes[k] || k)}</button>`).join("")}</div>
+      <div class="frases-lista">${FRASES_VIDEO[cat].map((f) => `<button type="button" data-frase="${esc(f)}">${esc(f)}</button>`).join("")}</div>`);
+  }
+  $("#folhaEst").addEventListener("click", (e) => {
+    const c = e.target.closest("[data-frase-cat]"); if (c) { folhaFrases(c.dataset.fraseCat); return; }
+    const f = e.target.closest("[data-frase]"); if (!f) return;
+    const V = vd(); if (!V.camadas) V.camadas = [];
+    const n = { id: novoId(), tipo: "texto", txt: f.dataset.frase, x: 540, y: 1080, tam: 58, cor: "branco", fundo: true };
+    V.camadas.push(n); V.sel = n.id; V.resultado = null; $("#folhaEst").close(); atualizarBarraEditor(); toast("Frase colocada no vídeo");
+  });
   function folhaEst(titulo, html) {
     $("#folhaEstTitulo").textContent = titulo; $("#folhaEstCorpo").innerHTML = html;
     const d = $("#folhaEst"); if (!d.open) d.showModal();

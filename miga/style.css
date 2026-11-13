@@ -1601,3 +1601,13 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 /* Menu ⋮ (Editar/Restaurar/Excluir): espaço certo para o quadradinho do ícone */
 .fi-op { grid-template-columns: 38px 1fr; }
 .fi-op--perigo { grid-template-columns: 38px auto; }
+/* Menu ⋮: Editar e Excluir centralizados do mesmo jeito */
+.fi-op, .fi-op--perigo { justify-content: center; grid-template-columns: 38px auto; }
+/* Frases prontas */
+.ed-add { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 700px) { .ed-add { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.frases-cats { flex-wrap: wrap; overflow: visible; margin: 10px 0 12px; }
+.frases-cats button.on { background: var(--rosa); color: #fff; }
+.frases-lista { display: grid; gap: 8px; margin-bottom: 12px; }
+.frases-lista button { min-height: 50px; padding: 10px 16px; border: 0; border-radius: 16px; background: var(--campo); box-shadow: inset 0 0 0 1px var(--linha); font: inherit; font-size: 15px; font-weight: 600; color: var(--preto); text-align: left; cursor: pointer; }
+.frases-lista button:active { background: var(--rosa-claro); }
