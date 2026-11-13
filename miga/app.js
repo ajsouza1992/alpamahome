@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=180"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=181"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=180"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=181"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -4129,6 +4129,11 @@
   }
   /** O toque do seu @ no final: sininho (glockenspiel) subindo + prato ao contrário entrando nele */
   function toqueArroba(ac, B, saida, sala, tp) {
+    // "plim" bem claro (sino sintetizado em duas notas), por cima de tudo: não depende das amostras
+    [[1568, 0, 0.42], [2093, 0.11, 0.38]].forEach(([f, d, v]) => { [[1, 1], [2.01, 0.4], [3, 0.16]].forEach(([h, gh]) => {
+      const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; const t = tp + d;
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v * gh, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      o.connect(g).connect(saida); o.start(t); o.stop(t + 1.2); }); });
     const pr = B["d-std-prato"];
     if (pr) { // prato invertido: "fuuum" que cresce até o toque
       const b = pr.buf, n = b.length, r = ac.createBuffer(1, n, b.sampleRate), o = b.getChannelData(0), d = r.getChannelData(0); for (let i = 0; i < n; i++) d[i] = o[n - 1 - i];
@@ -4147,7 +4152,7 @@
     const mestre = ac.createGain(); mestre.gain.value = 0.85; mestre.connect(comp);
     const musica = ac.createGain(); musica.connect(mestre);
     const ir = (seg, curva, corte) => { const b = ac.createBuffer(2, Math.floor(SR * seg), SR); for (let ch = 0; ch < 2; ch++) { const q = b.getChannelData(ch); for (let i = 0; i < q.length; i++) q[i] = (Math.random() * 2 - 1) * (corte ? (i / q.length < 0.9 ? 0.6 : 0) : Math.pow(1 - i / q.length, curva)); } return b; };
-    const sala = ac.createConvolver(); sala.buffer = ir(1.1, 4.5); const salaVolta = ac.createGain(); salaVolta.gain.value = E.eco ?? 0.07; sala.connect(salaVolta).connect(musica);
+    const sala = ac.createConvolver(); sala.buffer = ir(0.7, 6); const salaVolta = ac.createGain(); salaVolta.gain.value = Math.min(E.eco ?? 0.025, 0.03); // quase seco: sem cara de eco sala.connect(salaVolta).connect(musica);
     const portao = ac.createConvolver(); portao.buffer = ir(0.32, 1, true); const portaoVolta = ac.createGain(); portaoVolta.gain.value = 0.5; portao.connect(portaoVolta).connect(musica); // reverb "gated" dos anos 80
     const bomba = ac.createGain(); bomba.connect(musica); // instrumentos que "respiram" com o bumbo (dance)
     const lado = (no, p) => { if (!p || !ac.createStereoPanner) return no; const s = ac.createStereoPanner(); s.pan.value = p; s.connect(no); return s; };
@@ -4229,7 +4234,7 @@
             const vb = ac.createOscillator(), vg = ac.createGain(); vb.frequency.value = 5.5; vg.gain.value = f * 0.012; vb.connect(vg).connect(o.frequency); g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(V.ld ?? 0.12, tt + 0.05); g.gain.setValueAtTime(V.ld ?? 0.12, tt + passo * len * 0.85); g.gain.linearRampToValueAtTime(0.0001, tt + passo * len); o.connect(g); g.connect(musica); g.connect(sala); [o, vb].forEach((x) => { x.start(tt); x.stop(tt + passo * len + 0.05); }); }
           else nota(E.ld.inst, m, tt, V.ld ?? 0.3, { dur: passo * len * 0.9, rel: 0.12, sala: 0.3, pan: 0.1 }); } }
     }
-    if (plim != null) { const tp = t0 + plim; musica.gain.setValueAtTime(1, tp - 0.25); musica.gain.linearRampToValueAtTime(0.35, tp + 0.02); musica.gain.setValueAtTime(0.35, tp + 0.8); musica.gain.linearRampToValueAtTime(1, tp + 1.5); toqueArroba(ac, B, mestre, sala, tp); }
+    if (plim != null) { const tp = t0 + plim; musica.gain.setValueAtTime(1, tp - 0.25); musica.gain.linearRampToValueAtTime(0.25, tp + 0.02); musica.gain.setValueAtTime(0.25, tp + 0.8); musica.gain.linearRampToValueAtTime(1, tp + 1.5); toqueArroba(ac, B, mestre, sala, tp); }
     whooshes.forEach((w) => { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), nb2 = ac.createBuffer(1, SR, SR), dd = nb2.getChannelData(0); for (let q = 0; q < dd.length; q++) dd[q] = Math.random() * 2 - 1; s.buffer = nb2;
       f.type = "bandpass"; f.Q.value = 1.4; f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3200, t0 + w + 0.4); g.gain.setValueAtTime(0.0001, t0 + w); g.gain.linearRampToValueAtTime(0.22, t0 + w + 0.3); g.gain.linearRampToValueAtTime(0.0001, t0 + w + 0.45); s.connect(f).connect(g).connect(mestre); s.start(t0 + w); s.stop(t0 + w + 0.5); });
     return t0;
@@ -4245,7 +4250,7 @@
     const musica = ac.createGain(); musica.connect(mestre);
     const eco = ac.createConvolver(), ir = ac.createBuffer(2, Math.floor(SR * 2.4), SR);
     for (let ch = 0; ch < 2; ch++) { const q = ir.getChannelData(ch); for (let i = 0; i < q.length; i++) q[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / q.length, 3.5); }
-    eco.buffer = ir; const ecoVolta = ac.createGain(); ecoVolta.gain.value = Math.min(E.eco ?? 0.12, 0.12); eco.connect(ecoVolta).connect(musica);
+    eco.buffer = ir; const ecoVolta = ac.createGain(); ecoVolta.gain.value = Math.min(E.eco ?? 0.04, 0.04); eco.connect(ecoVolta).connect(musica);
     const sala = ac.createGain(); sala.connect(eco);
     const bomba = ac.createGain(); bomba.connect(musica); // "respira" junto com o bumbo
     const lado = (no, p) => { if (!ac.createStereoPanner) return no; const s = ac.createStereoPanner(); s.pan.value = p; s.connect(no); return s; };
@@ -4390,7 +4395,7 @@
     // Toque do seu @: sininho subindo + prato ao contrário (o mesmo em todas as músicas)
     if (plim != null) {
       const tp = t0 + plim;
-      musica.gain.setValueAtTime(1, tp - 0.25); musica.gain.linearRampToValueAtTime(0.35, tp + 0.02); musica.gain.setValueAtTime(0.35, tp + 0.8); musica.gain.linearRampToValueAtTime(1, tp + 1.5);
+      musica.gain.setValueAtTime(1, tp - 0.25); musica.gain.linearRampToValueAtTime(0.25, tp + 0.02); musica.gain.setValueAtTime(0.25, tp + 0.8); musica.gain.linearRampToValueAtTime(1, tp + 1.5);
       toqueArroba(ac, sonsDoContexto.get(ac) || {}, mestre, sala, tp);
     }
     // "Toc" macio quando algo aparece (no lugar do assobio)
