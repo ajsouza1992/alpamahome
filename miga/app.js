@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=147"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=148"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=147"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=148"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2476,30 +2476,25 @@
     const f = formato || wz.formato;
     artePost(tela, arteR(modelo, cor), it, ppFotos[it.id], f === "story" || f === "status" ? "story" : f, tAnim);
   }
-  /** Arte em movimento: a mesma arte do story/status, se mexendo no ritmo da música, por 20 segundos (sem abertura e sem final) */
+  /** Arte em movimento: a mesma arte do story/status se mexendo por 20 segundos, sem som (sem abertura e sem final) */
   const SEG_MOV = 20;
   async function gravarArteMovimento(botao) {
     const it = wzItem(), tipo = formatoGravacao(); if (!it) return null;
     if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return null; }
-    let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
-    await prepararFoto(it); await carregarMarca();
+    await prepararFoto(it); await carregarMarca(); // sem música: a música você escolhe no próprio Instagram/WhatsApp
     const R = arteR(), E = MUSICAS[musicaDe(R)], tela = document.createElement("canvas"); tela.width = 1080; tela.height = 1920; const ctx = tela.getContext("2d");
     const previa = $("#rtTela"); const pctx = previa && previa.getContext("2d");
-    let t0 = 0, dest = null;
-    try { if (!ac) throw 0; if (ac.state === "suspended") await ac.resume(); dest = ac.createMediaStreamDestination(); if (botao) botao.textContent = "Preparando a música…"; await carregarSons(ac, E); t0 = tocarTrilha(ac, dest, SEG_MOV, [], [], null, E, null); } catch (e) { t0 = 0; }
     artePost(tela, R, it, ppFotos[it.id], "story", 0);
-    const fluxo = tela.captureStream(30); if (dest && dest.stream) dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
+    const fluxo = tela.captureStream(30);
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 }), partes = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
     const fim = new Promise((ok) => { rec.onstop = ok; });
-    if (ac && t0) await new Promise((ok) => { const e = () => (ac.currentTime >= t0 - 0.02 ? ok() : requestAnimationFrame(e)); e(); });
     rec.start(); manterTelaAcesa(true); const ini = performance.now();
-    const agora = () => (ac && t0 ? ac.currentTime - t0 : (performance.now() - ini) / 1000);
+    const agora = () => (performance.now() - ini) / 1000;
     await new Promise((ok) => { const passo = () => { const t = agora(); if (t >= SEG_MOV + 0.4) { ok(); return; }
       artePost(tela, R, it, ppFotos[it.id], "story", Math.min(t, SEG_MOV)); if (pctx) { if (previa.width !== 540) { previa.width = 540; previa.height = 960; } pctx.drawImage(tela, 0, 0, 540, 960); }
       if (botao) botao.textContent = `Criando o vídeo… ${Math.min(100, Math.round((t / SEG_MOV) * 100))}%`; requestAnimationFrame(passo); }; passo(); });
-    rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); if (ac) ac.close().catch(() => {});
-    const mp4 = tipo.startsWith("video/mp4"); let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), SEG_MOV);
-    blob = await somCompativel(blob, tipo, (m) => { if (botao) botao.textContent = m; });
+    rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false);
+    const mp4 = tipo.startsWith("video/mp4"); const blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), SEG_MOV);
     return { blob, url: URL.createObjectURL(blob), nome: nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + (mp4 ? ".mp4" : ".webm"), chave: [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|") };
   }
   async function desenharMiniaturas(porCor) {
@@ -2578,11 +2573,11 @@
       if (wz.mov === undefined) wz.mov = movSalvo();
       const podeMov = k === "story" || k === "status", vMov = podeMov && wz.mov ? vidMovAtual() : null;
       if (L.arte) {
-        meio = (podeMov ? `<label class="rt-mov"><input type="checkbox" id="rtMov"${wz.mov ? " checked" : ""}><span><b>Em movimento</b><small>${wz.mov ? `Vídeo de ${SEG_MOV} s com música, a arte se mexendo` : "Desmarcado: vai a imagem parada"}</small></span></label>` : "")
+        meio = (podeMov ? `<label class="rt-mov"><input type="checkbox" id="rtMov"${wz.mov ? " checked" : ""}><span><b>Em movimento</b><small>${wz.mov ? `Vídeo de ${SEG_MOV} s sem música: a arte se mexendo (a música você coloca no Instagram)` : "Desmarcado: vai a imagem parada"}</small></span></label>` : "")
           + (vMov ? `<div class="wz-previa rt-video"><video src="${vMov.url}" controls playsinline loop></video></div>` : `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`);
         if (k === "story") { botao = "Postar no Instagram"; dica = "O link já vai copiado: no story, toque no adesivo de Link e cole."; }
         if (k === "status") { botao = "Postar no Status"; dica = "Escolha o WhatsApp com “B” e depois Meu status. O texto com o link vai junto."; }
-        if (podeMov && wz.mov && !vMov) { botao = `Criar o vídeo (${SEG_MOV} s)`; dica = `O app grava a arte se mexendo com música (leva ${SEG_MOV} segundos). Depois é só postar.`; }
+        if (podeMov && wz.mov && !vMov) { botao = `Criar o vídeo (${SEG_MOV} s)`; dica = `O app grava a arte se mexendo, sem música (leva ${SEG_MOV} segundos). No Instagram, adicione a música que quiser.`; }
         if (k === "feed") { botao = "Postar no feed"; dica = "Ao postar, a legenda já vai copiada: no Instagram é só colar."; }
         if (k === "feed") meio += `<div class="leg-bloco"><div class="leg-topo"><span>Legenda do feed</span><div><button type="button" class="leg-btn" id="rtCopiarLegFeed"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button></div></div><textarea id="rtLegFeed" rows="8">${esc(wz.legFeed && wz.legFeedId === item.id ? wz.legFeed : (wz.legFeedId = item.id, wz.legFeed = legendaFeed(item)))}</textarea></div><p class="nota">No feed o link não fica clicável: a legenda avisa que o link está na bio.</p>`;
         else meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
