@@ -1181,7 +1181,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=157"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=158"; });
     }
     edFoto = null;
     try {
@@ -1554,7 +1554,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=157"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=158"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1831,7 +1831,7 @@
     const box = $("#ppCats"); if (!box) return;
     const k = filtroLista, nome = k === "todas" ? "Todas" : NOME_CAT[k] || "Todas", q = faltamCat(k);
     const ic = k === "todas" ? '<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>' : ICONE_CAT[k];
-    box.innerHTML = `<button type="button" class="cat-sel${k !== "todas" ? " on" : ""}" data-cat-abrir><svg class="cat-sel__ic" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><span>Categoria: <b>${esc(nome)}</b>${q ? ` <i>${q}</i>` : ""}</span><em class="cat-sel__trocar">Trocar</em></button>${k !== "todas" ? '<button type="button" class="cat-limpar" data-cat="todas" aria-label="Ver todas as categorias">Ver todas</button>' : ""}` +
+    box.innerHTML = `<button type="button" class="cat-sel${k !== "todas" ? " on" : ""}" data-cat-abrir><svg class="cat-sel__ic" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><span><b>${k === "todas" ? "Todas as categorias" : esc(nome)}</b>${q ? ` <i>${q}</i>` : ""}</span><svg class="cat-sel__filtro" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg></button>${k !== "todas" ? '<button type="button" class="cat-limpar" data-cat="todas" aria-label="Ver todas as categorias">Ver todas</button>' : ""}` +
       `<div class="pp-chips-pc"><button type="button" class="chip-cat${k === "todas" ? " on" : ""}" data-cat="todas">Todas <i>${faltamCat("todas")}</i></button>` +
       Object.entries(NOME_CAT).map(([c, n]) => { const qq = faltamCat(c); return `<button type="button" class="chip-cat${k === c ? " on" : ""}${!qq ? " vazia" : ""}" data-cat="${c}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[c]}</svg>${esc(n)}${qq ? ` <i>${qq}</i>` : ""}</button>`; }).join("") + "</div>";
   }

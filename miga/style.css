@@ -1498,3 +1498,5 @@ body.modo-selecao main { padding-bottom: 200px; }
 body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { background: var(--rosa); color: #fff; }
 #ppDica { font-size: 12.5px; }
 .vazio-bt { margin-top: 12px; min-height: 44px; padding: 0 22px; }
+.cat-sel__filtro { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--rosa); stroke-width: 2.2; stroke-linecap: round; }
+.cat-sel b { font-weight: 600; }
