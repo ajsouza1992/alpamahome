@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=138"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=139"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=138"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=139"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2204,11 +2204,14 @@
       const fmtsRt = wz.canal === "roteiro" ? [...new Set((wz.lugares || []).filter((k) => LUGARES[k] && LUGARES[k].arte).map((k) => LUGARES[k].arte))] : [];
       if (fmtsRt.length === 1) wz.formato = fmtsRt[0]; else if (fmtsRt.length > 1 && !fmtsRt.includes(wz.formato)) wz.formato = "story";
       const mostraFmt = wz.canal === "instagram" || fmtsRt.length > 1;
+      // Só grupos/canal: não tem arte, vai a foto do produto + a mensagem
+      const semArte = wz.canal === "roteiro" && !fmtsRt.length;
       const qualProd = wz.canal === "roteiro" && wz.filaRoteiro ? `<p class="rt-etapa rt-qual">Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ${esc(limparNome(item.nome || ""))}</p>` : "";
       c.innerHTML = `${qualProd}<div class="estudio">
-        <div class="est-previa est-previa--img${wz.formato === "post" ? " est-previa--post" : ""}"><canvas id="wzEstTela"></canvas></div>
+        ${semArte ? `<p class="nota wz-centro">Para grupos e canal vai a <b>foto do produto</b> com a <b>mensagem</b> (sem arte).</p><div class="est-previa est-previa--foto">${item.imagem ? `<img src="${esc(item.imagem)}" alt="Foto do produto" referrerpolicy="no-referrer">` : '<p class="nota">Produto sem foto: vai só a mensagem.</p>'}</div>
+        <div class="est-ctrl est-ctrl--1">${botaoEst("modelo", "Estilo da mensagem", nomeModelo)}</div>` : `<div class="est-previa est-previa--img${wz.formato === "post" ? " est-previa--post" : ""}"><canvas id="wzEstTela"></canvas></div>
         <div class="est-ctrl est-ctrl--${mostraFmt ? 3 : 2}">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}${mostraFmt ? botaoEst("formato", wz.canal === "roteiro" ? "Ver como" : "Formato", wz.formato === "post" ? "Feed · 4:5" : "Story · em pé") : ""}</div>
-        ${fmtsRt.length > 1 ? '<p class="nota wz-centro">A mesma arte sai em pé para o story/status e 4:5 para o feed.</p>' : ""}
+        ${fmtsRt.length > 1 ? '<p class="nota wz-centro">A mesma arte sai em pé para o story/status e 4:5 para o feed.</p>' : ""}`}
       </div>
       ${comTexto ? blocoMensagem(item) : ""}
       ${botaoContinuar(true)}`;
