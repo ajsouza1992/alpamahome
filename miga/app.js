@@ -1192,7 +1192,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=177"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=178"; });
     }
     edFoto = null;
     try {
@@ -1566,7 +1566,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=177"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=178"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -5617,10 +5617,7 @@
     x.save(); x.scale(W / 1080, W / 1080);
     x.fillStyle = C.fundo; x.fillRect(0, 0, 1080, 1920);
     // bolinhas dos cantos (iguais às artes da Miga)
-    x.fillStyle = C.bola1; x.beginPath(); x.arc(-60 + Math.sin(t) * 10, 140, 300, 0, 7); x.fill();
-    x.fillStyle = C.bola2; x.beginPath(); x.arc(1140, 1820 + Math.cos(t * 0.8) * 10, 260, 0, 7); x.fill();
-    x.fillStyle = C.pontoA; x.beginPath(); x.arc(930, 330 + Math.sin(t * 1.3) * 12, 30, 0, 7); x.fill();
-    x.fillStyle = C.pontoB; x.beginPath(); x.arc(150, 1500 + Math.cos(t * 1.1) * 14, 22, 0, 7); x.fill();
+    { const pu = pulsoTela; pulsoTela = 0; bolinhas(x, (CORES_VIDEO[CH.cor] || CORES_VIDEO.preto).bola, CH.cor === "preto" ? "#e9e4d8" : "#ffffff", t); pulsoTela = pu; } // mesmos cantos dos outros modelos
     const linha = (partes, y, tam, t0, u) => { const k = easeC((u - t0) / 0.45); if (k <= 0) return; x.save(); x.globalAlpha = k; x.translate(540, y + (1 - k) * 60); let f = tam; x.font = `900 ${f}px Poppins`;
       let w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); if (w > 960) { f = Math.floor(f * 960 / w); x.font = `900 ${f}px Poppins`; w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); }
       let xx = -w / 2; x.textAlign = "left"; x.textBaseline = "middle"; partes.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, 0); xx += x.measureText(p).width; }); x.restore(); };
@@ -5649,7 +5646,7 @@
       const at = arroba(config.instagram); if (at) pilula(at, 540, 1440, "#ffd23f", "#1d1d1f", 56, 0.8, u, -0.03);
       linha([["toca na minha foto", C.suave]], at ? 1590 : 1450, 52, 1.1, u);
     }
-    if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 230, 170, 170);
+    if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160);
     x.restore();
     function bg0(i) { return i === 0 || i === 3; } // no fundo rosa, as pílulas rosa viram pretas
   }
