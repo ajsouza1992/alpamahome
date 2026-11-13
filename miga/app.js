@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=137"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=138"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=137"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=138"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3352,6 +3352,79 @@
       <label class="link link--foto">${img ? "Usar outra foto" : "Escolher foto"}<input type="file" id="vdFotoNova" accept="image/*,.webp,image/webp" hidden></label>
     </div>`;
   }
+  /* ---------- Kit da IA: a foto do produto pronta + a ideia do vídeo, com um toque ---------- */
+  // Mercado Livre: tenta a foto no tamanho grande (melhor para a IA); se não der, usa a normal
+  const fotoMaior = (src) => /mlstatic\.com\//.test(src || "") ? String(src).replace(/-[A-Z](\.(?:webp|jpe?g|png))(\?.*)?$/i, "-F$1") : src;
+  let kitIA = null;
+  async function prepararFotoIA(it, fmt) {
+    let arq = null;
+    if (fotoMaior(it.imagem) !== it.imagem) arq = await arquivoDaImagem(fotoMaior(it.imagem));
+    if (!arq) arq = await arquivoDaImagem(it.imagem);
+    if (!arq) return null;
+    const nome = nomeArquivo(it.nome || "produto");
+    if (fmt === "original") { const j = await converterImagem(arq); return j ? new File([j], nome, { type: "image/jpeg" }) : null; }
+    // Em pé 9:16, fundo branco e o produto grande no meio: é o formato do vídeo do Reels
+    const bmp = await createImageBitmap(arq), W = 1080, H = 1920, c = document.createElement("canvas"); c.width = W; c.height = H;
+    const x = c.getContext("2d"); x.fillStyle = "#ffffff"; x.fillRect(0, 0, W, H);
+    const s = Math.min(980 / bmp.width, 1500 / bmp.height), w = bmp.width * s, h = bmp.height * s;
+    x.imageSmoothingQuality = "high"; x.drawImage(bmp, (W - w) / 2, (H - h) / 2, w, h);
+    return await new Promise((ok) => c.toBlob((b) => ok(b ? new File([b], nome, { type: "image/jpeg" }) : null), "image/jpeg", 0.95));
+  }
+  async function abrirKitIA(it) {
+    if (!it) return;
+    kitIA = { it, fmt: "pe", ideia: 0, arq: {} };
+    pintarKitIA(); $("#folhaIA").showModal();
+    if (it.imagem) await carregarFotoKit();
+  }
+  async function carregarFotoKit() {
+    const K = kitIA; if (!K) return;
+    const f = K.fmt; if (!K.arq[f]) K.arq[f] = prepararFotoIA(K.it, f);
+    const arq = await K.arq[f]; if (kitIA !== K || K.fmt !== f) return;
+    const im = $("#iaPrevia"); if (!im) return;
+    if (arq) { im.src = URL.createObjectURL(arq); im.parentElement.classList.remove("carregando"); }
+    else { im.parentElement.classList.remove("carregando"); im.parentElement.classList.add("sem"); }
+  }
+  const ideiaIA = () => PROMPTS_VIDEO[kitIA.ideia][1](limparNome(kitIA.it.nome || "o produto"));
+  function pintarKitIA() {
+    const K = kitIA, it = K.it;
+    $("#folhaIACorpo").innerHTML = it.imagem ? `
+      <p class="ia-prod"><b>${esc(limparNome(it.nome || "Produto"))}</b></p>
+      <div class="ia-foto carregando ia-foto--${K.fmt}"><img id="iaPrevia" alt="Foto do produto para a IA"><span>Preparando a foto…</span></div>
+      <div class="ia-fmt">${[["pe", "Em pé 9:16"], ["original", "Original"]].map(([k, n]) => `<button type="button" data-ia-fmt="${k}" class="${K.fmt === k ? "on" : ""}">${n}</button>`).join("")}</div>
+      <p class="ia-passo">Ideia do vídeo</p>
+      <div class="vd-prompts ia-ideias">${PROMPTS_VIDEO.map(([n], k) => `<button type="button" data-ia-ideia="${k}" class="${K.ideia === k ? "on" : ""}">${esc(n)}</button>`).join("")}</div>
+      <p class="ia-prompt" id="iaPrompt">${esc(ideiaIA())}</p>
+      <button type="button" class="btn btn--rosa" id="iaEnviar">Mandar foto + ideia para a IA</button>
+      <div class="est-ctrl est-ctrl--3 rp-tiles">
+        <button type="button" class="est-btn" id="iaSalvar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Salvar foto</b></button>
+        <button type="button" class="est-btn" id="iaCopiarFoto"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Copiar foto</b></button>
+        <button type="button" class="est-btn" id="iaCopiarIdeia"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><b>Copiar ideia</b></button>
+      </div>
+      <p class="nota">No celular: toque em <b>Mandar</b> e escolha o <b>Gemini</b> (ou ChatGPT). A foto e a ideia vão juntas; a ideia também fica copiada. No Gemini, escolha <b>Vídeo</b> antes de enviar.</p>
+      <button type="button" class="btn btn--branco" id="iaPublicar">Já fiz o vídeo: publicar com este produto</button>`
+      : `<p class="nota">Este produto está sem foto. Coloque uma foto no produto (na lista) e volte aqui.</p>`;
+  }
+  $("#folhaIA").addEventListener("click", async (e) => {
+    const K = kitIA; if (!K) return; const t = e.target;
+    const f = t.closest("[data-ia-fmt]"); if (f) { K.fmt = f.dataset.iaFmt; pintarKitIA(); carregarFotoKit(); return; }
+    const d = t.closest("[data-ia-ideia]"); if (d) { K.ideia = +d.dataset.iaIdeia; document.querySelectorAll("[data-ia-ideia]").forEach((b) => b.classList.toggle("on", b === d)); $("#iaPrompt").textContent = ideiaIA(); return; }
+    if (t.closest("#iaCopiarIdeia")) { if (await copiarTexto(ideiaIA())) toast("Ideia copiada: cole na IA junto com a foto"); return; }
+    if (t.closest("#iaPublicar")) { $("#folhaIA").close(); if (ppAtual) fecharItemFila(); criarAPartirDaLista("video", [K.it]); return; }
+    const arq = K.arq[K.fmt] ? await K.arq[K.fmt] : null;
+    if (t.closest("#iaSalvar")) { if (arq) { baixarBlob(arq, arq.name); toast("Foto salva na galeria"); } else toast("A foto ainda está carregando"); return; }
+    if (t.closest("#iaCopiarFoto")) {
+      try { await navigator.clipboard.write([new ClipboardItem({ "image/png": converterImagem(arq, "image/png").then((x) => x || Promise.reject()) })]); toast("Foto copiada: cole na IA (segure no campo e Colar)"); }
+      catch (err) { toast("Este celular não deixa copiar foto: use “Salvar foto”"); }
+      return;
+    }
+    if (t.closest("#iaEnviar")) {
+      if (!arq) { toast("A foto ainda está carregando"); return; }
+      const ideia = ideiaIA(); await copiarTexto(ideia);
+      if (navigator.canShare && navigator.canShare({ files: [arq], text: ideia })) { try { await navigator.share({ files: [arq], text: ideia }); toast("A ideia também ficou copiada, se precisar colar"); return; } catch (err) { if (err.name === "AbortError") return; } }
+      baixarBlob(arq, arq.name); toast("Foto salva e ideia copiada: abra a IA, anexe a foto e cole a ideia");
+    }
+  });
+  $("#ppIA").addEventListener("click", () => { if (!ppAtual) return; aplicarCamposPp(true); abrirKitIA(ppAtual); });
   async function fotoParaIA() {
     const it = vdItem(); if (!it || !it.imagem) return null;
     const arq = await converterImagem(await arquivoDaImagem(it.imagem));
@@ -3396,7 +3469,7 @@
             ${blocoFotoIA()}
             <p class="nota">Copie um prompt e cole na IA de vídeo (Gemini, ChatGPT…) junto com a foto:</p>
             <div class="vd-prompts">${PROMPTS_VIDEO.map(([n], k) => `<button type="button" data-vd-prompt="${k}">${esc(n)}</button>`).join("")}</div>
-            <button type="button" class="btn btn--branco" id="vdFotoEnviar">Enviar a foto e o prompt para a IA</button>
+            <button type="button" class="btn btn--rosa" id="vdFotoEnviar">Abrir o kit da IA (foto + ideia)</button>
           </details>` : "";
         corpo = prod + video + ia;
       }
@@ -3920,7 +3993,7 @@
     if (t.closest("#vdTrocarProd")) { V.itemId = null; V.nome = ""; V.antigo = null; V.novo = null; V.cupom = ""; V.loja = ""; V.semVideo = false; V.fotoBmp = null; V.fotoSrc = ""; mostrarPasso(); return; }
     const pr = t.closest("[data-vd-prompt]"); if (pr) { if (await copiarTexto(PROMPTS_VIDEO[+pr.dataset.vdPrompt][1](V.nome || "o produto"))) toast("Prompt copiado: cole na IA de vídeo junto com a foto"); return; }
     if (t.closest("#vdFoto") || t.closest("#vdBaixarFoto")) { const arq = await fotoParaIA(); if (arq) { baixarBlob(arq, arq.name); toast("Foto salva na galeria"); } else toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
-    if (t.closest("#vdFotoEnviar")) {
+    if (t.closest("#vdFotoEnviar")) { const it = vdItem(); if (it) { abrirKitIA(it); return; }
       const arq = await fotoParaIA();
       if (!arq) { toast("Não consegui pegar a foto: use “Usar outra foto”"); return; }
       const prompt = PROMPTS_VIDEO[0][1](V.nome || "o produto");
