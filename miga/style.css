@@ -1655,3 +1655,7 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 /* Aviso no topo: nunca cobre os botões de baixo */
 .toast { top: calc(14px + env(safe-area-inset-top)); bottom: auto !important; transform: translate(-50%, -16px); }
 .toast.show { transform: translate(-50%, 0); }
+/* Corre pros Stories */
+.ch-rot { display: block; margin: 14px 0 6px; font-size: 14px; }
+.ch-chips { flex-wrap: wrap; overflow: visible; }
+.ch-chips button.on { background: var(--rosa); color: #fff; box-shadow: none; }

@@ -1192,7 +1192,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=176"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=177"; });
     }
     edFoto = null;
     try {
@@ -1566,7 +1566,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=176"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=177"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2181,7 +2181,7 @@
   function pintarCatPp(c) { c = NOME_CAT[c] ? c : "outros"; $("#ppCatNome").textContent = NOME_CAT[c]; $("#ppCatIc").innerHTML = `<svg viewBox="0 0 24 24">${ICONE_CAT[c]}</svg>`; }
   /* ---------- Início ---------- */
   let acaoPendente = null;
-  const ACOES_INICIO = [["roteiro", "Postar", "i-enviar"], ["reels", "Reels", "i-reels"], ["carrossel", "Carrossel", "i-carrossel"], ["video", "Vídeo", "i-rede-video"], ["cupons", "Cupons", "i-etiqueta"], ["livre", "Colagem", "i-rede-grade"], ["ia", "Vídeo IA", "i-brilho"], ["continuar", "Continuar", "i-continuar"]];
+  const ACOES_INICIO = [["roteiro", "Postar", "i-enviar"], ["reels", "Reels", "i-reels"], ["carrossel", "Carrossel", "i-carrossel"], ["video", "Vídeo", "i-rede-video"], ["cupons", "Cupons", "i-etiqueta"], ["chamada", "Corre pros Stories", "i-rede-insta"], ["livre", "Colagem", "i-rede-grade"], ["ia", "Vídeo IA", "i-brilho"], ["continuar", "Continuar", "i-continuar"]];
   function renderInicio() {
     const h = new Date().getHours(); $("#inOla").textContent = `${h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"}, miga! 💖`;
     const p = fila().filter((i) => !i.carregando && !foiCompartilhado(i)).length, f = incompletos().length, s = parados().length;
@@ -2202,6 +2202,7 @@
     const b = e.target.closest("[data-in]"); if (!b) return; const k = b.dataset.in;
     if (k === "video") { abrirVideoLivre(); return; }
     if (k === "cupons") { abrirPostarCupons(); return; }
+    if (k === "chamada") { abrirChamada(); return; }
     if (k === "continuar") { continuarProgresso(); return; }
     // precisa escolher os produtos: vai para a Lista já selecionando
     acaoPendente = k; filtroLista = "todas"; limparBusca(); irPara("postar"); marcados.clear(); modoVarios = true; renderFila();
@@ -2329,6 +2330,7 @@
     instagram: { nome: "Imagem do produto", cor: "#e8336d", desc: "Arte para story, Status ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
     livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
+    chamada: { nome: "Corre pros Stories", cor: "#1d1d1f", desc: "Reels chamando pros seus stories", icone: "i-rede-insta" },
     cupons: { nome: "Postar cupons", cor: "#ffd23f", desc: "Status e grupos só com cupons", icone: "i-etiqueta" },
     reels: { nome: "Reels de produtos", cor: "#8e44ec", desc: "1 a 5 produtos, vários modelos, com música", icone: "i-brilho" },
     video: { nome: "Publicar vídeo", cor: "#f2a900", desc: "Seu vídeo com abertura e final com música", icone: "i-rede-video" }
@@ -2348,6 +2350,7 @@
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
     if (canal === "cupons") return ["cEscolher", "cPronto"];
+    if (canal === "chamada") return ["chEditar", "chPronto"];
     if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", "kCarrossel"] : ["canal", "rItens", "rModelo", "rPronto"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
@@ -2396,6 +2399,7 @@
   function guardarProgresso() {
     try {
       // Terminou (chegou no resumo ou o vídeo/Reels ficou pronto): não tem mais o que continuar
+      if (wz.canal === "chamada" || wz.canal === "cupons") return; // temas prontos não guardam "continuar"
       if (wz.passo === "resumo" || (wz.reels && wz.reels.resultado) || (wz.video && wz.video.resultado)) { localStorage.removeItem("miga_progresso"); return; }
       // Voltar para a lista (ou abrir o app de novo) NÃO apaga onde você parou
       if (!wz.canal || !wz.passo || PASSOS_FINAIS.includes(wz.passo)) return;
@@ -2443,6 +2447,7 @@
     if (wz.canal === "video") { telaVideo(c); return; }
     if (wz.canal === "reels") { telaReels(c); return; }
     if (wz.canal === "cupons") { telaCupons(c); return; }
+    if (wz.canal === "chamada") { telaChamada(c); return; }
     if (wz.passo === "produto") {
       const l2 = fila().filter((x) => !x.carregando && (wz.filtroCat === undefined || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
       c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2>
@@ -5018,6 +5023,9 @@
       ld: { inst: "cowbell", entra: 0, notas: [72, 0, 72, 75, 0, 72, 0, 70, 72, 0, 72, 75, 0, 79, 0, 77, 72, 0, 72, 75, 0, 72, 0, 70, 68, 0, 68, 70, 0, 72, 0, 0] } },
     funkphonk: { real: true, bpm: 130, kit: "808", sujo: true, k: "x..x..x...x..x..", s: "....x.......x...", p: "....x.......x...", h: "x.x.x.x.x.x.x.x.", b: "x..x..x...x..x..", bx: "808", raiz: [28, 28, 31, 26], acordes: FM,
       ld: { inst: "cowbell", entra: 16, notas: [76, 0, 76, 0, 0, 79, 0, 0, 76, 0, 74, 0, 0, 0, 0, 0, 76, 0, 76, 0, 0, 81, 0, 0, 79, 0, 76, 0, 0, 0, 0, 0] } },
+    traparabe: { real: true, bpm: 140, kit: "808", k: "x.........x..x..", s: "........x.......", p: "........x.......", h: "x.x.x.x.xrx.x.rr", b: "x---------x--x--", bx: "808", raiz: [26, 27, 26, 24],
+      cp: "x---------------", ac: "cordas", acordes: [[62, 66, 69], [63, 67, 70], [62, 66, 69], [60, 63, 67]], vol: { ac: 0.18 },
+      ld: { inst: "kalimba", entra: 0, notas: [69, 0, 70, 0, 69, 0, 67, 0, 66, 0, 0, 0, 63, 0, 62, 0, 74, 0, 75, 0, 74, 0, 72, 0, 70, 0, 69, 0, 66, 0, 0, 0] } },
     treinotrap: { real: true, bpm: 150, kit: "808", k: "x.........x..x..", s: "........x.......", p: "........x.......", h: "x.x.x.x.xrx.x.rr", b: "x---------x--x--", bx: "808", raiz: [28, 24, 26, 23],
       cp: "x-------x-------", ac: "coro", oh: "x...............", acordes: [[52, 55, 59], [48, 52, 55], [50, 53, 57], [47, 50, 54]], vol: { ac: 0.24 } },
     hardstyle: { real: true, bpm: 150, kit: "dance", kd: true, kdLongo: true, k: "x...x...x...x...", p: "....x.......x...", h: "..x...x...x...x.", acordes: EM, raiz: [33, 29, 36, 31],
@@ -5073,7 +5081,7 @@
   const NOMES_MUSICA = {
     boombap: ["Boom bap", "rap americano dos anos 90"], gfunk: ["West Coast", "hip-hop da Califórnia"], oldschool: ["Old school", "hip-hop raiz, com scratch"],
     drill: ["Drill", "rap pesado de Nova York"], crunk: ["Rap de festa", "808 e metais"], poprap: ["Pop rap", "piano e batida forte"], chill: ["Hip-hop chill", "suave, de fundo"],
-    trap: ["Trap", "grave que desliza"],
+    trap: ["Trap", "grave que desliza"], traparabe: ["Trap árabe", "808 com melodia oriental"],
     dancepop: ["Dance pop", "pista, alegre"], eurodance: ["Eurodance", "dance dos anos 90"], disco: ["Disco", "baixo, cordas e metais"],
     housepiano: ["House piano", "piano de balada"], funk80: ["Funk anos 80", "baixo slap"],
     synthpop: ["Synthpop 80", "sintetizadores retrô"], poprock80: ["Pop rock 80", "guitarra e bateria com eco"], italo: ["Italo disco", "dance retrô"], dance80: ["Dance 80", "808 retrô"],
@@ -5574,6 +5582,185 @@
     const n = { id: novoId(), tipo: "texto", txt: f.dataset.frase, x: 540, y: 1080, tam: 58, cor: "branco", fundo: true };
     V.camadas.push(n); V.sel = n.id; V.resultado = null; $("#folhaEst").close(); atualizarBarraEditor(); toast("Frase colocada no vídeo");
   });
+
+  /* ===================== Tema pronto: "Corre pros Stories" (Reels chamando pros stories) ===================== */
+  const NICHOS_CHAMADA = {
+    perfumes: { palavra: "PERFUME", ic: ["perfume", "brilho"], frase: [["Tem perfume", ""], ["de ", "rica"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Body splash", "Perfume árabe", "Kits pra presente", "Importados"], ic2: ["presente", "coracao"] },
+    looks: { palavra: "LOOKS", ic: ["cabide", "brilho"], frase: [["Look de", ""], ["", "blogueira"], ["com preço", ""], ["de ", "amiga"]], icFrase: "bolsa", itens: ["Vestidos", "Conjuntos", "Blusinhas", "Jeans"], ic2: ["coracao", "estrela"] },
+    fitness: { palavra: "FITNESS", ic: ["top", "haltere"], frase: [["Treino", ""], ["", "lindo"], ["gastando", ""], ["", "pouco"]], icFrase: "fogo", itens: ["Leggings", "Tops", "Conjuntos", "Shorts"], ic2: ["tenis", "coracao"] },
+    calcados: { palavra: "CALÇADOS", ic: ["tenis", "brilho"], frase: [["Pisando", ""], ["", "bonito"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Tênis", "Sandálias", "Saltos", "Rasteirinhas"], ic2: ["coracao", "estrela"] },
+    acessorios: { palavra: "BOLSAS", ic: ["bolsa", "brilho"], frase: [["Bolsa de", ""], ["", "blogueira"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Bolsas", "Bijuterias", "Relógios", "Óculos"], ic2: ["coracao", "estrela"] },
+    maquiagem: { palavra: "MAKE", ic: ["batom", "brilho"], frase: [["Make", ""], ["de ", "rica"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Bases", "Batons", "Paletas", "Pincéis"], ic2: ["coracao", "estrela"] },
+    skincare: { palavra: "SKINCARE", ic: ["pote", "brilho"], frase: [["Pele", ""], ["de ", "rica"], ["gastando", ""], ["", "pouco"]], icFrase: "coracao", itens: ["Séruns", "Hidratantes", "Protetor solar", "Kits"], ic2: ["presente", "estrela"] },
+    cabelo: { palavra: "CABELO", ic: ["brilho", "coracao"], frase: [["Cabelo", ""], ["de ", "salão"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Shampoos", "Máscaras", "Finalizadores", "Secadores"], ic2: ["presente", "estrela"] },
+    suplementos: { palavra: "SUPLEMENTOS", ic: ["pote", "haltere"], frase: [["Foco no", ""], ["", "shape"], ["gastando", ""], ["", "pouco"]], icFrase: "fogo", itens: ["Whey", "Creatina", "Colágeno", "Vitaminas"], ic2: ["top", "raio"] },
+    eletronicos: { palavra: "TECH", ic: ["fone", "raio"], frase: [["Tecnologia", ""], ["", "boa"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Fones", "Carregadores", "Smartwatch", "Caixinhas de som"], ic2: ["raio", "estrela"] },
+    casa: { palavra: "CASA", ic: ["casa", "brilho"], frase: [["Casa", ""], ["", "linda"], ["gastando", ""], ["", "pouco"]], icFrase: "panela", itens: ["Cozinha", "Organização", "Decoração", "Cama e banho"], ic2: ["coracao", "presente"] },
+    geral: { palavra: "PROMOÇÃO", ic: ["porcento", "fogo"], frase: [["Achadinho", ""], ["", "bom"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Moda", "Beleza", "Casa", "Perfumes"], ic2: ["presente", "coracao"] }
+  };
+  const CORES_CHAMADA = {
+    preto: { nome: "Preto", fundo: "#1d1d1f", texto: "#ffffff", d1: "#ffd23f", d2: "#e8336d", bola1: "#e8336d", bola2: "#e9e4d8", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "rgba(255,255,255,.8)" },
+    rosa: { nome: "Rosa", fundo: "#e8336d", texto: "#ffffff", d1: "#ffd23f", d2: "#1d1d1f", bola1: "rgba(255,255,255,.22)", bola2: "rgba(255,255,255,.22)", pontoA: "#ffd23f", pontoB: "#ffffff", suave: "rgba(255,255,255,.88)" },
+    creme: { nome: "Creme", fundo: "#fff3c4", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.6)", bola2: "#ffffff", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" },
+    branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.45)", bola2: "#efeae0", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" }
+  };
+  const T_CHAMADA = 12.4, T_PLIM_CHAMADA = 10.0;
+  const ch = () => wz.ch;
+  function abrirChamada() {
+    wz = { canal: "chamada", passo: "chEditar", veioDaLista: true, ch: { nicho: "perfumes", cor: "preto", musica: "traparabe", resultado: null, legenda: null } };
+    marcados.clear(); irPara("criar"); mostrarPasso();
+  }
+  const easeC = (t) => t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);
+  const puloC = (t) => { t = Math.max(0, Math.min(1, t)); const s = 1.70158 * 1.6; return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2); };
+  function quadroChamada(ctx, W, t, CH) {
+    const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, C = CORES_CHAMADA[CH.cor] || CORES_CHAMADA.preto, x = ctx;
+    x.save(); x.scale(W / 1080, W / 1080);
+    x.fillStyle = C.fundo; x.fillRect(0, 0, 1080, 1920);
+    // bolinhas dos cantos (iguais às artes da Miga)
+    x.fillStyle = C.bola1; x.beginPath(); x.arc(-60 + Math.sin(t) * 10, 140, 300, 0, 7); x.fill();
+    x.fillStyle = C.bola2; x.beginPath(); x.arc(1140, 1820 + Math.cos(t * 0.8) * 10, 260, 0, 7); x.fill();
+    x.fillStyle = C.pontoA; x.beginPath(); x.arc(930, 330 + Math.sin(t * 1.3) * 12, 30, 0, 7); x.fill();
+    x.fillStyle = C.pontoB; x.beginPath(); x.arc(150, 1500 + Math.cos(t * 1.1) * 14, 22, 0, 7); x.fill();
+    const linha = (partes, y, tam, t0, u) => { const k = easeC((u - t0) / 0.45); if (k <= 0) return; x.save(); x.globalAlpha = k; x.translate(540, y + (1 - k) * 60); let f = tam; x.font = `900 ${f}px Poppins`;
+      let w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); if (w > 960) { f = Math.floor(f * 960 / w); x.font = `900 ${f}px Poppins`; w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); }
+      let xx = -w / 2; x.textAlign = "left"; x.textBaseline = "middle"; partes.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, 0); xx += x.measureText(p).width; }); x.restore(); };
+    const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.18)"; x.shadowBlur = 24; x.beginPath(); x.arc(0, 0, tam * 0.62, 0, 7); x.fill(); x.shadowColor = "transparent"; iconeReels(x, nome, tam * 0.8); x.restore(); };
+    const pilula = (txt, cx, cy, bg, fg, tam, t0, u, giro = -0.03, borda = true) => { const k = (u - t0) / 0.45; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy); x.rotate(giro); x.scale(s, s); x.font = `800 ${tam}px Poppins`; const w = x.measureText(txt).width + tam * 1.4, h = tam * 1.9; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = bg; x.fill(); if (borda) { x.lineWidth = 7; x.strokeStyle = "#1d1d1f"; x.stroke(); } x.fillStyle = fg; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(txt, 0, 3); x.restore(); };
+    const T = C.texto, A = C.d1;
+    if (t < 3.2) {
+      pilula("ATUALIZEI OS STORIES", 540, 520, "#ffd23f", "#1d1d1f", 44, 0.05, t, -0.04);
+      linha([["Enchi meus", T]], 760, 118, 0.2, t); linha([["stories de", T]], 900, 118, 0.35, t);
+      linha([[N.palavra, A]], 1070, 150, 0.5, t);
+      adesivo(N.ic[0], 300, 1330, 260, 0.8, t, -0.12); adesivo(N.ic[1], 780, 1320, 220, 1.0, t, 0.1);
+      linha([["com preço de amiga", C.suave]], 1560, 60, 1.2, t);
+    } else if (t < 6.4) { const u = t - 3.2;
+      N.frase.forEach(([a1, d], i) => linha([[a1, T], [d, i === 3 ? C.d2 === C.fundo ? A : C.d2 : A]], 640 + i * 140, 112, 0.05 + i * 0.15, u));
+      adesivo(N.icFrase, 540, 1360, 280, 0.7, u, -0.08);
+    } else if (t < 9.6) { const u = t - 6.4;
+      linha([["Tem de tudo:", T]], 560, 100, 0.05, u);
+      const est = [["#e8336d", "#fff", false], ["#ffd23f", "#1d1d1f", true], ["#ffffff", "#1d1d1f", CH.cor === "branco" || CH.cor === "creme"], ["#e8336d", "#fff", false]];
+      N.itens.forEach((it, i) => { const [bg, fg, bd] = CH.cor === "rosa" && bg0(i) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
+      adesivo(N.ic2[0], 220, 1500, 200, 1.3, u, -0.15); adesivo(N.ic2[1], 860, 1500, 180, 1.45, u, 0.12);
+    } else { const u = t - 9.6;
+      linha([["Corre nos meus", T]], 600, 104, 0.05, u); linha([["STORIES", A]], 760, 170, 0.2, u);
+      const k = easeC((u - 0.4) / 0.5);
+      if (k > 0) { const pr = 1 + 0.05 * Math.sin(u * 6); x.save(); x.translate(540, 1130); x.scale(k * pr, k * pr); const g = x.createLinearGradient(-170, -170, 170, 170); g.addColorStop(0, "#ffd23f"); g.addColorStop(0.5, "#e8336d"); g.addColorStop(1, "#7b3fe4"); x.lineWidth = 22; x.strokeStyle = g; x.beginPath(); x.arc(0, 0, 170, 0, 7); x.stroke(); x.fillStyle = "#fff"; x.beginPath(); x.arc(0, 0, 145, 0, 7); x.fill(); if (edMarca) x.drawImage(edMarca, -115, -115, 230, 230); x.restore(); }
+      const tap = ((u - 1.0) % 1.2) / 1.2; if (u > 1.0 && tap < 0.5) { x.save(); x.globalAlpha = 1 - tap * 2; x.strokeStyle = T; x.lineWidth = 8; x.beginPath(); x.arc(640, 1230, 30 + tap * 120, 0, 7); x.stroke(); x.restore(); }
+      const at = arroba(config.instagram); if (at) pilula(at, 540, 1440, "#ffd23f", "#1d1d1f", 56, 0.8, u, -0.03);
+      linha([["toca na minha foto", C.suave]], at ? 1590 : 1450, 52, 1.1, u);
+    }
+    if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 230, 170, 170);
+    x.restore();
+    function bg0(i) { return i === 0 || i === 3; } // no fundo rosa, as pílulas rosa viram pretas
+  }
+  function legendaChamada(CH) {
+    const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, nome = CH.nicho === "geral" ? "promoção" : (NOME_CAT[CH.nicho] || N.palavra).toLowerCase(), at = arroba(config.instagram);
+    const tags = { perfumes: "#perfume #perfumes #perfumefeminino #bodysplash #perfumearabe", looks: "#moda #lookdodia #modafeminina #looks", fitness: "#modafitness #fitness #treino #legging", calcados: "#calcados #tenis #sandalias #sapatos", acessorios: "#bolsas #acessorios #bijuterias", maquiagem: "#maquiagem #make #makebarata", skincare: "#skincare #cuidadoscomapele #pele", cabelo: "#cabelo #cabelos #cuidadoscomocabelo", suplementos: "#suplementos #whey #creatina", eletronicos: "#tecnologia #fone #eletronicos", casa: "#casa #decoracao #organizacao #cozinha", geral: "#promocao #ofertas" }[CH.nicho] || "";
+    return `Enchi meus stories de ${N.palavra.toLowerCase()} ✨\n\nTem ${N.itens.slice(0, -1).join(", ").toLowerCase()} e ${N.itens[N.itens.length - 1].toLowerCase()}, tudo com preço de amiga 💸\n\n👉 Corre nos meus stories antes que acabe! É só tocar na minha foto${at ? ` (${at})` : ""}.\n\nQual você quer primeiro? Me conta aqui 👇\n\n${tags} #achadinhos #achadinhosmercadolivre #achadinhosshopee #promoção #cupomdedesconto`.replace(" de promoção ✨", " de promoção ✨").replace(nome + nome, nome);
+  }
+  function telaChamada(c) {
+    const CH = ch();
+    if (wz.passo === "chEditar") {
+      const chips = (attr, lista, atual) => `<div class="ed-chips ch-chips">${lista.map(([k, n]) => `<button type="button" ${attr}="${k}" class="${k === atual ? "on" : ""}">${esc(n)}</button>`).join("")}</div>`;
+      const nichos = Object.keys(NICHOS_CHAMADA).map((k) => [k, k === "geral" ? "Promoções gerais" : NOME_CAT[k] || k]);
+      c.innerHTML = `<h2 class="wz-titulo">Corre pros Stories</h2>
+        <p class="nota">Um Reels pronto chamando a galera pros seus stories. Escolha o nicho, a cor e a música.</p>
+        <div class="wz-previa"><canvas id="chQuadro" width="540" height="960"></canvas></div>
+        <b class="ch-rot">Nicho</b>${chips("data-ch-nicho", nichos, CH.nicho)}
+        <b class="ch-rot">Cor</b>${chips("data-ch-cor", Object.entries(CORES_CHAMADA).map(([k, v]) => [k, v.nome]), CH.cor)}
+        <b class="ch-rot">Música</b>${chips("data-ch-mus", [["traparabe", "Trap árabe"], ["trap", "Trap"], ["funkphonk", "Funk phonk"], ["dancepop", "Dance pop"], ["mais", "Mais músicas…"]], ["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? CH.musica : "mais")}
+        ${["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? "" : `<p class="nota">Música: <b>${esc((NOMES_MUSICA[CH.musica] || [CH.musica])[0])}</b></p>`}
+        ${arroba(config.instagram) ? "" : '<p class="nota">Dica: coloque o seu @ do Instagram em ⚙️ Ajustes para ele aparecer no final.</p>'}
+        <button type="button" class="btn btn--branco" id="chPrevia">▶ Ver prévia com música</button>
+        <div class="vd-progresso" id="chProgresso" hidden><i></i></div>
+        <button type="button" class="btn btn--rosa" id="chGerar">Criar o vídeo</button>
+        <p class="nota">O vídeo tem ${Math.round(T_CHAMADA)} segundos e é gravado em tempo real: deixe o app aberto até terminar.</p>`;
+      carregarMarca().then(() => loopChamada());
+      return;
+    }
+    if (wz.passo === "chPronto") {
+      const r = CH.resultado; if (CH.legenda == null) CH.legenda = legendaChamada(CH);
+      c.innerHTML = `<h2 class="wz-titulo">Reels pronto</h2>
+        <div class="rp-grade"><div class="rp-midia">
+          <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
+          <figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"><figcaption>Capa</figcaption></figure></div>
+        <div class="rp-acoes">
+          <button type="button" class="btn btn--rosa" id="chPostar">Postar / compartilhar</button>
+          <div class="est-ctrl est-ctrl--3 rp-tiles">
+            <button type="button" class="est-btn" id="chBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Baixar vídeo</b></button>
+            <button type="button" class="est-btn" id="chBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>
+            <button type="button" class="est-btn" id="chRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Mudar e regravar</b></button>
+          </div>
+          <div class="campo"><span>Legenda pronta</span><textarea id="chLegenda" rows="9">${esc(CH.legenda)}</textarea></div>
+          <button type="button" class="btn btn--branco" id="chCopiar">Copiar legenda</button>
+          ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
+          <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
+        </div></div>`;
+    }
+  }
+  function loopChamada() {
+    const cv = $("#chQuadro"); if (!cv) return; const cx = cv.getContext("2d"), ini = performance.now();
+    const passo = () => { const v = $("#chQuadro"); if (!v || v !== cv || wz.canal !== "chamada" || wz.passo !== "chEditar") return; if (!ch().tocando) quadroChamada(cx, 540, ((performance.now() - ini) / 1000) % T_CHAMADA, ch()); requestAnimationFrame(passo); };
+    passo();
+  }
+  async function rodarChamada(gravar) {
+    const CH = ch(), tipo = formatoGravacao();
+    if (gravar && (!tipo || !HTMLCanvasElement.prototype.captureStream)) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return; }
+    if (CH.tocando) { CH.tocando.parar(); return; }
+    let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
+    await carregarMarca();
+    const W = gravar ? 1080 : 540, tela = gravar ? document.createElement("canvas") : $("#chQuadro"); if (!tela) return;
+    if (gravar) { tela.width = 1080; tela.height = 1920; }
+    const ctx = tela.getContext("2d"), previa = $("#chQuadro") && $("#chQuadro").getContext("2d");
+    const btn = gravar ? $("#chGerar") : $("#chPrevia"), barra = $("#chProgresso"), total = T_CHAMADA;
+    if (btn) btn.disabled = true; if (gravar && barra) ligarBarra(btn, barra);
+    let t0 = 0, dest = null, rec = null, partes = [], fim = null; const E = MUSICAS[CH.musica] || MUSICAS.traparabe;
+    try { if (!ac) throw new Error("sem som"); if (ac.state === "suspended") await ac.resume(); dest = gravar ? ac.createMediaStreamDestination() : ac.destination; await carregarSons(ac, E); t0 = tocarTrilha(ac, dest, total, [], [], null, E, T_PLIM_CHAMADA); } catch (e) { t0 = 0; }
+    if (gravar) {
+      const fluxo = tela.captureStream(30); if (dest && dest.stream) dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
+      rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 }); rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); }; fim = new Promise((ok) => { rec.onstop = ok; });
+      if (ac && t0) await new Promise((ok) => { const e = () => (ac.currentTime >= t0 - 0.02 ? ok() : requestAnimationFrame(e)); e(); });
+      rec.start(); manterTelaAcesa(true);
+    }
+    const inicio = performance.now(), atraso = !gravar && ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
+    const agora = () => ac && t0 ? ac.currentTime - t0 - atraso : (performance.now() - inicio) / 1000;
+    let parado = false; CH.tocando = { parar: () => { parado = true; } };
+    if (!gravar && btn) { btn.disabled = false; }
+    await new Promise((ok) => { const passo = () => { const t = agora(); if (parado || t >= total + (gravar ? 0.45 : 0)) { ok(); return; }
+      quadroChamada(ctx, W, Math.min(Math.max(0, t), total - 0.01), CH); if (gravar && previa) previa.drawImage(tela, 0, 0, 540, 960);
+      if (btn) btn.textContent = gravar ? "Gravando… " + Math.min(100, Math.round((t / total) * 100)) + "%" : "■ Parar prévia";
+      if (gravar && barra) barra.querySelector("i").style.width = Math.min(100, (t / total) * 100) + "%"; requestAnimationFrame(passo); }; passo(); });
+    CH.tocando = null;
+    if (rec) { rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); }
+    if (ac) ac.close().catch(() => {});
+    if (!gravar) { if (btn) { btn.disabled = false; btn.textContent = "▶ Ver prévia com música"; } return; }
+    const mp4 = tipo.startsWith("video/mp4"); let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
+    blob = await somCompativel(blob, tipo, (m) => { if (btn) btn.textContent = m; });
+    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; quadroChamada(tc.getContext("2d"), 1080, 2.6, CH);
+    const capa = await telaParaJpeg(tc, "miga-corre-pros-stories-capa.jpg");
+    CH.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-corre-pros-stories.${mp4 ? "mp4" : "webm"}`, capa }; CH.legenda = null;
+    wz.passo = "chPronto"; mostrarPasso();
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "chamada") return;
+    const t = e.target, CH = ch();
+    const n = t.closest("[data-ch-nicho]"); if (n) { CH.nicho = n.dataset.chNicho; mostrarPasso(); return; }
+    const co = t.closest("[data-ch-cor]"); if (co) { CH.cor = co.dataset.chCor; mostrarPasso(); return; }
+    const mu = t.closest("[data-ch-mus]"); if (mu) {
+      let v = mu.dataset.chMus; if (v === "mais") { v = await escolherOpcao("Música", LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k][0]]), CH.musica); if (v === null) return; }
+      CH.musica = v; mostrarPasso(); return; }
+    if (t.closest("#chPrevia")) { rodarChamada(false); return; }
+    if (t.closest("#chGerar")) { if (CH.tocando) CH.tocando.parar(); rodarChamada(true); return; }
+    if (t.closest("#chRefazer")) { wz.passo = "chEditar"; mostrarPasso(); return; }
+    if (t.closest("#chBaixar")) { baixarBlob(CH.resultado.blob, CH.resultado.nome); toast("Vídeo salvo"); return; }
+    if (t.closest("#chBaixarCapa")) { baixarBlob(CH.resultado.capa, CH.resultado.capa.name); toast("Capa salva: use em Editar capa"); return; }
+    if (t.closest("#chCopiar")) { if (await copiarTexto($("#chLegenda").value)) toast("Legenda copiada"); return; }
+    if (t.closest("#chPostar")) { const r = CH.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
+      if (await copiarTexto($("#chLegenda").value)) toast("Legenda copiada: é só colar no Instagram");
+      if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
+      baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram e escolha da galeria"); }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal === "chamada" && e.target.id === "chLegenda") ch().legenda = e.target.value; });
   /** Barra de "criando o vídeo": rosa, com o texto branco e o percentual (o botão some enquanto grava) */
   function ligarBarra(btn, barra) {
     if (!barra) return; barra.hidden = false; barra.dataset.txt = "Criando o vídeo… 0%";
