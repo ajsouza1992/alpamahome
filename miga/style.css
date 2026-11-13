@@ -1591,3 +1591,8 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 .abas button { color: var(--preto); }
 .abas button[aria-current="page"] { color: var(--rosa-escuro); }
 @media (min-width: 960px) { .abas button svg { width: 36px !important; height: 36px !important; padding: 8px; } }
+/* Aba aberta toda rosa, com texto branco */
+.abas button[aria-current="page"] { background: var(--rosa) !important; color: #fff !important; box-shadow: var(--sombra-botao); outline: none; }
+.abas button[aria-current="page"] svg { background: rgba(255,255,255,.22); stroke: #fff; }
+.abas button[aria-current="page"] b { background: #fff; color: var(--rosa-escuro); }
+.abas button:focus:not(:focus-visible) { outline: none; }
