@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=143"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=144"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=143"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=144"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2376,10 +2376,10 @@
     const corpo = `✨ *${p.nome}*\n\n💸 ${preco}${off}${p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : ""}\n\n${FRASES[p.categoria] || FRASES.outros}\n\n${linkLoja(p.loja, p.link)}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
     return comConvite(`${abre}\n\n${corpo}`);
   }
-  /** Manda direto para o WhatsApp: a foto do produto (com o selo da loja) + a mensagem pronta */
+  /** Manda direto para o WhatsApp: a foto do produto (limpa, sem selo) + a mensagem pronta */
   async function enviarProdutoNoWhats(it, base) {
     const texto = it.textoEditado && it.texto ? it.texto : mensagemWhats(it, base);
-    let foto = null; try { if (it.imagem) foto = await fotoComLoja(await converterImagem(await arquivoDaImagem(it.imagem)), it.loja); } catch (e) { foto = null; }
+    let foto = null; try { if (it.imagem) foto = await converterImagem(await arquivoDaImagem(it.imagem)); /* grupo e canal: foto limpa, sem o selo da loja */ } catch (e) { foto = null; }
     let r = await compartilharArquivo(foto, comLoja(texto, it.loja, it.link));
     if (r === "sem") { await copiarTexto(texto); abrirWhatsApp(texto); r = "aberto"; }
     if (r === "cancelado") return false;
