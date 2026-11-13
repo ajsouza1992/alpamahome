@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=128"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=129"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=128"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=129"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2834,7 +2834,7 @@
 
   /* ---------- Vídeo com o tema do Miga ---------- */
   const DESC_TEMAS_VIDEO = {
-    vidro: "Moldura colorida com o vídeo grande e a descrição num painel de vidro transparente em cima do vídeo",
+    vidro: "Moldura colorida com o vídeo grande e a descrição num painel transparente em cima do vídeo",
     desfoque: "O próprio vídeo desfocado no fundo e ele nítido num cartão",
     quadrado: "Vídeo quadrado no meio, título em cima e preço embaixo",
     neon: "Fundo escuro com o vídeo numa borda brilhante",
@@ -3010,8 +3010,7 @@
       if (ai > 0) {
         const ph = ai + 70, py = base - ph - 26, px = vx + 26, pw = vw2 - 52;
         ctx.save(); retArredondado(ctx, px, py, pw, ph, 36); ctx.clip();
-        if (vw) { ctx.filter = "blur(18px)"; pintar(vx, top, vw2, alt); ctx.filter = "none"; }
-        ctx.fillStyle = "rgba(20,20,22,.32)"; ctx.fillRect(px, py, pw, ph); ctx.restore();
+        ctx.fillStyle = "rgba(20,20,22,.38)"; ctx.fillRect(px, py, pw, ph); ctx.restore();
         ctx.save(); retArredondado(ctx, px, py, pw, ph, 36); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.stroke(); ctx.restore();
         infos(py + 34, "#ffffff", "#ffd23f", "rgba(255,255,255,.85)", true, 92);
       }
@@ -3393,7 +3392,7 @@
               ${r.capa ? '<button type="button" class="est-btn" id="vdBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
               <button type="button" class="est-btn" id="vdRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Regravar</b></button>
             </div>
-            ${V.itemId ? `<button type="button" class="btn btn--branco rp-whats" id="rpWhats"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg>Postar no WhatsApp (o produto)</button>` : ""}
+            ${V.itemId ? `<button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>Grupos e canal, com a mensagem pronta</small></span></button>` : ""}
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
             <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
           </div>
@@ -3428,6 +3427,26 @@
     return tc;
   }
   /** Escolher o momento do vídeo que vira a capa */
+  /** Capa do Reels: "titulo" (vitrine com os produtos) ou um momento do próprio vídeo */
+  let capaReelsEl = null, capaReelsTimer = 0;
+  async function capaDoReels(tipo, seg) {
+    const R = rr(); if (!R.resultado) return;
+    if (tipo === "titulo") { const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; await carregarMarca(); capaReels(tc.getContext("2d"), R, itensReels(), await fotosReels()); R.resultado.capa = await telaParaJpeg(tc, "miga-promo-reels-capa.jpg"); return; }
+    if (!capaReelsEl || capaReelsEl.dataset.src !== R.resultado.url) { capaReelsEl = document.createElement("video"); capaReelsEl.muted = true; capaReelsEl.playsInline = true; capaReelsEl.preload = "auto"; capaReelsEl.src = R.resultado.url; capaReelsEl.dataset.src = R.resultado.url; await new Promise((ok) => { capaReelsEl.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 4000); }); }
+    capaReelsEl.currentTime = Math.min(seg, (capaReelsEl.duration || seg + 1) - 0.1); await new Promise((ok) => { capaReelsEl.addEventListener("seeked", ok, { once: true }); setTimeout(ok, 2000); });
+    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; tc.getContext("2d").drawImage(capaReelsEl, 0, 0, 1080, 1920);
+    R.capaT = seg; R.resultado.capa = await telaParaJpeg(tc, "miga-promo-reels-capa.jpg");
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-r-capa]"); if (!b || wz.canal !== "reels") return;
+    const R = rr(); R.capaTipo = b.dataset.rCapa; temposDoModelo(R);
+    await capaDoReels(R.capaTipo, R.capaT != null ? R.capaT : T_INTRO + 0.5 * T_PROD);
+    const y = scrollY; mostrarPasso(); scrollTo(0, y);
+  });
+  $("#wzCorpo").addEventListener("input", (e) => {
+    if (e.target.id !== "rCapaMomento") return; const seg = parseFloat(e.target.value) || 0; clearTimeout(capaReelsTimer);
+    capaReelsTimer = setTimeout(async () => { await capaDoReels("momento", seg); const img = document.querySelector(".rp-capa img"); if (img) img.src = URL.createObjectURL(rr().resultado.capa); }, 160);
+  });
   let capaVideoEl = null, capaTimer = 0;
   function momentoDaCapa(seg) {
     const V = vd(); if (!V.url || !V.resultado) return;
@@ -3570,23 +3589,14 @@
   }
   function quadroFinal(ctx, W, t, V) { try { acentoCena = acentosDe(MUSICAS[V.batida || "house"], V.iniFinal || 0, 8); quadroFinal0(ctx, W, t, V); } finally { acentoCena = null; } }
   function quadroFinal0(ctx, W, t, V) {
+    // Igual ao final dos Reels: logo, "Segue a Miga!", o seu @ e a chamada (Link na bio)
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
-    const C = CORES_VIDEO[V.cor] || CORES_VIDEO.rosa;
-    ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, 1080, 1920); bolinhas(ctx, C.bola, V.cor === "preto" ? "#e9e4d8" : "#ffffff", t + 30);
-    if (V.modelo || V.camp) { relogioReels = t; desenharDecor(ctx, decorDe({ modelo: V.modelo || "achadinho", camp: V.camp })); }
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    comPulo(ctx, t, A(0), 540, 640, () => { if (edMarca) ctx.drawImage(edMarca, -220, -220, 440, 440); });
-    comSubida(ctx, t, A(1), () => { ctx.font = "800 120px Poppins"; ctx.fillStyle = C.texto; ctx.fillText("Segue a Miga!", 540, 990); });
-    const insta = arroba(config.instagram);
-    let y = 1170;
-    if (insta) {
-      comPulo(ctx, t, A(2), 540, y, () => { pilulaReels(ctx, insta, 0, 0, C.pill, C.pillTexto, 66); });
-      y += 190;
-    }
-    const botao = String(V.botao == null ? "Link na bio" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
-    if (botao) comSubida(ctx, t, A(3), () => pilulaReels(ctx, botao, 540, y, "#ffffff", "#1d1d1f", 52, true));
+    const C = CORES_VIDEO[V.cor] || CORES_VIDEO.rosa, antes = ctaReels;
+    ctaReels = String(V.botao == null ? "Link na bio" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim();
+    relogioReels = t; fimReels(ctx, t, C, V.cor); ctaReels = antes;
     ctx.restore();
   }
+
   /** A musiquinha do Miga, tocada pelo próprio celular (Web Audio) e gravada junto com o vídeo */
   function tocarTrilha(ac, saida, total, pops, whooshes, meio, E = MUSICAS.house, plim = null) {
     const t0 = ac.currentTime + 0.35, SR = ac.sampleRate; // respiro para o áudio "acordar": as primeiras batidas não encavalam
@@ -4998,7 +5008,7 @@
         <div class="rp-grade">
           <div class="rp-midia">
             <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
-            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"><figcaption>Capa</figcaption></figure>` : ""}
+            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"><figcaption>Capa</figcaption><div class="rp-capa-op"><button type="button" data-r-capa="titulo" class="${(R.capaTipo || "titulo") === "titulo" ? "on" : ""}">Título</button><button type="button" data-r-capa="momento" class="${R.capaTipo === "momento" ? "on" : ""}">Momento</button></div>${R.capaTipo === "momento" ? `<label class="rp-capa-momento"><span>Momento da capa</span><input type="range" id="rCapaMomento" min="0" max="${Math.max(0.1, T_INTRO + T_PROD * itensReels().length + T_FIM - 0.3).toFixed(1)}" step="0.1" value="${(R.capaT != null ? R.capaT : T_INTRO + 0.5 * T_PROD).toFixed(1)}"></label>` : ""}</figure>` : ""}
           </div>
           <div class="rp-acoes">
             <button type="button" class="btn btn--rosa" id="rPostar">Postar / compartilhar</button>
@@ -5007,7 +5017,7 @@
               ${r.capa ? '<button type="button" class="est-btn" id="rBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
               <button type="button" class="est-btn" id="rRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Regravar</b></button>
             </div>
-            <button type="button" class="btn btn--branco rp-whats" id="rpWhats"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg>Postar no WhatsApp (${itensReels().length} ${itensReels().length > 1 ? "produtos" : "produto"})</button>
+            <button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>${itensReels().length} ${itensReels().length > 1 ? "produtos, um por um" : "produto"} · grupos e canal</small></span></button>
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
             ${blocoLegenda(R)}
             <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
@@ -5049,7 +5059,7 @@
       </div>
       <button type="button" class="btn btn--rosa" id="kPostar">Postar / compartilhar</button>
       <button type="button" class="btn btn--branco" id="kBaixar">Baixar as ${l.length + 2} imagens</button>
-      <button type="button" class="btn btn--branco rp-whats" id="rpWhats"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg>Postar no WhatsApp (${l.length} ${l.length > 1 ? "produtos" : "produto"})</button>
+      <button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>${l.length} ${l.length > 1 ? "produtos, um por um" : "produto"} · grupos e canal</small></span></button>
       ${blocoLegenda(R)}
       <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
     slidesCarrossel().then((s) => { const tr = $("#kTrilho"); if (!tr) return; tr.innerHTML = ""; s.forEach((cv) => tr.appendChild(cv)); });
