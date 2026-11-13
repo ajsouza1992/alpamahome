@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=129"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=130"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=129"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=130"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2834,7 +2834,7 @@
 
   /* ---------- Vídeo com o tema do Miga ---------- */
   const DESC_TEMAS_VIDEO = {
-    vidro: "Moldura colorida com o vídeo grande e a descrição num painel transparente em cima do vídeo",
+    vidro: "Moldura colorida com o vídeo grande e a descrição solta em cima do vídeo",
     desfoque: "O próprio vídeo desfocado no fundo e ele nítido num cartão",
     quadrado: "Vídeo quadrado no meio, título em cima e preço embaixo",
     neon: "Fundo escuro com o vídeo numa borda brilhante",
@@ -2854,7 +2854,7 @@
     minimal: "Só o vídeo, com selo de preço e a chamada"
   };
   const TEMAS_VIDEO = {
-    cheia: "Tela cheia", vidro: "Moldura vidro", desfoque: "Desfoque", legenda: "Legenda", manchete: "Manchete", contagem: "Contagem", neon: "Neon", quadrado: "Quadrado", story: "Story", gradiente: "Gradiente", faixa: "Faixa", selo: "Etiqueta", cinema: "Cinema", moldura: "Moldura", polaroid: "Polaroid", circulo: "Círculo", dividido: "Dividido", minimal: "Mínimo"
+    cheia: "Tela cheia", vidro: "Moldura texto livre", desfoque: "Desfoque", legenda: "Legenda", manchete: "Manchete", contagem: "Contagem", neon: "Neon", quadrado: "Quadrado", story: "Story", gradiente: "Gradiente", faixa: "Faixa", selo: "Etiqueta", cinema: "Cinema", moldura: "Moldura", polaroid: "Polaroid", circulo: "Círculo", dividido: "Dividido", minimal: "Mínimo"
   };
   const CORES_VIDEO = {
     creme: { nome: "Creme", antigo: "#8a817b", fundo: "#fff3c4", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff", bola: "rgba(255,210,63,.45)" },
@@ -2999,7 +2999,7 @@
       const y2 = top + alt + 30 + infos(top + alt + 30, C.texto, C.destaque, C.antigo);
       if (V.botao) pilula(V.botao, w / 2, y2 + 60, C.pill, C.pillTexto);
       marca(w - 185, h - 180, 150, C.cor === "preto" || V.cor === "preto" ? "#e9e4d8" : null);
-    } else if (V.tema === "vidro") { // moldura colorida, vídeo grande e a descrição num painel de vidro em cima do vídeo
+    } else if (V.tema === "vidro") { // moldura colorida, vídeo grande e a descrição solta (sem caixa) em cima do vídeo
       ctx.fillStyle = C.fundo; ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = C.bola; ctx.beginPath(); ctx.arc(40, 40, 190, 0, Math.PI * 2); ctx.fill();
       const fimTitulo = titulo(150, C.texto, C.destaque);
@@ -3008,11 +3008,13 @@
       ctx.save(); retArredondado(ctx, vx, top, vw2, alt, 48); ctx.clip(); pintar(vx, top, vw2, alt); ctx.restore();
       const ai = altInfos();
       if (ai > 0) {
-        const ph = ai + 70, py = base - ph - 26, px = vx + 26, pw = vw2 - 52;
-        ctx.save(); retArredondado(ctx, px, py, pw, ph, 36); ctx.clip();
-        ctx.fillStyle = "rgba(20,20,22,.38)"; ctx.fillRect(px, py, pw, ph); ctx.restore();
-        ctx.save(); retArredondado(ctx, px, py, pw, ph, 36); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.stroke(); ctx.restore();
-        infos(py + 34, "#ffffff", "#ffd23f", "rgba(255,255,255,.85)", true, 92);
+        // Texto livre em cima do vídeo: sem caixa, só uma sombra suave embaixo para dar leitura
+        const py = base - ai - 60, gy = Math.max(top, py - 160);
+        ctx.save(); retArredondado(ctx, vx, top, vw2, alt, 48); ctx.clip();
+        const g = ctx.createLinearGradient(0, gy, 0, base); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(.55, "rgba(0,0,0,.45)"); g.addColorStop(1, "rgba(0,0,0,.7)");
+        ctx.fillStyle = g; ctx.fillRect(vx, gy, vw2, base - gy); ctx.restore();
+        ctx.save(); ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 3;
+        infos(py, "#ffffff", "#ffd23f", "rgba(255,255,255,.9)", true, 92); ctx.restore();
       }
       if (V.botao) pilula(V.botao, w / 2, h - 95, C.pill, C.pillTexto, 40);
       marca(w - 175, h - 160, 130, V.cor === "preto" ? "#e9e4d8" : null);
