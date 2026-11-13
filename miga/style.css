@@ -1584,3 +1584,10 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 .ed-chips button .ic-selo { width: 24px; height: 24px; padding: 4.5px; margin-right: 6px; }
 #bnModelo [data-v] { display: inline-flex; align-items: center; gap: 8px; }
 .ed-chips button { display: inline-flex; align-items: center; white-space: nowrap; }
+
+/* Menu (barra de baixo e lateral) no estilo "Na bolinha rosa" */
+.abas button svg { box-sizing: border-box; width: 30px !important; height: 30px !important; padding: 6px; border-radius: 30%; background: var(--rosa-claro); stroke: var(--rosa); stroke-width: 2; flex: none; transition: background .2s, stroke .2s; }
+.abas button[aria-current="page"] svg { background: var(--rosa); stroke: #fff; }
+.abas button { color: var(--preto); }
+.abas button[aria-current="page"] { color: var(--rosa-escuro); }
+@media (min-width: 960px) { .abas button svg { width: 36px !important; height: 36px !important; padding: 8px; } }
