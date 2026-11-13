@@ -403,7 +403,7 @@ body.travado { overflow: hidden; }
 #conviteCampo[hidden], #conviteVazio[hidden] { display: none; }
 
 /* ---------- Criar: passo a passo ---------- */
-.wz { display: grid; gap: 14px; min-height: calc(100dvh - 230px); align-content: start; }
+.wz { display: grid; gap: 14px; min-height: 0; align-content: start; }
 .wz__barra { height: 7px; border-radius: 7px; background: var(--linha); overflow: hidden; }
 .wz__barra i { display: block; height: 100%; width: 0; border-radius: 7px; background: var(--rosa); transition: width .3s; }
 .wz__info { display: flex; justify-content: space-between; align-items: center; min-height: 28px; margin-top: 6px; font-size: 12.5px; color: var(--cinza); }
@@ -1275,3 +1275,9 @@ body.modo-selecao main { padding-bottom: 200px; }
 .est-previa--foto { display: grid; place-items: center; margin: 0 auto 12px; width: min(70vw, 300px); aspect-ratio: 1; border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 12px 26px -18px rgba(0,0,0,.5); }
 .est-previa--foto img { width: 100%; height: 100%; object-fit: contain; }
 .est-ctrl--1 { grid-template-columns: 1fr !important; }
+/* Sem espaço branco sobrando no fim do cartão: o próprio fim da página já deixa lugar para os botões fixos */
+@media (max-width: 959px) {
+  #aba-criar .wz { padding-bottom: 20px; }
+  .wz__corpo:has(.wz-rodape) { padding-bottom: 0 !important; }
+  .wz__corpo:has(.barra-cores) { padding-bottom: 90px !important; }
+}
