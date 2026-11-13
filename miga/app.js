@@ -1192,7 +1192,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=178"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=179"; });
     }
     edFoto = null;
     try {
@@ -1566,7 +1566,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=178"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=179"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1807,6 +1807,7 @@
   const marcaBusca = (txt) => { const s = esc(txt); const t = termoBusca.trim(); if (!t || ehLink(t)) return s; let out = s;
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
+  $("#ajOcultarPostados").addEventListener("change", (e) => { config.ocultarPostados = e.target.checked; gravarConfig(); renderFila(); toast(e.target.checked ? "Postados ocultos da Lista" : "Postados de volta na Lista"); });
   function renderFila() {
     migrarCategorias(); renderCatsLista(); pintarMarcados();
     const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && bateBusca(i));
@@ -1815,12 +1816,13 @@
     document.querySelectorAll("#ppVisao [data-visao]").forEach((b) => { b.classList.toggle("on", b.dataset.visao === v); b.setAttribute("aria-selected", String(b.dataset.visao === v)); });
     [["#vqPostar", qt.postar], ["#vqPostados", qt.postados], ["#vqTodos", qt.todos]].forEach(([s, n]) => { $(s).textContent = n; $(s).hidden = !n; });
     pintarNovoLink();
-    const l0 = ordenar(base), l = [...l0.filter((i) => !foiCompartilhado(i)), ...l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0))];
+    const ocultos = config.ocultarPostados && !termoBusca.trim() ? base.filter(foiCompartilhado).length : 0;
+    const l0 = ordenar(base), l = [...l0.filter((i) => !foiCompartilhado(i)), ...(ocultos ? [] : l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0)))];
     pintarCats();
     const np = l.filter((i) => !foiCompartilhado(i)).length, nd = l.length - np;
     $("#ppSelecionar").hidden = !l.length && !modoVarios; $("#ppOrdem").hidden = l.length < 2 || modoVarios; $("#ppDica").hidden = !l.length;
     $("#ppOrdemTxt").textContent = ({ recentes: "Recentes", antigos: "Antigos", preco: "Menor preço", desconto: "Desconto" })[ordemLista] || "Recentes";
-    $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}`;
+    $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}${ocultos ? ` · ${ocultos} ${ocultos === 1 ? "postado oculto" : "postados ocultos"}` : ""}`;
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
       return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}${ppAtual === i ? " aberto" : ""}">${post ? '<span class="selo-canto"><svg><use href="#i-check"/></svg>Postado</span>' : ""}<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
@@ -2203,6 +2205,7 @@
     if (k === "video") { abrirVideoLivre(); return; }
     if (k === "cupons") { abrirPostarCupons(); return; }
     if (k === "chamada") { abrirChamada(); return; }
+    if (k === "carrossel") { abrirCartas(); return; }
     if (k === "continuar") { continuarProgresso(); return; }
     // precisa escolher os produtos: vai para a Lista já selecionando
     acaoPendente = k; filtroLista = "todas"; limparBusca(); irPara("postar"); marcados.clear(); modoVarios = true; renderFila();
@@ -2330,6 +2333,7 @@
     instagram: { nome: "Imagem do produto", cor: "#e8336d", desc: "Arte para story, Status ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
     livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
+    cartas: { nome: "Carrossel", cor: "#e8336d", desc: "Carrossel de dicas, do seu jeito", icone: "i-carrossel" },
     chamada: { nome: "Corre pros Stories", cor: "#1d1d1f", desc: "Reels chamando pros seus stories", icone: "i-rede-insta" },
     cupons: { nome: "Postar cupons", cor: "#ffd23f", desc: "Status e grupos só com cupons", icone: "i-etiqueta" },
     reels: { nome: "Reels de produtos", cor: "#8e44ec", desc: "1 a 5 produtos, vários modelos, com música", icone: "i-brilho" },
@@ -2351,6 +2355,7 @@
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
     if (canal === "cupons") return ["cEscolher", "cPronto"];
     if (canal === "chamada") return ["chEditar", "chPronto"];
+    if (canal === "cartas") return ["kaEditar"];
     if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", "kCarrossel"] : ["canal", "rItens", "rModelo", "rPronto"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
@@ -2399,7 +2404,7 @@
   function guardarProgresso() {
     try {
       // Terminou (chegou no resumo ou o vídeo/Reels ficou pronto): não tem mais o que continuar
-      if (wz.canal === "chamada" || wz.canal === "cupons") return; // temas prontos não guardam "continuar"
+      if (wz.canal === "chamada" || wz.canal === "cupons" || wz.canal === "cartas") return; // temas prontos não guardam "continuar"
       if (wz.passo === "resumo" || (wz.reels && wz.reels.resultado) || (wz.video && wz.video.resultado)) { localStorage.removeItem("miga_progresso"); return; }
       // Voltar para a lista (ou abrir o app de novo) NÃO apaga onde você parou
       if (!wz.canal || !wz.passo || PASSOS_FINAIS.includes(wz.passo)) return;
@@ -2448,6 +2453,7 @@
     if (wz.canal === "reels") { telaReels(c); return; }
     if (wz.canal === "cupons") { telaCupons(c); return; }
     if (wz.canal === "chamada") { telaChamada(c); return; }
+    if (wz.canal === "cartas") { telaCartas(c); return; }
     if (wz.passo === "produto") {
       const l2 = fila().filter((x) => !x.carregando && (wz.filtroCat === undefined || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
       c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2>
@@ -5583,6 +5589,102 @@
     V.camadas.push(n); V.sel = n.id; V.resultado = null; $("#folhaEst").close(); atualizarBarraEditor(); toast("Frase colocada no vídeo");
   });
 
+
+  /* ===================== Carrossel livre (dicas, sem produtos), no padrão das artes da Miga ===================== */
+  const CORES_CARTA = {
+    branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", em: "#e8336d", b1: "rgba(255,210,63,.45)", b2: "#efeae0", b3: "rgba(255,210,63,.45)", circ: "#fff8e4" },
+    rosa: { nome: "Rosa", fundo: "#e8336d", texto: "#ffffff", em: "#ffd23f", b1: "#ffffff", b2: "#ffffff", b3: "rgba(255,255,255,.7)", circ: "#ffffff" },
+    creme: { nome: "Creme", fundo: "#fff3c4", texto: "#1d1d1f", em: "#e8336d", b1: "rgba(255,210,63,.6)", b2: "#ffffff", b3: "rgba(255,210,63,.6)", circ: null, grad: true },
+    preto: { nome: "Preto", fundo: "#1d1d1f", texto: "#ffffff", em: "#ffd23f", b1: "#e8336d", b2: "#e9e4d8", b3: "#e8336d", circ: "#ffffff" }
+  };
+  const EMOJIS_CARTA = ["💖", "✨", "🔥", "💸", "👀", "😍", "🛍️", "🎁", "⏳", "👉", "✅", "⭐", "🌸", "💄", "👗", "👟"];
+  const car = () => wz.car;
+  function abrirCartas() {
+    const at = arroba(config.instagram);
+    let salvo = null; try { salvo = JSON.parse(localStorage.getItem("miga_carrossel") || "null"); } catch (e) { salvo = null; }
+    const padrao = [
+      { cor: "branco", ic: "porcento", titulo: "Pague *menos*\nnas compras online", texto: "5 truques que eu uso todo dia", botao: "Arrasta pro lado →" },
+      { cor: "rosa", ic: "carrinho", titulo: "*1.* Seu título aqui", texto: "Escreva a dica aqui.", botao: "" },
+      { cor: "preto", ic: "coracao", titulo: "Entra no meu\n*canal*", texto: "Achadinho conferido todo dia no canal do WhatsApp. O link tá na bio!", botao: at ? `Segue a ${at}` : "Segue a gente 💖" }];
+    wz = { canal: "cartas", passo: "kaEditar", veioDaLista: true, car: { telas: salvo && Array.isArray(salvo.telas) && salvo.telas.length ? salvo.telas : padrao, sel: 0, campo: "titulo" } };
+    marcados.clear(); irPara("criar"); mostrarPasso();
+  }
+  const guardarCartas = () => { try { localStorage.setItem("miga_carrossel", JSON.stringify({ telas: car().telas })); } catch (e) { /* segue */ } };
+  function quebrarCarta(ctx, txt, larg) {
+    const saida = [];
+    String(txt || "").split("\n").forEach((par) => { let linha = ""; par.split(" ").forEach((p) => { const t = linha ? linha + " " + p : p; if (ctx.measureText(t.replace(/\*/g, "")).width > larg && linha) { saida.push(linha); linha = p; } else linha = t; }); saida.push(linha); });
+    // um destaque *aberto* numa linha continua na seguinte
+    let aberto = false; return saida.map((l) => { let s = (aberto ? "*" : "") + l; const n = (l.match(/\*/g) || []).length; if (n % 2) aberto = !aberto; if (aberto) s += "*"; return s; });
+  }
+  function desenharCarta(ctx, S, tela, idx, total) {
+    const C = CORES_CARTA[tela.cor] || CORES_CARTA.branco, x = ctx; x.save(); x.scale(S / 1080, S / 1080);
+    if (C.grad) { const g = x.createRadialGradient(540, 378, 0, 540, 378, 800); g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6"); x.fillStyle = g; } else x.fillStyle = C.fundo;
+    x.fillRect(0, 0, 1080, 1080);
+    x.fillStyle = C.b1; x.beginPath(); x.arc(30, 30, 180, 0, 7); x.fill();
+    x.fillStyle = C.b2; x.beginPath(); x.arc(1030, 1040, 150, 0, 7); x.fill();
+    x.fillStyle = C.b3; x.beginPath(); x.arc(995, 135, 25, 0, 7); x.fill();
+    // medir o bloco para centralizar
+    x.font = "800 86px Poppins"; const lt = quebrarCarta(x, tela.titulo, 860);
+    x.font = "500 44px Poppins"; const lp = tela.texto ? quebrarCarta(x, tela.texto, 860) : [];
+    const hIc = tela.ic ? 234 : 0, hT = lt.length * 91, hP = lp.length ? 30 + lp.length * 58 : 0, hB = tela.botao ? 40 + 108 : 0, H = hIc + hT + hP + hB;
+    let y = Math.max(80, (1080 - H) / 2);
+    if (tela.ic) { x.save(); x.translate(540, y + 100); if (C.circ) { x.fillStyle = C.circ; x.shadowColor = "rgba(0,0,0,.25)"; x.shadowBlur = 40; x.shadowOffsetY = 18; x.beginPath(); x.arc(0, 0, 100, 0, 7); x.fill(); x.shadowColor = "transparent"; } iconeReels(x, tela.ic, C.circ ? 132 : 172); x.restore(); y += hIc; }
+    x.textAlign = "left"; x.textBaseline = "middle";
+    const linhaRica = (l, yy, fonte) => { x.font = fonte; const ps = partesDestaque(l, C.texto, C.em), w = ps.reduce((s, [p]) => s + x.measureText(p).width, 0); let xx = 540 - w / 2; ps.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, yy); xx += x.measureText(p).width; }); };
+    lt.forEach((l) => { linhaRica(l, y + 45, "800 86px Poppins"); y += 91; });
+    if (lp.length) { y += 30; lp.forEach((l) => { x.globalAlpha = 0.95; linhaRica(l, y + 29, "500 44px Poppins"); x.globalAlpha = 1; y += 58; }); }
+    if (tela.botao) { y += 40; x.save(); x.translate(540, y + 54); x.rotate(-0.052); x.font = "800 42px Poppins"; const w = x.measureText(tela.botao).width + 100, h = 96; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = "#ffd23f"; x.fill(); x.lineWidth = 6; x.strokeStyle = "#1d1d1f"; x.stroke(); x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.fillText(tela.botao, 0, 2); x.restore(); }
+    if (edMarca) x.drawImage(edMarca, 1080 - 48 - 130, 1080 - 40 - 130, 130, 130);
+    x.restore();
+  }
+  function telaCartas(c) {
+    const K = car(), T = K.telas, s = T[K.sel] || T[0];
+    const chips = (attr, lista, atual) => `<div class="ed-chips ch-chips">${lista.map(([k, n]) => `<button type="button" ${attr}="${k}" class="${k === atual ? "on" : ""}">${n}</button>`).join("")}</div>`;
+    c.innerHTML = `<h2 class="wz-titulo">Carrossel</h2>
+      <p class="nota">Monte as telas do seu jeito: cor, figurinha, textos e emojis. A primeira e a última já vêm prontas. Use *asteriscos* para destacar uma palavra.</p>
+      <div class="ka-previa"><canvas id="kaQuadro" width="540" height="540"></canvas></div>
+      <div class="ka-telas">${T.map((t, i) => `<button type="button" class="ka-mini${i === K.sel ? " on" : ""}" data-ka-sel="${i}"><canvas width="120" height="120" data-ka-mini="${i}"></canvas><i>${i + 1}</i></button>`).join("")}${T.length < 10 ? '<button type="button" class="ka-mini ka-mais" data-ka-add>＋<small>Nova tela</small></button>' : ""}</div>
+      <div class="ka-ops"><button type="button" class="btn btn--branco" data-ka-mover="-1" ${K.sel === 0 ? "disabled" : ""}>← Mover</button><button type="button" class="btn btn--branco" data-ka-mover="1" ${K.sel === T.length - 1 ? "disabled" : ""}>Mover →</button><button type="button" class="btn btn--branco" data-ka-dup>Duplicar</button><button type="button" class="btn btn--branco ka-del" data-ka-del ${T.length <= 1 ? "disabled" : ""}>Excluir</button></div>
+      <h3 class="ch-tela">Tela ${K.sel + 1}</h3>
+      <b class="ch-rot">Cor</b>${chips("data-ka-cor", Object.entries(CORES_CARTA).map(([k, v]) => [k, v.nome]), s.cor)}
+      <b class="ch-rot">Figurinha</b><div class="ch-figs">${["", ...FIGURAS].map((f) => `<button type="button" data-ka-ic="${f}" class="${f === (s.ic || "") ? "on" : ""}" aria-label="${f || "sem figurinha"}">${f ? `<canvas width="60" height="60" data-fig-ka="${f}"></canvas>` : "✕"}</button>`).join("")}</div>
+      <label class="ch-campo"><span>Título</span><textarea data-ka-campo="titulo" rows="2" maxlength="80">${esc(s.titulo || "")}</textarea></label>
+      <label class="ch-campo"><span>Texto</span><textarea data-ka-campo="texto" rows="3" maxlength="200">${esc(s.texto || "")}</textarea></label>
+      <label class="ch-campo"><span>Botão amarelo (deixe vazio para não ter)</span><input data-ka-campo="botao" maxlength="34" value="${esc(s.botao || "")}"></label>
+      <b class="ch-rot">Emojis (entram no campo que você tocou por último)</b><div class="ka-emojis">${EMOJIS_CARTA.map((e) => `<button type="button" data-ka-emoji="${e}">${e}</button>`).join("")}</div>
+      <button type="button" class="btn btn--rosa" id="kaBaixar">Salvar as ${T.length} imagens</button>
+      <button type="button" class="btn btn--branco" id="kaZerar">Começar um carrossel novo</button>
+      <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>`;
+    carregarMarca().then(pintarCartas);
+    document.querySelectorAll("[data-fig-ka]").forEach((cv) => { const x = cv.getContext("2d"); x.translate(30, 30); iconeReels(x, cv.dataset.figKa, 46); });
+  }
+  function pintarCartas(soAtual) {
+    const K = car(); if (!K) return; const q = $("#kaQuadro"); if (q) desenharCarta(q.getContext("2d"), 540, K.telas[K.sel], K.sel, K.telas.length);
+    document.querySelectorAll("[data-ka-mini]").forEach((cv) => { const i = +cv.dataset.kaMini; if (soAtual && i !== K.sel) return; desenharCarta(cv.getContext("2d"), 120, K.telas[i], i, K.telas.length); });
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "cartas") return;
+    const t = e.target, K = car(), T = K.telas, s = T[K.sel], redesenhar = () => { guardarCartas(); const y = scrollY; mostrarPasso(); scrollTo(0, y); };
+    const sl = t.closest("[data-ka-sel]"); if (sl) { K.sel = +sl.dataset.kaSel; redesenhar(); return; }
+    if (t.closest("[data-ka-add]")) { const fim = T.length > 1 ? T.length - 1 : T.length; T.splice(fim, 0, { cor: ["rosa", "creme", "preto", "branco"][fim % 4], ic: "estrela", titulo: `*${fim}.* Seu título aqui`, texto: "Escreva a dica aqui.", botao: "" }); K.sel = fim; redesenhar(); return; }
+    const mv = t.closest("[data-ka-mover]"); if (mv) { const d = +mv.dataset.kaMover, j = K.sel + d; if (j < 0 || j >= T.length) return; [T[K.sel], T[j]] = [T[j], T[K.sel]]; K.sel = j; redesenhar(); return; }
+    if (t.closest("[data-ka-dup]")) { if (T.length >= 10) { toast("O Instagram aceita até 10 telas (no app vou até 10)"); return; } T.splice(K.sel + 1, 0, { ...s }); K.sel++; redesenhar(); return; }
+    if (t.closest("[data-ka-del]")) { if (T.length <= 1) return; T.splice(K.sel, 1); K.sel = Math.max(0, K.sel - 1); redesenhar(); return; }
+    const co = t.closest("[data-ka-cor]"); if (co) { s.cor = co.dataset.kaCor; redesenhar(); return; }
+    const ic = t.closest("[data-ka-ic]"); if (ic) { s.ic = ic.dataset.kaIc; document.querySelectorAll("[data-ka-ic]").forEach((b) => b.classList.toggle("on", b === ic)); guardarCartas(); pintarCartas(true); return; }
+    const em = t.closest("[data-ka-emoji]"); if (em) { const campo = K.campo || "titulo", el = document.querySelector(`[data-ka-campo="${campo}"]`); if (!el) return;
+      const p = el.selectionStart ?? el.value.length; el.value = el.value.slice(0, p) + em.dataset.kaEmoji + el.value.slice(el.selectionEnd ?? p); s[campo] = el.value; guardarCartas(); pintarCartas(true); return; }
+    if (t.closest("#kaZerar")) { try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } abrirCartas(); return; }
+    if (t.closest("#kaBaixar")) {
+      const b = $("#kaBaixar"); b.disabled = true; b.textContent = "Preparando…"; await carregarMarca(); const arqs = [];
+      for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, `miga-carrossel-${String(i + 1).padStart(2, "0")}.jpg`)); }
+      b.disabled = false; b.textContent = `Salvar as ${T.length} imagens`;
+      if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs }); return; } catch (err) { if (err.name === "AbortError") return; } }
+      arqs.forEach((f, i) => setTimeout(() => baixarBlob(f, f.name), i * 350)); toast("Imagens salvas: no Instagram, escolha várias na ordem");
+    }
+  });
+  $("#wzCorpo").addEventListener("focusin", (e) => { if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.kaCampo) car().campo = e.target.dataset.kaCampo; });
+  $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal !== "cartas" || !e.target.dataset || !e.target.dataset.kaCampo) return; const K = car(); K.telas[K.sel][e.target.dataset.kaCampo] = e.target.value; guardarCartas(); pintarCartas(true); });
   /* ===================== Tema pronto: "Corre pros Stories" (Reels chamando pros stories) ===================== */
   const NICHOS_CHAMADA = {
     perfumes: { palavra: "PERFUME", ic: ["perfume", "brilho"], frase: [["Tem perfume", ""], ["de ", "rica"], ["com preço", ""], ["de ", "amiga"]], icFrase: "dinheiro", itens: ["Body splash", "Perfume árabe", "Kits pra presente", "Importados"], ic2: ["presente", "coracao"] },
@@ -5605,6 +5707,18 @@
     branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.45)", bola2: "#efeae0", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" }
   };
   const T_CHAMADA = 12.4, T_PLIM_CHAMADA = 10.0;
+  /** Textos do tema: o padrão do nicho + o que você editou (use *palavra* para destacar) */
+  function dadosChamada(CH) {
+    const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, at = arroba(config.instagram);
+    const base = { etiqueta: "ATUALIZEI OS STORIES", t1: "Enchi meus", t2: "stories de", palavra: N.palavra, sub: "com preço de amiga",
+      frase: N.frase.map(([p, d]) => p + (d ? `*${d}*` : "")), lista: "Tem de tudo:", itens: N.itens.slice(), cta1: "Corre nos meus", cta2: "STORIES", toque: "toca na minha foto", arroba: at,
+      ic: N.ic.slice(), icFrase: N.icFrase, ic2: N.ic2.slice() };
+    const tx = CH.tx || {}; const d = { ...base, ...tx };
+    ["frase", "itens", "ic", "ic2"].forEach((k) => { d[k] = base[k].map((v, i) => (tx[k] && tx[k][i] != null ? tx[k][i] : v)); });
+    return d;
+  }
+  /** "de *rica*" → partes com a cor normal e a cor de destaque */
+  const partesDestaque = (s, cor, corD) => String(s || "").split("*").map((p, i) => [p, i % 2 ? corD : cor]).filter(([p]) => p);
   const ch = () => wz.ch;
   function abrirChamada() {
     wz = { canal: "chamada", passo: "chEditar", veioDaLista: true, ch: { nicho: "perfumes", cor: "preto", musica: "traparabe", resultado: null, legenda: null } };
@@ -5623,28 +5737,28 @@
       let xx = -w / 2; x.textAlign = "left"; x.textBaseline = "middle"; partes.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, 0); xx += x.measureText(p).width; }); x.restore(); };
     const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.18)"; x.shadowBlur = 24; x.beginPath(); x.arc(0, 0, tam * 0.62, 0, 7); x.fill(); x.shadowColor = "transparent"; iconeReels(x, nome, tam * 0.8); x.restore(); };
     const pilula = (txt, cx, cy, bg, fg, tam, t0, u, giro = -0.03, borda = true) => { const k = (u - t0) / 0.45; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy); x.rotate(giro); x.scale(s, s); x.font = `800 ${tam}px Poppins`; const w = x.measureText(txt).width + tam * 1.4, h = tam * 1.9; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = bg; x.fill(); if (borda) { x.lineWidth = 7; x.strokeStyle = "#1d1d1f"; x.stroke(); } x.fillStyle = fg; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(txt, 0, 3); x.restore(); };
-    const T = C.texto, A = C.d1;
+    const T = C.texto, A = C.d1, D = dadosChamada(CH);
     if (t < 3.2) {
-      pilula("ATUALIZEI OS STORIES", 540, 520, "#ffd23f", "#1d1d1f", 44, 0.05, t, -0.04);
-      linha([["Enchi meus", T]], 760, 118, 0.2, t); linha([["stories de", T]], 900, 118, 0.35, t);
-      linha([[N.palavra, A]], 1070, 150, 0.5, t);
-      adesivo(N.ic[0], 300, 1330, 260, 0.8, t, -0.12); adesivo(N.ic[1], 780, 1320, 220, 1.0, t, 0.1);
-      linha([["com preço de amiga", C.suave]], 1560, 60, 1.2, t);
+      if (D.etiqueta) pilula(D.etiqueta, 540, 520, "#ffd23f", "#1d1d1f", 44, 0.05, t, -0.04);
+      linha(partesDestaque(D.t1, T, A), 760, 118, 0.2, t); linha(partesDestaque(D.t2, T, A), 900, 118, 0.35, t);
+      linha([[D.palavra, A]], 1070, 150, 0.5, t);
+      if (D.ic[0]) adesivo(D.ic[0], 300, 1330, 260, 0.8, t, -0.12); if (D.ic[1]) adesivo(D.ic[1], 780, 1320, 220, 1.0, t, 0.1);
+      linha([[D.sub, C.suave]], 1560, 60, 1.2, t);
     } else if (t < 6.4) { const u = t - 3.2;
-      N.frase.forEach(([a1, d], i) => linha([[a1, T], [d, i === 3 ? C.d2 === C.fundo ? A : C.d2 : A]], 640 + i * 140, 112, 0.05 + i * 0.15, u));
-      adesivo(N.icFrase, 540, 1360, 280, 0.7, u, -0.08);
+      D.frase.forEach((s, i) => linha(partesDestaque(s, T, i === 3 && C.d2 !== C.fundo ? C.d2 : A), 640 + i * 140, 112, 0.05 + i * 0.15, u));
+      if (D.icFrase) adesivo(D.icFrase, 540, 1360, 280, 0.7, u, -0.08);
     } else if (t < 9.6) { const u = t - 6.4;
-      linha([["Tem de tudo:", T]], 560, 100, 0.05, u);
+      linha(partesDestaque(D.lista, T, A), 560, 100, 0.05, u);
       const est = [["#e8336d", "#fff", false], ["#ffd23f", "#1d1d1f", true], ["#ffffff", "#1d1d1f", CH.cor === "branco" || CH.cor === "creme"], ["#e8336d", "#fff", false]];
-      N.itens.forEach((it, i) => { const [bg, fg, bd] = CH.cor === "rosa" && bg0(i) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
-      adesivo(N.ic2[0], 220, 1500, 200, 1.3, u, -0.15); adesivo(N.ic2[1], 860, 1500, 180, 1.45, u, 0.12);
+      D.itens.forEach((it, i) => { if (!it) return; const [bg, fg, bd] = CH.cor === "rosa" && bg0(i) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
+      if (D.ic2[0]) adesivo(D.ic2[0], 220, 1500, 200, 1.3, u, -0.15); if (D.ic2[1]) adesivo(D.ic2[1], 860, 1500, 180, 1.45, u, 0.12);
     } else { const u = t - 9.6;
-      linha([["Corre nos meus", T]], 600, 104, 0.05, u); linha([["STORIES", A]], 760, 170, 0.2, u);
+      linha(partesDestaque(D.cta1, T, A), 600, 104, 0.05, u); linha([[D.cta2, A]], 760, 170, 0.2, u);
       const k = easeC((u - 0.4) / 0.5);
       if (k > 0) { const pr = 1 + 0.05 * Math.sin(u * 6); x.save(); x.translate(540, 1130); x.scale(k * pr, k * pr); const g = x.createLinearGradient(-170, -170, 170, 170); g.addColorStop(0, "#ffd23f"); g.addColorStop(0.5, "#e8336d"); g.addColorStop(1, "#7b3fe4"); x.lineWidth = 22; x.strokeStyle = g; x.beginPath(); x.arc(0, 0, 170, 0, 7); x.stroke(); x.fillStyle = "#fff"; x.beginPath(); x.arc(0, 0, 145, 0, 7); x.fill(); if (edMarca) x.drawImage(edMarca, -115, -115, 230, 230); x.restore(); }
       const tap = ((u - 1.0) % 1.2) / 1.2; if (u > 1.0 && tap < 0.5) { x.save(); x.globalAlpha = 1 - tap * 2; x.strokeStyle = T; x.lineWidth = 8; x.beginPath(); x.arc(640, 1230, 30 + tap * 120, 0, 7); x.stroke(); x.restore(); }
-      const at = arroba(config.instagram); if (at) pilula(at, 540, 1440, "#ffd23f", "#1d1d1f", 56, 0.8, u, -0.03);
-      linha([["toca na minha foto", C.suave]], at ? 1590 : 1450, 52, 1.1, u);
+      const at = D.arroba; if (at) pilula(at, 540, 1440, "#ffd23f", "#1d1d1f", 56, 0.8, u, -0.03);
+      linha([[D.toque, C.suave]], at ? 1590 : 1450, 52, 1.1, u);
     }
     if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160);
     x.restore();
@@ -5667,6 +5781,7 @@
         <b class="ch-rot">Cor</b>${chips("data-ch-cor", Object.entries(CORES_CHAMADA).map(([k, v]) => [k, v.nome]), CH.cor)}
         <b class="ch-rot">Música</b>${chips("data-ch-mus", [["traparabe", "Trap árabe"], ["trap", "Trap"], ["funkphonk", "Funk phonk"], ["dancepop", "Dance pop"], ["mais", "Mais músicas…"]], ["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? CH.musica : "mais")}
         ${["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? "" : `<p class="nota">Música: <b>${esc((NOMES_MUSICA[CH.musica] || [CH.musica])[0])}</b></p>`}
+        <button type="button" class="btn btn--branco" id="chEditarTx">✏️ Editar textos e figurinhas</button>
         ${arroba(config.instagram) ? "" : '<p class="nota">Dica: coloque o seu @ do Instagram em ⚙️ Ajustes para ele aparecer no final.</p>'}
         <button type="button" class="btn btn--branco" id="chPrevia">▶ Ver prévia com música</button>
         <div class="vd-progresso" id="chProgresso" hidden><i></i></div>
@@ -5695,6 +5810,30 @@
         </div></div>`;
     }
   }
+  function folhaTextosChamada() {
+    const D = dadosChamada(ch()), campo = (k, rot, v, i) => `<label class="ch-campo"><span>${rot}</span><input data-ch-tx="${k}"${i != null ? ` data-i="${i}"` : ""} maxlength="40" value="${esc(v || "")}"></label>`;
+    const figs = (k, atual, i) => `<div class="ch-figs">${["", ...FIGURAS].map((f) => `<button type="button" data-ch-ic="${k}"${i != null ? ` data-i="${i}"` : ""} data-v="${f}" class="${f === atual ? "on" : ""}" aria-label="${f || "sem figurinha"}">${f ? `<canvas width="60" height="60" data-fig-ch="${f}"></canvas>` : "✕"}</button>`).join("")}</div>`;
+    folhaEst("Textos e figurinhas", `<p class="nota">Mude o que quiser. Use *asteriscos* para destacar uma palavra na cor de destaque. Dá para colocar emojis.</p>
+      <h3 class="ch-tela">Tela 1 · Capa</h3>${campo("etiqueta", "Etiqueta", D.etiqueta)}${campo("t1", "Linha 1", D.t1)}${campo("t2", "Linha 2", D.t2)}${campo("palavra", "Palavra grande", D.palavra)}${campo("sub", "Frase de baixo", D.sub)}
+      <b class="ch-rot">Figurinha da esquerda</b>${figs("ic", D.ic[0], 0)}<b class="ch-rot">Figurinha da direita</b>${figs("ic", D.ic[1], 1)}
+      <h3 class="ch-tela">Tela 2 · Frase</h3>${D.frase.map((s, i) => campo("frase", "Linha " + (i + 1), s, i)).join("")}<b class="ch-rot">Figurinha</b>${figs("icFrase", D.icFrase)}
+      <h3 class="ch-tela">Tela 3 · Lista</h3>${campo("lista", "Título", D.lista)}${D.itens.map((s, i) => campo("itens", "Item " + (i + 1), s, i)).join("")}
+      <b class="ch-rot">Figurinha da esquerda</b>${figs("ic2", D.ic2[0], 0)}<b class="ch-rot">Figurinha da direita</b>${figs("ic2", D.ic2[1], 1)}
+      <h3 class="ch-tela">Tela 4 · Final</h3>${campo("cta1", "Linha 1", D.cta1)}${campo("cta2", "Palavra grande", D.cta2)}${campo("arroba", "Seu @ (ou deixe vazio)", D.arroba)}${campo("toque", "Frase de baixo", D.toque)}
+      <button type="button" class="btn btn--branco" id="chPadrao">Voltar aos textos do nicho</button>`);
+    document.querySelectorAll("[data-fig-ch]").forEach((c) => { const x = c.getContext("2d"); x.translate(30, 30); iconeReels(x, c.dataset.figCh, 46); });
+  }
+  $("#folhaEst").addEventListener("input", (e) => {
+    const k = e.target.dataset && e.target.dataset.chTx; if (!k || wz.canal !== "chamada") return; const CH = ch(); CH.tx = CH.tx || {};
+    if (e.target.dataset.i != null) { const D = dadosChamada(CH); CH.tx[k] = D[k].slice(); CH.tx[k][+e.target.dataset.i] = e.target.value; } else CH.tx[k] = e.target.value;
+  });
+  $("#folhaEst").addEventListener("click", (e) => {
+    if (wz.canal !== "chamada") return; const CH = ch();
+    if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast("Textos do nicho de volta"); return; }
+    const b = e.target.closest("[data-ch-ic]"); if (!b) return; const k = b.dataset.chIc; CH.tx = CH.tx || {};
+    if (b.dataset.i != null) { const D = dadosChamada(CH); CH.tx[k] = D[k].slice(); CH.tx[k][+b.dataset.i] = b.dataset.v; } else CH.tx[k] = b.dataset.v;
+    b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+  });
   function loopChamada() {
     const cv = $("#chQuadro"); if (!cv) return; const cx = cv.getContext("2d"), ini = performance.now();
     const passo = () => { const v = $("#chQuadro"); if (!v || v !== cv || wz.canal !== "chamada" || wz.passo !== "chEditar") return; if (!ch().tocando) quadroChamada(cx, 540, ((performance.now() - ini) / 1000) % T_CHAMADA, ch()); requestAnimationFrame(passo); };
@@ -5741,7 +5880,8 @@
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "chamada") return;
     const t = e.target, CH = ch();
-    const n = t.closest("[data-ch-nicho]"); if (n) { CH.nicho = n.dataset.chNicho; mostrarPasso(); return; }
+    const n = t.closest("[data-ch-nicho]"); if (n) { CH.nicho = n.dataset.chNicho; CH.tx = null; mostrarPasso(); return; }
+    if (t.closest("#chEditarTx")) { folhaTextosChamada(); return; }
     const co = t.closest("[data-ch-cor]"); if (co) { CH.cor = co.dataset.chCor; mostrarPasso(); return; }
     const mu = t.closest("[data-ch-mus]"); if (mu) {
       let v = mu.dataset.chMus; if (v === "mais") { v = await escolherOpcao("Música", LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k][0]]), CH.musica); if (v === null) return; }
@@ -6264,7 +6404,7 @@
   }
   function abrirConfig() {
     mostrarConta();
-    $("#ajInsta").value = config.instagram || "";
+    $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados;
     pintarAjustes();
     if (!dialogo.open) dialogo.showModal();
   }
