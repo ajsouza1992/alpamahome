@@ -1188,7 +1188,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=173"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=174"; });
     }
     edFoto = null;
     try {
@@ -1562,7 +1562,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=173"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=174"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2413,7 +2413,7 @@
     if (p.canal === "video") { if (l.length) criarAPartirDaLista("video", l, p.camp); else abrirVideoLivre(); return; }
     if (!l.length) { try { localStorage.removeItem("miga_progresso"); } catch (e) { /* segue */ } renderFila(); toast("Os produtos dessa criação não estão mais na lista"); return; }
     criarAPartirDaLista(p.canal, l, p.camp);
-    if (p.canal === "roteiro") { wz.modelo = p.modelo || wz.modelo; wz.cor = p.cor || wz.cor; if (p.lugares) wz.lugares = p.lugares; }
+    if (p.canal === "roteiro") { wz.modelo = p.modelo || wz.modelo; wz.cor = p.cor || wz.cor; if (p.lugares) { wz.lugares = p.lugares.filter((k) => LUGARES[k]); if (!wz.lugares.length) wz.lugares = lugaresSalvos(); } }
     if (p.canal === "reels" && p.reels) Object.assign(wz.reels, p.reels);
     if (passosDe(wz.canal).includes(p.passo) && p.passo !== "rodar") wz.passo = p.passo;
     mostrarPasso();
@@ -2762,7 +2762,7 @@
     const agora = () => (performance.now() - ini) / 1000;
     await new Promise((ok) => { const passo = () => { const t = agora(); if (t >= SEG_MOV + 0.4) { ok(); return; }
       artePost(tela, R, it, ppFotos[it.id], "story", Math.min(t, SEG_MOV)); if (pctx) { if (previa.width !== 540) { previa.width = 540; previa.height = 960; } pctx.drawImage(tela, 0, 0, 540, 960); }
-      if (botao) botao.textContent = `Criando o vídeo… ${Math.min(100, Math.round((t / SEG_MOV) * 100))}%`; requestAnimationFrame(passo); }; passo(); });
+      if (botao) { const pc = Math.min(100, Math.round((t / SEG_MOV) * 100)); botao.textContent = `Criando o vídeo… ${pc}%`; botao.style.background = `linear-gradient(90deg, #e8336d ${pc}%, #f39bb9 ${pc}%)`; botao.style.color = "#fff"; botao.style.opacity = "1"; } requestAnimationFrame(passo); }; passo(); });
     rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false);
     const mp4 = tipo.startsWith("video/mp4"); const blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), SEG_MOV);
     return { blob, url: URL.createObjectURL(blob), nome: nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + (mp4 ? ".mp4" : ".webm"), chave: [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|") };
@@ -2805,13 +2805,12 @@
   const LUGARES = {
     story: { nome: "Story do Instagram", desc: "arte em pé + link", arte: "story", canal: "instagram" },
     status: { nome: "Status do WhatsApp", desc: "arte em pé + texto", arte: "story", canal: "whatsapp" },
-    grupo: { nome: "Grupos do WhatsApp", desc: "foto + mensagem", texto: true, canal: "whatsapp" },
-    canal: { nome: "Canal do WhatsApp", desc: "foto + mensagem", texto: true, canal: "whatsapp" },
+    grupo: { nome: "Grupos e canal do WhatsApp", desc: "foto + mensagem para os grupos e o canal", texto: true, canal: "whatsapp" },
     feed: { nome: "Post do feed", desc: "arte + legenda", arte: "post", canal: "instagram" }
   };
   function lugaresSalvos() {
     try { const l = JSON.parse(localStorage.getItem("miga_lugares") || "null"); if (Array.isArray(l) && l.length) return l.filter((k) => LUGARES[k]); } catch (e) { /* segue */ }
-    return ["story", "status", "grupo", "canal"];
+    return ["story", "status", "grupo"];
   }
   const precisaArte = () => (wz.lugares || []).some((k) => LUGARES[k].arte);
   const precisaTexto = () => (wz.lugares || []).some((k) => LUGARES[k].texto);
@@ -2826,7 +2825,7 @@
       c.innerHTML = `<h2 class="wz-titulo">Onde vai postar?</h2>
         ${wz.filaRoteiro && wz.filaRoteiro.length > 1 ? blocoOrdemRoteiro() : `<div class="wz-prod on" style="cursor:default">${miniLoja(item, fotoMini(item))}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small></span></div>`}
         <p class="nota">Marque tudo de uma vez. O app guarda sua escolha para a próxima.</p>
-        <div class="wz-ops">${Object.entries(LUGARES).map(([k, v]) => `<button type="button" class="rt-lugar${wz.lugares.includes(k) ? " on" : ""}" data-lugar="${k}"><i></i><span><b>${v.nome}</b><small>${v.desc}</small></span></button>`).join("")}</div>
+        <div class="wz-ops">${Object.entries(LUGARES).map(([k, v]) => `<button type="button" class="rt-lugar${v.canal === "whatsapp" ? " rt-lugar--zap" : ""}${wz.lugares.includes(k) ? " on" : ""}" data-lugar="${k}"><i></i><span><b>${v.nome}</b><small>${v.desc}</small></span></button>`).join("")}</div>
         ${botaoContinuar(wz.lugares.length > 0, `Começar (${wz.lugares.length} ${wz.lugares.length === 1 ? "lugar" : "lugares"})`)}`;
       return true;
     }
@@ -2854,7 +2853,7 @@
       } else {
         const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
         meio = `<div class="balao wz-balao${k === "telegram" ? " wz-balao--tg" : ""}">${formatarWhats(txt)}</div>`;
-        if (k === "grupo") { botao = "Enviar com foto"; dica = "Escolha o WhatsApp e o grupo. A foto e a mensagem vão juntas."; }
+        if (k === "grupo") { botao = "Enviar no WhatsApp"; dica = "Escolha o grupo ou o canal. A foto e a mensagem vão juntas. Para mandar no outro, toque de novo em “Enviar no WhatsApp”."; }
         if (k === "canal") { botao = "Enviar no canal"; dica = "Escolha o WhatsApp com “B” e o seu canal. Se o canal não aparecer, use “Copiar o texto” e cole no canal."; }
         if (k === "telegram") { botao = "Abrir no Telegram"; dica = "No Telegram o link fica clicável."; }
         meio += `<button type="button" class="btn btn--branco" id="rtCopiarTexto">Copiar o texto</button>`;
@@ -2907,7 +2906,7 @@
   function postarProdutosNoWhats(ids, base = {}) {
     ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
     const lug = lugaresSalvos().filter((k) => LUGARES[k].texto);
-    wz = { canal: "roteiro", passo: "montagem", veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo", "canal"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
+    wz = { canal: "roteiro", passo: "montagem", veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
     ids.forEach((id) => { const it = fila().find((x) => x.id === id); if (it && !it.textoEditado) it.texto = ""; });
     mostrarPasso(); scrollTo(0, 0);
   }
@@ -4381,7 +4380,7 @@
     await carregarMarca(); await fotoDoVideo();
     if (V.semVideo && !V.fotoBmp) { if (ac) ac.close().catch(() => {}); toast("Este produto está sem foto: escolha um vídeo ou coloque uma foto no produto"); return; }
     const btn = $("#vdGerar"); btn.disabled = true; btn.textContent = "Gravando… 0%"; V.gravando = true; V.capaFrame = null;
-    const barra = $("#vdProgresso"); barra.hidden = false;
+    const barra = $("#vdProgresso"); ligarBarra(btn, barra);
     const W = 1080, H = 1920, tela = document.createElement("canvas"); tela.width = W; tela.height = H;
     const ctx = tela.getContext("2d"), previa = $("#vdQuadro").getContext("2d");
     let v = null;
@@ -5458,8 +5457,8 @@
     if (it.loja) comPulo(ctx, t, A(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
     // Selo de desconto liso no canto da foto
     if (off >= 5) comPulo(ctx, t, A(2), 540 + L / 2 - 30, FY - L / 2 + 62, () => {
-      ctx.rotate(0.08 + (flutua != null ? 0.06 * Math.sin(flutua * 1.4) : 0)); { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
-      ctx.fillStyle = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
+      ctx.rotate(0.08 + (flutua != null ? 0.06 * Math.sin(flutua * 1.4) : 0)); { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? ((C.fundo === "#e8336d") ? "#ffd23f" : "#e8336d") : C.pill; ctx.fill(); ctx.restore();
+      ctx.fillStyle = estilo === "oferta" ? ((C.fundo === "#e8336d") ? "#1d1d1f" : "#ffffff") : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
     if (cima) {
       ctx.font = "700 42px Poppins"; const lc = quebrarTexto(ctx, nome, 900, 2);
@@ -5571,6 +5570,13 @@
     const n = { id: novoId(), tipo: "texto", txt: f.dataset.frase, x: 540, y: 1080, tam: 58, cor: "branco", fundo: true };
     V.camadas.push(n); V.sel = n.id; V.resultado = null; $("#folhaEst").close(); atualizarBarraEditor(); toast("Frase colocada no vídeo");
   });
+  /** Barra de "criando o vídeo": rosa, com o texto branco e o percentual (o botão some enquanto grava) */
+  function ligarBarra(btn, barra) {
+    if (!barra) return; barra.hidden = false; barra.dataset.txt = "Criando o vídeo… 0%";
+    if (!btn) return; btn.hidden = true;
+    const copiar = () => { barra.dataset.txt = btn.textContent.replace(/^Gravando/, "Criando o vídeo"); };
+    new MutationObserver(copiar).observe(btn, { childList: true, characterData: true, subtree: true });
+  }
   function folhaEst(titulo, html) {
     $("#folhaEstTitulo").textContent = titulo; $("#folhaEstCorpo").innerHTML = html;
     const d = $("#folhaEst"); if (!d.open) d.showModal();
@@ -5771,7 +5777,7 @@
     if (gravar) { tela.width = 1080; tela.height = 1920; }
     const ctx = tela.getContext("2d"), previa = $("#rQuadro") && $("#rQuadro").getContext("2d");
     const btn = gravar ? $("#rGerar") : $("#rPrevia"), barra = $("#rProgresso");
-    if (btn) btn.disabled = true; if (gravar && barra) barra.hidden = false;
+    if (btn) btn.disabled = true; if (gravar && barra) ligarBarra(btn, barra);
     let t0 = 0, dest = null, fluxo = null, rec = null, partes = [], fim = null;
     try {
       if (!ac) throw new Error("sem som");

@@ -1629,3 +1629,11 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 .rt-ordem-lista li small { font-size: 12.5px; color: var(--rosa-escuro); font-weight: 700; }
 .rt-ordem-lista li button { width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--rosa-claro); color: var(--rosa-escuro); font: 800 18px Poppins, sans-serif; cursor: pointer; }
 .rt-ordem-lista li button:disabled { opacity: .3; cursor: default; }
+/* Barra de criação do vídeo: rosa com texto branco e percentual */
+.vd-progresso { position: relative; height: 54px; border-radius: 999px; background: #f39bb9; overflow: hidden; box-shadow: var(--sombra-botao); }
+.vd-progresso i { display: block; height: 100%; width: 0; background: var(--rosa); transition: width .25s linear; }
+.vd-progresso::after { content: attr(data-txt); position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 15.5px; text-shadow: 0 1px 2px rgba(0,0,0,.18); }
+/* WhatsApp sempre verde: botão de enviar e a opção marcada */
+.btn.wz-zap, .wz-zap { background: #25d366 !important; color: #fff !important; box-shadow: 0 10px 22px -12px rgba(37,211,102,.8) !important; }
+.rt-lugar--zap.on { border-color: #25d366; background: #effcf4; }
+.rt-lugar--zap.on i { background: #25d366; }
