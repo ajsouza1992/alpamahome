@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=185"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=186"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=185"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=186"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -5286,6 +5286,7 @@
     const estrela = (x, y, r, cor) => { ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 - Math.PI / 2, rr = i % 2 ? r * 0.3 : r; ctx[i ? "lineTo" : "moveTo"](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); contorno(cor); };
     const coracao = (cor) => { ctx.beginPath(); ctx.moveTo(0, 80); ctx.bezierCurveTo(-110, 10, -95, -85, -45, -85); ctx.bezierCurveTo(-15, -85, 0, -60, 0, -42); ctx.bezierCurveTo(0, -60, 15, -85, 45, -85); ctx.bezierCurveTo(95, -85, 110, 10, 0, 80); ctx.closePath(); contorno(cor);
       ctx.beginPath(); ctx.ellipse(-48, -42, 16, 10, -0.6, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fill(); };
+    if (nome === "bolsa") { desenharFigNova(ctx, "bolsaNova", contorno, estrela, ROSA, AMAR, PRETO); ctx.restore(); return; }
     if (nome === "brilho") { estrela(-15, 10, 85, AMAR); estrela(65, -65, 34, ROSA); }
     else if (nome === "estrela") { ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5 - Math.PI / 2, r = i % 2 ? 42 : 95; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r + 8); } ctx.closePath(); contorno(AMAR); }
     else if (nome === "carrinho") {
@@ -5480,10 +5481,11 @@
     else if (nome === "olhos") {
       [-46, 46].forEach((x) => { ctx.beginPath(); ctx.ellipse(x, 0, 40, 58, 0, 0, Math.PI * 2); contorno(BRANCO); ctx.beginPath(); ctx.arc(x + 10, 16, 20, 0, Math.PI * 2); ctx.fillStyle = PRETO; ctx.fill(); ctx.beginPath(); ctx.arc(x + 16, 8, 6, 0, Math.PI * 2); ctx.fillStyle = BRANCO; ctx.fill(); });
     }
-    else if (nome === "carteira") {
-      retArredondado(ctx, -62, -86, 112, 44, 8); contorno(BRANCO);
-      retArredondado(ctx, -92, -56, 184, 124, 20); contorno(ROSA);
-      retArredondado(ctx, 28, -20, 74, 52, 14); contorno(AMAR); bola(56, 6, 9, PRETO);
+    else if (nome === "carteira") { // carteira com cartão aparecendo e fecho
+      retArredondado(ctx, -66, -80, 108, 52, 10); contorno("#9fd8ff"); ctx.fillStyle = AMAR; ctx.fillRect(-60, -66, 96, 12);
+      retArredondado(ctx, -94, -46, 188, 128, 22); contorno(ROSA);
+      ctx.save(); ctx.setLineDash([9, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.85)"; retArredondado(ctx, -80, -32, 160, 100, 14); ctx.stroke(); ctx.restore(); ctx.lineWidth = 11;
+      retArredondado(ctx, 30, -8, 72, 54, 18); contorno("#c91f57"); bola(62, 19, 11, AMAR);
     }
     else if (nome === "diamante") {
       poli([[-84, -28], [-46, -76], [46, -76], [84, -28], [0, 88]], AZUL);
@@ -5510,24 +5512,26 @@
       poli([[-26, -96], [-22, -52], [-44, -36], [-26, -16], [-84, 92], [84, 92], [26, -16], [44, -36], [22, -52], [26, -96], [12, -96], [10, -58], [-10, -58], [-12, -96]], ROSA);
       retArredondado(ctx, -32, -24, 64, 16, 6); contorno(AMAR);
     }
+    else if (nome === "bolsaNova") { // bolsa de mão com aba e fecho dourado
+      ctx.save(); ctx.lineCap = "round"; ctx.beginPath(); ctx.arc(0, -30, 46, Math.PI * 1.05, Math.PI * 1.95); ctx.lineWidth = 30; ctx.strokeStyle = PRETO; ctx.stroke(); ctx.lineWidth = 14; ctx.strokeStyle = "#c91f57"; ctx.stroke(); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(-76, -26); ctx.lineTo(76, -26); ctx.lineTo(92, 66); ctx.quadraticCurveTo(94, 92, 68, 92); ctx.lineTo(-68, 92); ctx.quadraticCurveTo(-94, 92, -92, 66); ctx.closePath(); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(-76, -26); ctx.lineTo(76, -26); ctx.lineTo(80, 14); ctx.quadraticCurveTo(0, 48, -80, 14); ctx.closePath(); contorno("#c91f57");
+      retArredondado(ctx, -16, 14, 32, 28, 8); contorno(AMAR); brilhoBranco(-56, 46, 8, 18, 0.25);
+    }
     else if (nome === "setabaixo") {
       poli([[-36, -94], [36, -94], [36, 0], [80, 0], [0, 92], [-80, 0], [-36, 0]], ROSA);
       ctx.fillStyle = "rgba(255,255,255,.75)"; retArredondado(ctx, -18, -80, 12, 60, 6); ctx.fill();
     }
-    else if (nome === "esmalte") { // 💅 mão com as unhas pintadas e o pincel do esmalte
+    else if (nome === "esmalte") { // 💅 mão grande com unhas rosa e o pincel do esmalte
       const PELE = "#f9cfae", UNHA = "#e8336d";
-      ctx.save(); ctx.translate(-12, 6);
-      ctx.save(); ctx.translate(-58, 40); ctx.rotate(-0.85); retArredondado(ctx, -17, -58, 34, 78, 17); contorno(PELE); ctx.restore();
-      const dedos = [[-60, -66, 30], [-28, -96, 31], [5, -88, 31], [38, -60, 28]];
+      ctx.save(); ctx.translate(-10, 12); ctx.scale(1.08, 1.08);
+      ctx.save(); ctx.translate(-62, 36); ctx.rotate(-0.8); retArredondado(ctx, -19, -56, 38, 80, 19); contorno(PELE); ctx.restore();
+      const dedos = [[-64, -62, 34], [-28, -90, 35], [9, -82, 35], [46, -56, 31]];
       dedos.forEach(([x, y, w]) => { retArredondado(ctx, x, y, w, 40 - y, w / 2); contorno(PELE); });
-      ctx.lineWidth = 5; dedos.forEach(([x, y, w]) => { retArredondado(ctx, x + 5, y + 5, w - 10, 26, (w - 10) / 2); contorno(UNHA); ctx.beginPath(); ctx.ellipse(x + 12, y + 15, 3, 6, 0, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.fill(); });
-      ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(-64, 12); ctx.lineTo(68, 12); ctx.quadraticCurveTo(72, 66, 36, 96); ctx.lineTo(-28, 96); ctx.quadraticCurveTo(-66, 66, -64, 12); ctx.closePath(); contorno(PELE);
-      ctx.lineWidth = 6; ctx.strokeStyle = "rgba(29,29,31,.3)"; ctx.beginPath(); ctx.moveTo(-10, 56); ctx.quadraticCurveTo(12, 66, 34, 54); ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
+      ctx.lineWidth = 6; dedos.forEach(([x, y, w]) => { retArredondado(ctx, x + 4, y + 4, w - 8, 32, (w - 8) / 2); contorno(UNHA); ctx.beginPath(); ctx.ellipse(x + 12, y + 16, 3.5, 8, 0, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fill(); });
+      ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(-68, 12); ctx.lineTo(77, 12); ctx.quadraticCurveTo(80, 64, 42, 92); ctx.lineTo(-30, 92); ctx.quadraticCurveTo(-70, 64, -68, 12); ctx.closePath(); contorno(PELE);
       ctx.restore();
-      ctx.save(); ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(98, -100); ctx.lineTo(52, -70); ctx.lineWidth = 28; ctx.strokeStyle = PRETO; ctx.stroke(); ctx.lineWidth = 16; ctx.strokeStyle = "#3a3a40"; ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(52, -70); ctx.lineTo(18, -76); ctx.lineWidth = 15; ctx.strokeStyle = PRETO; ctx.stroke(); ctx.lineWidth = 6; ctx.strokeStyle = UNHA; ctx.stroke();
-      ctx.restore();
+      ctx.save(); ctx.translate(64, -78); ctx.rotate(-0.95); retArredondado(ctx, -14, -40, 28, 56, 8); contorno("#2f2f35"); ctx.beginPath(); ctx.moveTo(0, 16); ctx.lineTo(0, 40); ctx.strokeStyle = PRETO; ctx.lineWidth = 14; ctx.stroke(); ctx.strokeStyle = UNHA; ctx.lineWidth = 7; ctx.stroke(); ctx.restore(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
     }
     else if (nome === "saco") { // 💰
       const SACO = "#f2c14e";
@@ -5552,28 +5556,28 @@
       ctx.beginPath(); ctx.ellipse(0, -54, 48, 20, 0, 0, Math.PI * 2); contorno(ROSA);
       brilhoBranco(-12, -12, 6, 16, 0.1);
     }
-    else if (nome === "abobora") { // 🎃
-      const LAR = "#ff8a1f";
-      retArredondado(ctx, -10, -98, 22, 40, 8); contorno("#3c9d4b");
-      ctx.beginPath(); ctx.moveTo(10, -76); ctx.quadraticCurveTo(46, -100, 60, -76); ctx.quadraticCurveTo(36, -66, 10, -76); contorno("#5cc06a");
-      ctx.beginPath(); ctx.ellipse(-42, 14, 54, 74, 0, 0, Math.PI * 2); contorno(LAR);
-      ctx.beginPath(); ctx.ellipse(42, 14, 54, 74, 0, 0, Math.PI * 2); contorno(LAR);
-      ctx.beginPath(); ctx.ellipse(0, 14, 46, 80, 0, 0, Math.PI * 2); contorno(LAR);
-      ctx.fillStyle = PRETO; [[-44, -8], [44, -8]].forEach(([x, y]) => { ctx.beginPath(); ctx.moveTo(x - 18, y + 14); ctx.lineTo(x, y - 16); ctx.lineTo(x + 18, y + 14); ctx.closePath(); ctx.fill(); });
-      ctx.beginPath(); ctx.moveTo(-50, 30); ctx.lineTo(-30, 48); ctx.lineTo(-14, 34); ctx.lineTo(0, 52); ctx.lineTo(14, 34); ctx.lineTo(30, 48); ctx.lineTo(50, 30); ctx.quadraticCurveTo(0, 90, -50, 30); ctx.fill();
+    else if (nome === "abobora") { // 🎃 um corpo só, gomos em laranja-escuro e carinha grande
+      const LAR = "#ff8a1f", ESC = "#d9640a";
+      retArredondado(ctx, -10, -98, 22, 36, 8); contorno("#3c9d4b");
+      ctx.beginPath(); ctx.moveTo(10, -78); ctx.quadraticCurveTo(44, -102, 62, -78); ctx.quadraticCurveTo(36, -66, 10, -78); contorno("#5cc06a");
+      ctx.beginPath(); ctx.ellipse(0, 12, 94, 76, 0, 0, Math.PI * 2); contorno(LAR);
+      ctx.lineWidth = 6; ctx.strokeStyle = ESC; ctx.beginPath(); ctx.moveTo(-34, -56); ctx.quadraticCurveTo(-62, 12, -34, 82); ctx.moveTo(34, -56); ctx.quadraticCurveTo(62, 12, 34, 82); ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
+      ctx.fillStyle = PRETO; [[-38, -6], [38, -6]].forEach(([x, y]) => { ctx.beginPath(); ctx.moveTo(x - 20, y + 16); ctx.lineTo(x, y - 18); ctx.lineTo(x + 20, y + 16); ctx.closePath(); ctx.fill(); });
+      ctx.beginPath(); ctx.moveTo(-54, 28); ctx.lineTo(-34, 44); ctx.lineTo(-16, 30); ctx.lineTo(0, 48); ctx.lineTo(16, 30); ctx.lineTo(34, 44); ctx.lineTo(54, 28); ctx.quadraticCurveTo(0, 98, -54, 28); ctx.fill();
+      brilhoBranco(-66, -18, 8, 16, 0.3);
     }
-    else if (nome === "lua") { // 🌙
-      const R = 84, cx2 = 40, cy2 = -26, r2 = 72, d = Math.hypot(cx2, cy2), aa = (R * R - r2 * r2 + d * d) / (2 * d), h = Math.sqrt(R * R - aa * aa);
+    else if (nome === "lua") { // 🌙 só a lua
+      const R = 88, cx2 = 42, cy2 = -28, r2 = 74, d = Math.hypot(cx2, cy2), aa = (R * R - r2 * r2 + d * d) / (2 * d), h = Math.sqrt(R * R - aa * aa);
       const px = aa * cx2 / d, py = aa * cy2 / d, p1 = [px + h * cy2 / d, py - h * cx2 / d], p2 = [px - h * cy2 / d, py + h * cx2 / d];
       const a1 = Math.atan2(p1[1], p1[0]), a2 = Math.atan2(p2[1], p2[0]), b1 = Math.atan2(p1[1] - cy2, p1[0] - cx2), b2 = Math.atan2(p2[1] - cy2, p2[0] - cx2);
       ctx.beginPath(); ctx.arc(0, 0, R, a1, a2, true); ctx.arc(cx2, cy2, r2, b2, b1, false); ctx.closePath(); contorno(AMAR);
-      brilhoBranco(-50, 10, 8, 18, 0.2); estrela(66, 46, 18, AMAR); estrela(30, -86, 12, ROSA);
+      brilhoBranco(-56, 12, 9, 20, 0.2);
     }
-    else if (nome === "musculo") { // 💪 braço dobrado mostrando o muque (uma forma só)
-      ctx.beginPath(); ctx.moveTo(-100, 24); ctx.bezierCurveTo(-82, -36, -10, -46, 16, -4); ctx.lineTo(20, -62); ctx.lineTo(76, -62); ctx.lineTo(82, 40); ctx.quadraticCurveTo(84, 84, 40, 84); ctx.lineTo(-100, 84); ctx.closePath(); contorno(AMAR);
-      bola(48, -74, 36, AMAR);
-      ctx.lineWidth = 7; ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(28, -86); ctx.quadraticCurveTo(48, -96, 70, -88); ctx.moveTo(24, -68); ctx.quadraticCurveTo(44, -76, 66, -70); ctx.moveTo(-58, 18); ctx.quadraticCurveTo(-30, 30, -4, 16); ctx.stroke(); ctx.lineWidth = 11;
-      brilhoBranco(-48, -8, 18, 8, -0.4);
+    else if (nome === "musculo") { // 💪 braço dobrado: muque grande e punho fechado
+      ctx.beginPath(); ctx.moveTo(-100, 26); ctx.bezierCurveTo(-84, -34, -10, -48, 18, -6); ctx.lineTo(20, -46); ctx.lineTo(80, -46); ctx.lineTo(84, 40); ctx.quadraticCurveTo(86, 86, 40, 86); ctx.lineTo(-100, 86); ctx.closePath(); contorno(AMAR);
+      retArredondado(ctx, 8, -104, 84, 70, 32); contorno(AMAR);
+      ctx.lineWidth = 7; ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(22, -60); ctx.quadraticCurveTo(40, -48, 60, -58); ctx.moveTo(36, -102); ctx.quadraticCurveTo(30, -84, 40, -70); ctx.moveTo(62, -102); ctx.quadraticCurveTo(56, -84, 66, -70); ctx.moveTo(-60, 20); ctx.quadraticCurveTo(-32, 32, -4, 18); ctx.stroke(); ctx.lineWidth = 11;
+      brilhoBranco(-50, -6, 18, 8, -0.4);
     }
     else if (nome === "boca") { // 👄
       ctx.beginPath(); ctx.moveTo(-94, 0); ctx.quadraticCurveTo(0, 18, 94, 0); ctx.bezierCurveTo(62, 66, -62, 66, -94, 0); ctx.closePath(); contorno("#c91f57");
@@ -5585,9 +5589,12 @@
       ctx.fillStyle = PRETO;
       const sorriso = () => { ctx.beginPath(); ctx.moveTo(-48, 20); ctx.quadraticCurveTo(0, 96, 48, 20); ctx.closePath(); contorno("#7a2032"); ctx.save(); ctx.clip(); ctx.fillStyle = BRANCO; ctx.fillRect(-60, 14, 120, 16); ctx.restore(); ctx.beginPath(); ctx.moveTo(-48, 20); ctx.quadraticCurveTo(0, 96, 48, 20); ctx.closePath(); ctx.stroke(); };
       if (nome === "frio") {
-        [-32, 32].forEach((x) => { ctx.beginPath(); ctx.ellipse(x, -22, 10, 15, 0, 0, Math.PI * 2); ctx.fill(); });
-        retArredondado(ctx, -44, 22, 88, 38, 12); contorno(BRANCO); ctx.lineWidth = 6; ctx.beginPath(); [-22, 0, 22].forEach((x) => { ctx.moveTo(x, 22); ctx.lineTo(x, 60); }); ctx.moveTo(-44, 41); ctx.lineTo(44, 41); ctx.stroke(); ctx.lineWidth = 11;
-        [[-74, -62], [72, -50]].forEach(([x, y]) => { ctx.beginPath(); ctx.moveTo(x, y - 18); ctx.quadraticCurveTo(x + 14, y + 6, x, y + 10); ctx.quadraticCurveTo(x - 14, y + 6, x, y - 18); contorno("#d9f1ff"); });
+        // neve no alto da cabeça, com a borda ondulada
+        ctx.save(); ctx.beginPath(); ctx.arc(0, 0, 90, 0, Math.PI * 2); ctx.clip();
+        ctx.beginPath(); ctx.moveTo(-100, -100); ctx.lineTo(100, -100); ctx.lineTo(100, -52); for (let k = 0; k <= 8; k++) { const xx = 100 - k * 25; ctx.quadraticCurveTo(xx - 12, k % 2 ? -66 : -40, xx - 25, -52); } ctx.closePath(); ctx.fillStyle = "#eef9ff"; ctx.fill(); ctx.lineWidth = 6; ctx.stroke(); ctx.restore();
+        ctx.lineWidth = 11; ctx.beginPath(); ctx.arc(0, 0, 90, 0, Math.PI * 2); ctx.stroke();
+        [-34, 34].forEach((x) => { ctx.beginPath(); ctx.ellipse(x, -20, 17, 21, 0, 0, Math.PI * 2); contorno(BRANCO); ctx.beginPath(); ctx.arc(x, -16, 8, 0, Math.PI * 2); ctx.fillStyle = PRETO; ctx.fill(); });
+        retArredondado(ctx, -46, 26, 92, 36, 14); contorno(BRANCO); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-46, 44); ctx.lineTo(46, 44); [-16, 16].forEach((x) => { ctx.moveTo(x, 26); ctx.lineTo(x, 62); }); ctx.stroke(); ctx.lineWidth = 11;
       } else if (nome === "estrelada") {
         [-34, 34].forEach((x) => { ctx.beginPath(); for (let i = 0; i < 10; i++) { const g = i * Math.PI / 5 - Math.PI / 2, r = i % 2 ? 11 : 26; ctx.lineTo(x + Math.cos(g) * r, -18 + Math.sin(g) * r); } ctx.closePath(); contorno(ROSA); });
         sorriso();
@@ -5635,12 +5642,14 @@
       for (let i = 0; i < 10; i++) { const g = (i / 10) * Math.PI * 2; ctx.save(); ctx.rotate(g); poli([[-14, -64], [14, -64], [0, -98]], AMAR); ctx.restore(); }
       bola(0, 0, 56, AMAR); brilhoBranco(-20, -22, 12, 7);
     }
-    else if (nome === "pincel") {
-      ctx.rotate(0.55);
-      retArredondado(ctx, -13, 0, 26, 100, 12); contorno(ROSA);
-      retArredondado(ctx, -18, -26, 36, 32, 5); contorno("#d9d9df");
-      ctx.beginPath(); ctx.moveTo(-18, -26); ctx.quadraticCurveTo(-34, -84, 0, -104); ctx.quadraticCurveTo(34, -84, 18, -26); ctx.closePath(); contorno("#3a3a40");
-      ctx.beginPath(); ctx.moveTo(-14, -78); ctx.quadraticCurveTo(0, -112, 14, -78); ctx.quadraticCurveTo(0, -70, -14, -78); ctx.fillStyle = "#f3a6c0"; ctx.fill();
+    else if (nome === "pincel") { // pincel de blush: cerdas fofinhas com pó rosa
+      ctx.rotate(0.5);
+      retArredondado(ctx, -14, 6, 28, 98, 13); contorno(ROSA);
+      ctx.fillStyle = AMAR; ctx.fillRect(-9, 70, 18, 9);
+      retArredondado(ctx, -20, -24, 40, 36, 6); contorno("#d9d9df"); ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(-12, -18, 6, 24);
+      const cerdas = () => { ctx.beginPath(); ctx.moveTo(-20, -24); ctx.bezierCurveTo(-46, -60, -34, -106, 0, -106); ctx.bezierCurveTo(34, -106, 46, -60, 20, -24); ctx.closePath(); };
+      cerdas(); contorno("#4a3b3f"); ctx.save(); cerdas(); ctx.clip(); ctx.beginPath(); ctx.ellipse(0, -100, 42, 28, 0, 0, Math.PI * 2); ctx.fillStyle = "#f59ab8"; ctx.fill(); ctx.restore(); cerdas(); ctx.stroke();
+      ctx.fillStyle = "#f59ab8"; [[34, -96, 5], [44, -78, 4], [26, -114, 3.5]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
     }
     else if (nome === "balao") {
       poli([[-46, 40], [-66, 92], [-4, 46]], BRANCO);
