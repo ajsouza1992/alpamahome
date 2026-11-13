@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=136"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=137"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=136"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=137"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2200,10 +2200,15 @@
       const nomeModelo = wz.tituloArte || (campanha() ? campanha().nome : MODELOS_REELS[wz.modelo].nome);
       const comTexto = legendaNoEstudio() && item.precoNovo;
       if (comTexto && (!item.texto || !item.textoEditado)) usarModeloTexto();
+      // Postar: a prévia segue onde você vai postar (só feed = arte 4:5; story/status = em pé; os dois = dá para trocar)
+      const fmtsRt = wz.canal === "roteiro" ? [...new Set((wz.lugares || []).filter((k) => LUGARES[k] && LUGARES[k].arte).map((k) => LUGARES[k].arte))] : [];
+      if (fmtsRt.length === 1) wz.formato = fmtsRt[0]; else if (fmtsRt.length > 1 && !fmtsRt.includes(wz.formato)) wz.formato = "story";
+      const mostraFmt = wz.canal === "instagram" || fmtsRt.length > 1;
       const qualProd = wz.canal === "roteiro" && wz.filaRoteiro ? `<p class="rt-etapa rt-qual">Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ${esc(limparNome(item.nome || ""))}</p>` : "";
       c.innerHTML = `${qualProd}<div class="estudio">
-        <div class="est-previa est-previa--img${wz.formato === "post" && wz.canal !== "roteiro" ? " est-previa--post" : ""}"><canvas id="wzEstTela"></canvas></div>
-        <div class="est-ctrl est-ctrl--${wz.canal === "instagram" ? 3 : 2}">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}${wz.canal === "instagram" ? botaoEst("formato", "Formato", wz.formato === "post" ? "Post · feed 4:5" : "Story · em pé") : ""}</div>
+        <div class="est-previa est-previa--img${wz.formato === "post" ? " est-previa--post" : ""}"><canvas id="wzEstTela"></canvas></div>
+        <div class="est-ctrl est-ctrl--${mostraFmt ? 3 : 2}">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}${mostraFmt ? botaoEst("formato", wz.canal === "roteiro" ? "Ver como" : "Formato", wz.formato === "post" ? "Feed · 4:5" : "Story · em pé") : ""}</div>
+        ${fmtsRt.length > 1 ? '<p class="nota wz-centro">A mesma arte sai em pé para o story/status e 4:5 para o feed.</p>' : ""}
       </div>
       ${comTexto ? blocoMensagem(item) : ""}
       ${botaoContinuar(true)}`;
@@ -2539,8 +2544,9 @@
         meio = `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`;
         if (k === "story") { botao = "Postar no Instagram"; dica = "O link já vai copiado: no story, toque no adesivo de Link e cole."; }
         if (k === "status") { botao = "Postar no Status"; dica = "Escolha o WhatsApp com “B” e depois Meu status. O texto com o link vai junto."; }
-        if (k === "feed") { botao = "Postar no feed"; dica = "A legenda já vai copiada, avisando que o link está na bio."; }
-        meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
+        if (k === "feed") { botao = "Postar no feed"; dica = "Ao postar, a legenda já vai copiada: no Instagram é só colar."; }
+        if (k === "feed") meio += `<div class="leg-bloco"><div class="leg-topo"><span>Legenda do feed</span><div><button type="button" class="leg-btn" id="rtCopiarLegFeed"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button></div></div><textarea id="rtLegFeed" rows="8">${esc(wz.legFeed && wz.legFeedId === item.id ? wz.legFeed : (wz.legFeedId = item.id, wz.legFeed = legendaFeed(item)))}</textarea></div><p class="nota">No feed o link não fica clicável: a legenda avisa que o link está na bio.</p>`;
+        else meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
       } else {
         const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
         meio = `<div class="balao wz-balao${k === "telegram" ? " wz-balao--tg" : ""}">${formatarWhats(txt)}</div>`;
@@ -2601,6 +2607,8 @@
       return await new Promise((ok) => c.toBlob((b) => ok(b ? new File([b], arq.name || "achadinho.jpg", { type: "image/jpeg" }) : arq), "image/jpeg", 0.92));
     } catch (e) { return arq; }
   }
+  /** Legenda do feed: igual à do Reels (chamada, preço, aviso do link na bio, seu @ e hashtags) */
+  const legendaFeed = (it) => legendaReels({ modelo: wz.modelo || "achadinho", camp: wz.camp || "", titulo: wz.tituloArte || "" }, [it]);
   async function postarLugar() {
     const it = wzItem(), k = wz.lugares[wz.idx], L = LUGARES[k];
     let r = "sem";
@@ -2610,7 +2618,7 @@
       let texto = "";
       if (k === "story") await copiarTexto(it.link);
       if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
-      if (k === "feed") { const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`; await copiarTexto(legendaInstagram(base, it.loja, it.link)); }
+      if (k === "feed") { const el = $("#rtLegFeed"); await copiarTexto(el ? el.value : legendaFeed(it)); toast("Legenda copiada: é só colar no Instagram"); }
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { if (arq) baixarBlob(arq, arq.name); if (texto) await copiarTexto(texto); toast("Imagem salva: abra o app e escolha da galeria"); }
     } else if (k === "telegram") {
@@ -2625,11 +2633,13 @@
     registrarCompartilhado(L.canal, L.nome);
     const y = scrollY; mostrarPasso(); scrollTo(0, y);
   }
+  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "rtLegFeed") wz.legFeed = e.target.value; });
   // Voltou do outro app: segue o roteiro
 
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "roteiro") return;
     const t = e.target;
+    if (t.closest("#rtCopiarLegFeed")) { if (await copiarTexto($("#rtLegFeed").value)) toast("Legenda copiada"); return; }
     const lg = t.closest("[data-lugar]");
     if (lg) {
       const k = lg.dataset.lugar;
