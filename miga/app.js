@@ -1181,7 +1181,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=159"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=161"; });
     }
     edFoto = null;
     try {
@@ -1554,7 +1554,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=159"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=161"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1806,7 +1806,7 @@
     const l0 = ordenar(base), l = [...l0.filter((i) => !foiCompartilhado(i)), ...l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0))];
     pintarCats();
     const np = l.filter((i) => !foiCompartilhado(i)).length, nd = l.length - np;
-    $("#ppSelecionar").hidden = !l.length && !modoVarios; $("#ppOrdem").hidden = l.length < 2; $("#ppDica").hidden = !l.length;
+    $("#ppSelecionar").hidden = !l.length && !modoVarios; $("#ppOrdem").hidden = l.length < 2 || modoVarios; $("#ppDica").hidden = !l.length;
     $("#ppOrdemTxt").textContent = ({ recentes: "Recentes", antigos: "Antigos", preco: "Menor preço", desconto: "Desconto" })[ordemLista] || "Recentes";
     $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}`;
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
@@ -1897,13 +1897,12 @@
       toast("Não consegui ler o produto: toque nele e complete à mão");
     }
     item.categoria = catNova === "auto" ? adivinharCategoria(item.nome) : catNova;
-    if (naLista === true) { const c = await escolherCategoria({ sugestao: item.categoria, nome: item.nome }); if (c) item.categoria = c; }
-    else if (naLista === "lote" && adicionarTexto.cat) item.categoria = adicionarTexto.cat;
+    if (naLista === "lote" && adicionarTexto.cat) item.categoria = adicionarTexto.cat;
     item.catV2 = true;
     delete item.carregando;
     renderFila(); salvarFila(true);
     // Faltou foto, nome ou preço (comum na Shopee e na Amazon): abre o produto e pede o que falta
-    if (naLista === true && (!item.imagem || !item.precoNovo || !item.nome) && !ppAtual) abrirItemFila(item, true);
+    if (naLista === true && !ppAtual) abrirNovoProduto(item);
     return item;
   }
   /** Um link: adiciona e, se faltar algo, abre para completar. Vários links colados juntos: adiciona todos de uma vez. */
@@ -2111,7 +2110,7 @@
     const mc = e.target.closest("[data-marcar]");
     if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); mc.setAttribute("aria-pressed", String(marcados.has(id))); mc.parentElement.classList.toggle("marcado", marcados.has(id)); pintarMarcados(); return; }
     const menu = e.target.closest("[data-menu-item]");
-    if (menu) { const it = fila().find((i) => i.id === menu.dataset.menuItem); if (it) abrirMenuItem(it); return; }
+    if (menu) { const it = fila().find((i) => i.id === menu.dataset.menuItem); if (it) abrirMenuItem(it, "opcoes"); return; }
     const b = e.target.closest("[data-pp]");
     if (!b) return;
     if (modoVarios) { const id = b.dataset.pp; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); renderFila(); return; }
@@ -2121,13 +2120,14 @@
   const ehPC = () => window.matchMedia("(min-width: 1100px)").matches;
   /* ---------- Menu ⋮ do produto ---------- */
   let itemMenu = null;
-  const ACOES_ITEM = [["reels", "Reels", "i-reels"], ["livre", "Colagem", "i-rede-grade"], ["video", "Vídeo", "i-rede-video"], ["ia", "Vídeo IA", "i-brilho"], ["link", "Abrir link", "i-abrir"], ["editar", "Editar", "i-lapis"]];
-  function abrirMenuItem(it) {
+  const ACOES_ITEM = [["reels", "Reels", "i-reels"], ["livre", "Colagem", "i-rede-grade"], ["video", "Vídeo", "i-rede-video"], ["carrossel", "Carrossel", "i-carrossel"], ["ia", "Vídeo IA", "i-brilho"], ["link", "Abrir link", "i-abrir"]];
+  function abrirMenuItem(it, modo = "criar") {
     itemMenu = it; const post = foiCompartilhado(it);
     $("#folhaItemTitulo").textContent = limparNome(it.nome || "Produto");
     $("#folhaItemSub").textContent = [it.precoNovo && brl(it.precoNovo), NOME_LOJA[it.loja], NOME_CAT[it.categoria || "outros"], post && "postado"].filter(Boolean).join(" · ");
+    $("#folhaItemCriar").hidden = modo !== "criar"; $("#folhaItemOps").hidden = modo === "criar";
     $("#folhaItemCriar").innerHTML = `<button type="button" class="fi-principal" data-fi="roteiro"><svg><use href="#i-enviar"/></svg>Postar</button><div class="fi-grade">` + ACOES_ITEM.map(([k, n, ic]) => `<button type="button" class="fi-acao" data-fi="${k}"><svg><use href="#${ic}"/></svg>${n}</button>`).join("") + "</div>";
-    $("#folhaItemOps").innerHTML = `${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}<button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
+    $("#folhaItemOps").innerHTML = `<button type="button" class="fi-op" data-fi="editar"><svg><use href="#i-lapis"/></svg>Editar</button>${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}<button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
     $("#folhaItem").showModal();
   }
   async function excluirProduto(it) {
@@ -2197,8 +2197,8 @@
   });
   async function cadastrarDoInicio(texto) {
     const t = String(texto || "").trim(); if (!t) { $("#inLink").focus(); return; }
-    $("#inLink").value = ""; const it = await adicionarTexto(t);
-    if (it && it.id) { renderInicio(); toastAcao(`Adicionado em ${NOME_CAT[it.categoria] || "Outros"}`, "Ver na lista", () => { filtroLista = it.categoria || "todas"; irPara("postar"); }); }
+    $("#inLink").value = ""; filtroLista = "todas"; limparBusca(); irPara("postar"); // mostra "Buscando o produto…" e depois abre para conferir
+    await adicionarTexto(t); renderInicio();
   }
   $("#inColar").addEventListener("click", async () => {
     if ($("#inLink").value.trim()) { cadastrarDoInicio($("#inLink").value); return; }
@@ -2225,7 +2225,7 @@
     $("#ppLinkItem").value = item.link || "";
     ppCategoria.marcar(item.categoria || "outros"); pintarCatPp(item.categoria || "outros");
     mostrarFalta(pedirFalta);
-    $("#ppSalvar").hidden = !modoCompletar; pintarCampanhaBotoes(); pintarMarcados();
+    $("#ppSalvar").hidden = !modoCompletar && !ppNovo; if (!ppNovo) { $("#ppNovoTopo").hidden = true; $("#ppSalvar").textContent = "Próximo para completar →"; } pintarCampanhaBotoes(); pintarMarcados();
     if (!ehPC()) window.scrollTo({ top: 0 });
   }
   function mostrarFalta(destacar) {
@@ -2240,7 +2240,7 @@
     if (destacar && !it.precoNovo && it.imagem) setTimeout(() => $("#ppNovo").focus(), 300);
   }
   function fecharItemFila(sair) {
-    if (sair) modoCompletar = false;
+    if (sair) { modoCompletar = false; ppNovo = false; $("#ppNovoTopo").hidden = true; }
     ppAtual = null;
     $("#ppItem").hidden = true; $("#ppListaBloco").hidden = false;
     renderFila();
@@ -2278,8 +2278,15 @@
   ["#ppNome", "#ppNovo", "#ppAntigo", "#ppCupom", "#ppLinkItem"].forEach((s) => $(s).addEventListener("input", () => { clearTimeout(aplicarCamposPp.d); aplicarCamposPp.d = setTimeout(() => aplicarCamposPp(), 500); }));
   $("#ppCategoria").addEventListener("click", () => setTimeout(() => aplicarCamposPp(), 0));
   // Completando vários: vai para o próximo que falta
+  /** Produto novo: abre a mesma tela de editar para conferir foto, preços, cupom e categoria antes de salvar */
+  let ppNovo = false;
+  function abrirNovoProduto(item) {
+    ppNovo = true; irPara("postar"); abrirItemFila(item, true);
+    $("#ppNovoTopo").hidden = false; $("#ppSalvar").hidden = false; $("#ppSalvar").textContent = "Salvar produto";
+  }
   $("#ppSalvar").addEventListener("click", () => {
     const it = ppAtual; if (!it) return; aplicarCamposPp(true);
+    if (ppNovo) { ppNovo = false; $("#ppNovoTopo").hidden = true; fecharItemFila(true); toast(`Salvo em ${NOME_CAT[it.categoria] || "Outros"}`); return; }
     const p = incompletos().find((x) => x !== it);
     if (p) { abrirItemFila(p, true); toast("Próximo para completar"); } else { modoCompletar = false; fecharItemFila(); toast("Pronto! Todos completos"); }
   });
@@ -2734,6 +2741,7 @@
   async function gravarArteMovimento(botao) {
     const it = wzItem(), tipo = formatoGravacao(); if (!it) return null;
     if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return null; }
+    wz.gravandoMov = true; setTimeout(() => { wz.gravandoMov = false; }, (SEG_MOV + 8) * 1000);
     await prepararFoto(it); await carregarMarca(); // sem música: a música você escolhe no próprio Instagram/WhatsApp
     const R = arteR(), E = MUSICAS[musicaDe(R)], tela = document.createElement("canvas"); tela.width = 1080; tela.height = 1920; const ctx = tela.getContext("2d");
     const previa = $("#rtTela"); const pctx = previa && previa.getContext("2d");
@@ -2845,7 +2853,11 @@
       c.innerHTML = `${barra}${meio}<p class="nota wz-centro">${dica}</p>
         ${feito ? '<p class="nota wz-centro rt-feito">Postado. Toque em “Próximo” para seguir.</p>' : ""}
         <div class="wz-rodape rt-rodape"><button type="button" class="btn ${feito ? "btn--branco" : "btn--rosa"} wz-continuar${!feito && (k === "status" || k === "grupo" || k === "canal") ? " wz-zap" : !feito && k === "telegram" ? " wz-tg" : ""}" id="rtPostar">${feito ? "Postar de novo" : botao}</button>${pular}</div>`;
-      if (L.arte) { const desenhar = () => desenharMontagem($("#rtTela"), true, null, null, L.arte); desenhar(); prepararFoto(item).then(() => { if (wz.passo === "rodar") desenhar(); }); }
+      if (L.arte) {
+        const desenhar = () => desenharMontagem($("#rtTela"), true, null, null, L.arte); desenhar(); prepararFoto(item).then(() => { if (wz.passo === "rodar") desenhar(); });
+        // Em movimento: a prévia já mostra a arte se mexendo (em loop), antes de criar o vídeo
+        if (podeMov && wz.mov && !vMov) { const cv = $("#rtTela"), ini = performance.now(); const passo = () => { if (!cv.isConnected) return; if (wz.gravandoMov) { requestAnimationFrame(passo); return; } desenharMontagem(cv, true, null, null, "story", ((performance.now() - ini) / 1000) % SEG_MOV); requestAnimationFrame(passo); }; prepararFoto(item).then(passo); }
+      }
       return true;
     }
     if (wz.passo === "resumo") {
@@ -3763,7 +3775,7 @@
       } else if (modo) {
         const prod = modo === "produto" ? `<div class="vd-prod"><span class="pp-mini">${fotoMini(it)}</span><span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${it.imagem ? `<button type="button" class="vd-baixar-foto" id="vdBaixarFoto"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar foto</button>` : ""}</span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
         const video = `<div class="vd-arquivo">
-            ${V.url ? `<video class="vd-previa" src="${V.url}" muted playsinline controls></video>` : ""}
+            ${V.url ? `<video class="vd-previa" src="${V.url}" playsinline controls></video>` : ""}
             <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher o vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
             ${modo === "produto" && it.imagem ? `<button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>` : ""}
           </div>`;
@@ -3889,7 +3901,15 @@
     const V = vd(); await carregarMarca(); await fotoDoVideo(); await primeiroQuadro();
     const cv = $("#vdQuadro"); if (!cv) return; const cx = cv.getContext("2d");
     let el = null;
-    if (!V.semVideo && V.url) { el = document.createElement("video"); el.src = V.url; el.muted = true; el.loop = true; el.playsInline = true; el.play().catch(() => {}); }
+    if (!V.semVideo && V.url) {
+      // Prévia com o som do vídeo (se o celular bloquear o som automático, fica um botão para ligar)
+      el = document.createElement("video"); el.src = V.url; el.muted = !!V.semSomPrevia; el.loop = true; el.playsInline = true;
+      el.play().catch(() => { el.muted = true; el.play().catch(() => {}); pintarSom(); });
+      let bt = $("#vdSom"); if (!bt && cv.parentElement) { bt = document.createElement("button"); bt.type = "button"; bt.id = "vdSom"; bt.className = "vd-som"; cv.parentElement.style.position = "relative"; cv.parentElement.appendChild(bt); }
+      const pintarSom = () => { const b = $("#vdSom"); if (b) { b.innerHTML = el.muted ? "🔇 Ligar o som" : "🔊 Som ligado"; b.classList.toggle("off", el.muted); } };
+      if (bt) bt.onclick = () => { el.muted = !el.muted; V.semSomPrevia = el.muted; if (!el.muted) el.play().catch(() => {}); pintarSom(); };
+      pintarSom(); el.addEventListener("volumechange", pintarSom);
+    }
     const t0 = performance.now();
     const passo = () => {
       if (!cv.isConnected || V.gravando || wz.passo !== "vTema") { if (el) el.pause(); return; }
@@ -3960,6 +3980,7 @@
   /** k-ésimo toque forte da cena (sem música definida, cai na batida) */
   const A = (k) => (acentoCena && acentoCena[k] != null ? acentoCena[k] : B(k));
   const naBatida = (t) => Math.exp(-((t % B(1)) / B(1)) * 5);
+  let flutua = null; // tempo da arte em movimento (suave, sem seguir a batida)
   let pulsoTela = 0; // 1 no tempo da batida (só nos vídeos; na imagem parada fica 0)
   const emTempos = (seg, batida) => Math.max(2, Math.round(seg / batida / 2) * 2) * batida; // duração com número par de tempos
   const entrada = (t, ini, dur = 0.5) => Math.max(0, Math.min(1, (t - noTempo(ini)) / dur));
@@ -4073,7 +4094,7 @@
     const mestre = ac.createGain(); mestre.gain.value = 0.85; mestre.connect(comp);
     const musica = ac.createGain(); musica.connect(mestre);
     const ir = (seg, curva, corte) => { const b = ac.createBuffer(2, Math.floor(SR * seg), SR); for (let ch = 0; ch < 2; ch++) { const q = b.getChannelData(ch); for (let i = 0; i < q.length; i++) q[i] = (Math.random() * 2 - 1) * (corte ? (i / q.length < 0.9 ? 0.6 : 0) : Math.pow(1 - i / q.length, curva)); } return b; };
-    const sala = ac.createConvolver(); sala.buffer = ir(1.8, 3.2); const salaVolta = ac.createGain(); salaVolta.gain.value = E.eco ?? 0.18; sala.connect(salaVolta).connect(musica);
+    const sala = ac.createConvolver(); sala.buffer = ir(1.1, 4.5); const salaVolta = ac.createGain(); salaVolta.gain.value = E.eco ?? 0.07; sala.connect(salaVolta).connect(musica);
     const portao = ac.createConvolver(); portao.buffer = ir(0.32, 1, true); const portaoVolta = ac.createGain(); portaoVolta.gain.value = 0.5; portao.connect(portaoVolta).connect(musica); // reverb "gated" dos anos 80
     const bomba = ac.createGain(); bomba.connect(musica); // instrumentos que "respiram" com o bumbo (dance)
     const lado = (no, p) => { if (!p || !ac.createStereoPanner) return no; const s = ac.createStereoPanner(); s.pan.value = p; s.connect(no); return s; };
@@ -4171,7 +4192,7 @@
     const musica = ac.createGain(); musica.connect(mestre);
     const eco = ac.createConvolver(), ir = ac.createBuffer(2, Math.floor(SR * 2.4), SR);
     for (let ch = 0; ch < 2; ch++) { const q = ir.getChannelData(ch); for (let i = 0; i < q.length; i++) q[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / q.length, 3.5); }
-    eco.buffer = ir; const ecoVolta = ac.createGain(); ecoVolta.gain.value = E.eco ?? 0.32; eco.connect(ecoVolta).connect(musica);
+    eco.buffer = ir; const ecoVolta = ac.createGain(); ecoVolta.gain.value = Math.min(E.eco ?? 0.12, 0.12); eco.connect(ecoVolta).connect(musica);
     const sala = ac.createGain(); sala.connect(eco);
     const bomba = ac.createGain(); bomba.connect(musica); // "respira" junto com o bumbo
     const lado = (no, p) => { if (!ac.createStereoPanner) return no; const s = ac.createStereoPanner(); s.pan.value = p; s.connect(no); return s; };
@@ -5107,12 +5128,11 @@
     temposDoModelo(R); const C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, M = modeloEfetivo(R);
     relogioReels = 0; decorAtual = decorDe(R); pulsoTela = 0;
     if (tAnim != null) { // arte em movimento: entra no ritmo, depois "respira" com a batida e vai chegando perto devagar
-      const E = MUSICAS[musicaDe(R)], bt = 60 / E.bpm, fase = (tAnim % bt) / bt;
-      relogioReels = tAnim; pulsoTela = Math.exp(-fase * 7); acentoCena = acentosDe(E, 0, 8);
-      const z = 1 + 0.07 * Math.min(1, tAnim / 20) + 0.008 * pulsoTela;
+      relogioReels = tAnim; pulsoTela = 0; acentoCena = null; flutua = tAnim;
+      const z = 1 + 0.05 * Math.min(1, tAnim / 20);
       ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
       try { if (H === 1920) produtoReels(ctx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor); else comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor)); }
-      finally { ctx.restore(); pulsoTela = 0; acentoCena = null; }
+      finally { ctx.restore(); pulsoTela = 0; acentoCena = null; flutua = null; }
       return;
     }
     if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); return; }
@@ -5402,6 +5422,7 @@
     comSubida(ctx, t, A(0), () => tituloGrande(ctx, titulo, cima ? 186 + OY : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone));
     // Foto (sempre igual)
     comPulo(ctx, t, A(1), 540, FY, () => {
+      if (flutua != null) { ctx.translate(0, Math.sin(flutua * 1.1) * 12); const sf = 1 + 0.018 * Math.sin(flutua * 0.7); ctx.scale(sf, sf); }
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
       if (bmp) { const s = Math.min((L - 80) / bmp.width, (L - 80) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.save(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.clip(); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); ctx.restore(); }
       else iconeReels(ctx, "bolsa", 300);
@@ -5409,14 +5430,14 @@
     if (it.loja) comPulo(ctx, t, A(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
     // Selo de desconto liso no canto da foto
     if (off >= 5) comPulo(ctx, t, A(2), 540 + L / 2 - 30, FY - L / 2 + 62, () => {
-      ctx.rotate(0.08); { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
+      ctx.rotate(0.08 + (flutua != null ? 0.06 * Math.sin(flutua * 1.4) : 0)); { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? "#e8336d" : C.pill; ctx.fill(); ctx.restore();
       ctx.fillStyle = estilo === "oferta" ? "#ffffff" : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
     if (cima) {
       ctx.font = "700 42px Poppins"; const lc = quebrarTexto(ctx, nome, 900, 2);
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 + OY); ctx.fillRect(540 - w / 2 + ld, 1252 + OY, w - ld, 5); });
-      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) + OY, () => { { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
       if (it.cupom) comSubida(ctx, t, A(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1418 + OY, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1458 + OY); });
       return;
     }
@@ -5429,7 +5450,7 @@
     else if (antigo) comSubida(ctx, t, A(3.5), () => riscado("de " + brl(antigo), y, 46));
     y += antigo ? 95 : 55;
     if (novo) comPulo(ctx, t, A(4), 540, y, () => {
-      { const ps = 1 + 0.05 * pulsoTela; ctx.scale(ps, ps); }
+      { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); }
       const tx = (antigo ? "por " : "") + preco;
       if (estilo === "grande") { ctx.font = "900 88px Poppins"; const w = ctx.measureText(tx).width + 90; retArredondado(ctx, -w / 2, -64, w, 128, 64); ctx.fillStyle = C.pill; ctx.fill(); ctx.fillStyle = C.pillTexto; ctx.fillText(tx, 0, 4); return; }
       let f = estilo === "oferta" ? 124 : 108; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; }

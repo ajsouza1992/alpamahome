@@ -1554,3 +1554,15 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select
   .conteudo { max-width: 1360px; margin-left: calc(240px + max(0px, (100vw - 240px - 1360px) / 2)); }
 }
 .campo-sel > svg { display: none; }
+/* Produto novo: aviso no topo e botão Salvar destacado */
+.pp-novo-topo { display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px; background: var(--rosa-claro); }
+.pp-novo-topo b { color: var(--rosa); } .pp-novo-topo span { font-size: 13px; color: var(--preto); }
+#ppSalvar:not([hidden]) { display: flex; width: 100%; min-height: 52px; background: var(--rosa); color: #fff; box-shadow: var(--sombra-botao); }
+/* Seleção: "Selecionar todos" à esquerda, Cancelar à direita */
+#ppListaBloco .barra-filtro #ppTodos:not([hidden]) { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; height: 36px; padding: 0 12px 0 8px; border: 0; border-radius: 999px; background: var(--campo); font: inherit; font-size: 13px; font-weight: 600; color: var(--preto); cursor: pointer; }
+body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto; background: var(--campo); color: var(--rosa); }
+/* Mensagem dos grupos/canal centralizada e na largura toda */
+.rt-etapa ~ .wz-balao, .wz__corpo .balao.wz-balao { margin-left: auto; margin-right: auto; width: 100%; max-width: 640px; box-sizing: border-box; }
+/* Publicar vídeo: botão de som na prévia */
+.vd-som { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 3; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(29, 29, 31, .78); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.vd-som.off { background: var(--rosa); }

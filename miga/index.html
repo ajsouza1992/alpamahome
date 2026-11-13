@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=159">
+  <link rel="manifest" href="manifest.json?v=161">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=159">
+  <link rel="stylesheet" href="style.css?v=161">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -64,7 +64,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=159" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=161" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -90,7 +90,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=159" alt="">
+    <img src="logo.png?v=161" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -271,7 +271,7 @@
         <button type="button" data-visao="todos">Todos <i id="vqTodos"></i></button>
       </div>
       <div class="barra-filtro">
-        <button type="button" class="sel-todos" id="ppTodos" hidden><span class="pp-caixa-mini" id="ppTodosCx"></span>Todos</button>
+        <button type="button" class="sel-todos" id="ppTodos" hidden><span class="pp-caixa-mini" id="ppTodosCx"></span>Selecionar todos</button>
         <span class="nota" id="ppTotal"></span>
         <button type="button" class="link-sel" id="ppSelecionar">Selecionar</button>
         <button type="button" class="link-sel pp-ordem" id="ppOrdem"><svg><use href="#i-ordem"/></svg><span id="ppOrdemTxt">Recentes</span></button>
@@ -292,6 +292,7 @@
         <span class="pp-mini pp-mini--grande"><img id="ppFotoMini" alt="Foto do produto" hidden><span class="sem-foto" id="ppSemFoto">sem foto</span><span id="ppSeloLoja"></span></span>
         <label class="btn btn--branco" id="ppFotoBtn">Trocar foto<input type="file" id="ppArquivoTopo" accept="image/*,.webp,image/webp" hidden></label>
       </div>
+      <div class="pp-novo-topo" id="ppNovoTopo" hidden><b>Produto novo</b><span>Confira a foto, os preços, o cupom e a categoria. Pode mudar o que quiser e toque em “Salvar produto”.</span></div>
       <p class="aviso" id="ppFalta" hidden></p>
       <label class="campo"><span>Nome do produto</span><input id="ppNome" maxlength="120"></label>
       <div class="duas">
@@ -745,7 +746,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=159"></script>
-  <script src="app.js?v=159"></script>
+  <script src="firebase-config.js?v=161"></script>
+  <script src="app.js?v=161"></script>
 </body>
 </html>
