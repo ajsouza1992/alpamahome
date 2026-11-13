@@ -1294,3 +1294,8 @@ body.modo-selecao main { padding-bottom: 200px; }
 .rp-whats span { display: block; } .rp-whats b { font-size: 15px; font-weight: 600; }
 .rp-whats.feito { background: #25d366; }
 .rp-whats:focus:not(:focus-visible) { outline: none; }
+/* Histórico: botão de restaurar para a Lista */
+.hi-restaurar svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pp-lapis.hi-restaurar { right: 60px; }
+#historico .pp-linha:has(.hi-restaurar) .pp-item { padding-right: 108px; }
+.barra-selecao.bs-hist .bs-duas { grid-template-columns: 1fr 1fr 1.3fr; }

@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=145"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=146"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=145"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=146"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1793,6 +1793,7 @@
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
+    const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
     const visH = [...document.querySelectorAll("#historico [data-marcar]")].map((x) => x.dataset.marcar);
     $("#hiTodosCx").classList.toggle("on", !!visH.length && visH.every((id) => marcados.has(id)));
     $("#ppTodos").hidden = !modoVarios; $("#ppTotal").hidden = modoVarios; $("#ppFiltrar").hidden = modoVarios;
@@ -1833,6 +1834,10 @@
     if (!l.length) { toast("Nenhum produto nessa seleção"); return; }
     marcados.clear(); l.forEach((i) => marcados.add(i.id)); modoVarios = true; renderFila();
     toast(`${l.length} ${l.length === 1 ? "produto selecionado" : "produtos selecionados"}`);
+  });
+  $("#restaurarMarcados").addEventListener("click", () => {
+    if (!marcados.size) { toast("Toque nos produtos que quer restaurar"); return; }
+    const ids = [...marcados]; marcados.clear(); sairModoVarios(); restaurarNaLista(ids);
   });
   $("#excluirMarcados").addEventListener("click", async () => {
     const l = itensMarcados(); if (!l.length) return;
@@ -4355,12 +4360,20 @@
           <span class="hi-quando">Postado ${dataCurta(i.postadoEm || i.criadoEm)}${onde.length ? ` · ${esc(onde.join(", "))}` : ""}</span>
         </span>
         <span class="seta">›</span>
-      </button>${modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>` : `<button type="button" class="pp-lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button>`}</div>`;
+      </button>${modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>` : `<button type="button" class="pp-lapis hi-restaurar" data-restaurar="${esc(i.id)}" aria-label="Restaurar ${esc(i.nome || "produto")} para a Lista" title="Voltar para a Lista"><svg><use href="#i-restaurar"/></svg></button><button type="button" class="pp-lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button>`}</div>`;
     }).join("") : `<p class="vazio-lista">${termo ? "Nada encontrado." : "O que você postar aparece aqui, com a data e onde foi postado."}</p>`;
     pintarMarcados();
   }
+  /** Restaurar: o produto sai do Histórico e volta para a Lista (para postar de novo) */
+  function restaurarNaLista(ids) {
+    const l = fila().filter((i) => ids.includes(i.id)); if (!l.length) return;
+    l.forEach((it) => { it.feito = {}; delete it.postadoEm; it.ondePostou = []; });
+    salvarFila(true); contarFila(); renderHistorico();
+    toast(l.length === 1 ? "Voltou para a Lista" : `${l.length} produtos voltaram para a Lista`);
+  }
   $("#historico").addEventListener("click", (e) => {
     if (e.target.closest("[data-abrir-link]")) return;
+    const rs = e.target.closest("[data-restaurar]"); if (rs) { restaurarNaLista([rs.dataset.restaurar]); return; }
     const mc = e.target.closest("[data-marcar]");
     if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); renderHistorico(); return; }
     const b = e.target.closest("[data-editar], [data-pp]"); if (!b) return;
