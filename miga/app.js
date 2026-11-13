@@ -1188,7 +1188,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=165"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=166"; });
     }
     edFoto = null;
     try {
@@ -1562,7 +1562,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=165"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=166"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -5222,15 +5222,15 @@
     for (let k = 0; k < 12; k++) { const ang = (k / 12) * Math.PI * 2; ctx.drawImage(telaSilhueta, -L / 2 + Math.cos(ang) * r, -L / 2 + Math.sin(ang) * r); }
     ctx.drawImage(telaAdesivo, -L / 2, -L / 2);
   }
-  /** Figurinha das artes no estilo Selo suave: círculo rosa-claro com borda branca e o desenho em rosa-escuro */
+  /** Figurinha das artes no estilo "Na bolinha rosa": quadradinho rosa arredondado, borda branca e o desenho em branco */
   function iconeReels(ctx, nome, tam) {
-    const d = ICONES_MIGA["f_" + nome] || ICONES_MIGA.f_brilho, r = tam / 2;
+    const d = ICONES_MIGA["f_" + nome] || ICONES_MIGA.f_brilho, L = tam * 0.9;
     ctx.save();
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#fde4ec";
-    ctx.shadowColor = "rgba(29,29,31,.22)"; ctx.shadowBlur = tam * 0.08; ctx.shadowOffsetY = tam * 0.03; ctx.fill();
+    retArredondado(ctx, -L / 2, -L / 2, L, L, L * 0.3); ctx.fillStyle = "#e8336d";
+    ctx.shadowColor = "rgba(29,29,31,.25)"; ctx.shadowBlur = tam * 0.08; ctx.shadowOffsetY = tam * 0.03; ctx.fill();
     ctx.shadowColor = "transparent"; ctx.lineWidth = Math.max(2, tam * 0.035); ctx.strokeStyle = "#ffffff"; ctx.stroke();
-    const s = (tam * 0.58) / 24; ctx.scale(s, s); ctx.translate(-12, -12);
-    ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#c91f57"; ctx.stroke(new Path2D(d));
+    const s = (tam * 0.56) / 24; ctx.scale(s, s); ctx.translate(-12, -12);
+    ctx.lineWidth = 2.1; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#ffffff"; ctx.stroke(new Path2D(d));
     ctx.restore();
   }
   function tituloReels(ctx, texto, y, C, tam) {
