@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=130"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=131"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=130"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=131"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3625,7 +3625,10 @@
     const nota = (m) => 440 * Math.pow(2, (m - 69) / 12);
     // 808 com leve distorção
     const dist = ac.createWaveShaper(); const curva = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; curva[i] = Math.tanh(x * (E.sujo ? 4 : 1.8)); } dist.curve = curva; dist.connect(musica);
-    const kick = (t, longo) => { const o = osc("sine", 165, t, longo ? 0.55 : 0.32, 0.95, dist); o.frequency.setValueAtTime(165, t); o.frequency.exponentialRampToValueAtTime(longo ? 40 : 48, t + 0.09); barulho(t, 0.008, 0.35, "highpass", 2500); };
+    const kick = (t, longo) => { const o = osc("sine", 165, t, longo ? 0.55 : 0.32, 0.95, dist); o.frequency.setValueAtTime(165, t); o.frequency.exponentialRampToValueAtTime(longo ? 40 : 48, t + 0.09); barulho(t, 0.008, 0.35, "highpass", 2500);
+      if (!E.classico) { const sub = osc("sine", 70, t, longo ? 0.5 : 0.34, 0.55, dist); sub.frequency.setValueAtTime(90, t); sub.frequency.exponentialRampToValueAtTime(46, t + 0.12); barulho(t, 0.012, 0.3, "bandpass", 1800); } };
+    /** Conga/percussão grave: dá mais batida sem som de corda */
+    const conga = (t, alto) => { const f0 = alto ? 340 : 215; const o = osc("sine", f0 * 1.5, t, 0.2, alto ? 0.3 : 0.38); o.frequency.setValueAtTime(f0 * 1.5, t); o.frequency.exponentialRampToValueAtTime(f0, t + 0.035); const f = barulho(t, 0.025, 0.14, "bandpass", f0 * 5); f.Q.value = 2; };
     const caixa = (t, palma) => {
       if (palma) { [0, 0.011, 0.023].forEach((d, q) => { const f = barulho(t + d, q === 2 ? 0.2 : 0.025, q === 2 ? 0.5 : 0.4, "bandpass", 1500); f.Q.value = 1.4; }); barulho(t + 0.02, 0.3, 0.22, "bandpass", 1300, sala); }
       else { const o = osc("sine", 210, t, 0.11, 0.35); o.frequency.setValueAtTime(210, t); o.frequency.exponentialRampToValueAtTime(150, t + 0.08); barulho(t, 0.16, 0.42, "bandpass", 2600); barulho(t, 0.25, 0.18, "bandpass", 2200, sala); }
@@ -3663,9 +3666,33 @@
       const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = f; o.connect(g); o.start(t); o.stop(t + dur * 1.2 + 0.1);
       const m = ac.createOscillator(), mg = ac.createGain(); m.frequency.value = f * 2; mg.gain.setValueAtTime(f * 1.2, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.4); m.connect(mg).connect(o.frequency); m.start(t); m.stop(t + dur * 1.2 + 0.1);
     };
+    /** Pad quente (substitui o violão/guitarra nos acordes) */
+    const pad = (f, t, dur, vol, pan = 0) => {
+      const fl = ac.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 1500; const g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + Math.min(0.1, dur * 0.3)); g.gain.setValueAtTime(vol, t + dur * 0.8); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.15);
+      fl.connect(g); g.connect(lado(bomba, pan)); g.connect(sala);
+      [-8, 8].forEach((dt) => { const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t + dur + 0.25); });
+    };
+    /** Flauta: sopro no começo, vibrato que entra devagar */
+    const flauta = (f, t, dur, vol, pan = 0.1) => {
+      const d = Math.max(0.16, dur), sai = lado(musica, pan), g = ac.createGain(), lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = Math.min(9000, f * 4);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.05); g.gain.setValueAtTime(vol * 0.85, t + d); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.2);
+      lp.connect(g); g.connect(sai); g.connect(sala);
+      const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = f; o.connect(lp);
+      const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.type = "triangle"; o2.frequency.value = f * 2; g2.gain.value = 0.14; o2.connect(g2).connect(lp);
+      const vib = ac.createOscillator(), vg = ac.createGain(); vib.frequency.value = 5.4; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.009, t + Math.min(0.4, d)); vib.connect(vg); vg.connect(o.frequency);
+      const s = ac.createBufferSource(), bf = ac.createBiquadFilter(), sg = ac.createGain(); s.buffer = ruido; bf.type = "bandpass"; bf.frequency.value = Math.min(9000, f * 2.2); bf.Q.value = 1.8;
+      sg.gain.setValueAtTime(0.0001, t); sg.gain.linearRampToValueAtTime(vol * 0.55, t + 0.025); sg.gain.exponentialRampToValueAtTime(vol * 0.07, t + 0.14); sg.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.18); s.connect(bf).connect(sg).connect(sai);
+      [o, o2, vib].forEach((x) => { x.start(t); x.stop(t + d + 0.3); }); s.start(t, Math.random() * 0.5); s.stop(t + d + 0.3);
+    };
     const baixo808 = (m, t, dur, prox) => { const o = osc("sine", nota(m), t, dur, 0.85, dist); if (prox && E.desliza) { o.frequency.setValueAtTime(nota(m), t + dur * 0.6); o.frequency.exponentialRampToValueAtTime(nota(prox), t + dur * 0.9); } };
     const baixoSaw = (m, t, dur) => { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 600; f.connect(bomba); osc("sawtooth", nota(m), t, dur, 0.3, f); osc("sine", nota(m - 12), t, dur, 0.35, bomba); };
     const acorde = (ms, t, dur, tipo) => ms.forEach((m) => {
+      if (!E.classico) {
+        if (tipo === "violaoGrave") { corda(nota(m), t + ms.indexOf(m) * 0.018, Math.max(dur, 0.45), 0.14, (ms.indexOf(m) - 1) * 0.3, "violao"); return; }
+        if (tipo === "piano" || tipo === "teclado" || tipo === "rhodes") { rhodes(nota(m + 12), t, Math.max(dur, 0.4), 0.075, (ms.indexOf(m) - 1) * 0.3); return; }
+        if (tipo === "violao" || tipo === "pluck" || tipo === "pad" || !tipo) { pad(nota(m + 12), t, Math.max(dur, 0.3), 0.032, (ms.indexOf(m) - 1) * 0.35); return; }
+      }
       if (tipo === "super") { const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 4200; f.connect(bomba); f.connect(sala); [[-24, -0.6], [-11, -0.3], [0, 0], [11, 0.3], [24, 0.6]].forEach(([dt, p]) => osc("sawtooth", nota(m + 12), t, dur, 0.03, lado(f, p), dt)); }
       else if (tipo === "piano" || tipo === "teclado") corda(nota(m + 12), t + ms.indexOf(m) * 0.006, Math.max(dur, 0.6), tipo === "piano" ? 0.13 : 0.1, (ms.indexOf(m) - 1) * 0.25, "piano");
       else if (tipo === "violao" || tipo === "pluck") corda(nota(m + 12), t + ms.indexOf(m) * 0.022, Math.max(dur, 0.5), 0.12, (ms.indexOf(m) - 1) * 0.3, "violao");
@@ -3674,7 +3701,8 @@
     });
     const lider = (m, t, dur) => {
       const tipo = E.lider || "triangle";
-      if (tipo === "piano") { corda(nota(m), t, Math.max(dur, 0.8), E.liderVol || 0.16, 0.1, "piano"); if (E.sinos) { const g = ac.createGain(); env(g, t, 0.035, 1.2, 0.003); g.connect(musica); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(m + 12); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(m + 12) * 3.5; mg.gain.setValueAtTime(nota(m) * 1.5, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.8); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(t); x.stop(t + 1.3); }); } }
+      if (tipo === "flauta") { flauta(nota(m), t, dur, E.liderVol || 0.15); if (E.sinos) { const g = ac.createGain(); env(g, t, 0.03, 1.1, 0.003); g.connect(musica); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(m + 12); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(m + 12) * 3.5; mg.gain.setValueAtTime(nota(m) * 1.5, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.8); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(t); x.stop(t + 1.2); }); } }
+      else if (tipo === "piano") { corda(nota(m), t, Math.max(dur, 0.8), E.liderVol || 0.16, 0.1, "piano"); if (E.sinos) { const g = ac.createGain(); env(g, t, 0.035, 1.2, 0.003); g.connect(musica); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(m + 12); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(m + 12) * 3.5; mg.gain.setValueAtTime(nota(m) * 1.5, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.8); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(t); x.stop(t + 1.3); }); } }
       else if (tipo === "sino") { const g = ac.createGain(); env(g, t, 0.14, 0.9, 0.003); g.connect(musica); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(m); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(m) * 3.5; mg.gain.setValueAtTime(nota(m) * 2, t); mg.gain.exponentialRampToValueAtTime(1, t + 0.6); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(t); x.stop(t + 1.1); }); }
       else if (tipo === "cowbell") { const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = nota(m) * 1.5; f.Q.value = 3; f.connect(musica); osc("square", nota(m), t, 0.12, 0.2, f); osc("square", nota(m) * 1.48, t, 0.12, 0.14, f); }
       else if (tipo === "sine") { const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime((E.liderVol || 0.12) * 0.8, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.25); g.connect(musica); g.connect(sala);
@@ -3691,6 +3719,7 @@
       if (P(E.o, i) === "o") chimbal(t, true);
       if (P(E.tique, i) === "x") aro(t);
       const sh = P(E.sh, i); if (sh === "x" || sh === "X") shaker(t, sh === "X");
+      const cg = P(E.cg, i); if (cg === "x" || cg === "X") conga(t, cg === "X");
       const gz = P(E.guizo, i); if (gz === "x" || gz === "X") guizo(t, gz === "X");
       const bx = P(E.b, i);
       if (bx === "x" || bx === "X") {
@@ -3700,7 +3729,7 @@
         ultimoBaixo = m;
       }
       const cx = P(E.c, i); if (cx === "x") { let len = 1; while (len < 16 && P(E.c, i + len) === "-") len++; acorde(E.acordes[bar], t, passo * len * 0.95, E.acordeTipo); }
-      if (E.melodiaReal && E.melodia && st >= (E.entra ?? 32)) { const m = E.melodia[(st - (E.entra ?? 32)) % E.melodia.length]; if (m) lider(m, t, passo * 1.6); }
+      if (E.melodiaReal && E.melodia && st >= (E.entra ?? 32)) { const m = E.melodia[(st - (E.entra ?? 32)) % E.melodia.length]; if (m) { let len = 1; const ml = E.melodia.length, j = (st - (E.entra ?? 32)) % ml; if (E.lider === "flauta") while (len < 6 && !E.melodia[(j + len) % ml]) len++; lider(m, t, E.lider === "flauta" ? passo * len * 0.92 : passo * 1.6); } }
       if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.025, "highpass", 3000);
     }
     // "Plim" na hora que aparece o seu @
@@ -4267,13 +4296,57 @@
     phonk: { bpm: 130, k808: true, sujo: true, k: "x.....x...x.....", s: "........x.......", h: "x.x.x.x.x.x.x.x.", b: "x-----x---x-----", baixo: "808", c: "", acordes: [[60, 63, 67], [60, 63, 67], [56, 60, 63], [58, 62, 65]], raiz: [36, 36, 32, 34],
       lider: "cowbell", entra: 0, melodia: [72, 0, 72, 75, 0, 72, 0, 70, 72, 0, 72, 75, 0, 79, 0, 77, 72, 0, 72, 75, 0, 72, 0, 70, 68, 0, 68, 70, 0, 72, 0, 0] }
   };
+  // Remix: mais batida e grave, sem violão/guitarra nos acordes, flauta na melodia. O Trap fica como era.
+  const FL = (vol = 0.15, entra = 16) => ({ lider: "flauta", melodiaReal: true, liderVol: vol, entra });
+  const REMIX = {
+    trap: { classico: true },
+    house: { acordeTipo: "rhodes", cg: "...x..X....x..X.", ...FL(0.14) },
+    eletronica: { cg: "..X...X...X...X." },
+    drill: { ...FL(0.16, 0), cg: "x.....X...x....." },
+    lofi: { ...FL(0.13) },
+    funk: { cg: "x..X..x...x.X..." },
+    dembow: { cg: "x..X..X.x..X..X.", ...FL(0.15) },
+    disco: { cg: "...X.......X...." },
+    boombap: { ...FL(0.13) },
+    housegrave: { cg: "x..X....x..X....", ...FL(0.14) },
+    tropical: { cg: "..x..X....x..X..", ...FL(0.16) },
+    trappesado: {},
+    trapmelodico: { ...FL(0.15) },
+    funkmandela: { cg: "x..X..x.x..X..x." },
+    eletrodrop: { cg: "...X...X...X...X" },
+    reggaetonromantico: { ...FL(0.14) },
+    perreosuave: { ...FL(0.14) },
+    reggaetonpop: { cg: "x..X..X.x..X..X.", ...FL(0.15) },
+    reggaetonnoite: { ...FL(0.13) },
+    bachata: { cg: "x.X.x.X.x.X.x.X.", ...FL(0.14) },
+    afrobeat: { cg: "x.X..Xx.x.X..X.x", ...FL(0.15) },
+    reggaetonmoderno: { cg: "x..X..X.x..X..X.", ...FL(0.14) },
+    latinpop: { acordeTipo: "pad", cg: "x..X..x.x..X..x.", ...FL(0.15) },
+    moombahton: { cg: "x..X..X.x..X..X.", ...FL(0.15) },
+    cumbiapop: { acordeTipo: "pad", cg: "x.X.x.X.x.X.x.X.", ...FL(0.16) },
+    latintrap: { ...FL(0.15) },
+    natalpop: { lider: "flauta", liderVol: 0.17 },
+    natalreggaeton: { acordeTipo: "pad", lider: "flauta", liderVol: 0.16, cg: "x..X..X.x..X..X." },
+    natallofi: { lider: "flauta", liderVol: 0.15 },
+    anonovo: { lider: "flauta", liderVol: 0.17, cg: "...X...X...X...X" },
+    phonk: {}
+  };
+  Object.entries(REMIX).forEach(([k, v]) => { if (MUSICAS[k]) Object.assign(MUSICAS[k], v); });
+  // Novas: violão só como base, com batida grave; e flauta em cima do grave
+  MUSICAS.violaograve = { bpm: 96, k808: true, desliza: true, k: "x.....x...x.....", s: "....x.......x...", palma: true, h: "x.x.x.x.x.x.x.x.", chVol: 0.7, cg: "..X...X...X..X..", b: "x-----x---x-----", baixo: "808", c: "x..x..x...x..x..", acordeTipo: "violaoGrave",
+    acordes: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], raiz: [33, 29, 24, 31], melodia: [] };
+  MUSICAS.trapflauta = { bpm: 140, k808: true, desliza: true, k: "x.........x..x..", s: "........x.......", palma: true, h: "x.x.x.x.xrx.x.rr", b: "x---------x--x--", baixo: "808", c: "", acordes: [[57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]], raiz: [33, 29, 26, 28],
+    ...FL(0.16, 0), melodia: [76, 0, 0, 74, 0, 0, 72, 0, 0, 0, 71, 0, 72, 0, 0, 0, 69, 0, 0, 0, 72, 0, 74, 0, 76, 0, 0, 0, 77, 0, 76, 0] };
+  MUSICAS.reggaetonflauta = { bpm: 95, k: "x...x...x...x...", s: "...x..x....x..x.", palma: true, h: "x.x.x.x.x.x.x.x.", chVol: 0.7, cg: "x..X..X.x..X..X.", b: "x-..x-..x-..x-..", baixo: "808", desliza: true, c: "x-------x-------", acordeTipo: "pad",
+    acordes: [[62, 65, 69], [58, 62, 65], [60, 64, 67], [57, 60, 64]], raiz: [26, 22, 24, 21], ...FL(0.16, 0), melodia: [74, 0, 77, 0, 74, 0, 72, 0, 74, 0, 0, 0, 69, 0, 0, 0, 70, 0, 72, 0, 74, 0, 77, 0, 76, 0, 74, 0, 72, 0, 0, 0] };
   const NOMES_MUSICA = {
-    house: ["House", "animada e alegre"], housegrave: ["House grave", "grave marcante"], tropical: ["House tropical", "leve, de verão"],
+    trapflauta: ["Trap com flauta", "grave forte e flauta"], reggaetonflauta: ["Reggaeton com flauta", "latino com batida grave"], violaograve: ["Violão com grave", "violão de fundo e batida pesada"],
+    house: ["House", "animada, com flauta"], housegrave: ["House grave", "grave marcante"], tropical: ["House tropical", "flauta de verão"],
     eletronica: ["Eletrônica", "agitada"], eletrodrop: ["Eletrônica drop", "com virada forte"],
     trap: ["Trap", "grave que desliza"], trappesado: ["Trap pesado", "grave com muita ênfase"], trapmelodico: ["Trap melódico", "grave e suave"],
-    drill: ["Drill", "tenso, com tique-taque"], funk: ["Funk", "dançante"], funkmandela: ["Funk mandelão", "grave estourado"],
+    drill: ["Drill", "grave tenso com flauta"], funk: ["Funk", "dançante"], funkmandela: ["Funk mandelão", "grave estourado"],
     phonk: ["Phonk", "grave sujo e sininho"],
-    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], perreosuave: ["Perreo suave", "romântico com cordas"], reggaetonpop: ["Reggaeton pop", "alegre e romântico"], reggaetonnoite: ["Reggaeton da noite", "lento e envolvente"], bachata: ["Bachata pop", "romântica e dançante"], natalpop: ["Natal pop", "Jingle Bells com sininhos"], natalreggaeton: ["Natal reggaeton", "Deck the Halls latino"], natallofi: ["Natal lo-fi", "calminho com piano"], anonovo: ["Ano novo", "festa com Auld Lang Syne"], reggaetonmoderno: ["Reggaeton moderno", "violão e grave deslizando"], latinpop: ["Latin pop", "violão e shaker, alegre"], moombahton: ["Moombahton", "latino eletrônico"], cumbiapop: ["Cumbia pop", "dançante e leve"], latintrap: ["Trap latino", "grave e romântico"], afrobeat: ["Afrobeat", "suingado"],
+    dembow: ["Reggaeton", "latino"], reggaetonromantico: ["Reggaeton romântico", "mais calmo"], perreosuave: ["Perreo suave", "romântico com cordas"], reggaetonpop: ["Reggaeton pop", "alegre e romântico"], reggaetonnoite: ["Reggaeton da noite", "lento e envolvente"], bachata: ["Bachata pop", "romântica e dançante"], natalpop: ["Natal pop", "Jingle Bells com sininhos"], natalreggaeton: ["Natal reggaeton", "Deck the Halls latino"], natallofi: ["Natal lo-fi", "calminho com flauta e sininhos"], anonovo: ["Ano novo", "festa com Auld Lang Syne"], reggaetonmoderno: ["Reggaeton moderno", "flauta e grave deslizando"], latinpop: ["Latin pop", "flauta e conga, alegre"], moombahton: ["Moombahton", "latino eletrônico"], cumbiapop: ["Cumbia pop", "flauta e percussão"], latintrap: ["Trap latino", "grave e romântico"], afrobeat: ["Afrobeat", "suingado"],
     disco: ["Disco", "baixo saltitante"], boombap: ["Boom bap", "rap anos 90"], lofi: ["Lo-fi", "calmo e delicado"]
   };
   const MODELOS_REELS = {
