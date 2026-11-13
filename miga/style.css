@@ -1566,3 +1566,20 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 /* Publicar vídeo: botão de som na prévia */
 .vd-som { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 3; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(29, 29, 31, .78); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .vd-som.off { background: var(--rosa); }
+
+/* ===== Ícones no estilo "Selo suave" (v162): desenho rosa-escuro dentro de um círculo rosa-claro ===== */
+.in-acao svg, .fi-acao svg { box-sizing: border-box; width: 46px; height: 46px; padding: 11px; border-radius: 50%; background: var(--rosa-claro); stroke: var(--rosa-escuro); stroke-width: 2; }
+.in-acao[data-in="roteiro"] svg { background: rgba(255,255,255,.22); stroke: #fff; }
+.in-acao--destaque svg { background: #fff; }
+.fi-op svg { box-sizing: border-box; width: 38px; height: 38px; padding: 9px; border-radius: 50%; background: var(--rosa-claro); stroke: var(--rosa-escuro); stroke-width: 2; flex: none; }
+.fi-op--perigo svg { background: #fde4e4; stroke: #c62828; }
+.fi-principal svg { box-sizing: border-box; width: 36px; height: 36px; padding: 8px; border-radius: 50%; background: rgba(255,255,255,.22); }
+.pp-cat svg.pp-cat__ic { box-sizing: border-box; width: 46px; height: 46px; padding: 11px; border-radius: 50%; background: var(--rosa-claro); stroke: var(--rosa-escuro); stroke-width: 2; }
+.pp-cat.on svg.pp-cat__ic { stroke-width: 2.2; background: #fff; }
+.pp-cat.vazia svg.pp-cat__ic { background: #f1ece4; stroke: #b4aca4; }
+.folha-cat .pp-cat.on svg.pp-cat__ic { stroke: var(--rosa-escuro); }
+.ic-selo { box-sizing: border-box; flex: none; width: 30px; height: 30px; padding: 6px; border-radius: 50%; background: var(--rosa-claro); fill: none; stroke: var(--rosa-escuro); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
+.ic-selo--mini { width: 24px; height: 24px; padding: 4.5px; margin-right: 6px; }
+.ed-chips button .ic-selo { width: 24px; height: 24px; padding: 4.5px; margin-right: 6px; }
+#bnModelo [data-v] { display: inline-flex; align-items: center; gap: 8px; }
+.ed-chips button { display: inline-flex; align-items: center; white-space: nowrap; }
