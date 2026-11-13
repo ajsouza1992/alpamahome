@@ -76,7 +76,7 @@
   const NOME_CAT = { looks: "Looks", fitness: "Moda fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
   /** Ícones do app (estilo Selo suave), como caminhos SVG 24×24: categorias, figurinhas (f_), formatos de selo (s_) */
   const ICONE_MODELO_ARTE = { achadinho: "brilho", relampago: "raio", baixou: "etiqueta", ultimas: "relogio", novidade: "megafone", enquete: "pergunta", cupom: "cupom", lista: "lista", meutexto: "lapis", boasvindas: "coracao", comofunciona: "info", categorias: "colagem", stories: "story", siga: "instagram" };
-  const ICONES_MIGA = {"looks": "M9 2v3.5L7 8l2.5 2L5 21h14l-4.5-11L17 8l-2-2.5V2M9 5.5c1.8 1 4.2 1 6 0", "fitness": "M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7", "calcados": "M3 18.5 4.6 15a2 2 0 0 1 1.8-1.2h2.8a4 4 0 0 0 3.2-1.6L16.5 6a1.6 1.6 0 0 1 2.7.3L21 10v1.5M3 18.5h7.5a4 4 0 0 0 3-1.4L21 11.5M18.6 12.8 17.8 21h2.4l.8-8.6", "acessorios": "M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2", "perfumes": "M9 9h6a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3zM10 9V6h4v3M12 6V3M9 3h6", "maquiagem": "M9 21V11h6v10zM10 11V6l4-3v8", "skincare": "M8 10h8v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1zM10 10V7h4v3M11 7V4h4", "suplementos": "M10.5 20.5l10-10a4.9 4.9 0 1 0-7-7l-10 10a4.9 4.9 0 1 0 7 7zM8.5 8.5l7 7", "eletronicos": "M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3", "casa": "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "outros": "M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2M12 17.5s-3-1.7-3-3.5a1.5 1.5 0 0 1 3-.6 1.5 1.5 0 0 1 3 .6c0 1.8-3 3.5-3 3.5z", "continuar": "M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M10.5 9v6l4.5-3z", "f_brilho": "M12 2l2 6.5L20 10l-6 2-2 7-2-7-6-2 6-1.5zM19 15l.7 2 2 .8-2 .7-.7 2-.7-2-2-.7 2-.8z", "f_coracao": "M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z", "f_presente": "M4 8h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1zM12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5", "f_fogo": "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.4a2.5 2.5 0 0 0 2.5 2.4z", "f_raio": "M4 14a1 1 0 0 1-.8-1.6l9.9-10.2a.5.5 0 0 1 .9.5l-1.9 6A1 1 0 0 0 13 10h7a1 1 0 0 1 .8 1.6l-9.9 10.2a.5.5 0 0 1-.9-.5l1.9-6A1 1 0 0 0 11 14z", "f_etiqueta": "M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4zM6.2 7.5a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z", "f_bolsa": "M3.5 9h17l-1.3 10.2a2 2 0 0 1-2 1.8H6.8a2 2 0 0 1-2-1.8zM8 9V7a4 4 0 0 1 8 0v2M10 13h4", "f_trofeu": "M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17c0 .6-.5 1-1 1.2C7.9 18.8 7 20.2 7 22M14 14.7V17c0 .6.5 1 1 1.2 1.1.6 2 2 2 3.8M18 2H6v7a6 6 0 0 0 12 0z", "f_top": "M7 3v5c0 1-2 2-2 4v6h14v-6c0-2-2-3-2-4V3M7 8c1.5 2 3.5 2 5 0 1.5 2 3.5 2 5 0M5 15h14", "f_relogio": "M4 13a8 8 0 1 0 16 0a8 8 0 1 0 -16 0zM12 9v4l2 2M5 3 2 6M22 6l-3-3", "f_pote": "M8 7h8a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-8a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3zM7 7V4h10v3M8 13h8", "f_cupom": "M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM9 15l6-6M8.7 9.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0zM13.7 14.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0z", "f_porcento": "M19 5 5 19M4 6.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0zM15 17.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0z", "f_dinheiro": "M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-16a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2zM9.5 12a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0zM6 12h.01M18 12h.01", "f_carrinho": "M7 21a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM18 21a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM2 2h2.5l2.7 12.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L22 7H5.1", "f_megafone": "M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6", "f_estrela": "M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.5 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.7a2 2 0 0 0-.6 1.8l.9 5.2a.5.5 0 0 1-.8.5l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.5l.9-5.2a2 2 0 0 0-.6-1.8L1.6 9.8a.5.5 0 0 1 .3-.9l5.2-.8A2 2 0 0 0 8.6 7z", "f_check": "M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0zM8 12l3 3 5-6", "f_seta": "M5 12h14M13 6l6 6-6 6", "f_cabide": "M12 7a2 2 0 1 1 2-2c0 1-1 1.5-2 2.5v1M12 8.5 2.5 16a1 1 0 0 0 .6 1.8h17.8a1 1 0 0 0 .6-1.8z", "f_tenis": "M2 17V9.5a1.5 1.5 0 0 1 2.4-1.2L7 10.2l2.5-2.7 3.3 3.8c1.5 1.7 3.6 2.5 5.8 2.7A3.6 3.6 0 0 1 22 17.6V18H2zM2 18v1.5a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V18M11 12.5l-1.3 1.2M13 14.5l-1.3 1.2", "f_haltere": "M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7", "f_batom": "M9 21V11h6v10zM10 11V6l4-3v8", "f_perfume": "M9 9h6a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3zM10 9V6h4v3M12 6V3M9 3h6", "f_fone": "M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3", "f_panela": "M3 10h18v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM1 10h2M21 10h2M8 6c0-1 1-1 1-2M12 6c0-1 1-1 1-2M16 6c0-1 1-1 1-2", "f_patinha": "M9 4a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM16 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM18 16a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.8 1.2 5 5 0 0 0-1.7-2.2A4 4 0 0 1 9 10z", "f_mamadeira": "M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1", "f_bebe": "M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1", "f_lapis": "M21.2 6.8a2.8 2.8 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5z", "f_aviao": "M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z", "f_arvore": "M17 14l3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7zM12 22v-3", "f_floco": "M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M9 4l3 3 3-3M9 20l3-3 3 3M4 9l3 3-3 3M20 9l-3 3 3 3", "f_casa": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z", "f_espelho": "M6 9a6 7 0 1 0 12 0a6 7 0 1 0 -12 0zM12 16v5M9 21h6M9.5 7a3 3 0 0 1 2-2", "f_caixa": "M4 4h16a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1zM5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4", "f_folha": "M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10zM2 21c0-3 1.9-5.4 5.2-6.1 2.4-.5 4.7-1.6 6.8-3.9", "f_gota": "M12 2.7 6.3 8.4a8 8 0 1 0 11.4 0zM9 15a3 3 0 0 0 3 3", "f_xicara": "M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM6 2v2M10 2v2M14 2v2", "f_calendario": "M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-13a2 2 0 0 1 2 -2zM16 2v4M8 2v4M3 10h18M9 15.5l2 2 4-4", "f_caminhao": "M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.6a1 1 0 0 0-.2-.6l-3.5-4.4A1 1 0 0 0 17.5 8H14M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM5 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z", "f_ampulheta": "M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2", "f_foguete": "M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1zM12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2zM9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5", "f_pergunta": "M7.9 20A9 9 0 1 0 4 16.1L2 22zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01", "f_info": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0zM12 16v-4M12 8h.01", "f_story": "M10.1 2.2a10 10 0 0 1 3.8 0M17.6 3.7a10 10 0 0 1 2.7 2.7M21.8 10.1a10 10 0 0 1 0 3.8M20.3 17.6a10 10 0 0 1-2.7 2.7M13.9 21.8a10 10 0 0 1-3.8 0M6.4 20.3a10 10 0 0 1-2.7-2.7M2.2 13.9a10 10 0 0 1 0-3.8M3.7 6.4a10 10 0 0 1 2.7-2.7M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0z", "f_vestido": "M9 2v3.5L7 8l2.5 2L5 21h14l-4.5-11L17 8l-2-2.5V2M9 5.5c1.8 1 4.2 1 6 0", "f_lista": "M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13", "f_instagram": "M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1 -5 5h-10a5 5 0 0 1 -5 -5v-10a5 5 0 0 1 5 -5zM8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0zM16.7 6.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0z", "f_colagem": "M4.5 3h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM15.5 3h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM15.5 14h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM4.5 14h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5z", "f_lapis2": "M21.2 6.8a2.8 2.8 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5z", "s_estrela": "M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.5 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.7a2 2 0 0 0-.6 1.8l.9 5.2a.5.5 0 0 1-.8.5l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.5l.9-5.2a2 2 0 0 0-.6-1.8L1.6 9.8a.5.5 0 0 1 .3-.9l5.2-.8A2 2 0 0 0 8.6 7z", "s_circulo": "M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76z", "s_fita": "M5 3h14v18l-7-5-7 5z", "s_etiqueta": "M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4zM6.2 7.5a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z", "f_caderno": "M2 6h4M2 10h4M2 14h4M2 18h4M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-16a2 2 0 0 1 2 -2zM16 2v20"};
+  const ICONES_MIGA = {"looks": "M9 2v3.5L7 8l2.5 2L5 21h14l-4.5-11L17 8l-2-2.5V2M9 5.5c1.8 1 4.2 1 6 0", "fitness": "M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7", "calcados": "M3 18.5 4.6 15a2 2 0 0 1 1.8-1.2h2.8a4 4 0 0 0 3.2-1.6L16.5 6a1.6 1.6 0 0 1 2.7.3L21 10v1.5M3 18.5h7.5a4 4 0 0 0 3-1.4L21 11.5M18.6 12.8 17.8 21h2.4l.8-8.6", "acessorios": "M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2", "perfumes": "M9 9h6a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3zM10 9V6h4v3M12 6V3M9 3h6", "maquiagem": "M9 21V11h6v10zM10 11V6l4-3v8", "skincare": "M8 10h8v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1zM10 10V7h4v3M11 7V4h4", "suplementos": "M10.5 20.5l10-10a4.9 4.9 0 1 0-7-7l-10 10a4.9 4.9 0 1 0 7 7zM8.5 8.5l7 7", "eletronicos": "M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3", "casa": "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "outros": "M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2M12 17.5s-3-1.7-3-3.5a1.5 1.5 0 0 1 3-.6 1.5 1.5 0 0 1 3 .6c0 1.8-3 3.5-3 3.5z", "continuar": "M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M10.5 9v6l4.5-3z", "f_brilho": "M12 2l2 6.5L20 10l-6 2-2 7-2-7-6-2 6-1.5zM19 15l.7 2 2 .8-2 .7-.7 2-.7-2-2-.7 2-.8z", "f_coracao": "M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z", "f_presente": "M4 8h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1zM12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5", "f_fogo": "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.4a2.5 2.5 0 0 0 2.5 2.4z", "f_raio": "M4 14a1 1 0 0 1-.8-1.6l9.9-10.2a.5.5 0 0 1 .9.5l-1.9 6A1 1 0 0 0 13 10h7a1 1 0 0 1 .8 1.6l-9.9 10.2a.5.5 0 0 1-.9-.5l1.9-6A1 1 0 0 0 11 14z", "f_etiqueta": "M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4zM6.2 7.5a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z", "f_bolsa": "M3.5 9h17l-1.3 10.2a2 2 0 0 1-2 1.8H6.8a2 2 0 0 1-2-1.8zM8 9V7a4 4 0 0 1 8 0v2M10 13h4", "f_trofeu": "M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17c0 .6-.5 1-1 1.2C7.9 18.8 7 20.2 7 22M14 14.7V17c0 .6.5 1 1 1.2 1.1.6 2 2 2 3.8M18 2H6v7a6 6 0 0 0 12 0z", "f_top": "M7 3v5c0 1-2 2-2 4v6h14v-6c0-2-2-3-2-4V3M7 8c1.5 2 3.5 2 5 0 1.5 2 3.5 2 5 0M5 15h14", "f_relogio": "M4 13a8 8 0 1 0 16 0a8 8 0 1 0 -16 0zM12 9v4l2 2M5 3 2 6M22 6l-3-3", "f_pote": "M8 7h8a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-8a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3zM7 7V4h10v3M8 13h8", "f_cupom": "M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM9 15l6-6M8.7 9.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0zM13.7 14.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0z", "f_porcento": "M19 5 5 19M4 6.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0zM15 17.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0z", "f_dinheiro": "M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-16a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2zM9.5 12a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0zM6 12h.01M18 12h.01", "f_carrinho": "M7 21a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM18 21a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM2 2h2.5l2.7 12.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L22 7H5.1", "f_megafone": "M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6", "f_estrela": "M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.5 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.7a2 2 0 0 0-.6 1.8l.9 5.2a.5.5 0 0 1-.8.5l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.5l.9-5.2a2 2 0 0 0-.6-1.8L1.6 9.8a.5.5 0 0 1 .3-.9l5.2-.8A2 2 0 0 0 8.6 7z", "f_check": "M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0zM8 12l3 3 5-6", "f_seta": "M5 12h14M13 6l6 6-6 6", "f_cabide": "M12 7a2 2 0 1 1 2-2c0 1-1 1.5-2 2.5v1M12 8.5 2.5 16a1 1 0 0 0 .6 1.8h17.8a1 1 0 0 0 .6-1.8z", "f_tenis": "M2 17V9.5a1.5 1.5 0 0 1 2.4-1.2L7 10.2l2.5-2.7 3.3 3.8c1.5 1.7 3.6 2.5 5.8 2.7A3.6 3.6 0 0 1 22 17.6V18H2zM2 18v1.5a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V18M11 12.5l-1.3 1.2M13 14.5l-1.3 1.2", "f_haltere": "M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7", "f_batom": "M9 21V11h6v10zM10 11V6l4-3v8", "f_perfume": "M9 9h6a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3zM10 9V6h4v3M12 6V3M9 3h6", "f_fone": "M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3", "f_panela": "M3 10h18v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM1 10h2M21 10h2M8 6c0-1 1-1 1-2M12 6c0-1 1-1 1-2M16 6c0-1 1-1 1-2", "f_patinha": "M9 4a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM16 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM18 16a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.8 1.2 5 5 0 0 0-1.7-2.2A4 4 0 0 1 9 10z", "f_mamadeira": "M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1", "f_bebe": "M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1", "f_lapis": "M21.2 6.8a2.8 2.8 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5z", "f_aviao": "M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z", "f_arvore": "M17 14l3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7zM12 22v-3", "f_floco": "M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M9 4l3 3 3-3M9 20l3-3 3 3M4 9l3 3-3 3M20 9l-3 3 3 3", "f_casa": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z", "f_espelho": "M6 9a6 7 0 1 0 12 0a6 7 0 1 0 -12 0zM12 16v5M9 21h6M9.5 7a3 3 0 0 1 2-2", "f_caixa": "M4 4h16a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1zM5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4", "f_folha": "M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10zM2 21c0-3 1.9-5.4 5.2-6.1 2.4-.5 4.7-1.6 6.8-3.9", "f_gota": "M12 2.7 6.3 8.4a8 8 0 1 0 11.4 0zM9 15a3 3 0 0 0 3 3", "f_xicara": "M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM6 2v2M10 2v2M14 2v2", "f_calendario": "M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-13a2 2 0 0 1 2 -2zM16 2v4M8 2v4M3 10h18M9 15.5l2 2 4-4", "f_caminhao": "M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.6a1 1 0 0 0-.2-.6l-3.5-4.4A1 1 0 0 0 17.5 8H14M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM5 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z", "f_ampulheta": "M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2", "f_foguete": "M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1zM12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2zM9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5", "f_pergunta": "M7.9 20A9 9 0 1 0 4 16.1L2 22zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01", "f_info": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0zM12 16v-4M12 8h.01", "f_story": "M10.1 2.2a10 10 0 0 1 3.8 0M17.6 3.7a10 10 0 0 1 2.7 2.7M21.8 10.1a10 10 0 0 1 0 3.8M20.3 17.6a10 10 0 0 1-2.7 2.7M13.9 21.8a10 10 0 0 1-3.8 0M6.4 20.3a10 10 0 0 1-2.7-2.7M2.2 13.9a10 10 0 0 1 0-3.8M3.7 6.4a10 10 0 0 1 2.7-2.7M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0z", "f_vestido": "M9 2v3.5L7 8l2.5 2L5 21h14l-4.5-11L17 8l-2-2.5V2M9 5.5c1.8 1 4.2 1 6 0", "f_lista": "M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13", "f_instagram": "M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1 -5 5h-10a5 5 0 0 1 -5 -5v-10a5 5 0 0 1 5 -5zM8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0zM16.7 6.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0z", "f_colagem": "M4.5 3h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM15.5 3h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM15.5 14h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM4.5 14h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5z", "f_lapis2": "M21.2 6.8a2.8 2.8 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5z", "s_estrela": "M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.5 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.7a2 2 0 0 0-.6 1.8l.9 5.2a.5.5 0 0 1-.8.5l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.5l.9-5.2a2 2 0 0 0-.6-1.8L1.6 9.8a.5.5 0 0 1 .3-.9l5.2-.8A2 2 0 0 0 8.6 7z", "s_circulo": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z", "s_fita": "M5 8H2l2 4-2 4h3M19 8h3l-2 4 2 4h-3M6.5 6h11a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 14.5v-7A1.5 1.5 0 0 1 6.5 6z", "s_etiqueta": "M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4zM6.2 7.5a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z", "f_caderno": "M2 6h4M2 10h4M2 14h4M2 18h4M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-16a2 2 0 0 1 2 -2zM16 2v20"};
   const icPath = (k) => ICONES_MIGA[k] ? `<path d="${ICONES_MIGA[k]}"/>` : "";
   /** Ícone pequeno no estilo Selo suave (círculo rosa-claro) para botões e listas */
   const icSelo = (k, extra = "") => ICONES_MIGA[k] ? `<svg class="ic-selo${extra}" viewBox="0 0 24 24" aria-hidden="true">${icPath(k)}</svg>` : "";
@@ -1188,7 +1188,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=166"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=167"; });
     }
     edFoto = null;
     try {
@@ -1562,7 +1562,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=166"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=167"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3520,7 +3520,7 @@
   const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
   let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
-  const FORMAS_SELO = { estrela: "Estrela", circulo: "Florzinha", fita: "Bandeirinha", etiqueta: "Etiqueta" };
+  const FORMAS_SELO = { estrela: "Estrela", circulo: "Círculo", fita: "Fita", etiqueta: "Etiqueta" };
   const ICONE_SELO = { "Promoção": "f_megafone", "Black Friday": "f_etiqueta", "Natal": "f_arvore", "Oferta relâmpago": "f_raio", "Frete grátis": "f_caminhao", "Só hoje": "f_calendario", "Últimas unidades": "f_ampulheta", "Lançamento": "f_foguete", "Cupom liberado": "f_cupom", "-50%": "f_porcento", "Achadinho": "f_brilho" };
   function migrarCamadas(V) {
     if (!V.camadas) V.camadas = [];
@@ -3529,9 +3529,9 @@
   }
   function formaSelo(ctx, forma, w, h) {
     ctx.beginPath();
-    if (forma === "circulo") { const R = Math.max(w, h) / 2 + 8; for (let i = 0; i <= 160; i++) { const t = (i / 160) * Math.PI * 2, q = R * (1 + 0.075 * Math.cos(8 * t)); ctx.lineTo(Math.cos(t) * q, Math.sin(t) * q); } ctx.closePath(); return; } // florzinha
+    if (forma === "circulo") { ctx.arc(0, 0, Math.max(w, h) / 2, 0, Math.PI * 2); return; }
     if (forma === "estrela") { const r = Math.max(w, h) / 2 + 20, n = 18; for (let i = 0; i < n * 2; i++) { const ang = (i * Math.PI) / n, q = i % 2 ? r * 0.86 : r; ctx.lineTo(Math.cos(ang) * q, Math.sin(ang) * q); } ctx.closePath(); return; }
-    if (forma === "fita") { const x = w / 2 + 14, y = h / 2 + 4; ctx.moveTo(-x, -y); ctx.lineTo(x, -y); ctx.lineTo(x, y + 30); ctx.lineTo(0, y - 2); ctx.lineTo(-x, y + 30); ctx.closePath(); return; } // bandeirinha
+    if (forma === "fita") { const x = w / 2 + 30, y = h / 2; ctx.moveTo(-x, -y); ctx.lineTo(x, -y); ctx.lineTo(x - 34, 0); ctx.lineTo(x, y); ctx.lineTo(-x, y); ctx.lineTo(-x + 34, 0); ctx.closePath(); return; }
     // etiqueta: ponta à esquerda com furinho
     const x = w / 2 + 20, y = h / 2 + 6; ctx.moveTo(-x - 40, 0); ctx.lineTo(-x, -y); ctx.lineTo(x, -y); ctx.quadraticCurveTo(x + 14, -y, x + 14, -y + 14); ctx.lineTo(x + 14, y - 14); ctx.quadraticCurveTo(x + 14, y, x, y); ctx.lineTo(-x, y); ctx.closePath();
   }
@@ -5222,15 +5222,148 @@
     for (let k = 0; k < 12; k++) { const ang = (k / 12) * Math.PI * 2; ctx.drawImage(telaSilhueta, -L / 2 + Math.cos(ang) * r, -L / 2 + Math.sin(ang) * r); }
     ctx.drawImage(telaAdesivo, -L / 2, -L / 2);
   }
-  /** Figurinha das artes no estilo "Na bolinha rosa": quadradinho rosa arredondado, borda branca e o desenho em branco */
+  /** Figurinha das artes (colorida, como adesivo). Os ícones novos do app não entram nas artes. */
   function iconeReels(ctx, nome, tam) {
-    const d = ICONES_MIGA["f_" + nome] || ICONES_MIGA.f_brilho, L = tam * 0.9;
-    ctx.save();
-    retArredondado(ctx, -L / 2, -L / 2, L, L, L * 0.3); ctx.fillStyle = "#e8336d";
-    ctx.shadowColor = "rgba(29,29,31,.25)"; ctx.shadowBlur = tam * 0.08; ctx.shadowOffsetY = tam * 0.03; ctx.fill();
-    ctx.shadowColor = "transparent"; ctx.lineWidth = Math.max(2, tam * 0.035); ctx.strokeStyle = "#ffffff"; ctx.stroke();
-    const s = (tam * 0.56) / 24; ctx.scale(s, s); ctx.translate(-12, -12);
-    ctx.lineWidth = 2.1; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#ffffff"; ctx.stroke(new Path2D(d));
+    const ROSA = "#e8336d", AMAR = "#ffd23f", PRETO = "#1d1d1f", s = tam / 200;
+    ctx.save(); ctx.scale(s, s); ctx.lineWidth = 11; ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = PRETO;
+    const contorno = (cor) => { ctx.fillStyle = cor; ctx.fill(); ctx.stroke(); };
+    const estrela = (x, y, r, cor) => { ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 - Math.PI / 2, rr = i % 2 ? r * 0.3 : r; ctx[i ? "lineTo" : "moveTo"](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); contorno(cor); };
+    const coracao = (cor) => { ctx.beginPath(); ctx.moveTo(0, 80); ctx.bezierCurveTo(-110, 10, -95, -85, -45, -85); ctx.bezierCurveTo(-15, -85, 0, -60, 0, -42); ctx.bezierCurveTo(0, -60, 15, -85, 45, -85); ctx.bezierCurveTo(95, -85, 110, 10, 0, 80); ctx.closePath(); contorno(cor);
+      ctx.beginPath(); ctx.ellipse(-48, -42, 16, 10, -0.6, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fill(); };
+    if (nome === "brilho") { estrela(-15, 10, 85, AMAR); estrela(65, -65, 34, ROSA); }
+    else if (nome === "estrela") { ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5 - Math.PI / 2, r = i % 2 ? 42 : 95; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r + 8); } ctx.closePath(); contorno(AMAR); }
+    else if (nome === "carrinho") {
+      ctx.beginPath(); ctx.moveTo(-95, -70); ctx.lineTo(-62, -70); ctx.lineTo(-40, 30); ctx.lineTo(70, 30); ctx.lineTo(90, -40); ctx.lineTo(-52, -40); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-48, -40); ctx.lineTo(90, -40); ctx.lineTo(70, 30); ctx.lineTo(-38, 30); ctx.closePath(); contorno(ROSA);
+      [[-25, 68], [55, 68]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2); contorno(AMAR); });
+    }
+    else if (nome === "seta") { ctx.beginPath(); ctx.moveTo(-90, -28); ctx.lineTo(20, -28); ctx.lineTo(20, -75); ctx.lineTo(95, 0); ctx.lineTo(20, 75); ctx.lineTo(20, 28); ctx.lineTo(-90, 28); ctx.closePath(); contorno(ROSA); }
+    else if (nome === "dinheiro") {
+      ctx.rotate(-0.15); retArredondado(ctx, -95, -55, 190, 110, 16); contorno("#7ed39a");
+      ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); contorno("#ffffff"); ctx.fillStyle = PRETO; ctx.font = "900 40px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("$", 0, 3);
+    }
+    else if (nome === "porcento") { ctx.beginPath(); ctx.arc(0, 0, 88, 0, Math.PI * 2); contorno(AMAR); ctx.fillStyle = PRETO; ctx.font = "900 110px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("%", 0, 8); }
+    else if (nome === "megafone") {
+      ctx.rotate(-0.2); ctx.beginPath(); ctx.moveTo(-70, -25); ctx.lineTo(60, -80); ctx.lineTo(60, 80); ctx.lineTo(-70, 25); ctx.closePath(); contorno(ROSA);
+      retArredondado(ctx, -95, -30, 30, 60, 8); contorno(AMAR); ctx.beginPath(); ctx.moveTo(-60, 25); ctx.lineTo(-45, 85); ctx.lineTo(-20, 85); ctx.lineTo(-30, 18); ctx.closePath(); contorno(AMAR);
+    }
+    else if (nome === "raio") { ctx.beginPath(); ctx.moveTo(25, -95); ctx.lineTo(-60, 15); ctx.lineTo(-5, 15); ctx.lineTo(-28, 95); ctx.lineTo(62, -20); ctx.lineTo(8, -20); ctx.closePath(); contorno(AMAR); }
+    else if (nome === "etiqueta") {
+      ctx.rotate(-0.25); ctx.beginPath(); ctx.moveTo(-85, -58); ctx.lineTo(35, -58); ctx.lineTo(92, 0); ctx.lineTo(35, 58); ctx.lineTo(-85, 58); ctx.closePath(); contorno(ROSA);
+      ctx.beginPath(); ctx.arc(42, 0, 13, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(-32, -30); ctx.lineTo(-32, 26); ctx.moveTo(-56, 4); ctx.lineTo(-32, 28); ctx.lineTo(-8, 4); ctx.stroke();
+    }
+    else if (nome === "relogio") {
+      [-62, 62].forEach((x) => { ctx.beginPath(); ctx.arc(x, -72, 28, 0, Math.PI * 2); contorno(AMAR); });
+      ctx.beginPath(); ctx.arc(0, 8, 84, 0, Math.PI * 2); contorno("#fff");
+      ctx.strokeStyle = ROSA; ctx.beginPath(); ctx.moveTo(0, 8); ctx.lineTo(42, 36); ctx.stroke(); ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(0, 8); ctx.lineTo(0, -44); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 8, 9, 0, Math.PI * 2); ctx.fillStyle = PRETO; ctx.fill();
+    }
+    else if (nome === "presente") {
+      ctx.beginPath(); ctx.ellipse(-34, -66, 34, 22, -0.5, 0, Math.PI * 2); contorno(AMAR); ctx.beginPath(); ctx.ellipse(34, -66, 34, 22, 0.5, 0, Math.PI * 2); contorno(AMAR);
+      retArredondado(ctx, -78, -20, 156, 110, 12); contorno(ROSA); retArredondado(ctx, -92, -52, 184, 40, 12); contorno(ROSA);
+      ctx.beginPath(); ctx.rect(-16, -52, 32, 142); contorno(AMAR);
+    }
+    else if (nome === "trofeu") {
+      ctx.beginPath(); ctx.arc(-70, -40, 30, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke(); ctx.beginPath(); ctx.arc(70, -40, 30, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+      retArredondado(ctx, -50, 60, 100, 34, 8); contorno(ROSA); ctx.beginPath(); ctx.rect(-14, 20, 28, 42); contorno(AMAR);
+      ctx.beginPath(); ctx.moveTo(-72, -85); ctx.lineTo(72, -85); ctx.lineTo(62, -10); ctx.quadraticCurveTo(0, 50, -62, -10); ctx.closePath(); contorno(AMAR);
+      estrela(0, -40, 26, "#fff");
+    }
+    else if (nome === "cupom") {
+      ctx.rotate(-0.12); ctx.beginPath(); ctx.moveTo(-98, -60); ctx.lineTo(98, -60); ctx.lineTo(98, -20); ctx.arc(98, 0, 20, -Math.PI / 2, Math.PI / 2, true); ctx.lineTo(98, 60); ctx.lineTo(-98, 60); ctx.lineTo(-98, 20); ctx.arc(-98, 0, 20, Math.PI / 2, -Math.PI / 2, true); ctx.closePath(); contorno(AMAR);
+      ctx.setLineDash([12, 10]); ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(45, -50); ctx.lineTo(45, 50); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = ROSA; ctx.font = "800 92px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("%", -25, 6);
+    }
+    else if (nome === "coracao") coracao(ROSA);
+    else if (nome === "check") { ctx.beginPath(); ctx.arc(0, 0, 88, 0, Math.PI * 2); contorno(ROSA); ctx.strokeStyle = "#fff"; ctx.lineWidth = 22; ctx.beginPath(); ctx.moveTo(-42, 2); ctx.lineTo(-10, 34); ctx.lineTo(46, -30); ctx.stroke(); }
+    else if (nome === "fogo") {
+      ctx.beginPath(); ctx.moveTo(0, 92); ctx.bezierCurveTo(-90, 92, -95, 10, -45, -35); ctx.bezierCurveTo(-40, -5, -25, 5, -15, 5); ctx.bezierCurveTo(-30, -45, 0, -80, 20, -98); ctx.bezierCurveTo(25, -50, 90, -30, 80, 30); ctx.bezierCurveTo(75, 75, 40, 92, 0, 92); ctx.closePath(); contorno("#ff7a00");
+      ctx.beginPath(); ctx.moveTo(0, 88); ctx.bezierCurveTo(-45, 88, -48, 40, -15, 15); ctx.bezierCurveTo(-5, 40, 15, 35, 15, 10); ctx.bezierCurveTo(45, 35, 48, 88, 0, 88); ctx.closePath(); ctx.fillStyle = AMAR; ctx.fill();
+    }
+    else if (nome === "bolsa") {
+      ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(0, -40, 42, Math.PI, 0); ctx.stroke(); ctx.lineWidth = 11;
+      retArredondado(ctx, -82, -45, 164, 140, 22); contorno(ROSA); estrela(0, 25, 38, AMAR);
+    }
+    else if (nome === "arvore") {
+      ctx.beginPath(); ctx.rect(-16, 60, 32, 34); contorno("#8a5a2b");
+      [[-80, 70, -10], [-62, 20, -48], [-44, -30, -86]].forEach(([w, yb, yt]) => { ctx.beginPath(); ctx.moveTo(-w, yb); ctx.lineTo(w, yb); ctx.lineTo(0, yt - 20); ctx.closePath(); contorno("#1fa463"); });
+      estrela(0, -104, 26, AMAR); [[-30, 40], [28, 6], [-14, -30]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fillStyle = ROSA; ctx.fill(); });
+    }
+    else if (nome === "floco") {
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 12;
+      for (let i = 0; i < 6; i++) { ctx.save(); ctx.rotate(i * Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -88); ctx.moveTo(0, -55); ctx.lineTo(-22, -75); ctx.moveTo(0, -55); ctx.lineTo(22, -75); ctx.stroke(); ctx.restore(); }
+      ctx.strokeStyle = "#9fd3ff"; ctx.lineWidth = 5; for (let i = 0; i < 6; i++) { ctx.save(); ctx.rotate(i * Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -88); ctx.stroke(); ctx.restore(); }
+    }
+    else if (nome === "panela") {
+      ctx.beginPath(); ctx.moveTo(-95, -20); ctx.lineTo(-130, -30); ctx.stroke(); ctx.beginPath(); ctx.moveTo(95, -20); ctx.lineTo(130, -30); ctx.stroke();
+      retArredondado(ctx, -95, -30, 190, 110, 26); contorno(ROSA); retArredondado(ctx, -105, -52, 210, 28, 14); contorno(AMAR);
+      ctx.beginPath(); ctx.arc(0, -62, 14, Math.PI, 0); contorno(AMAR);
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 8; [-30, 0, 30].forEach((x) => { ctx.beginPath(); ctx.moveTo(x, -78); ctx.quadraticCurveTo(x + 14, -98, x, -118); ctx.stroke(); });
+    }
+    else if (nome === "perfume") {
+      retArredondado(ctx, -22, -100, 44, 34, 8); contorno(AMAR); ctx.beginPath(); ctx.rect(-12, -68, 24, 18); contorno("#ffffff");
+      retArredondado(ctx, -78, -52, 156, 150, 40); contorno(ROSA);
+      ctx.beginPath(); ctx.ellipse(-36, -14, 14, 26, -0.3, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fill(); estrela(30, 40, 26, AMAR);
+    }
+    else if (nome === "batom") {
+      ctx.rotate(0.35); retArredondado(ctx, -34, 0, 68, 96, 10); contorno(AMAR); retArredondado(ctx, -26, -40, 52, 42, 6); contorno("#c9c2b4");
+      ctx.beginPath(); ctx.moveTo(-22, -40); ctx.lineTo(-22, -96); ctx.lineTo(22, -70); ctx.lineTo(22, -40); ctx.closePath(); contorno(ROSA);
+    }
+    else if (nome === "cabide") {
+      const linha2 = (desenho) => { ctx.save(); ctx.lineWidth = 24; ctx.strokeStyle = PRETO; desenho(); ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = AMAR; desenho(); ctx.stroke(); ctx.restore(); };
+      linha2(() => { ctx.beginPath(); ctx.arc(0, -72, 20, Math.PI, Math.PI * 2.3); });
+      linha2(() => { ctx.beginPath(); ctx.moveTo(0, -50); ctx.lineTo(-100, 20); ctx.lineTo(100, 20); ctx.closePath(); });
+      ctx.beginPath(); ctx.moveTo(-70, 20); ctx.lineTo(-80, 100); ctx.lineTo(80, 100); ctx.lineTo(70, 20); ctx.closePath(); contorno(ROSA);
+    }
+    else if (nome === "pote") { // pote de suplemento
+      retArredondado(ctx, -62, -58, 124, 150, 22); contorno(ROSA);
+      retArredondado(ctx, -72, -88, 144, 40, 12); contorno(PRETO === "#1d1d1f" ? "#3a3a3d" : PRETO);
+      retArredondado(ctx, -48, -18, 96, 70, 10); contorno(AMAR);
+      ctx.fillStyle = PRETO; ctx.font = "900 34px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("PRO", 0, 18);
+    }
+    else if (nome === "top") { // top fitness
+      ctx.beginPath(); ctx.moveTo(-72, -92); ctx.lineTo(-40, -92); ctx.quadraticCurveTo(-30, -24, 0, -18); ctx.quadraticCurveTo(30, -24, 40, -92); ctx.lineTo(72, -92); ctx.quadraticCurveTo(72, -12, 96, 28); ctx.lineTo(96, 80); ctx.lineTo(-96, 80); ctx.lineTo(-96, 28); ctx.quadraticCurveTo(-72, -12, -72, -92); ctx.closePath(); contorno(ROSA);
+      ctx.beginPath(); ctx.rect(-96, 42, 192, 38); contorno(AMAR);
+      ctx.beginPath(); ctx.moveTo(-40, 10); ctx.quadraticCurveTo(0, 30, 40, 10); ctx.lineWidth = 8; ctx.stroke();
+    }
+    else if (nome === "tenis") {
+      ctx.rotate(-0.08);
+      ctx.beginPath(); ctx.moveTo(-100, 40); ctx.lineTo(-95, -10); ctx.quadraticCurveTo(-85, -55, -45, -60); ctx.lineTo(-20, -30); ctx.quadraticCurveTo(10, -10, 50, 0); ctx.quadraticCurveTo(100, 10, 100, 40); ctx.closePath(); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(-104, 40); ctx.lineTo(104, 40); ctx.quadraticCurveTo(104, 66, 80, 66); ctx.lineTo(-84, 66); ctx.quadraticCurveTo(-104, 66, -104, 40); ctx.closePath(); contorno("#ffffff");
+      ctx.save(); ctx.lineWidth = 8; [[-38, -38, -14, -22], [-26, -24, -2, -10], [-14, -10, 10, 2]].forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(10, 16); ctx.quadraticCurveTo(45, 24, 70, 12); ctx.lineWidth = 9; ctx.strokeStyle = AMAR; ctx.stroke();
+    }
+    else if (nome === "haltere") {
+      ctx.beginPath(); ctx.rect(-60, -10, 120, 20); contorno("#c9c2b4");
+      [-1, 1].forEach((s) => { retArredondado(ctx, s * 60 - (s > 0 ? 0 : 36), -50, 36, 100, 10); contorno(ROSA); retArredondado(ctx, s * 96 - (s > 0 ? 0 : 22), -32, 22, 64, 8); contorno(AMAR); });
+    }
+    else if (nome === "patinha") {
+      ctx.beginPath(); ctx.ellipse(0, 30, 52, 44, 0, 0, Math.PI * 2); contorno(ROSA);
+      [[-62, -30], [-24, -66], [24, -66], [62, -30]].forEach(([x, y]) => { ctx.beginPath(); ctx.ellipse(x, y, 20, 26, x * 0.006, 0, Math.PI * 2); contorno(ROSA); });
+    }
+    else if (nome === "mamadeira") {
+      ctx.beginPath(); ctx.moveTo(-14, -60); ctx.quadraticCurveTo(0, -112, 14, -60); ctx.closePath(); contorno(AMAR);
+      retArredondado(ctx, -40, -64, 80, 22, 8); contorno(ROSA); retArredondado(ctx, -46, -42, 92, 140, 30); contorno("#ffffff");
+      ctx.lineWidth = 6; [-10, 20, 50].forEach((y) => { ctx.beginPath(); ctx.moveTo(-46, y); ctx.lineTo(-22, y); ctx.stroke(); });
+    }
+    else if (nome === "fone") {
+      ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(0, 10, 80, Math.PI, 0); ctx.stroke(); ctx.lineWidth = 11;
+      [-1, 1].forEach((s) => { retArredondado(ctx, s * 80 - 28, 0, 56, 90, 22); contorno(ROSA); });
+    }
+    else if (nome === "aviao") {
+      ctx.rotate(-0.5); ctx.beginPath(); ctx.moveTo(-100, 0); ctx.quadraticCurveTo(0, -24, 100, -8); ctx.quadraticCurveTo(110, 0, 100, 8); ctx.quadraticCurveTo(0, 24, -100, 0); contorno("#ffffff");
+      ctx.beginPath(); ctx.moveTo(-10, -8); ctx.lineTo(30, -80); ctx.lineTo(48, -80); ctx.lineTo(30, -6); contorno(ROSA); ctx.beginPath(); ctx.moveTo(-10, 8); ctx.lineTo(30, 80); ctx.lineTo(48, 80); ctx.lineTo(30, 6); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(-86, -2); ctx.lineTo(-104, -44); ctx.lineTo(-92, -44); ctx.lineTo(-70, -6); contorno(AMAR);
+    }
+    else if (nome === "lapis") {
+      ctx.rotate(0.6); retArredondado(ctx, -22, -80, 44, 130, 6); contorno(AMAR); ctx.beginPath(); ctx.moveTo(-22, 50); ctx.lineTo(0, 100); ctx.lineTo(22, 50); ctx.closePath(); contorno("#f4d9b3");
+      retArredondado(ctx, -22, -104, 44, 26, 8); contorno(ROSA);
+    }
+    else if (nome === "casa") {
+      ctx.beginPath(); ctx.moveTo(-96, -6); ctx.lineTo(0, -92); ctx.lineTo(96, -6); ctx.closePath(); contorno(ROSA);
+      retArredondado(ctx, -74, -10, 148, 106, 8); contorno("#ffffff"); retArredondado(ctx, -20, 30, 40, 66, 6); contorno(AMAR);
+    }
     ctx.restore();
   }
   function tituloReels(ctx, texto, y, C, tam) {
