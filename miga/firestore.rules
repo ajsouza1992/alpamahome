@@ -16,6 +16,12 @@ service cloud.firestore {
         ];
     }
 
+    // Espaço único da Miga: todas as contas autorizadas usam os mesmos dados
+    match /espacos/miga/{documento=**} {
+      allow read, write: if autorizada();
+    }
+
+    // Pasta antiga de cada conta (só para o app levar os dados para o espaço único)
     match /usuarios/{uid}/{documento=**} {
       allow read, write: if autorizada() && request.auth.uid == uid;
     }

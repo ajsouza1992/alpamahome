@@ -3,7 +3,7 @@
  * Desenvolvido por Alpama Soluções.
  *
  * Entrada: login anônimo (Firebase Authentication)
- * Dados:   histórico e grupos no Firestore (usuarios/{uid}/...)
+ * Dados:   lista, histórico e ajustes no Firestore, num espaço único (espacos/miga/...) para todas as contas autorizadas
  *          — sem Firebase configurado, usa o próprio navegador (modo local)
  * Abas:    Criar · Histórico · Grupos
  *
@@ -279,9 +279,10 @@
   // ---- modo nuvem (Firestore) ----
   function criarNuvem() {
     const { fs, db } = conta.fb;
-    const col = () => fs.collection(db, "usuarios", conta.uid, "historico");
-    const docConfig = () => fs.doc(db, "usuarios", conta.uid, "config", "app");
-    const colLista = () => fs.collection(db, "usuarios", conta.uid, "lista");
+    // Espaço único da Miga: todas as contas autorizadas usam a mesma lista, histórico e ajustes
+    const col = () => fs.collection(db, "espacos", "miga", "historico");
+    const docConfig = () => fs.doc(db, "espacos", "miga", "config", "app");
+    const colLista = () => fs.collection(db, "espacos", "miga", "lista");
     const salvos = new Map(); // o que já está salvo na nuvem (para gravar só o que mudou)
     return {
       salvar: (i) => fs.setDoc(fs.doc(col(), i.id), i),
@@ -361,7 +362,44 @@
     }
     aviso($("#avisoEntrada"), "");
     mostrarEntrada(false);
+    try { await migrarParaNuvem(); } catch (e) { console.warn("migração", e); toast("Não consegui enviar tudo deste aparelho agora: tento de novo na próxima vez"); }
     await carregarDados();
+  }
+  /**
+   * Leva para a nuvem (espaço único) tudo que estava:
+   *  1) só neste aparelho (modo local: lista, histórico, grupos, cupons, @), e
+   *  2) na pasta antiga da conta (usuarios/{uid}).
+   * Junta sem apagar nada e sem repetir produto (compara pelo link). Roda uma vez por aparelho/conta.
+   */
+  async function migrarParaNuvem() {
+    const { fs, db } = conta.fb, marca = "miga_migrado_" + conta.uid;
+    if (ls.ler(marca)) return;
+    let fila = [], hist = [], cfgs = [];
+    // 1) deste aparelho
+    fila.push(...ls.lerJson("miga_fila", []));
+    try { hist.push(...(await local.listar())); } catch (e) { /* sem histórico local */ }
+    try { cfgs.push(await local.lerConfig()); } catch (e) { /* segue */ }
+    // 2) pasta antiga da conta
+    try {
+      const sl = await fs.getDocs(fs.collection(db, "usuarios", conta.uid, "lista")); fila.push(...sl.docs.map((d) => d.data()));
+      const sh = await fs.getDocs(fs.collection(db, "usuarios", conta.uid, "historico")); hist.push(...sh.docs.map((d) => d.data()));
+      const sc = await fs.getDoc(fs.doc(db, "usuarios", conta.uid, "config", "app")); if (sc.exists()) { const x = sc.data(); cfgs.push(x); if (x.fila) fila.push(...x.fila); }
+    } catch (e) { /* pasta antiga sem acesso ou vazia */ }
+    fila = fila.filter((i) => i && i.id && i.link); hist = hist.filter((h) => h && h.id);
+    const temAlgo = fila.length || hist.length || cfgs.some((c) => (c.grupos || []).length || (c.cupons || []).length || c.convite || c.instagram);
+    if (!temAlgo) { ls.gravar(marca, "1"); return; }
+    // o que já está na nuvem
+    const lista = await dados.lerFila(), links = new Set(lista.map((i) => chaveLink(i.link)));
+    const novos = []; for (const i of fila) { const k = chaveLink(i.link); if (!links.has(k)) { links.add(k); novos.push({ ...i, carregando: undefined }); } }
+    novos.forEach((i) => delete i.carregando);
+    if (novos.length) await dados.gravarFila([...novos, ...lista].sort((x, y) => (y.criadoEm || 0) - (x.criadoEm || 0)));
+    for (const h of hist) { try { const ja = await dados.pegar(h.id); if (!ja) await dados.salvar(h); } catch (e) { /* segue */ } }
+    const atual = await dados.lerConfig(), uniq = (l) => { const v = new Set(); return l.filter((x) => { const k = JSON.stringify(x); if (v.has(k)) return false; v.add(k); return true; }); };
+    const junto = { grupos: uniq([...(atual.grupos || []), ...cfgs.flatMap((c) => c.grupos || [])]), cupons: [...new Set([...(atual.cupons || []), ...cfgs.flatMap((c) => c.cupons || [])])],
+      cupomInfo: Object.assign({}, ...cfgs.map((c) => c.cupomInfo || {}), atual.cupomInfo || {}), convite: atual.convite || (cfgs.find((c) => c.convite) || {}).convite || "", instagram: atual.instagram || (cfgs.find((c) => c.instagram) || {}).instagram || "" };
+    await dados.gravarConfig(junto);
+    ls.gravar(marca, "1");
+    if (novos.length || hist.length) toast(`Pronto: ${novos.length} ${novos.length === 1 ? "produto foi" : "produtos foram"} para a nuvem`);
   }
   $("#entrarGoogleEntrada").addEventListener("click", async () => {
     if (!conta.fb) { toast("A nuvem (Firebase) não está configurada"); return; }
@@ -1137,7 +1175,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=152"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=153"; });
     }
     edFoto = null;
     try {
@@ -1510,7 +1548,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=152"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=153"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
