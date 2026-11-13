@@ -523,7 +523,18 @@
 
   document.addEventListener("click", (e) => { if (e.target.closest("[data-abrir-link]")) e.stopPropagation(); }, true);
   /* =========================== Abas =========================== */
+  /* Sons: só um tocando por vez, e tudo para quando você sai da tela (gravações em andamento continuam) */
+  const SONS_VIVOS = new Set();
+  (() => { const Base = window.AudioContext || window.webkitAudioContext; if (!Base) return;
+    function Novo(...args) { const c = new Base(...args); pararSons(false); SONS_VIVOS.add(c); return c; }
+    Novo.prototype = Base.prototype; window.AudioContext = Novo; if (window.webkitAudioContext) window.webkitAudioContext = Novo; })();
+  function pararSons(saiuDaTela) {
+    SONS_VIVOS.forEach((c) => { if (c._gravando) return; try { if (c.state !== "closed") c.close().catch(() => {}); } catch (e) { /* segue */ } SONS_VIVOS.delete(c); });
+    try { if (wz && wz.reels && wz.reels.tocando && !wz.reels.tocando.gravando) wz.reels.tocando.parar(); if (wz && wz.ch && wz.ch.tocando && !wz.ch.tocando.gravando) wz.ch.tocando.parar(); } catch (e) { /* segue */ }
+    if (saiuDaTela) document.querySelectorAll("video").forEach((v) => { if (!v.dataset.gravando) try { v.pause(); } catch (e) { /* segue */ } });
+  }
   function irPara(aba) {
+    pararSons(true);
     if (modoVarios && (aba === "postar" || aba === "historico")) { modoVarios = false; marcados.clear(); }
     document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-" + aba; });
     document.querySelectorAll(".abas button").forEach((b) => {
@@ -1192,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=179"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=180"; });
     }
     edFoto = null;
     try {
@@ -1566,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=179"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=180"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1839,7 +1850,7 @@
     pintarMarcados();
   }
   /** Início: blocos das categorias, com quantos faltam postar em cada */
-  const faltamCat = (k) => fila().filter((i) => !i.carregando && !foiCompartilhado(i) && (k === "todas" || (i.categoria || "outros") === k)).length;
+  const faltamCat = (k) => fila().filter((i) => !i.carregando && (k === "todas" || (i.categoria || "outros") === k)).length;
   const blocoCat = (k, n, q, on, extra = "") => `<button type="button" class="pp-cat${on ? " on" : ""}${!q ? " vazia" : ""}" data-cat="${k}"${extra}><svg class="pp-cat__ic" viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k] || ""}</svg><b>${esc(n)}</b>${q ? `<i>${q}</i>` : ""}</button>`;
   /** Lista: categorias numa fileira (chips) */
   function pintarCats() {
@@ -2432,6 +2443,7 @@
     mostrarPasso();
   }
   function mostrarPasso() {
+    { const chave = (wz && wz.canal) + ":" + (wz && wz.passo); if (chave !== mostrarPasso.ultima) { mostrarPasso.ultima = chave; pararSons(true); } }
     setTimeout(guardarProgresso, 0);
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
     $("#wzBarra").style.width = Math.round(((i + 1) / l.length) * 100) + "%";
@@ -4391,7 +4403,7 @@
     if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return; }
     // O som precisa ser ligado logo no toque do botão
     let ac = null;
-    try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
+    try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac._gravando = true; ac.resume(); } catch (e) { ac = null; }
     await carregarMarca(); await fotoDoVideo();
     if (V.semVideo && !V.fotoBmp) { if (ac) ac.close().catch(() => {}); toast("Este produto está sem foto: escolha um vídeo ou coloque uma foto no produto"); return; }
     const btn = $("#vdGerar"); btn.disabled = true; btn.textContent = "Gravando… 0%"; V.gravando = true; V.capaFrame = null;
@@ -5240,7 +5252,10 @@
     c_beleza: { ic: ["batom", "perfume"], selo: "Beleza", frase: "Autocuidado com desconto", cor: "rosa", lay: "circulo" },
     c_casa: { ic: ["casa", "panela"], selo: "Casa", frase: "Casa linda gastando pouco", cor: "creme", lay: "polaroid" }
   };
-  const decorDe = (R) => { const k = R.camp && DECOR["c_" + R.camp] ? "c_" + R.camp : DECOR[R.modelo] ? R.modelo : "achadinho"; return { ...DECOR[k], chave: k }; };
+  const decorDe = (R) => { const k = R.camp && DECOR["c_" + R.camp] ? "c_" + R.camp : DECOR[R.modelo] ? R.modelo : "achadinho", d = { ...DECOR[k], chave: k };
+    // figurinha escolhida por você no modelo atual (Editar título e figurinha)
+    let ico = R.icone; if (!ico && wz && wz.canal) { try { const e = estLer(); if (e.icone && e.modelo === R.modelo && (e.camp || "") === (R.camp || "")) ico = e.icone; } catch (err) { /* segue */ } }
+    if (ico) d.ic = [ico, ...((DECOR[k].ic || []).slice(1))]; return d; };
   let decorAtual = null;
   const POS_DECOR = [[95, 600, 110, -0.2], [985, 720, 105, 0.2], [90, 1060, 95, 0.15], [990, 1110, 100, -0.15], [140, 1810, 90, 0.1]];
   function desenharDecor() { /* fundo limpo: o tema aparece no título, na cor e nos selos */ }
@@ -5544,7 +5559,7 @@
     produtos: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>'
   };
   ICONE_EST.produtosLivre = ICONE_EST.produtos;
-  const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k] || ""}</svg><b>${esc(nome)}</b><small>${esc(valor || "")}</small></button>`;
+  const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k] || ""}</svg><b>${esc(nome)}</b><small>${esc(String(valor || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " "))}</small></button>`;
   let amostra = null, amostraK = "", amostraT = 0;
   const ICO_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>', ICO_PAUSA = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1"/><rect x="13.5" y="5.5" width="4" height="13" rx="1"/></svg>';
   function tocarAmostra(k) {
@@ -5628,7 +5643,7 @@
     x.font = "500 44px Poppins"; const lp = tela.texto ? quebrarCarta(x, tela.texto, 860) : [];
     const hIc = tela.ic ? 234 : 0, hT = lt.length * 91, hP = lp.length ? 30 + lp.length * 58 : 0, hB = tela.botao ? 40 + 108 : 0, H = hIc + hT + hP + hB;
     let y = Math.max(80, (1080 - H) / 2);
-    if (tela.ic) { x.save(); x.translate(540, y + 100); if (C.circ) { x.fillStyle = C.circ; x.shadowColor = "rgba(0,0,0,.25)"; x.shadowBlur = 40; x.shadowOffsetY = 18; x.beginPath(); x.arc(0, 0, 100, 0, 7); x.fill(); x.shadowColor = "transparent"; } iconeReels(x, tela.ic, C.circ ? 132 : 172); x.restore(); y += hIc; }
+    if (tela.ic) { x.save(); x.translate(540, y + 100); if (C.texto === "#ffffff") iconeAdesivo(x, tela.ic, 172); else iconeReels(x, tela.ic, 172); x.restore(); y += hIc; }
     x.textAlign = "left"; x.textBaseline = "middle";
     const linhaRica = (l, yy, fonte) => { x.font = fonte; const ps = partesDestaque(l, C.texto, C.em), w = ps.reduce((s, [p]) => s + x.measureText(p).width, 0); let xx = 540 - w / 2; ps.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, yy); xx += x.measureText(p).width; }); };
     lt.forEach((l) => { linhaRica(l, y + 45, "800 86px Poppins"); y += 91; });
@@ -5636,6 +5651,39 @@
     if (tela.botao) { y += 40; x.save(); x.translate(540, y + 54); x.rotate(-0.052); x.font = "800 42px Poppins"; const w = x.measureText(tela.botao).width + 100, h = 96; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = "#ffd23f"; x.fill(); x.lineWidth = 6; x.strokeStyle = "#1d1d1f"; x.stroke(); x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.fillText(tela.botao, 0, 2); x.restore(); }
     if (edMarca) x.drawImage(edMarca, 1080 - 48 - 130, 1080 - 40 - 130, 130, 130);
     x.restore();
+  }
+  /** Prompt para pedir o carrossel a uma IA (Gemini, ChatGPT…) e colar a resposta aqui */
+  const promptCartas = () => `Você vai criar o texto de um carrossel para o Instagram da Miga Promo: perfil de achadinhos e promoções da Shopee, Mercado Livre e Amazon, para mulheres. Tom de amiga, alegre e direto, frases curtas, português do Brasil.
+
+TEMA: [ESCREVA AQUI O TEMA]
+QUANTIDADE DE TELAS: [de 3 a 10]
+
+Regras:
+- A tela 1 é a capa: um gancho forte que dá vontade de arrastar para o lado.
+- As telas do meio ensinam (uma dica por tela).
+- A última tela chama para seguir o perfil e entrar no canal do WhatsApp (link na bio).
+- Comece pela cor "branco" e depois alterne entre "rosa", "creme" e "preto".
+
+Campos de cada tela:
+- cor: "branco", "rosa", "creme" ou "preto"
+- figurinha: uma destas (ou "" para nenhuma): ${FIGURAS.join(", ")}
+- titulo: até 40 letras. Coloque *asteriscos* em volta de 1 palavra para destacar. Use \\n para quebrar a linha.
+- texto: até 140 letras (pode ser "")
+- botao: até 30 letras, só se fizer sentido (ex.: "Arrasta pro lado →"); senão ""
+- Pode usar emojis.
+
+Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
+[
+  {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →"},
+  {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": ""}
+]`;
+  /** Lê a resposta da IA (o bloco [ ... ]) e monta as telas */
+  function lerRespostaCartas(txt) {
+    const i = txt.indexOf("["), j = txt.lastIndexOf("]"); if (i < 0 || j < i) return null;
+    let l; try { l = JSON.parse(txt.slice(i, j + 1).replace(/[“”]/g, '"')); } catch (e) { return null; }
+    if (!Array.isArray(l) || !l.length) return null;
+    return l.slice(0, 10).map((o) => ({ cor: CORES_CARTA[String(o.cor || "").toLowerCase()] ? String(o.cor).toLowerCase() : "branco", ic: FIGURAS.includes(o.figurinha) ? o.figurinha : "",
+      titulo: String(o.titulo || "").slice(0, 80), texto: String(o.texto || "").slice(0, 200), botao: String(o.botao || "").slice(0, 34) }));
   }
   function telaCartas(c) {
     const K = car(), T = K.telas, s = T[K.sel] || T[0];
@@ -5652,6 +5700,7 @@
       <label class="ch-campo"><span>Texto</span><textarea data-ka-campo="texto" rows="3" maxlength="200">${esc(s.texto || "")}</textarea></label>
       <label class="ch-campo"><span>Botão amarelo (deixe vazio para não ter)</span><input data-ka-campo="botao" maxlength="34" value="${esc(s.botao || "")}"></label>
       <b class="ch-rot">Emojis (entram no campo que você tocou por último)</b><div class="ka-emojis">${EMOJIS_CARTA.map((e) => `<button type="button" data-ka-emoji="${e}">${e}</button>`).join("")}</div>
+      <div class="duas"><button type="button" class="btn btn--branco" id="kaPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="kaColar">Colar resposta da IA</button></div>
       <button type="button" class="btn btn--rosa" id="kaBaixar">Salvar as ${T.length} imagens</button>
       <button type="button" class="btn btn--branco" id="kaZerar">Começar um carrossel novo</button>
       <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>`;
@@ -5674,6 +5723,9 @@
     const ic = t.closest("[data-ka-ic]"); if (ic) { s.ic = ic.dataset.kaIc; document.querySelectorAll("[data-ka-ic]").forEach((b) => b.classList.toggle("on", b === ic)); guardarCartas(); pintarCartas(true); return; }
     const em = t.closest("[data-ka-emoji]"); if (em) { const campo = K.campo || "titulo", el = document.querySelector(`[data-ka-campo="${campo}"]`); if (!el) return;
       const p = el.selectionStart ?? el.value.length; el.value = el.value.slice(0, p) + em.dataset.kaEmoji + el.value.slice(el.selectionEnd ?? p); s[campo] = el.value; guardarCartas(); pintarCartas(true); return; }
+    if (t.closest("#kaPrompt")) { if (await copiarTexto(promptCartas())) toast("Prompt copiado: cole no Gemini ou no ChatGPT, troque o TEMA e envie"); return; }
+    if (t.closest("#kaColar")) { folhaEst("Colar resposta da IA", `<p class="nota">Cole aqui a resposta inteira da IA (o bloco que começa com [ ). As telas atuais serão trocadas.</p>
+      <label class="ch-campo"><span>Resposta</span><textarea id="kaResp" rows="9"></textarea></label><button type="button" class="btn btn--rosa" id="kaAplicar">Montar o carrossel</button>`); return; }
     if (t.closest("#kaZerar")) { try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } abrirCartas(); return; }
     if (t.closest("#kaBaixar")) {
       const b = $("#kaBaixar"); b.disabled = true; b.textContent = "Preparando…"; await carregarMarca(); const arqs = [];
@@ -5682,6 +5734,11 @@
       if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs }); return; } catch (err) { if (err.name === "AbortError") return; } }
       arqs.forEach((f, i) => setTimeout(() => baixarBlob(f, f.name), i * 350)); toast("Imagens salvas: no Instagram, escolha várias na ordem");
     }
+  });
+  $("#folhaEst").addEventListener("click", (e) => {
+    if (wz.canal !== "cartas" || !e.target.closest("#kaAplicar")) return;
+    const l = lerRespostaCartas($("#kaResp").value || ""); if (!l) { toast("Não consegui ler a resposta: copie o bloco inteiro, do [ até o ]"); return; }
+    car().telas = l; car().sel = 0; guardarCartas(); $("#folhaEst").close(); mostrarPasso(); toast(`${l.length} telas montadas`);
   });
   $("#wzCorpo").addEventListener("focusin", (e) => { if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.kaCampo) car().campo = e.target.dataset.kaCampo; });
   $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal !== "cartas" || !e.target.dataset || !e.target.dataset.kaCampo) return; const K = car(); K.telas[K.sel][e.target.dataset.kaCampo] = e.target.value; guardarCartas(); pintarCartas(true); });
@@ -5735,7 +5792,7 @@
     const linha = (partes, y, tam, t0, u) => { const k = easeC((u - t0) / 0.45); if (k <= 0) return; x.save(); x.globalAlpha = k; x.translate(540, y + (1 - k) * 60); let f = tam; x.font = `900 ${f}px Poppins`;
       let w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); if (w > 960) { f = Math.floor(f * 960 / w); x.font = `900 ${f}px Poppins`; w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); }
       let xx = -w / 2; x.textAlign = "left"; x.textBaseline = "middle"; partes.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, 0); xx += x.measureText(p).width; }); x.restore(); };
-    const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.18)"; x.shadowBlur = 24; x.beginPath(); x.arc(0, 0, tam * 0.62, 0, 7); x.fill(); x.shadowColor = "transparent"; iconeReels(x, nome, tam * 0.8); x.restore(); };
+    const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); if (C.texto === "#ffffff") iconeAdesivo(x, nome, tam); else iconeReels(x, nome, tam); x.restore(); };
     const pilula = (txt, cx, cy, bg, fg, tam, t0, u, giro = -0.03, borda = true) => { const k = (u - t0) / 0.45; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy); x.rotate(giro); x.scale(s, s); x.font = `800 ${tam}px Poppins`; const w = x.measureText(txt).width + tam * 1.4, h = tam * 1.9; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = bg; x.fill(); if (borda) { x.lineWidth = 7; x.strokeStyle = "#1d1d1f"; x.stroke(); } x.fillStyle = fg; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(txt, 0, 3); x.restore(); };
     const T = C.texto, A = C.d1, D = dadosChamada(CH);
     if (t < 3.2) {
@@ -5781,7 +5838,7 @@
         <b class="ch-rot">Cor</b>${chips("data-ch-cor", Object.entries(CORES_CHAMADA).map(([k, v]) => [k, v.nome]), CH.cor)}
         <b class="ch-rot">Música</b>${chips("data-ch-mus", [["traparabe", "Trap árabe"], ["trap", "Trap"], ["funkphonk", "Funk phonk"], ["dancepop", "Dance pop"], ["mais", "Mais músicas…"]], ["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? CH.musica : "mais")}
         ${["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? "" : `<p class="nota">Música: <b>${esc((NOMES_MUSICA[CH.musica] || [CH.musica])[0])}</b></p>`}
-        <button type="button" class="btn btn--branco" id="chEditarTx">✏️ Editar textos e figurinhas</button>
+        <button type="button" class="btn btn--branco btn-ic" id="chEditarTx"><svg class="ic-mono"><use href="#i-lapis"/></svg>Editar textos e figurinhas</button>
         ${arroba(config.instagram) ? "" : '<p class="nota">Dica: coloque o seu @ do Instagram em ⚙️ Ajustes para ele aparecer no final.</p>'}
         <button type="button" class="btn btn--branco" id="chPrevia">▶ Ver prévia com música</button>
         <div class="vd-progresso" id="chProgresso" hidden><i></i></div>
@@ -5810,10 +5867,39 @@
         </div></div>`;
     }
   }
+  const promptChamada = () => `Você vai escrever os textos de um Reels da Miga Promo (perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels chama as seguidoras para ver as promoções que acabei de postar nos stories.
+
+NICHO / ASSUNTO: [ESCREVA AQUI, ex.: perfumes, moda fitness, maquiagem]
+
+O vídeo tem 4 telas. Preencha os campos (frases curtas; pode usar emojis; use *asteriscos* em volta de 1 palavra para destacar):
+Tela 1 (capa): etiqueta (até 22 letras, ex.: "ATUALIZEI OS STORIES"), linha1 (até 14 letras), linha2 (até 14 letras), palavra (1 palavra grande, em maiúsculas), frase_baixo (até 24 letras)
+Tela 2 (frase): frase = 4 linhas curtas (até 14 letras cada)
+Tela 3 (lista): lista_titulo (até 16 letras), itens = 4 itens (até 18 letras cada)
+Tela 4 (final): cta1 (até 16 letras), cta2 (1 palavra grande, ex.: "STORIES"), toque (até 22 letras)
+Figurinhas (escolha desta lista): ${FIGURAS.join(", ")}
+- capa_esquerda, capa_direita, frase_figurinha, lista_esquerda, lista_direita
+
+Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
+{"etiqueta": "ATUALIZEI OS STORIES", "linha1": "Enchi meus", "linha2": "stories de", "palavra": "PERFUME", "frase_baixo": "com preço de amiga",
+ "frase": ["Tem perfume", "de *rica*", "com preço", "de *amiga*"],
+ "lista_titulo": "Tem de tudo:", "itens": ["Body splash", "Perfume árabe", "Kits pra presente", "Importados"],
+ "cta1": "Corre nos meus", "cta2": "STORIES", "toque": "toca na minha foto",
+ "capa_esquerda": "perfume", "capa_direita": "brilho", "frase_figurinha": "dinheiro", "lista_esquerda": "presente", "lista_direita": "coracao"}`;
+  function lerRespostaChamada(txt) {
+    const i = txt.indexOf("{"), j = txt.lastIndexOf("}"); if (i < 0 || j < i) return null;
+    let o; try { o = JSON.parse(txt.slice(i, j + 1).replace(/[“”]/g, '"')); } catch (e) { return null; }
+    const s = (v, n) => String(v == null ? "" : v).slice(0, n), f = (v) => (FIGURAS.includes(v) ? v : ""), arr = (v, n) => (Array.isArray(v) ? v : []).slice(0, 4).map((x) => s(x, n));
+    const tx = { etiqueta: s(o.etiqueta, 30), t1: s(o.linha1, 30), t2: s(o.linha2, 30), palavra: s(o.palavra, 20), sub: s(o.frase_baixo, 34), lista: s(o.lista_titulo, 24), cta1: s(o.cta1, 24), cta2: s(o.cta2, 16), toque: s(o.toque, 30),
+      ic: [f(o.capa_esquerda), f(o.capa_direita)], icFrase: f(o.frase_figurinha), ic2: [f(o.lista_esquerda), f(o.lista_direita)] };
+    const fr = arr(o.frase, 30), it = arr(o.itens, 26); if (fr.length) tx.frase = fr; if (it.length) tx.itens = it;
+    Object.keys(tx).forEach((k) => { if (tx[k] === "") delete tx[k]; }); return tx;
+  }
   function folhaTextosChamada() {
     const D = dadosChamada(ch()), campo = (k, rot, v, i) => `<label class="ch-campo"><span>${rot}</span><input data-ch-tx="${k}"${i != null ? ` data-i="${i}"` : ""} maxlength="40" value="${esc(v || "")}"></label>`;
     const figs = (k, atual, i) => `<div class="ch-figs">${["", ...FIGURAS].map((f) => `<button type="button" data-ch-ic="${k}"${i != null ? ` data-i="${i}"` : ""} data-v="${f}" class="${f === atual ? "on" : ""}" aria-label="${f || "sem figurinha"}">${f ? `<canvas width="60" height="60" data-fig-ch="${f}"></canvas>` : "✕"}</button>`).join("")}</div>`;
-    folhaEst("Textos e figurinhas", `<p class="nota">Mude o que quiser. Use *asteriscos* para destacar uma palavra na cor de destaque. Dá para colocar emojis.</p>
+    folhaEst("Textos e figurinhas", `<div class="duas"><button type="button" class="btn btn--branco" id="chPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="chColar">Colar resposta da IA</button></div>
+      <div id="chColarBox" hidden><label class="ch-campo"><span>Cole aqui a resposta inteira da IA (o bloco que começa com { )</span><textarea id="chResp" rows="7"></textarea></label><button type="button" class="btn btn--rosa" id="chAplicar">Usar estes textos</button></div>
+      <p class="nota">Mude o que quiser. Use *asteriscos* para destacar uma palavra na cor de destaque. Dá para colocar emojis.</p>
       <h3 class="ch-tela">Tela 1 · Capa</h3>${campo("etiqueta", "Etiqueta", D.etiqueta)}${campo("t1", "Linha 1", D.t1)}${campo("t2", "Linha 2", D.t2)}${campo("palavra", "Palavra grande", D.palavra)}${campo("sub", "Frase de baixo", D.sub)}
       <b class="ch-rot">Figurinha da esquerda</b>${figs("ic", D.ic[0], 0)}<b class="ch-rot">Figurinha da direita</b>${figs("ic", D.ic[1], 1)}
       <h3 class="ch-tela">Tela 2 · Frase</h3>${D.frase.map((s, i) => campo("frase", "Linha " + (i + 1), s, i)).join("")}<b class="ch-rot">Figurinha</b>${figs("icFrase", D.icFrase)}
@@ -5830,6 +5916,9 @@
   $("#folhaEst").addEventListener("click", (e) => {
     if (wz.canal !== "chamada") return; const CH = ch();
     if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast("Textos do nicho de volta"); return; }
+    if (e.target.closest("#chPrompt")) { copiarTexto(promptChamada()).then((ok) => ok && toast("Prompt copiado: cole no Gemini ou no ChatGPT, troque o NICHO e envie")); return; }
+    if (e.target.closest("#chColar")) { $("#chColarBox").hidden = false; $("#chResp").focus(); return; }
+    if (e.target.closest("#chAplicar")) { const tx = lerRespostaChamada($("#chResp").value || ""); if (!tx) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } CH.tx = tx; folhaTextosChamada(); toast("Textos da IA aplicados"); return; }
     const b = e.target.closest("[data-ch-ic]"); if (!b) return; const k = b.dataset.chIc; CH.tx = CH.tx || {};
     if (b.dataset.i != null) { const D = dadosChamada(CH); CH.tx[k] = D[k].slice(); CH.tx[k][+b.dataset.i] = b.dataset.v; } else CH.tx[k] = b.dataset.v;
     b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
@@ -5843,7 +5932,7 @@
     const CH = ch(), tipo = formatoGravacao();
     if (gravar && (!tipo || !HTMLCanvasElement.prototype.captureStream)) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return; }
     if (CH.tocando) { CH.tocando.parar(); return; }
-    let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
+    let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); if (gravar) ac._gravando = true; ac.resume(); } catch (e) { ac = null; }
     await carregarMarca();
     const W = gravar ? 1080 : 540, tela = gravar ? document.createElement("canvas") : $("#chQuadro"); if (!tela) return;
     if (gravar) { tela.width = 1080; tela.height = 1920; }
@@ -5860,7 +5949,7 @@
     }
     const inicio = performance.now(), atraso = !gravar && ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
     const agora = () => ac && t0 ? ac.currentTime - t0 - atraso : (performance.now() - inicio) / 1000;
-    let parado = false; CH.tocando = { parar: () => { parado = true; } };
+    let parado = false; CH.tocando = { parar: () => { parado = true; }, gravando: gravar };
     if (!gravar && btn) { btn.disabled = false; }
     await new Promise((ok) => { const passo = () => { const t = agora(); if (parado || t >= total + (gravar ? 0.45 : 0)) { ok(); return; }
       quadroChamada(ctx, W, Math.min(Math.max(0, t), total - 0.01), CH); if (gravar && previa) previa.drawImage(tela, 0, 0, 540, 960);
@@ -5916,19 +6005,30 @@
   const TEMAS_POST = () => Object.entries(MODELOS_REELS).filter(([, m]) => m.cat);
   /** Modelo/campanha/título/cor de cada tela, num formato só */
   function estLer() {
-    if (wz.canal === "reels") { const R = rr(); return { modelo: R.modelo, camp: R.camp || "", titulo: R.titulo || "", cor: R.cor }; }
-    if (wz.canal === "livre") { const L = livre(); return { modelo: L.modelo || "achadinho", camp: L.camp || "", titulo: L.tituloProp || "", cor: L.cor }; }
-    if (wz.canal === "cupons") { const C = cc(); return { modelo: C.modelo || "cupom", camp: C.camp || "", titulo: C.tituloProp || "", cor: C.cor }; }
-    if (wz.canal === "video") { const V = vd(); return { modelo: V.modelo || "achadinho", camp: V.camp || "", titulo: V.tituloProp || "", cor: V.cor }; }
-    return { modelo: wz.modelo, camp: wz.camp || "", titulo: wz.tituloArte || "", cor: wz.cor };
+    if (wz.canal === "reels") { const R = rr(); return { modelo: R.modelo, camp: R.camp || "", titulo: R.titulo || "", cor: R.cor, icone: R.icone || "" }; }
+    if (wz.canal === "livre") { const L = livre(); return { modelo: L.modelo || "achadinho", camp: L.camp || "", titulo: L.tituloProp || "", cor: L.cor, icone: L.icone || "" }; }
+    if (wz.canal === "cupons") { const C = cc(); return { modelo: C.modelo || "cupom", camp: C.camp || "", titulo: C.tituloProp || "", cor: C.cor, icone: C.icone || "" }; }
+    if (wz.canal === "video") { const V = vd(); return { modelo: V.modelo || "achadinho", camp: V.camp || "", titulo: V.tituloProp || "", cor: V.cor, icone: V.icone || "" }; }
+    return { modelo: wz.modelo, camp: wz.camp || "", titulo: wz.tituloArte || "", cor: wz.cor, icone: wz.icone || "" };
   }
   const tituloDoModelo = (e, n) => e.titulo ? tituloDigitado(e.titulo) : CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].titulo : MODELOS_REELS[e.modelo].titulo.replace("{n}", n > 1 ? n : "");
   function estGravar(e) {
-    if (wz.canal === "reels") { const R = rr(); Object.assign(R, { modelo: e.modelo, camp: e.camp, titulo: e.titulo, cor: e.cor, legenda: null, resultado: null }); return; }
-    if (wz.canal === "livre") { const L = livre(); Object.assign(L, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, titulo: tituloDoModelo(e, L.n), legenda: "" }); return; }
-    if (wz.canal === "cupons") { const C = cc(); Object.assign(C, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, texto: null }); return; }
-    if (wz.canal === "video") { const V = vd(); Object.assign(V, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, titulo: tituloDoModelo(e, 1), resultado: null }); return; }
-    Object.assign(wz, { modelo: e.modelo, camp: e.camp, tituloArte: e.titulo, cor: e.cor }); const it = wzItem(); if (it && !it.textoEditado) it.texto = "";
+    if (wz.canal === "reels") { const R = rr(); Object.assign(R, { modelo: e.modelo, camp: e.camp, titulo: e.titulo, cor: e.cor, icone: e.icone || "", legenda: null, resultado: null }); return; }
+    if (wz.canal === "livre") { const L = livre(); Object.assign(L, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, icone: e.icone || "", titulo: tituloDoModelo(e, L.n), legenda: "" }); return; }
+    if (wz.canal === "cupons") { const C = cc(); Object.assign(C, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, icone: e.icone || "", texto: null }); return; }
+    if (wz.canal === "video") { const V = vd(); Object.assign(V, { modelo: e.modelo, camp: e.camp, tituloProp: e.titulo, cor: e.cor, icone: e.icone || "", titulo: tituloDoModelo(e, 1), resultado: null }); return; }
+    Object.assign(wz, { modelo: e.modelo, camp: e.camp, tituloArte: e.titulo, cor: e.cor, icone: e.icone || "" }); const it = wzItem(); if (it && !it.textoEditado) it.texto = "";
+  }
+  /** Título do modelo como ele aparece (com *destaque*) */
+  const tituloBase = (e) => (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].titulo : (MODELOS_REELS[e.modelo] || MODELOS_REELS.achadinho).titulo.replace("{n}", "")).replace(/\s+\n/g, "\n");
+  function folhaTituloModelo() {
+    const e = estLer(), tit = e.titulo || tituloBase(e), atual = e.icone || ((decorDe({ modelo: e.modelo, camp: e.camp, icone: "" }).ic || [])[0] || "");
+    folhaEst(wz.canal === "video" ? "Título do vídeo" : "Título e figurinha", `<p class="nota">Escreva o título do seu jeito. Use *asteriscos* para destacar e Enter para quebrar a linha. Dá para usar emojis.</p>
+      <label class="ch-campo"><span>Título</span><textarea id="estTitTxt" rows="2" maxlength="60">${esc(tit)}</textarea></label>
+      <b class="ch-rot">Figurinha</b><div class="ch-figs">${FIGURAS.map((f) => `<button type="button" data-est-fig="${f}" class="${f === atual ? "on" : ""}" aria-label="${f}"><canvas width="60" height="60" data-fig-est="${f}"></canvas></button>`).join("")}</div>
+      <button type="button" class="btn btn--rosa" id="estTitSalvar">Salvar</button>
+      <button type="button" class="btn btn--branco" id="estTitPadrao">Voltar ao padrão do modelo</button>`);
+    document.querySelectorAll("[data-fig-est]").forEach((c) => { const x = c.getContext("2d"); x.translate(30, 30); iconeReels(x, c.dataset.figEst, 46); });
   }
   function folhaModelo(aba) {
     const reels = wz.canal === "reels", R = estLer();
@@ -5938,7 +6038,7 @@
     if (aba === "sugestoes") itens = Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => [k, m.nome, DECOR[k].frase, !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "temas") itens = Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => [k, m.nome, m.sub(), !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, R.camp === k && !R.titulo]);
-    folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<div class="titulo-proprio"><input id="estTitulo" maxlength="40" placeholder="Escrever meu título" value="${esc(R.titulo || "")}"><button type="button" class="btn btn--rosa" id="estTituloOk">Usar</button></div>
+    folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<button type="button" class="btn btn--branco btn-ic" id="estEditarTit"><svg class="ic-mono"><use href="#i-lapis"/></svg>Editar título e figurinha</button>
       <div class="tabs-mod">${tabs}</div>
       <div class="lista-mod lista-mod--mini">${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${aba !== "campanhas" && ICONE_MODELO[k] ? icSelo("f_" + ICONE_MODELO[k], " ic-selo--mini") : ""}${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
     pintarMinis(R);
@@ -6020,10 +6120,18 @@
     const em = t.closest("[data-escolhe-mod]");
     if (em) {
       const [aba, k] = em.dataset.escolheMod.split(":"), e = estLer();
-      e.titulo = ""; // a cor fica como está (sequência das 4 cores); para mudar, use o botão Cor
+      e.titulo = ""; e.icone = ""; // a cor fica como está (sequência das 4 cores); para mudar, use o botão Cor
       if (aba === "campanhas") e.camp = k; else { e.camp = ""; e.modelo = k; }
       estGravar(e); $("#folhaEst").close(); aposMudarEstudio(); return;
     }
+    if (t.closest("#estEditarTit")) { folhaTituloModelo(); return; }
+    const fg = t.closest("[data-est-fig]"); if (fg) { document.querySelectorAll("[data-est-fig]").forEach((b) => b.classList.toggle("on", b === fg)); return; }
+    if (t.closest("#estTitSalvar")) {
+      const e = estLer(), txt = $("#estTitTxt").value.trim(), base = tituloBase(e), f = document.querySelector("[data-est-fig].on");
+      e.titulo = txt && txt !== base ? txt : ""; e.icone = f ? f.dataset.estFig : "";
+      estGravar(e); $("#folhaEst").close(); aposMudarEstudio(); toast("Título e figurinha salvos"); return;
+    }
+    if (t.closest("#estTitPadrao")) { const e = estLer(); e.titulo = ""; e.icone = ""; estGravar(e); folhaTituloModelo(); return; }
     if (t.closest("#estTituloOk")) {
       const e = estLer(); e.titulo = $("#estTitulo").value.trim(); estGravar(e);
       $("#folhaEst").close(); aposMudarEstudio(); return;
@@ -6096,7 +6204,7 @@
     if (!l.length) { toast("Escolha pelo menos um produto"); return; }
     const tipo = formatoGravacao();
     if (gravar && (!tipo || !HTMLCanvasElement.prototype.captureStream)) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return; }
-    let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
+    let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); if (gravar) ac._gravando = true; ac.resume(); } catch (e) { ac = null; }
     if (R.tocando) { R.tocando.parar(); }
     await carregarMarca(); const fotos = await fotosReels();
     temposDoModelo(R); const total = duracaoReelsProdutos(), n = l.length;
@@ -6130,7 +6238,7 @@
     const atraso = !gravar && ac ? (ac.outputLatency || ac.baseLatency || 0) : 0;
     const agora = () => ac && t0 ? ac.currentTime - t0 - atraso : (performance.now() - inicio) / 1000;
     let parado = false;
-    R.tocando = { parar: () => { parado = true; } };
+    R.tocando = { parar: () => { parado = true; }, gravando: gravar };
     await new Promise((ok) => {
       const passo = () => {
         const t = agora();

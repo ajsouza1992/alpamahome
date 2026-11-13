@@ -1694,3 +1694,11 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 .toast { pointer-events: none !important; top: calc(86px + env(safe-area-inset-top)); }
 .toast.show { pointer-events: auto !important; }
 @media (min-width: 960px) { .toast { top: 24px; } }
+/* Todos os botões com sombra, os rosas também */
+.btn--rosa, .colar__btn, .ed-add button, .ed-ok, .fi-principal, .wz-continuar, .bt, .toast__bt, .ch-chips button.on, .ed-chips button.on, .rt-ordem-chips button.on, .frases-cats button.on, .tabs-mod button.on, .alternar button[aria-checked="true"] {
+  box-shadow: 0 10px 22px -12px rgba(232,51,109,.75); }
+.btn--rosa:active, .colar__btn:active { box-shadow: 0 4px 10px -6px rgba(232,51,109,.7); }
+.btn.wz-zap, .rp-whats { box-shadow: 0 10px 22px -12px rgba(37,211,102,.8) !important; }
+/* Botão com ícone de traço (sem cor) */
+.btn-ic { display: flex; align-items: center; justify-content: center; gap: 10px; }
+svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
