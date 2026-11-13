@@ -1181,7 +1181,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=155"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=156"; });
     }
     edFoto = null;
     try {
@@ -1554,7 +1554,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=155"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=156"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1830,9 +1830,9 @@
     const box = $("#ppCats"); if (!box) return;
     const k = filtroLista, nome = k === "todas" ? "Todas" : NOME_CAT[k] || "Todas", q = faltamCat(k);
     const ic = k === "todas" ? '<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>' : ICONE_CAT[k];
-    box.innerHTML = `<button type="button" class="cat-sel${k !== "todas" ? " on" : ""}" data-cat-abrir><svg class="cat-sel__ic" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><span>Categoria: <b>${esc(nome)}</b>${q ? ` <i>${q}</i>` : ""}</span><svg class="cat-sel__seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>${k !== "todas" ? '<button type="button" class="cat-limpar" data-cat="todas" aria-label="Ver todas as categorias">Ver todas</button>' : ""}` +
+    box.innerHTML = `<button type="button" class="cat-sel${k !== "todas" ? " on" : ""}" data-cat-abrir><svg class="cat-sel__ic" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><span>Categoria: <b>${esc(nome)}</b>${q ? ` <i>${q}</i>` : ""}</span><em class="cat-sel__trocar">Trocar</em></button>${k !== "todas" ? '<button type="button" class="cat-limpar" data-cat="todas" aria-label="Ver todas as categorias">Ver todas</button>' : ""}` +
       `<div class="pp-chips-pc"><button type="button" class="chip-cat${k === "todas" ? " on" : ""}" data-cat="todas">Todas <i>${faltamCat("todas")}</i></button>` +
-      Object.entries(NOME_CAT).map(([c, n]) => { const qq = faltamCat(c); return `<button type="button" class="chip-cat${k === c ? " on" : ""}" data-cat="${c}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[c]}</svg>${esc(n)}${qq ? ` <i>${qq}</i>` : ""}</button>`; }).join("") + "</div>";
+      Object.entries(NOME_CAT).map(([c, n]) => { const qq = faltamCat(c); return `<button type="button" class="chip-cat${k === c ? " on" : ""}${!qq ? " vazia" : ""}" data-cat="${c}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[c]}</svg>${esc(n)}${qq ? ` <i>${qq}</i>` : ""}</button>`; }).join("") + "</div>";
   }
 
 
@@ -2149,7 +2149,7 @@
     $("#folhaCatTitulo").textContent = titulo; $("#folhaCatSub").textContent = nome ? `“${limparNome(nome).slice(0, 60)}” · sugestão já marcada` : "";
     const pintar = () => {
       $("#folhaCatGrade").innerHTML = (todas ? `<button type="button" class="pp-cat${sel === "todas" ? " on" : ""}" data-cat="todas"><svg class="pp-cat__ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><b>Todas</b>${faltamCat("todas") ? `<i>${faltamCat("todas")}</i>` : ""}</button>` : "")
-        + Object.entries(NOME_CAT).map(([k, n]) => blocoCat(k, n, todas ? faltamCat(k) : 0, k === sel).replace(" vazia", "")).join("");
+        + Object.entries(NOME_CAT).map(([k, n]) => (todas ? blocoCat(k, n, faltamCat(k), k === sel) : blocoCat(k, n, 0, k === sel).replace(" vazia", ""))).join("");
       $("#folhaCatOk").textContent = `${acao} ${sel === "todas" ? "todas" : NOME_CAT[sel]}`; };
     pintar(); d.returnValue = ""; d.showModal();
     return new Promise((ok) => {

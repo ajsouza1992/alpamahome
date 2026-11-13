@@ -1480,3 +1480,11 @@ body.modo-selecao main { padding-bottom: 200px; }
   .pp-chips-pc { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 }
 #ppListaBloco .barra-filtro #ppSelecionar { margin-right: 0; padding-left: 0; }
+.cat-sel__trocar { flex: none; font-style: normal; font-size: 13px; font-weight: 700; color: var(--rosa); }
+/* Categoria sem produto: ícone e nome em cinza (com produto: rosa) */
+.pp-cat.vazia { opacity: 1; }
+.pp-cat.vazia svg.pp-cat__ic { stroke: #b4aca4; }
+.pp-cat.vazia b { color: #a39b93; font-weight: 500; }
+.chip-cat.vazia:not(.on) { color: #a39b93; }
+.chip-cat.vazia:not(.on) svg { stroke: #b4aca4; }
+.folha-cat .pp-cat.on svg.pp-cat__ic { stroke: var(--rosa); }
