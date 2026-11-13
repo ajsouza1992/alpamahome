@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=144"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=145"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=144"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=145"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3311,8 +3311,8 @@
   function pintarBotaoWhats(b, n, feitos) {
     const t = b.querySelector("b"), s = b.querySelector("small"); if (!t || !s) return;
     if (!feitos) return;
-    if (feitos < n) { t.textContent = `Enviar o próximo (${feitos + 1} de ${n})`; s.textContent = "Foto + mensagem do próximo produto"; }
-    else { t.textContent = "Enviado no WhatsApp ✓"; s.textContent = "Toque para enviar de novo"; b.classList.add("feito"); }
+    if (feitos < n) { t.textContent = `Enviar o próximo no WhatsApp (${feitos + 1} de ${n})`; s.textContent = ""; }
+    else { t.textContent = "Enviar de novo no WhatsApp"; s.textContent = ""; b.classList.add("feito"); }
   }
   $("#wzCorpo").addEventListener("pointerdown", (e) => {
     const cv = e.target.closest && e.target.closest("#vdQuadro"); if (!cv || wz.canal !== "video") return;

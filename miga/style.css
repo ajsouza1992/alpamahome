@@ -1288,3 +1288,9 @@ body.modo-selecao main { padding-bottom: 200px; }
   .conteudo:has(#aba-criar:not([hidden]) .barra-cores) { padding-bottom: calc(260px + env(safe-area-inset-bottom)); }
   body.modo-selecao .conteudo { padding-bottom: calc(200px + env(safe-area-inset-bottom)); }
 }
+/* Botão do WhatsApp nas telas de pronto: mesmo padrão do "Enviar com foto" (pílula verde simples) */
+.rp-whats { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; padding: 0 20px; border: 0; border-radius: 999px; background: #25d366; color: #fff; font: inherit; font-size: 15px; font-weight: 600; box-shadow: none; text-align: center; }
+.rp-whats i, .rp-whats small { display: none; }
+.rp-whats span { display: block; } .rp-whats b { font-size: 15px; font-weight: 600; }
+.rp-whats.feito { background: #25d366; }
+.rp-whats:focus:not(:focus-visible) { outline: none; }
