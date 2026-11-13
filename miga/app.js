@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=183"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=184"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=183"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=184"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3560,7 +3560,7 @@
   /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
   const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
   const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
-  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "foguete", "bomba", "corra", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao"];
+  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "setabaixo", "esmalte", "laco", "oculos", "espelho", "sol", "pincel", "foguete", "bomba", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao"];
   const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
   let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
@@ -5510,6 +5510,47 @@
       poli([[-26, -96], [-22, -52], [-44, -36], [-26, -16], [-84, 92], [84, 92], [26, -16], [44, -36], [22, -52], [26, -96], [12, -96], [10, -58], [-10, -58], [-12, -96]], ROSA);
       retArredondado(ctx, -32, -24, 64, 16, 6); contorno(AMAR);
     }
+    else if (nome === "setabaixo") {
+      poli([[-36, -94], [36, -94], [36, 0], [80, 0], [0, 92], [-80, 0], [-36, 0]], ROSA);
+      ctx.fillStyle = "rgba(255,255,255,.75)"; retArredondado(ctx, -18, -80, 12, 60, 6); ctx.fill();
+    }
+    else if (nome === "esmalte") {
+      const PELE = "#f6c7a5";
+      ctx.save(); ctx.translate(-26, 2); ctx.scale(1.05, 1.05);
+      ctx.beginPath(); ctx.ellipse(-78, 44, 22, 40, -0.7, 0, Math.PI * 2); contorno(PELE);
+      [[-64, -44, 30, 96], [-32, -78, 30, 128], [0, -70, 30, 120], [32, -46, 28, 96]].forEach(([x, y, w, h]) => { retArredondado(ctx, x, y, w, h, 15); contorno(PELE); });
+      retArredondado(ctx, -66, 8, 128, 86, 32); contorno(PELE);
+      [[-64, -44, 30], [-32, -78, 30], [0, -70, 30], [32, -46, 28]].forEach(([x, y, w]) => { retArredondado(ctx, x + 5, y + 5, w - 10, 26, 10); contorno(ROSA); });
+      ctx.restore();
+      retArredondado(ctx, 70, 8, 18, 30, 5); contorno("#2f2f35");
+      retArredondado(ctx, 58, 34, 42, 56, 14); contorno(ROSA); brilhoBranco(70, 50, 5, 10, 0.2);
+    }
+    else if (nome === "laco") {
+      ctx.beginPath(); ctx.moveTo(-8, 10); ctx.lineTo(-44, 88); ctx.lineTo(-22, 80); ctx.lineTo(-10, 96); ctx.lineTo(8, 14); ctx.closePath(); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(8, 10); ctx.lineTo(44, 88); ctx.lineTo(22, 80); ctx.lineTo(10, 96); ctx.lineTo(-8, 14); ctx.closePath(); contorno(ROSA);
+      [-1, 1].forEach((s) => { ctx.beginPath(); ctx.moveTo(0, -4); ctx.bezierCurveTo(s * 30, -70, s * 98, -62, s * 92, -4); ctx.bezierCurveTo(s * 98, 52, s * 30, 60, 0, -4); ctx.closePath(); contorno(ROSA); });
+      retArredondado(ctx, -18, -26, 36, 44, 12); contorno(AMAR); brilhoBranco(-58, -26, 12, 7);
+    }
+    else if (nome === "oculos") {
+      ctx.lineWidth = 11; ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(-92, -14); ctx.lineTo(-100, -40); ctx.moveTo(92, -14); ctx.lineTo(100, -40); ctx.moveTo(-14, -8); ctx.quadraticCurveTo(0, -22, 14, -8); ctx.stroke();
+      [-52, 52].forEach((x) => { retArredondado(ctx, x - 40, -34, 80, 66, 28); contorno(ROSA); brilhoBranco(x - 18, -14, 12, 6); });
+    }
+    else if (nome === "espelho") {
+      traco([[0, 46], [0, 94]], AMAR, 20);
+      ctx.beginPath(); ctx.ellipse(0, -24, 64, 74, 0, 0, Math.PI * 2); contorno(ROSA);
+      ctx.beginPath(); ctx.ellipse(0, -24, 46, 56, 0, 0, Math.PI * 2); contorno(AZUL); brilhoBranco(-18, -48, 10, 18, 0.4);
+    }
+    else if (nome === "sol") {
+      for (let i = 0; i < 10; i++) { const g = (i / 10) * Math.PI * 2; ctx.save(); ctx.rotate(g); poli([[-14, -64], [14, -64], [0, -98]], AMAR); ctx.restore(); }
+      bola(0, 0, 56, AMAR); brilhoBranco(-20, -22, 12, 7);
+    }
+    else if (nome === "pincel") {
+      ctx.rotate(0.55);
+      retArredondado(ctx, -13, 0, 26, 100, 12); contorno(ROSA);
+      retArredondado(ctx, -18, -26, 36, 32, 5); contorno("#d9d9df");
+      ctx.beginPath(); ctx.moveTo(-18, -26); ctx.quadraticCurveTo(-34, -84, 0, -104); ctx.quadraticCurveTo(34, -84, 18, -26); ctx.closePath(); contorno("#3a3a40");
+      ctx.beginPath(); ctx.moveTo(-14, -78); ctx.quadraticCurveTo(0, -112, 14, -78); ctx.quadraticCurveTo(0, -70, -14, -78); ctx.fillStyle = "#f3a6c0"; ctx.fill();
+    }
     else if (nome === "balao") {
       poli([[-46, 40], [-66, 92], [-4, 46]], BRANCO);
       retArredondado(ctx, -94, -74, 188, 124, 44); contorno(BRANCO);
@@ -5797,7 +5838,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →"},
   {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": ""}
  ]}`;
-  const NOME_FIG = { brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa" };
+  const NOME_FIG = { brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", setabaixo: "seta para baixo", esmalte: "mão passando esmalte", laco: "laço", oculos: "óculos de sol", espelho: "espelho de mão", sol: "sol", pincel: "pincel de maquiagem", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa" };
   const semDestaque = (s) => String(s || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " ").trim();
   /** Texto alternativo feito pelo app: diz o que aparece e copia exatamente o que está escrito na imagem */
   function altCarta(tela, i, n) {
