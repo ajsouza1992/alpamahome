@@ -96,17 +96,21 @@
   }
   /** Aviso com botão (ex.: "Desfazer") */
   function toastAcao(msg, rotulo, acao) {
-    const t = $("#toast"); t.innerHTML = ""; const s = document.createElement("span"); s.textContent = msg; const b = document.createElement("button"); b.type = "button"; b.className = "toast__bt"; b.textContent = rotulo;
+    const t = $("#toast"); t.innerHTML = ""; t.classList.remove("toast--ok", "toast--erro", "toast--info"); const s = document.createElement("span"); s.textContent = msg; const b = document.createElement("button"); b.type = "button"; b.className = "toast__bt"; b.textContent = rotulo;
     b.addEventListener("click", () => { t.classList.remove("show"); acao(); }, { once: true }); t.append(s, b); t.classList.add("show", "com-bt");
     clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove("show", "com-bt"), 5000);
   }
+  /** Aviso rápido: cartão com ícone (✓ deu certo, ! atenção, ✕ erro), texto com espaço para respirar; toque para fechar */
   function toast(msg) {
-    const t = $("#toast"); t.classList.remove("com-bt");
-    t.textContent = msg;
+    const t = $("#toast"), m = String(msg || "");
+    const tipo = /^(não |nao |erro|falh|ops)|inválid|não consegui|não está configurad|não tem /i.test(m) ? "erro" : /^(escolha|escreva|marque|toque|use |coloque|preencha|complete|abra|selecione)/i.test(m) ? "info" : "ok";
+    t.classList.remove("com-bt", "toast--ok", "toast--erro", "toast--info"); t.classList.add("toast--" + tipo);
+    t.innerHTML = `<i class="toast__ic" aria-hidden="true">${tipo === "ok" ? "✓" : tipo === "erro" ? "✕" : "!"}</i><span></span>`; t.querySelector("span").textContent = m;
     t.classList.add("show");
     clearTimeout(toast.timer);
-    toast.timer = setTimeout(() => t.classList.remove("show"), 2800);
+    toast.timer = setTimeout(() => t.classList.remove("show"), tipo === "erro" ? 4500 : 3000);
   }
+  $("#toast").addEventListener("click", (e) => { if (!e.target.closest(".toast__bt")) $("#toast").classList.remove("show"); });
   function aviso(el, msg, ok) {
     el.textContent = msg || "";
     el.hidden = !msg;
@@ -1188,7 +1192,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=174"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=176"; });
     }
     edFoto = null;
     try {
@@ -1562,7 +1566,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=174"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=176"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
