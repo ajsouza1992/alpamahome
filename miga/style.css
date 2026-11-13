@@ -1500,3 +1500,57 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { background: var(--
 .vazio-bt { margin-top: 12px; min-height: 44px; padding: 0 22px; }
 .cat-sel__filtro { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--rosa); stroke-width: 2.2; stroke-linecap: round; }
 .cat-sel b { font-weight: 600; }
+
+/* ===================== Sistema de design (botões, ícones, cartões) ===================== */
+:root { --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e6: 24px; --e8: 32px; --raio-cartao: 20px; --sombra-cartao: 0 6px 18px rgba(29, 29, 31, .06); --sombra-botao: 0 5px 12px rgba(232, 51, 109, .18); }
+/* Ícones: um estilo só (traço 2px, pontas redondas) */
+svg use { stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; }
+/* Campos: letra 16px (fácil de ler, sem zoom) */
+input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select { font-size: 16px; }
+/* Botões: 4 tipos */
+.btn { min-height: 48px; font-weight: 600; font-size: 15px; border-radius: 999px; }
+.btn--rosa { min-height: 52px; background: var(--rosa); color: #fff; box-shadow: var(--sombra-botao); }
+.btn--rosa:active { background: var(--rosa-escuro); }
+.btn--rosa:disabled { background: var(--campo); color: var(--placeholder); box-shadow: none; }
+.btn--branco { background: var(--campo); color: var(--preto); box-shadow: inset 0 0 0 1px var(--linha); }
+.btn--branco:active { background: var(--amarelo-claro); }
+.link, .link-sel { font-weight: 600; color: var(--rosa); }
+.btn--perigo, .fi-op--perigo { background: var(--rosa-claro) !important; color: var(--rosa-escuro) !important; }
+/* Botão de ícone: área de toque 44×44 */
+.pp-pontos { width: 44px; height: 44px; }
+.bt-icone { width: 44px; height: 44px; }
+/* Cartão de produto */
+.pp-linha .pp-item { background: var(--branco); border-radius: var(--raio-cartao); box-shadow: var(--sombra-cartao), inset 0 0 0 1px var(--linha); padding: 12px 56px 12px 12px; gap: 12px; grid-template-columns: 84px minmax(0, 1fr) auto; }
+.pp-linha .pp-item .pp-mini, .pp-linha .pp-item .pp-mini > img, .pp-linha .pp-item .pp-mini .sem-foto { width: 84px !important; height: 84px !important; border-radius: 14px; }
+.pp-linha .pp-item strong { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.pp-preco { display: block; margin-top: 3px; font-size: 17px; font-weight: 700; color: var(--rosa); }
+.pp-preco s { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--placeholder); }
+.pp-linha .pp-item .meta { font-size: 12.5px; color: var(--cinza); }
+.pp-linha.postado .pp-item { background: var(--branco); opacity: .9; }
+.selo-canto { top: -8px; right: 14px; height: 24px; padding: 0 10px 0 7px; font-size: 11.5px; }
+/* Início */
+.in-num { background: var(--campo); } .in-num b { color: var(--preto); } .in-num.alerta b { color: #d14a1f; }
+.in-acao { background: var(--branco); box-shadow: inset 0 0 0 1px var(--linha); }
+.in-acao[data-in="roteiro"] { background: var(--rosa); color: #fff; box-shadow: var(--sombra-botao); }
+.in-acao[data-in="roteiro"] svg { stroke: #fff; }
+.in-acao--destaque { background: var(--rosa-claro); box-shadow: inset 0 0 0 1.5px var(--rosa); }
+#inCats .pp-cat, .folha-cat .pp-cat { background: var(--branco); box-shadow: inset 0 0 0 1px var(--linha); }
+#inCats .pp-cat.on, .folha-cat .pp-cat.on { background: var(--rosa-claro); box-shadow: inset 0 0 0 2px var(--rosa); }
+.in-cadastro { min-height: 58px; }
+/* Menu do produto: Postar grande, o resto em grade, Excluir separado */
+.fi-principal { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 54px; margin-bottom: 10px; border: 0; border-radius: 999px; background: var(--rosa); color: #fff; font: inherit; font-size: 16px; font-weight: 600; box-shadow: var(--sombra-botao); cursor: pointer; }
+.fi-principal svg { width: 22px; height: 22px; fill: none; stroke: #fff; }
+.fi-op { justify-content: start; }
+.fi-op--perigo { justify-content: center; grid-template-columns: auto auto; }
+/* Telas de pronto: Baixar = secundário em pílula, Regravar = texto */
+.rp-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rp-tiles .est-btn { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; min-height: 48px !important; padding: 0 14px; border-radius: 999px; background: var(--campo); box-shadow: inset 0 0 0 1px var(--linha); font-size: 14px; }
+.rp-tiles .est-btn svg { width: 20px; height: 20px; stroke: var(--rosa); }
+.rp-tiles .est-btn b { font-weight: 600; }
+.rp-tiles #vdRefazer, .rp-tiles #rRefazer, .rp-tiles #kRefazer { grid-column: 1 / -1; background: none; box-shadow: none; color: var(--rosa); min-height: 40px !important; }
+/* Popups: no computador viram janela centralizada */
+@media (min-width: 960px) {
+  .dialogo.folha { margin: auto; border-radius: 28px; max-height: 88vh; }
+  .conteudo { max-width: 1360px; margin-left: calc(240px + max(0px, (100vw - 240px - 1360px) / 2)); }
+}
+.campo-sel > svg { display: none; }

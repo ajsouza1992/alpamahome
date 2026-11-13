@@ -74,7 +74,7 @@
   const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
   // Categorias (nicho feminino), na ordem dos destaques do Instagram
   const NOME_CAT = { looks: "Looks", fitness: "Moda fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
-  const ICONE_CAT = { looks: '<path d="M9 3h6l-1 4 4 13H6l4-13z"/><path d="M10 7h4"/>', fitness: '<path d="M7 3h10l.6 4-1.6 14h-3.4L12 11l-.6 10H8L6.4 7z"/><path d="M6.8 6.2h10.4"/>', calcados: '<path d="M3 16.5c0-2.2.4-6 1.6-8.5l3 1.4 1.6-1.9 2.4 3.6c1.9 1.6 4.6 2.2 7.1 2.6a2.6 2.6 0 0 1 2.3 2.6v.2H3z"/><path d="M3 16.5v1.6a.9.9 0 0 0 .9.9h16.2a.9.9 0 0 0 .9-.9v-1.6"/><path d="M9.6 12.4l1.4-1M11.4 14.1l1.5-1"/>', acessorios: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', perfumes: '<rect x="6" y="9" width="12" height="12" rx="3"/><path d="M10 9V6h4v3M12 6V3M9 3h6"/>', maquiagem: '<path d="M9 21V11h6v10z"/><path d="M10 11V6l4-3v8"/>', skincare: '<path d="M8 10h8v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/><path d="M10 10V7h4v3M11 7V4h4"/><path d="M10 15h4"/>', cabelo: '<path d="M4 9a5 5 0 0 1 10 0v1H4z"/><path d="M14 8h6v3h-6"/><path d="M8 10v6a2 2 0 0 0 4 0v-6"/>', suplementos: '<rect x="3" y="9" width="18" height="7" rx="3.5" transform="rotate(-35 12 12.5)"/><path d="M10 7.5 14 14"/>', eletronicos: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>', casa: '<path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>', outros: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>' };
+  const ICONE_CAT = { looks: '<path d="M9 3h6l-1 4 4 13H6l4-13z"/><path d="M10 7h4"/>', fitness: '<path d="M7 3h10l.6 4-1.6 14h-3.4L12 11l-.6 10H8L6.4 7z"/><path d="M6.8 6.2h10.4"/>', calcados: '<path d="M3 16.5c0-2.2.4-6 1.6-8.5l3 1.4 1.6-1.9 2.4 3.6c1.9 1.6 4.6 2.2 7.1 2.6a2.6 2.6 0 0 1 2.3 2.6v.2H3z"/><path d="M3 16.5v1.6a.9.9 0 0 0 .9.9h16.2a.9.9 0 0 0 .9-.9v-1.6"/><path d="M9.6 12.4l1.4-1M11.4 14.1l1.5-1"/>', acessorios: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', perfumes: '<rect x="6" y="9" width="12" height="12" rx="3"/><path d="M10 9V6h4v3M12 6V3M9 3h6"/>', maquiagem: '<path d="M9 21V11h6v10z"/><path d="M10 11V6l4-3v8"/>', skincare: '<path d="M8 10h8v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/><path d="M10 10V7h4v3M11 7V4h4"/><path d="M10 15h4"/>', cabelo: '<path d="M4 9a5 5 0 0 1 10 0v1H4z"/><path d="M14 8h6v3h-6"/><path d="M8 10v6a2 2 0 0 0 4 0v-6"/>', suplementos: '<path d="m10.5 20.5 10-10a4.9 4.9 0 1 0-7-7l-10 10a4.9 4.9 0 1 0 7 7z"/><path d="m8.5 8.5 7 7"/>', eletronicos: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>', casa: '<path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>', outros: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>' };
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
   const limparNome = (t) => String(t || "").replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "").replace(/\s{2,}/g, " ").trim();
   const viaServidor = (u) => "api/imagem?url=" + encodeURIComponent(u);
@@ -877,7 +877,7 @@
     $("#acTotal").textContent = `${l.length} ${l.length === 1 ? "achado" : "achados"}`;
     $("#catalogo").innerHTML = l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
       return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
-        <span><strong>${esc(limparNome(p.nome))}</strong><span class="meta">${p.preco ? `<b>${brl(p.preco)}</b> · ` : ""}${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}${p.comissao ? ` · comissão ${String(p.comissao).replace(".", ",")}%` : ""}</span></span>
+        <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}${p.comissao ? ` · comissão ${String(p.comissao).replace(".", ",")}%` : ""}</span></span>
       </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>` : '<p class="vazio-lista">Nada encontrado nos achados.</p>';
   }
   $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(pintarAchados, 150); });
@@ -1181,7 +1181,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=158"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=159"; });
     }
     edFoto = null;
     try {
@@ -1554,7 +1554,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=158"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=159"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1813,7 +1813,8 @@
       return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}${ppAtual === i ? " aberto" : ""}">${post ? '<span class="selo-canto"><svg><use href="#i-check"/></svg>Postado</span>' : ""}<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
-          <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
+          ${i.precoNovo ? `<span class="pp-preco">${brl(i.precoNovo)}${i.precoAntigo && i.precoAntigo > i.precoNovo ? `<s>${brl(i.precoAntigo)}</s>` : ""}</span>` : ""}
+          <span class="meta">${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
           ${post ? `<span class="pp-onde">${onde.length ? esc(onde.join(", ")) + " · " : ""}${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
         <span class="seta">›</span>
@@ -2120,13 +2121,13 @@
   const ehPC = () => window.matchMedia("(min-width: 1100px)").matches;
   /* ---------- Menu ⋮ do produto ---------- */
   let itemMenu = null;
-  const ACOES_ITEM = [["roteiro", "Postar", "i-enviar"], ["reels", "Reels", "i-reels"], ["livre", "Colagem", "i-rede-grade"], ["video", "Vídeo", "i-rede-video"], ["ia", "Vídeo IA", "i-brilho"], ["link", "Abrir link", "i-abrir"]];
+  const ACOES_ITEM = [["reels", "Reels", "i-reels"], ["livre", "Colagem", "i-rede-grade"], ["video", "Vídeo", "i-rede-video"], ["ia", "Vídeo IA", "i-brilho"], ["link", "Abrir link", "i-abrir"], ["editar", "Editar", "i-lapis"]];
   function abrirMenuItem(it) {
     itemMenu = it; const post = foiCompartilhado(it);
     $("#folhaItemTitulo").textContent = limparNome(it.nome || "Produto");
     $("#folhaItemSub").textContent = [it.precoNovo && brl(it.precoNovo), NOME_LOJA[it.loja], NOME_CAT[it.categoria || "outros"], post && "postado"].filter(Boolean).join(" · ");
-    $("#folhaItemCriar").innerHTML = ACOES_ITEM.map(([k, n, ic]) => `<button type="button" class="fi-acao" data-fi="${k}"><svg><use href="#${ic}"/></svg>${n}</button>`).join("");
-    $("#folhaItemOps").innerHTML = `<button type="button" class="fi-op" data-fi="editar"><svg><use href="#i-lapis"/></svg>Editar</button>${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}<button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
+    $("#folhaItemCriar").innerHTML = `<button type="button" class="fi-principal" data-fi="roteiro"><svg><use href="#i-enviar"/></svg>Postar</button><div class="fi-grade">` + ACOES_ITEM.map(([k, n, ic]) => `<button type="button" class="fi-acao" data-fi="${k}"><svg><use href="#${ic}"/></svg>${n}</button>`).join("") + "</div>";
+    $("#folhaItemOps").innerHTML = `${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}<button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
     $("#folhaItem").showModal();
   }
   async function excluirProduto(it) {
