@@ -73,8 +73,8 @@
   }
   const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
   // Categorias (nicho feminino), na ordem dos destaques do Instagram
-  const NOME_CAT = { looks: "Looks", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", fitness: "Saúde e fitness", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
-  const ICONE_CAT = { looks: "👗", calcados: "👟", acessorios: "👜", perfumes: "🌸", maquiagem: "💄", skincare: "🧴", cabelo: "💇‍♀️", fitness: "🏋️‍♀️", suplementos: "💊", eletronicos: "🎧", casa: "🏡", outros: "✨" };
+  const NOME_CAT = { looks: "Looks", fitness: "Moda fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
+  const ICONE_CAT = { looks: '<path d="M9 3h6l-1 4 4 13H6l4-13z"/><path d="M10 7h4"/>', fitness: '<path d="M7 3c0 3 2 4 5 4s5-1 5-4"/><path d="M7 3 5 9l3 1v11h8V10l3-1-2-6"/>', calcados: '<path d="M3 16v-5l4 1 3-4 3 3c2 2 5 3 8 3v2z"/><path d="M3 16v2h18v-2"/>', acessorios: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>', perfumes: '<rect x="6" y="9" width="12" height="12" rx="3"/><path d="M10 9V6h4v3M12 6V3M9 3h6"/>', maquiagem: '<path d="M9 21V11h6v10z"/><path d="M10 11V6l4-3v8"/>', skincare: '<path d="M8 10h8v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1z"/><path d="M10 10V7h4v3M11 7V4h4"/><path d="M10 15h4"/>', cabelo: '<path d="M4 9a5 5 0 0 1 10 0v1H4z"/><path d="M14 8h6v3h-6"/><path d="M8 10v6a2 2 0 0 0 4 0v-6"/>', suplementos: '<rect x="3" y="9" width="18" height="7" rx="3.5" transform="rotate(-35 12 12.5)"/><path d="M10 7.5 14 14"/>', eletronicos: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>', casa: '<path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>', outros: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>' };
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
   const limparNome = (t) => String(t || "").replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "").replace(/\s{2,}/g, " ").trim();
   const viaServidor = (u) => "api/imagem?url=" + encodeURIComponent(u);
@@ -628,7 +628,7 @@
     maquiagem: "Make linda e duradoura gastando pouco 💄",
     skincare: "Pra rotina de skincare ficar completinha, com preço de amiga 🧴",
     cabelo: "Cabelo de salão em casa, gastando bem menos 💇‍♀️",
-    fitness: "Pra manter a rotina de treino em dia, com estilo e gastando menos 💪",
+    fitness: "Look de treino lindo e confortável, pra treinar com estilo gastando menos 💪",
     suplementos: "Pra cuidar da saúde e dos resultados do treino, com preço justo 💊",
     eletronicos: "Tecnologia que facilita o dia a dia, com desconto de verdade 🎧",
     casa: "Pra deixar a casa mais aconchegante e com aquele toque especial 🏡",
@@ -1116,7 +1116,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=150"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=151"; });
     }
     edFoto = null;
     try {
@@ -1489,7 +1489,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=150"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=151"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1752,7 +1752,7 @@
         </span>
         <span class="seta">›</span>
       </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`
-        : `<div class="pp-acoes-linha">${post ? `<button type="button" class="pp-mini-bt" data-restaurar="${esc(i.id)}" aria-label="Voltar para Para postar" title="Postar de novo"><svg><use href="#i-restaurar"/></svg></button>` : `<button type="button" class="pp-mini-bt pp-lixo-bt" data-excluir="${esc(i.id)}" aria-label="Tirar ${esc(i.nome || "produto")} da lista" title="Tirar da lista"><svg><use href="#i-lixo"/></svg></button>`}<button type="button" class="pp-mini-bt" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button></div>`}</div>`; };
+        : `<div class="pp-acoes-linha">${`<button type="button" class="pp-mini-bt pp-lixo-bt" data-excluir="${esc(i.id)}" aria-label="Tirar ${esc(i.nome || "produto")} da lista" title="Tirar da lista"><svg><use href="#i-lixo"/></svg></button>`}<button type="button" class="pp-mini-bt" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button></div>`}</div>`; };
     const vazio = termoBusca.trim() ? (ehLink(termoBusca) ? "" : "Nada encontrado com essa busca.") : filtroLista !== "todas" ? `Nenhum produto em ${NOME_CAT[filtroLista] || "nessa categoria"} ainda.` : "Cole aqui os links dos produtos que você vai divulgar.";
     $("#ppLista").innerHTML = (!termoBusca.trim() && filtroLista === "todas" ? painelHoje() : "") + (l.length ? l.map(linha).join("") : vazio ? `<p class="vazio-lista">${vazio}</p>` : "");
     pintarMarcados();
@@ -1762,7 +1762,7 @@
     const box = $("#ppCats"); if (!box) return;
     const faltam = (k) => fila().filter((i) => !i.carregando && !foiCompartilhado(i) && (k === "todas" || (i.categoria || "outros") === k)).length;
     box.innerHTML = [...Object.entries(NOME_CAT).map(([k, n]) => [k, n, ICONE_CAT[k]])].map(([k, n, ic]) => { const q = faltam(k);
-      return `<button type="button" class="pp-cat${filtroLista === k ? " on" : ""}${!q && k !== "todas" ? " vazia" : ""}" data-cat="${k}"><span class="pp-cat__ic">${ic}</span><b>${esc(n)}</b>${q ? `<i>${q}</i>` : ""}</button>`; }).join("");
+      return `<button type="button" class="pp-cat${filtroLista === k ? " on" : ""}${!q && k !== "todas" ? " vazia" : ""}" data-cat="${k}"><svg class="pp-cat__ic" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${esc(n)}</b>${q ? `<i>${q}</i>` : ""}</button>`; }).join("");
   }
   /** Colou um link novo: cartão "Produto novo" com o botão de adicionar */
   function pintarNovoLink() {
@@ -1875,7 +1875,7 @@
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
-    const noHist = !$("#aba-historico").hidden || (!$("#aba-postar").hidden && [...marcados].some((id) => { const i = fila().find((x) => x.id === id); return i && foiCompartilhado(i); })); $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
+    const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
     const visH = [...document.querySelectorAll("#historico [data-marcar]")].map((x) => x.dataset.marcar);
     $("#hiTodosCx").classList.toggle("on", !!visH.length && visH.every((id) => marcados.has(id)));
     $("#ppTodos").hidden = !modoVarios; $("#ppTotal").hidden = modoVarios; $("#ppFiltrar").hidden = modoVarios;
