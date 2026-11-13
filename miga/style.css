@@ -1254,3 +1254,4 @@ body.modo-selecao main { padding-bottom: 200px; }
 .rp-midia figure { min-width: 0; }
 .rp-capa-op { flex-wrap: wrap; width: 100%; }
 .rp-capa-op button { flex: 1 1 auto; min-width: 0; padding: 0 8px; }
+.rp-whats.feito { background: #128c4a; }

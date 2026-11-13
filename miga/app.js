@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=135"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=136"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=135"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=136"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2356,13 +2356,26 @@
   /** Mensagem pronta que acompanha o modelo (ou a campanha / título próprio) da arte. Para mudar, edite no lápis. */
   function usarModeloTexto() {
     const it = wzItem(); if (!it) return;
+    it.estiloTexto = "tema"; it.texto = mensagemWhats(it, { modelo: wz.modelo, camp: wz.camp, titulo: wz.tituloArte }); it.textoEditado = false; salvarFila();
+  }
+  /** Mensagem do WhatsApp (grupos e canal) de um produto, no modelo/campanha escolhidos */
+  function mensagemWhats(it, base = {}) {
     const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
-    const LG = LEGENDA_REELS[wz.modelo] || LEGENDA_REELS.achadinho;
-    const abre = wz.tituloArte ? `✨ *${wz.tituloArte.replace(/[*]/g, "")}*` : campanha() ? campanha().chamada : LG.um("").replace(/\s{2,}/g, " ").trim();
+    const LG = LEGENDA_REELS[base.modelo] || LEGENDA_REELS.achadinho, C = CAMPANHAS[base.camp];
+    const abre = base.titulo ? `✨ *${String(base.titulo).replace(/[*]/g, "").replace(/\s*\n\s*/g, " ")}*` : C ? C.chamada : LG.um("").replace(/\s{2,}/g, " ").trim();
     const preco = p.precoAntigo ? `~de ${brl(p.precoAntigo)}~ por *${brl(p.precoNovo)}*` : `por apenas *${brl(p.precoNovo)}*`;
     const off = p.precoAntigo && p.precoAntigo > p.precoNovo ? ` (${Math.round((1 - p.precoNovo / p.precoAntigo) * 100)}% OFF)` : "";
     const corpo = `✨ *${p.nome}*\n\n💸 ${preco}${off}${p.cupom ? `\n🎟️ Usa o cupom *${p.cupom}*` : ""}\n\n${FRASES[p.categoria] || FRASES.outros}\n\n${linkLoja(p.loja, p.link)}\n\nCorre que promoção boa assim acaba rapidinho! ⏳🌸`;
-    it.estiloTexto = "tema"; it.texto = comConvite(`${abre}\n\n${corpo}`); it.textoEditado = false; salvarFila();
+    return comConvite(`${abre}\n\n${corpo}`);
+  }
+  /** Manda direto para o WhatsApp: a foto do produto (com o selo da loja) + a mensagem pronta */
+  async function enviarProdutoNoWhats(it, base) {
+    const texto = it.textoEditado && it.texto ? it.texto : mensagemWhats(it, base);
+    let foto = null; try { if (it.imagem) foto = await fotoComLoja(await converterImagem(await arquivoDaImagem(it.imagem)), it.loja); } catch (e) { foto = null; }
+    let r = await compartilharArquivo(foto, comLoja(texto, it.loja, it.link));
+    if (r === "sem") { await copiarTexto(texto); abrirWhatsApp(texto); r = "aberto"; }
+    if (r === "cancelado") return false;
+    marcarPostado(it, "whatsapp", "WhatsApp"); return true;
   }
   /* Cores em sequência (Creme → Rosa → Branco → Preto): guarda a do último post e o próximo começa na seguinte */
   const ORDEM_CORES = ["creme", "rosa", "branco", "preto"];
@@ -3270,11 +3283,24 @@
   // Tocar e arrastar as camadas na prévia
   let arrasto = null;
   const pontoNaPrevia = (e, cv) => { const r = cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * 1080, ((e.clientY - r.top) / r.height) * 1920]; };
-  $("#wzCorpo").addEventListener("click", (e) => {
-    if (!e.target.closest("#rpWhats")) return;
-    if (wz.canal === "reels") { const R = rr(); postarProdutosNoWhats([...R.itens], { modelo: R.modelo, camp: R.camp, titulo: R.titulo, cor: R.cor }); }
-    else if (wz.canal === "video") { const V = vd(); if (V.itemId) postarProdutosNoWhats([V.itemId], { modelo: V.modelo, camp: V.camp, titulo: V.tituloProp, cor: V.cor }); }
+  // Botão verde das telas de pronto: foto + mensagem direto no WhatsApp (um produto por vez)
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    const b = e.target.closest("#rpWhats"); if (!b || b.dataset.ocupado) return;
+    const S = wz.canal === "reels" ? rr() : wz.canal === "video" ? vd() : null; if (!S) return;
+    const ids = (wz.canal === "reels" ? [...S.itens] : [S.itemId]).filter((id) => fila().some((x) => x.id === id));
+    if (!ids.length) { toast("Esse produto não está mais na lista"); return; }
+    const base = wz.canal === "reels" ? { modelo: S.modelo, camp: S.camp, titulo: S.titulo } : { modelo: S.modelo, camp: S.camp, titulo: S.tituloProp };
+    const k = (S.zapIdx || 0) % ids.length, it = fila().find((x) => x.id === ids[k]);
+    b.dataset.ocupado = "1";
+    try { if (await enviarProdutoNoWhats(it, base)) S.zapIdx = k + 1; } finally { delete b.dataset.ocupado; }
+    pintarBotaoWhats(b, ids.length, S.zapIdx || 0);
   });
+  function pintarBotaoWhats(b, n, feitos) {
+    const t = b.querySelector("b"), s = b.querySelector("small"); if (!t || !s) return;
+    if (!feitos) return;
+    if (feitos < n) { t.textContent = `Enviar o próximo (${feitos + 1} de ${n})`; s.textContent = "Foto + mensagem do próximo produto"; }
+    else { t.textContent = "Enviado no WhatsApp ✓"; s.textContent = "Toque para enviar de novo"; b.classList.add("feito"); }
+  }
   $("#wzCorpo").addEventListener("pointerdown", (e) => {
     const cv = e.target.closest && e.target.closest("#vdQuadro"); if (!cv || wz.canal !== "video") return;
     const V = vd(), [x, y] = pontoNaPrevia(e, cv);
@@ -3399,7 +3425,7 @@
               ${r.capa ? '<button type="button" class="est-btn" id="vdBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
               <button type="button" class="est-btn" id="vdRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Regravar</b></button>
             </div>
-            ${V.itemId ? `<button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>Grupos e canal, com a mensagem pronta</small></span></button>` : ""}
+            ${V.itemId ? `<button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>Foto + mensagem pronta, direto no grupo ou canal</small></span></button>` : ""}
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
             <div class="leg-bloco">
               <div class="leg-topo"><span>Legenda do Instagram</span><div><button type="button" class="leg-btn" id="vdCopiarLegenda"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button><button type="button" class="leg-btn" id="vdRefazerLegenda"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Refazer</button></div></div>
@@ -5115,7 +5141,7 @@
               ${r.capa ? '<button type="button" class="est-btn" id="rBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
               <button type="button" class="est-btn" id="rRefazer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Regravar</b></button>
             </div>
-            <button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>${itensReels().length} ${itensReels().length > 1 ? "produtos, um por um" : "produto"} · grupos e canal</small></span></button>
+            <button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>Foto + mensagem pronta${itensReels().length > 1 ? ` · ${itensReels().length} produtos, um por vez` : ", direto no grupo ou canal"}</small></span></button>
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
             ${blocoLegenda(R)}
             <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
@@ -5157,7 +5183,7 @@
       </div>
       <button type="button" class="btn btn--rosa" id="kPostar">Postar / compartilhar</button>
       <button type="button" class="btn btn--branco" id="kBaixar">Baixar as ${l.length + 2} imagens</button>
-      <button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>${l.length} ${l.length > 1 ? "produtos, um por um" : "produto"} · grupos e canal</small></span></button>
+      <button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>Foto + mensagem pronta${l.length > 1 ? ` · ${l.length} produtos, um por vez` : ", direto no grupo ou canal"}</small></span></button>
       ${blocoLegenda(R)}
       <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
     slidesCarrossel().then((s) => { const tr = $("#kTrilho"); if (!tr) return; tr.innerHTML = ""; s.forEach((cv) => tr.appendChild(cv)); });
