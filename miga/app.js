@@ -399,7 +399,7 @@
     renderCupons();
     contarFila();
     iniciarCriar(); wz = {};
-    irPara("postar");
+    irPara("inicio");
     // Link compartilhado de outro app (Shopee, Mercado Livre...): vai para a Lista
     if (recebidoPendente) { const t = recebidoPendente; recebidoPendente = ""; irPara("postar"); adicionarNaFila(t); }
   }
@@ -479,6 +479,8 @@
     if (aba === "grupos") renderGrupos();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
     if (aba === "postar" && !ppAtual) renderFila();
+    if (aba === "inicio") renderInicio();
+    document.body.dataset.aba = aba;
     if (aba === "criar" && !wz.passo) iniciarCriar();
     pintarMarcados();
     window.scrollTo({ top: 0 });
@@ -799,7 +801,14 @@
     esqueletoCatalogo();
     let d;
     try {
-      d = await api(`catalogo?filtro=${catFiltro.valor()}&loja=${catLoja.valor()}`);
+      // Sem categorias: junta os mais vendidos de todas, só filtrando pela loja
+      const FILTROS = ["moda", "beleza", "perfumes", "acessorios", "fitness", "saude", "casa"];
+      const rs = await Promise.allSettled(FILTROS.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}`)));
+      const ok = rs.filter((r) => r.status === "fulfilled").map((r) => r.value);
+      if (!ok.length) throw (rs[0] && rs[0].reason) || new Error("catálogo");
+      const vistos = new Set(), listas = ok.map((x) => x.produtos || []), todos = [];
+      for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); todos.push(p); });
+      d = { configurado: ok.reduce((m, x) => ({ ...m, ...(x.configurado || {}) }), {}), produtos: todos, avisos: ok.flatMap((x) => x.avisos || []) };
     } catch (e) {
       if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; }
       $("#catalogo").innerHTML = `<p class="vazio-lista">${e.codigo === "offline" ? "O catálogo só funciona no app publicado." : "Não consegui carregar o catálogo agora."}</p>`;
@@ -815,21 +824,19 @@
     }
     if (d.avisos && d.avisos.length) console.info("Catálogo:", d.avisos.join(" | "));
     catalogoAtual = d.produtos || [];
-    if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Sem mais vendidos nessa categoria agora. Escolha outra categoria ou outra loja.</p>'; return; }
-    $("#catalogo").innerHTML = catalogoAtual.map((p, i) => `
-      <article class="produto-cat">
-        <div class="produto-cat__foto">
-          ${p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}
-          <a class="produto-cat__loja" href="${esc(p.link)}" target="_blank" rel="noopener" title="Abrir no site">${esc(NOME_LOJA[p.loja] || "")}</a>
-        </div>
-        <div class="produto-cat__info">
-          <strong>${esc(p.nome)}</strong>
-          ${p.preco ? `<span class="preco">${brl(p.preco)}</span>` : ""}
-          ${p.comissao ? `<small>Comissão ${String(p.comissao).replace(".", ",")}%</small>` : ""}
-        </div>
-        <button type="button" class="btn btn--rosa" data-gerar="${i}">Gerar oferta</button>
-      </article>`).join("");
+    if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Sem achados nessa loja agora. Escolha outra loja.</p>'; return; }
+    pintarAchados();
   }
+  /** Achados no mesmo jeito da Lista (foto, nome, preço, loja) com o ⋮ */
+  function pintarAchados() {
+    const t = semAcento($("#acBusca").value.trim()), l = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t));
+    $("#acTotal").textContent = `${l.length} ${l.length === 1 ? "achado" : "achados"}`;
+    $("#catalogo").innerHTML = l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
+      return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
+        <span><strong>${esc(limparNome(p.nome))}</strong><span class="meta">${p.preco ? `<b>${brl(p.preco)}</b> · ` : ""}${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}${p.comissao ? ` · comissão ${String(p.comissao).replace(".", ",")}%` : ""}</span></span>
+      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>` : '<p class="vazio-lista">Nada encontrado nos achados.</p>';
+  }
+  $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(pintarAchados, 150); });
   [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
   // Aba de categoria escolhida sempre visível (desliza até ela)
   $("#catFiltro").addEventListener("click", (e) => {
@@ -864,6 +871,20 @@
   });
 
   $("#catalogo").addEventListener("click", async (e) => {
+    const am = e.target.closest("[data-achado-menu], [data-achado]");
+    if (am) {
+      const p = catalogoAtual[Number(am.dataset.achadoMenu ?? am.dataset.achado)]; if (!p) return;
+      const op = await escolherOpcao(limparNome(p.nome), [["adicionar", "Adicionar na lista"], ["abrir", "Abrir na loja"]], "");
+      if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
+      if (op !== "adicionar") return;
+      let link = p.link; if (!p.afiliado) { link = await pedirLinkAfiliado(p); if (!link) return; }
+      const ja = fila().find((i) => mesmoProduto(i, link)); if (ja) { toast("Esse produto já está na sua lista"); return; }
+      const sug = adivinharCategoria(p.nome), c = await escolherCategoria({ sugestao: sug, nome: p.nome }); if (!c) return;
+      const it = { id: novoId(), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "", categoria: c, catV2: true, texto: "", feito: {}, criadoEm: Date.now() };
+      fila().unshift(it); salvarFila(true); contarFila();
+      toastAcao(`Adicionado em ${NOME_CAT[c]}`, "Ver na lista", () => { filtroLista = c; irPara("postar"); });
+      return;
+    }
     const b = e.target.closest("[data-gerar]");
     if (!b) return;
     const p = catalogoAtual[Number(b.dataset.gerar)];
@@ -1116,7 +1137,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=151"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=152"; });
     }
     edFoto = null;
     try {
@@ -1489,7 +1510,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=151"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=152"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1742,28 +1763,33 @@
     const l0 = ordenar(base), l = [...l0.filter((i) => !foiCompartilhado(i)), ...l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0))];
     pintarCats();
     const np = l.filter((i) => !foiCompartilhado(i)).length, nd = l.length - np;
+    $("#ppOrdemTxt").textContent = ({ recentes: "Recentes", antigos: "Antigos", preco: "Menor preço", desconto: "Desconto" })[ordemLista] || "Recentes";
     $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}`;
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
-      return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
+      return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}${ppAtual === i ? " aberto" : ""}">${post ? '<span class="selo-canto"><svg><use href="#i-check"/></svg>Postado</span>' : ""}<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
-          ${post ? `<span class="selo-postado"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Postado${onde.length ? ` no ${esc(onde.join(", "))}` : ""} · ${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
+          ${post ? `<span class="pp-onde">${onde.length ? esc(onde.join(", ")) + " · " : ""}${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
         <span class="seta">›</span>
       </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`
-        : `<div class="pp-acoes-linha">${`<button type="button" class="pp-mini-bt pp-lixo-bt" data-excluir="${esc(i.id)}" aria-label="Tirar ${esc(i.nome || "produto")} da lista" title="Tirar da lista"><svg><use href="#i-lixo"/></svg></button>`}<button type="button" class="pp-mini-bt" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button></div>`}</div>`; };
-    const vazio = termoBusca.trim() ? (ehLink(termoBusca) ? "" : "Nada encontrado com essa busca.") : filtroLista !== "todas" ? `Nenhum produto em ${NOME_CAT[filtroLista] || "nessa categoria"} ainda.` : "Cole aqui os links dos produtos que você vai divulgar.";
-    $("#ppLista").innerHTML = (!termoBusca.trim() && filtroLista === "todas" ? painelHoje() : "") + (l.length ? l.map(linha).join("") : vazio ? `<p class="vazio-lista">${vazio}</p>` : "");
+        : `<button type="button" class="pp-pontos" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}"><svg><use href="#i-pontos"/></svg></button>`}</div>`; };
+    const vazio = termoBusca.trim() ? (ehLink(termoBusca) ? "" : "Nada encontrado com essa busca.") : filtroLista !== "todas" ? `Nenhum produto em ${NOME_CAT[filtroLista] || "nessa categoria"} ainda.` : "Cole no Início os links dos produtos que você vai divulgar.";
+    $("#ppLista").innerHTML = (l.length ? l.map(linha).join("") : vazio ? `<p class="vazio-lista">${vazio}</p>` : "");
     pintarMarcados();
   }
   /** Início: blocos das categorias, com quantos faltam postar em cada */
+  const faltamCat = (k) => fila().filter((i) => !i.carregando && !foiCompartilhado(i) && (k === "todas" || (i.categoria || "outros") === k)).length;
+  const blocoCat = (k, n, q, on, extra = "") => `<button type="button" class="pp-cat${on ? " on" : ""}${!q ? " vazia" : ""}" data-cat="${k}"${extra}><svg class="pp-cat__ic" viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k] || ""}</svg><b>${esc(n)}</b>${q ? `<i>${q}</i>` : ""}</button>`;
+  /** Lista: categorias numa fileira (chips) */
   function pintarCats() {
     const box = $("#ppCats"); if (!box) return;
-    const faltam = (k) => fila().filter((i) => !i.carregando && !foiCompartilhado(i) && (k === "todas" || (i.categoria || "outros") === k)).length;
-    box.innerHTML = [...Object.entries(NOME_CAT).map(([k, n]) => [k, n, ICONE_CAT[k]])].map(([k, n, ic]) => { const q = faltam(k);
-      return `<button type="button" class="pp-cat${filtroLista === k ? " on" : ""}${!q && k !== "todas" ? " vazia" : ""}" data-cat="${k}"><svg class="pp-cat__ic" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${esc(n)}</b>${q ? `<i>${q}</i>` : ""}</button>`; }).join("");
+    box.innerHTML = `<button type="button" class="chip-cat${filtroLista === "todas" ? " on" : ""}" data-cat="todas">Todas <i>${faltamCat("todas")}</i></button>` +
+      Object.entries(NOME_CAT).map(([k, n]) => { const q = faltamCat(k); return `<button type="button" class="chip-cat${filtroLista === k ? " on" : ""}" data-cat="${k}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k]}</svg>${esc(n)}${q ? ` <i>${q}</i>` : ""}</button>`; }).join("");
+    const on = box.querySelector(".on"); if (on && on.dataset.cat !== "todas") on.scrollIntoView({ block: "nearest", inline: "center" });
   }
+
   /** Colou um link novo: cartão "Produto novo" com o botão de adicionar */
   function pintarNovoLink() {
     const t = termoBusca.trim(), box = $("#ppNovoLink"); if (!box) return;
@@ -1796,7 +1822,7 @@
     if (!urlOk(lido.link)) { toast("Cola um link começando com https://"); return null; }
     const ja = fila().find((i) => mesmoProduto(i, lido.link));
     if (ja) {
-      if (naLista) { toast(foiCompartilhado(ja) ? "Esse produto já foi postado: está na aba “Postados”" : "Esse produto já está na sua lista"); termoBusca = lido.link; $("#ppLink").value = lido.link; pintarBotaoColar(); renderFila(); return null; }
+      if (naLista) { irPara("postar"); toast(foiCompartilhado(ja) ? "Esse produto já foi postado: está na aba “Postados”" : "Esse produto já está na sua lista"); termoBusca = lido.link; $("#ppLink").value = lido.link; pintarBotaoColar(); renderFila(); return null; }
       toast("Esse produto já estava na lista"); return ja;
     }
     const item = { id: novoId(), link: lido.link, loja: detectarLoja(lido.link) || "mercadolivre", nome: lido.nome || "", precoNovo: lido.preco || null, precoAntigo: null, imagem: "", cupom: "", categoria: "outros", texto: "", feito: {}, criadoEm: Date.now(), carregando: true };
@@ -1823,6 +1849,9 @@
       toast("Não consegui ler o produto: toque nele e complete à mão");
     }
     item.categoria = catNova === "auto" ? adivinharCategoria(item.nome) : catNova;
+    if (naLista === true) { const c = await escolherCategoria({ sugestao: item.categoria, nome: item.nome }); if (c) item.categoria = c; }
+    else if (naLista === "lote" && adicionarTexto.cat) item.categoria = adicionarTexto.cat;
+    item.catV2 = true;
     delete item.carregando;
     renderFila(); salvarFila(true);
     // Faltou foto, nome ou preço (comum na Shopee e na Amazon): abre o produto e pede o que falta
@@ -1833,25 +1862,28 @@
   async function adicionarTexto(texto) {
     const links = [...new Set((String(texto || "").match(/https?:\/\/[^\s<>"']+/g) || []))];
     if (links.length <= 1) return adicionarNaFila(texto, true);
-    $("#ppLink").value = ""; toast(`Adicionando ${links.length} produtos…`);
+    $("#ppLink").value = ""; adicionarTexto.cat = null;
+    { const c = await escolherCategoria({ titulo: `Categoria dos ${links.length} produtos`, acao: "Adicionar todos em" }); adicionarTexto.cat = c; }
+    toast(`Adicionando ${links.length} produtos…`);
     let n = 0;
     for (const l of links) { if (await adicionarNaFila(l, "lote")) n++; }
     const falta = incompletos().length;
     toast(`${n} ${n === 1 ? "produto adicionado" : "produtos adicionados"}${falta ? ` · ${falta} para completar` : ""}`);
   }
-  const pintarBotaoColar = () => { $("#ppColar").textContent = $("#ppLink").value ? "Limpar" : "Colar"; };
+  const pintarBotaoColar = () => { $("#ppColar").hidden = !$("#ppLink").value; };
   const limparBusca = () => { termoBusca = ""; abaBusca = null; $("#ppLink").value = ""; pintarBotaoColar(); };
   async function adicionarDaBusca() { const t = $("#ppLink").value; limparBusca(); renderFila(); await adicionarTexto(t); renderFila(); }
   $("#ppLink").addEventListener("input", () => { termoBusca = $("#ppLink").value; if (!termoBusca.trim()) abaBusca = null; pintarBotaoColar(); clearTimeout(renderFila.t); renderFila.t = setTimeout(renderFila, 120); });
   $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (!$("#ppNovoLink").hidden) adicionarDaBusca(); else $("#ppLink").blur(); } });
   $("#ppNovoLink").addEventListener("click", (e) => { if (e.target.closest("#ppAdicionarNovo")) adicionarDaBusca(); });
   $("#ppColar").addEventListener("click", async () => {
-    if ($("#ppLink").value) { limparBusca(); renderFila(); return; }
+    if ($("#ppLink").value) { limparBusca(); renderFila(); $("#ppLink").focus(); return; }
     try { const t = (await navigator.clipboard.readText()).trim(); if (!t) { toast("Não tem nada copiado"); return; } $("#ppLink").value = t; termoBusca = t; pintarBotaoColar(); renderFila();
       if (ehLink(t) && $("#ppNovoLink").hidden) toast("Esse produto já está nos seus produtos"); }
     catch (e) { $("#ppLink").focus(); toast("Toque e segure no campo para colar"); }
   });
-  $("#ppCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = filtroLista === b.dataset.cat ? "todas" : b.dataset.cat; renderFila(); });
+  $("#ppCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; renderFila(); });
+  $("#ppOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar", Object.entries(ORDENS), ordemLista); if (!v) return; ordemLista = v; try { localStorage.setItem("miga_ordem", v); } catch (e) { /* segue */ } renderFila(); });
   $("#ppVisao").addEventListener("click", (e) => { const b = e.target.closest("[data-visao]"); if (!b) return; if (termoBusca.trim()) { abaBusca = b.dataset.visao; renderFila(); return; } visaoLista = b.dataset.visao; try { localStorage.setItem("miga_visao", visaoLista); } catch (er) { /* segue */ } if (modoVarios) marcados.clear(); renderFila(); });
   $("#ppLimpar").addEventListener("click", async () => {
     const prontos = fila().filter((i) => Object.values(i.feito || {}).some(Boolean));
@@ -1864,7 +1896,7 @@
   const marcados = new Set();
   let modoVarios = false;
   function entrarModoVarios() { modoVarios = true; renderFila(); if (!$("#aba-historico").hidden) renderHistorico(); }
-  function sairModoVarios() { modoVarios = false; marcados.clear(); renderFila(); if (!$("#aba-historico").hidden) renderHistorico(); }
+  function sairModoVarios() { modoVarios = false; acaoPendente = null; marcados.clear(); renderFila(); if (!$("#aba-historico").hidden) renderHistorico(); }
   const itensMarcados = () => fila().filter((i) => marcados.has(i.id) && !i.carregando);
   function pintarMarcados() {
     for (const id of [...marcados]) if (!fila().some((i) => i.id === id)) marcados.delete(id);
@@ -1873,6 +1905,7 @@
     // Modo seleção: a barra de baixo vira os botões de criar
     document.body.classList.toggle("modo-selecao", !b.hidden);
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
+    { const nomes = { roteiro: "Postar", reels: "Criar Reels", carrossel: "Criar carrossel", livre: "Criar colagem", ia: "Abrir kit da IA" }; $("#oQueCriar").textContent = acaoPendente && nomes[acaoPendente] ? `${nomes[acaoPendente]}${n ? ` (${n})` : ""}` : "Continuar"; }
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
     const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
@@ -1971,6 +2004,12 @@
   });
   $("#oQueCriar").addEventListener("click", () => {
     if (!itensMarcados().length) { toast("Toque nos produtos primeiro"); return; }
+    if (acaoPendente) {
+      const k = acaoPendente, l = itensMarcados(), o = OPCOES_CRIAR.find((q) => q[0] === k);
+      if (k === "ia") { acaoPendente = null; sairModoVarios(); abrirKitIA(l[0]); return; }
+      if (o && !o[3](l.length)) { toast(`${o[1]}: ${o[4]}`); return; }
+      acaoPendente = null; criarAPartirDaLista(l.length === 1 && k === "livre" ? "instagram" : k, l); return;
+    }
     const n = itensMarcados().length; if (!n) return;
     $("#folhaCriarTitulo").textContent = n === 1 ? "O que vou criar com este produto?" : `O que vou criar com ${n} produtos?`;
     $("#folhaCriarOps").innerHTML = OPCOES_CRIAR.map(([k, nome, desc, ok, aviso]) => { const v = CANAIS[k] || { cor: "#e8336d", icone: "i-rede-grade" }, pode = ok(n);
@@ -2021,25 +2060,99 @@
     const mc = e.target.closest("[data-marcar]");
     if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); mc.setAttribute("aria-pressed", String(marcados.has(id))); mc.parentElement.classList.toggle("marcado", marcados.has(id)); pintarMarcados(); return; }
     const menu = e.target.closest("[data-menu-item]");
-    if (menu) {
-      const it = fila().find((i) => i.id === menu.dataset.menuItem);
-      if (!it) return;
-      const op = await escolherOpcao(it.nome || "Produto", [["editar", "Editar"], ["excluir", "Excluir"]], "");
-      if (op === "editar") abrirItemFila(it);
-      if (op === "compartilhar") { iniciarCriar({ itemId: it.id }); irPara("criar"); }
-      if (op === "excluir") {
-        if (!(await confirmar({ titulo: "Excluir da lista?", texto: `“${it.nome || "Produto"}” sai da sua lista (continua no Histórico se já foi compartilhado).`, ok: "Excluir" }))) return;
-        config.fila = fila().filter((i) => i !== it);
-        renderFila(); salvarFila(true); toast("Produto excluído da lista");
-      }
-      return;
-    }
+    if (menu) { const it = fila().find((i) => i.id === menu.dataset.menuItem); if (it) abrirMenuItem(it); return; }
     const b = e.target.closest("[data-pp]");
     if (!b) return;
     if (modoVarios) { const id = b.dataset.pp; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); renderFila(); return; }
     const item = fila().find((i) => i.id === b.dataset.pp);
-    if (item && !item.carregando) abrirItemFila(item);
+    if (item && !item.carregando) { if (ehPC()) abrirItemFila(item); else abrirMenuItem(item); }
   });
+  const ehPC = () => window.matchMedia("(min-width: 1100px)").matches;
+  /* ---------- Menu ⋮ do produto ---------- */
+  let itemMenu = null;
+  const ACOES_ITEM = [["roteiro", "Postar", "i-enviar"], ["reels", "Reels", "i-reels"], ["livre", "Colagem", "i-rede-grade"], ["video", "Vídeo", "i-rede-video"], ["ia", "Vídeo IA", "i-brilho"], ["link", "Abrir link", "i-abrir"]];
+  function abrirMenuItem(it) {
+    itemMenu = it; const post = foiCompartilhado(it);
+    $("#folhaItemTitulo").textContent = limparNome(it.nome || "Produto");
+    $("#folhaItemSub").textContent = [it.precoNovo && brl(it.precoNovo), NOME_LOJA[it.loja], NOME_CAT[it.categoria || "outros"], post && "postado"].filter(Boolean).join(" · ");
+    $("#folhaItemCriar").innerHTML = ACOES_ITEM.map(([k, n, ic]) => `<button type="button" class="fi-acao" data-fi="${k}"><svg><use href="#${ic}"/></svg>${n}</button>`).join("");
+    $("#folhaItemOps").innerHTML = `<button type="button" class="fi-op" data-fi="editar"><svg><use href="#i-lapis"/></svg>Editar</button>${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}<button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
+    $("#folhaItem").showModal();
+  }
+  async function excluirProduto(it) {
+    if (!(await confirmar({ titulo: "Excluir este produto?", texto: `“${limparNome(it.nome || "Produto")}” sai da lista.`, ok: "Excluir" }))) return false;
+    config.fila = fila().filter((i) => i !== it); if (it.histId) dados.apagar(it.histId).catch(() => {});
+    if (ppAtual === it) fecharItemFila(true);
+    salvarFila(true); renderFila(); contarFila(); if (!$("#aba-inicio").hidden) renderInicio(); toast("Produto excluído"); return true;
+  }
+  $("#folhaItem").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-fi]"); const it = itemMenu; if (!b || !it) return;
+    const k = b.dataset.fi; $("#folhaItem").close();
+    if (k === "editar") { irPara("postar"); abrirItemFila(it); return; }
+    if (k === "excluir") { excluirProduto(it); return; }
+    if (k === "restaurar") { restaurarNaLista([it.id]); return; }
+    if (k === "link") { if (it.link) window.open(it.link, "_blank", "noopener"); return; }
+    if (k === "ia") { abrirKitIA(it); return; }
+    criarAPartirDaLista(k === "livre" ? "instagram" : k, [it]);
+  });
+  /* ---------- Popup: qual a categoria? ---------- */
+  function escolherCategoria({ sugestao = "outros", nome = "", titulo = "Qual a categoria?", acao = "Adicionar em" } = {}) {
+    const d = $("#folhaCat"); let sel = NOME_CAT[sugestao] ? sugestao : "outros";
+    $("#folhaCatTitulo").textContent = titulo; $("#folhaCatSub").textContent = nome ? `“${limparNome(nome).slice(0, 60)}” · sugestão já marcada` : "";
+    const pintar = () => { $("#folhaCatGrade").innerHTML = Object.entries(NOME_CAT).map(([k, n]) => blocoCat(k, n, 0, k === sel).replace(" vazia", "")).join(""); $("#folhaCatOk").textContent = `${acao} ${NOME_CAT[sel]}`; };
+    pintar(); d.returnValue = ""; d.showModal();
+    return new Promise((ok) => {
+      const clique = (e) => { const b = e.target.closest("[data-cat]"); if (b) { sel = b.dataset.cat; pintar(); } };
+      const confirma = () => { d.returnValue = "ok"; d.close(); };
+      $("#folhaCatGrade").addEventListener("click", clique); $("#folhaCatOk").addEventListener("click", confirma);
+      d.addEventListener("close", () => { $("#folhaCatGrade").removeEventListener("click", clique); $("#folhaCatOk").removeEventListener("click", confirma); ok(d.returnValue === "ok" ? sel : null); }, { once: true });
+    });
+  }
+  $("#ppCatBtn").addEventListener("click", async () => {
+    if (!ppAtual) return; const c = await escolherCategoria({ sugestao: ppAtual.categoria || "outros", titulo: "Categoria", acao: "Usar" }); if (!c) return;
+    const r = document.querySelector(`#ppCategoria [data-v="${c}"]`); if (r) r.click(); pintarCatPp(c);
+  });
+  function pintarCatPp(c) { c = NOME_CAT[c] ? c : "outros"; $("#ppCatNome").textContent = NOME_CAT[c]; $("#ppCatIc").innerHTML = `<svg viewBox="0 0 24 24">${ICONE_CAT[c]}</svg>`; }
+  /* ---------- Início ---------- */
+  let acaoPendente = null;
+  const ACOES_INICIO = [["roteiro", "Postar", "i-enviar"], ["reels", "Reels", "i-reels"], ["carrossel", "Carrossel", "i-carrossel"], ["video", "Vídeo", "i-rede-video"], ["cupons", "Cupons", "i-etiqueta"], ["livre", "Colagem", "i-rede-grade"], ["ia", "Vídeo IA", "i-brilho"], ["continuar", "Continuar", "i-relogio"]];
+  function renderInicio() {
+    const h = new Date().getHours(); $("#inOla").textContent = `${h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"}, miga! 💖`;
+    const p = fila().filter((i) => !i.carregando && !foiCompartilhado(i)).length, f = incompletos().length, s = parados().length;
+    const hoje = new Date().toDateString(), ph = fila().filter((i) => i.postadoEm && new Date(i.postadoEm).toDateString() === hoje).length;
+    $("#inResumo").innerHTML = [[p, "para postar", "postar"], [f, f === 1 ? "incompleto" : "incompletos", "incompletos"], [s, "parados 7+ dias", "parados"], [ph, "postados hoje", "hoje"]].map(([n, t, k]) => `<button type="button" class="in-num${(k === "incompletos" || k === "parados") && n ? " alerta" : ""}" data-in-num="${k}"><b>${n}</b><span>${t}</span></button>`).join("");
+    const prog = lerProgresso();
+    $("#inAcoes").innerHTML = ACOES_INICIO.filter(([k]) => k !== "continuar" || prog).map(([k, n, ic]) => `<button type="button" class="in-acao${k === "continuar" ? " in-acao--destaque" : ""}" data-in="${k}"${k === "continuar" && prog ? ` title="${esc(prog.rotulo)}"` : ""}><svg><use href="#${ic}"/></svg>${n}</button>`).join("");
+    $("#inCats").innerHTML = Object.entries(NOME_CAT).map(([k, n]) => blocoCat(k, n, faltamCat(k), false)).join("");
+  }
+  $("#inCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; limparBusca(); irPara("postar"); });
+  $("#inResumo").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-in-num]"); if (!b) return; const k = b.dataset.inNum;
+    if (k === "incompletos") { const p = incompletos()[0]; if (!p) { toast("Todos os produtos estão completos"); return; } modoCompletar = true; irPara("postar"); abrirItemFila(p, true); return; }
+    filtroLista = "todas"; limparBusca(); irPara("postar");
+    if (k === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); modoVarios = true; renderFila(); toast(`${l.length} parados selecionados: toque em Continuar`); }
+  });
+  $("#inAcoes").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-in]"); if (!b) return; const k = b.dataset.in;
+    if (k === "video") { abrirVideoLivre(); return; }
+    if (k === "cupons") { abrirPostarCupons(); return; }
+    if (k === "continuar") { continuarProgresso(); return; }
+    // precisa escolher os produtos: vai para a Lista já selecionando
+    acaoPendente = k; filtroLista = "todas"; limparBusca(); irPara("postar"); marcados.clear(); modoVarios = true; renderFila();
+    toast(k === "ia" ? "Toque no produto do vídeo e depois em Continuar" : "Marque os produtos e toque em Continuar");
+  });
+  async function cadastrarDoInicio(texto) {
+    const t = String(texto || "").trim(); if (!t) { $("#inLink").focus(); return; }
+    $("#inLink").value = ""; const it = await adicionarTexto(t);
+    if (it && it.id) { renderInicio(); toastAcao(`Adicionado em ${NOME_CAT[it.categoria] || "Outros"}`, "Ver na lista", () => { filtroLista = it.categoria || "todas"; irPara("postar"); }); }
+  }
+  $("#inColar").addEventListener("click", async () => {
+    if ($("#inLink").value.trim()) { cadastrarDoInicio($("#inLink").value); return; }
+    try { const t = (await navigator.clipboard.readText()).trim(); if (!t) { toast("Não tem nada copiado"); return; } cadastrarDoInicio(t); }
+    catch (e) { $("#inLink").focus(); toast("Toque e segure no campo para colar"); }
+  });
+  $("#inLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); cadastrarDoInicio($("#inLink").value); } });
+  $("#inLink").addEventListener("paste", (e) => { const t = (e.clipboardData && e.clipboardData.getData("text")) || ""; if (/https?:\/\//.test(t)) { e.preventDefault(); cadastrarDoInicio(t); } });
   function mostrarFotoPp() {
     const tem = !!(ppAtual && ppAtual.imagem);
     $("#ppFotoMini").hidden = !tem; $("#ppSemFoto").hidden = tem;
@@ -2049,17 +2162,17 @@
   }
   function abrirItemFila(item, pedirFalta) {
     ppAtual = item;
-    $("#ppListaBloco").hidden = true; $("#ppItem").hidden = false;
+    $("#ppListaBloco").hidden = !ehPC(); $("#ppItem").hidden = false; if (ehPC()) renderFila();
     mostrarFotoPp();
     $("#ppNome").value = item.nome || "";
     $("#ppAntigo").value = item.precoAntigo ? paraCampo(item.precoAntigo) : "";
     $("#ppNovo").value = item.precoNovo ? paraCampo(item.precoNovo) : "";
     $("#ppCupom").value = item.cupom || "";
     $("#ppLinkItem").value = item.link || "";
-    ppCategoria.marcar(item.categoria || "outros");
+    ppCategoria.marcar(item.categoria || "outros"); pintarCatPp(item.categoria || "outros");
     mostrarFalta(pedirFalta);
     $("#ppSalvar").hidden = !modoCompletar; pintarCampanhaBotoes(); pintarMarcados();
-    window.scrollTo({ top: 0 });
+    if (!ehPC()) window.scrollTo({ top: 0 });
   }
   function mostrarFalta(destacar) {
     const it = ppAtual; if (!it) return;
