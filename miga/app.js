@@ -72,7 +72,9 @@
     return antes + linkLoja(loja, link) + texto.slice(fim < 0 ? texto.length : fim);
   }
   const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
-  const NOME_CAT = { moda: "Moda e Looks", beleza: "Beleza e Skincare", casa: "Casa e Decoração", saude: "Saúde e Fitness", outros: "Outros" };
+  // Categorias (nicho feminino), na ordem dos destaques do Instagram
+  const NOME_CAT = { looks: "Looks", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", fitness: "Saúde e fitness", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
+  const ICONE_CAT = { looks: "👗", calcados: "👟", acessorios: "👜", perfumes: "🌸", maquiagem: "💄", skincare: "🧴", cabelo: "💇‍♀️", fitness: "🏋️‍♀️", suplementos: "💊", eletronicos: "🎧", casa: "🏡", outros: "✨" };
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
   const limparNome = (t) => String(t || "").replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "").replace(/\s{2,}/g, " ").trim();
   const viaServidor = (u) => "api/imagem?url=" + encodeURIComponent(u);
@@ -619,9 +621,19 @@
 
   /* =========================== Gerar mensagem =========================== */
   const FRASES = {
+    looks: "Esse vai deixar seu look lindo e confortável, do jeitinho que a gente ama 👗",
+    calcados: "Confortável, lindo e combina com tudo: daqueles que a gente usa todo dia 👟",
+    acessorios: "O detalhe que faz o look inteiro brilhar ✨",
+    perfumes: "Pra deixar aquele cheirinho bom por onde passar 🌸",
+    maquiagem: "Make linda e duradoura gastando pouco 💄",
+    skincare: "Pra rotina de skincare ficar completinha, com preço de amiga 🧴",
+    cabelo: "Cabelo de salão em casa, gastando bem menos 💇‍♀️",
+    fitness: "Pra manter a rotina de treino em dia, com estilo e gastando menos 💪",
+    suplementos: "Pra cuidar da saúde e dos resultados do treino, com preço justo 💊",
+    eletronicos: "Tecnologia que facilita o dia a dia, com desconto de verdade 🎧",
+    casa: "Pra deixar a casa mais aconchegante e com aquele toque especial 🏡",
     moda: "Esse vai deixar seu look lindo e confortável, do jeitinho que a gente ama 👗",
     beleza: "Pra rotina de autocuidado ficar ainda mais gostosinha 💄",
-    casa: "Pra deixar a casa mais aconchegante e com aquele toque especial 🏡",
     saude: "Pra manter a rotina de cuidado e treino em dia, gastando menos 💪",
     outros: "Daqueles achadinhos que facilitam a vida e cabem no bolso ✨"
   };
@@ -1104,7 +1116,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=149"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=150"; });
     }
     edFoto = null;
     try {
@@ -1477,7 +1489,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=149"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=150"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1604,7 +1616,7 @@
   const miniLoja = (i, foto) => `<span class="pp-mini">${foto}${i.link && LOGO_LOJA[i.loja] ? `<a class="selo-link" href="${esc(i.link)}" target="_blank" rel="noopener" data-abrir-link title="Abrir na ${esc(NOME_LOJA[i.loja])}">${seloLojaHtml(i.loja)}</a>` : seloLojaHtml(i.loja)}</span>`;
   const fotoMini = (i) => i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
   /* Categorias na Lista: filtro e categoria do produto colado ("auto" adivinha pelo nome) */
-  const CATS_LISTA = { moda: "Moda", beleza: "Beleza", casa: "Casa", saude: "Saúde e fitness", outros: "Outros" };
+  const CATS_LISTA = NOME_CAT;
   /** Folha de escolha: um botão abre a lista de opções (sem um monte de botões na tela) */
   function escolherOpcao(titulo, opcoes, atual) {
     const d = $("#folhaEscolha");
@@ -1630,11 +1642,24 @@
   const foiCompartilhado = (i) => Object.values(i.feito || {}).some(Boolean);
   function adivinharCategoria(nome) {
     const n = String(nome || "").toLowerCase();
-    if (/perfume|batom|base |maquiag|skincare|s[eé]rum|hidratante|shampoo|condicionador|cabelo|unha|esmalte|protetor solar|creme|rímel|rimel|sombra|pincel|beleza|facial/.test(n)) return "beleza";
-    if (/vestido|blusa|cal[cç]a|saia|conjunto|short|camisa|camiseta|jaqueta|casaco|bolsa|sand[aá]lia|t[eê]nis|sapato|biqu[ií]ni|lingerie|suti[aã]|moda|look|cropped|body|jeans|rel[oó]gio|brinco|colar|anel|pulseira|[oó]culos/.test(n)) return "moda";
-    if (/creatina|whey|suplement|vitamina|academia|fitness|legging|top fitness|garrafa|squeeze|halter|yoga|colágeno|colageno|treino|bicicleta/.test(n)) return "saude";
-    if (/cozinha|panela|organizador|decora|almofada|cortina|tapete|lumin|lâmpada|lampada|cadeira|mesa|sof[aá]|cama|len[cç]ol|toalha|pote|airfryer|liquidificador|cafeteira|prateleira|vaso|lixeira|casa/.test(n)) return "casa";
+    if (/perfume|col[oô]nia|eau de|body splash|deo parfum|fragr[aâ]ncia/.test(n)) return "perfumes";
+    if (/shampoo|condicionador|cabelo|capilar|chapinha|prancha|secador|escova (alisadora|secadora|rotativa)|babyliss|modelador|leave.?in|tintura|mega hair/.test(n)) return "cabelo";
+    if (/batom|\bbase\b|maquiag|r[ií]mel|m[aá]scara de c[ií]lios|sombra|pincel|blush|corretivo|delineador|gloss|p[oó] compacto|iluminador|paleta|primer|esmalte|unha|bronzer|contorno/.test(n)) return "maquiagem";
+    if (/skin ?care|s[eé]rum|hidratante|protetor solar|creme|facial|sabonete|t[oô]nico|[aá]cido|niacinamida|retinol|esfoliante|demaquilante|[aá]gua micelar|olheiras|antissinais/.test(n)) return "skincare";
+    if (/creatina|whey|suplement|vitamina|col[aá]geno|pr[eé].?treino|bcaa|prote[ií]na|[oô]mega|termog[eê]nico|multivitam|c[aá]psulas|magn[eé]sio|melatonina|glutamina|albumina/.test(n)) return "suplementos";
+    if (/t[eê]nis|sand[aá]lia|sapato|chinelo|\bbota|sapatilha|rasteirinha|scarpin|salto alto|\bmule\b|papete|crocs|tamanco|mocassim/.test(n)) return "calcados";
+    if (/bolsa|mochila|carteira|rel[oó]gio|brinco|colar|anel|pulseira|[oó]culos|bijuteria|joia|semijoia|cinto|chap[eé]u|bon[eé]|necessaire|tiara|piranha|presilha|len[cç]o/.test(n)) return "acessorios";
+    if (/academia|fitness|legging|top fitness|garrafa|squeeze|halter|yoga|treino|bicicleta|corda de pular|el[aá]stico|caneleira|balan[cç]a|massageador/.test(n)) return "fitness";
+    if (/vestido|blusa|cal[cç]a|saia|conjunto|short|camisa|camiseta|jaqueta|casaco|biqu[ií]ni|mai[oô]|lingerie|suti[aã]|calcinha|pijama|moda|look|cropped|\bbody\b|jeans|macac[aã]o|kimono|cardigan|moletom|regata/.test(n)) return "looks";
+    if (/fone|celular|smartphone|carregador|cabo usb|caixa de som|smartwatch|notebook|tablet|c[aâ]mera|ring light|power ?bank|mouse|teclado|\btv\b|alexa|echo dot|airpods|headset|kindle|bluetooth|ssd|pendrive/.test(n)) return "eletronicos";
+    if (/cozinha|panela|organizador|decora|almofada|cortina|tapete|lumin|l[aâ]mpada|cadeira|mesa|sof[aá]|cama|len[cç]ol|toalha|pote|airfryer|liquidificador|cafeteira|prateleira|vaso|lixeira|casa/.test(n)) return "casa";
     return "outros";
+  }
+  /** Categorias antigas (Moda, Beleza, Saúde) passam para as novas, pelo nome do produto */
+  function migrarCategorias() {
+    const velhas = { moda: "looks", beleza: "skincare", saude: "fitness" }; let mudou = false;
+    fila().forEach((i) => { if (i.carregando) return; const velha = !NOME_CAT[i.categoria] || velhas[i.categoria]; if (!velha && (i.catV2 || i.categoria !== "outros")) return; if (!i.catV2) { i.catV2 = true; mudou = true; } if (!velha && i.categoria === "outros" && adivinharCategoria(i.nome) === "outros") return; const g = adivinharCategoria(i.nome); const nova = g !== "outros" ? g : velhas[i.categoria] || "outros"; if (nova !== i.categoria) { i.categoria = nova; mudou = true; } });
+    if (mudou) salvarFila(true);
   }
   const contarCat = (k) => fila().filter((i) => k === "todas" || (i.categoria || "outros") === k).length;
   function renderCatsLista() {
@@ -1707,28 +1732,37 @@
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   function renderFila() {
-    renderCatsLista(); pintarMarcados();
+    migrarCategorias(); renderCatsLista(); pintarMarcados();
     const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && bateBusca(i));
     const qt = { postar: base.filter((i) => naVisao(i, "postar")).length, postados: base.filter((i) => naVisao(i, "postados")).length, todos: base.length };
-    let v = termoBusca.trim() ? abaBusca || "todos" : visaoLista; // buscando: mostra tudo (Lista e postados), a não ser que você escolha outra aba
+    const v = "todos"; // tudo numa lista só: os já postados vão para o fim, com o selo de postado
     document.querySelectorAll("#ppVisao [data-visao]").forEach((b) => { b.classList.toggle("on", b.dataset.visao === v); b.setAttribute("aria-selected", String(b.dataset.visao === v)); });
     [["#vqPostar", qt.postar], ["#vqPostados", qt.postados], ["#vqTodos", qt.todos]].forEach(([s, n]) => { $(s).textContent = n; $(s).hidden = !n; });
     pintarNovoLink();
-    const l = ordenar(base.filter((i) => naVisao(i, v)));
-    $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${l.length} produto${l.length === 1 ? "" : "s"}`;
+    const l0 = ordenar(base), l = [...l0.filter((i) => !foiCompartilhado(i)), ...l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0))];
+    pintarCats();
+    const np = l.filter((i) => !foiCompartilhado(i)).length, nd = l.length - np;
+    $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}`;
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
       return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}"><button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           <span class="meta">${i.precoNovo ? `<b>${brl(i.precoNovo)}</b> · ` : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
-          ${post ? `<span class="hi-quando">Postado ${dataCurta(i.postadoEm || i.criadoEm)}${onde.length ? ` · ${esc(onde.join(", "))}` : ""}</span>` : ""}
+          ${post ? `<span class="selo-postado"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Postado${onde.length ? ` no ${esc(onde.join(", "))}` : ""} · ${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
         <span class="seta">›</span>
       </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`
         : `<div class="pp-acoes-linha">${post ? `<button type="button" class="pp-mini-bt" data-restaurar="${esc(i.id)}" aria-label="Voltar para Para postar" title="Postar de novo"><svg><use href="#i-restaurar"/></svg></button>` : `<button type="button" class="pp-mini-bt pp-lixo-bt" data-excluir="${esc(i.id)}" aria-label="Tirar ${esc(i.nome || "produto")} da lista" title="Tirar da lista"><svg><use href="#i-lixo"/></svg></button>`}<button type="button" class="pp-mini-bt" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome || "produto")}"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button></div>`}</div>`; };
-    const vazio = termoBusca.trim() ? (ehLink(termoBusca) ? "" : "Nada encontrado com essa busca.") : v === "postados" ? "O que você postar aparece aqui, com a data e onde foi postado." : fila().some((i) => !foiCompartilhado(i)) ? "Nenhum produto nessa categoria." : fila().length ? "Tudo postado! Veja na aba “Postados”." : "Cole aqui os links dos produtos que você vai divulgar.";
-    $("#ppLista").innerHTML = (v === "postar" && !termoBusca.trim() ? painelHoje() : "") + (l.length ? l.map(linha).join("") : vazio ? `<p class="vazio-lista">${vazio}</p>` : "");
+    const vazio = termoBusca.trim() ? (ehLink(termoBusca) ? "" : "Nada encontrado com essa busca.") : filtroLista !== "todas" ? `Nenhum produto em ${NOME_CAT[filtroLista] || "nessa categoria"} ainda.` : "Cole aqui os links dos produtos que você vai divulgar.";
+    $("#ppLista").innerHTML = (!termoBusca.trim() && filtroLista === "todas" ? painelHoje() : "") + (l.length ? l.map(linha).join("") : vazio ? `<p class="vazio-lista">${vazio}</p>` : "");
     pintarMarcados();
+  }
+  /** Início: blocos das categorias, com quantos faltam postar em cada */
+  function pintarCats() {
+    const box = $("#ppCats"); if (!box) return;
+    const faltam = (k) => fila().filter((i) => !i.carregando && !foiCompartilhado(i) && (k === "todas" || (i.categoria || "outros") === k)).length;
+    box.innerHTML = [...Object.entries(NOME_CAT).map(([k, n]) => [k, n, ICONE_CAT[k]])].map(([k, n, ic]) => { const q = faltam(k);
+      return `<button type="button" class="pp-cat${filtroLista === k ? " on" : ""}${!q && k !== "todas" ? " vazia" : ""}" data-cat="${k}"><span class="pp-cat__ic">${ic}</span><b>${esc(n)}</b>${q ? `<i>${q}</i>` : ""}</button>`; }).join("");
   }
   /** Colou um link novo: cartão "Produto novo" com o botão de adicionar */
   function pintarNovoLink() {
@@ -1817,6 +1851,7 @@
       if (ehLink(t) && $("#ppNovoLink").hidden) toast("Esse produto já está nos seus produtos"); }
     catch (e) { $("#ppLink").focus(); toast("Toque e segure no campo para colar"); }
   });
+  $("#ppCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = filtroLista === b.dataset.cat ? "todas" : b.dataset.cat; renderFila(); });
   $("#ppVisao").addEventListener("click", (e) => { const b = e.target.closest("[data-visao]"); if (!b) return; if (termoBusca.trim()) { abaBusca = b.dataset.visao; renderFila(); return; } visaoLista = b.dataset.visao; try { localStorage.setItem("miga_visao", visaoLista); } catch (er) { /* segue */ } if (modoVarios) marcados.clear(); renderFila(); });
   $("#ppLimpar").addEventListener("click", async () => {
     const prontos = fila().filter((i) => Object.values(i.feito || {}).some(Boolean));
@@ -1840,7 +1875,7 @@
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
-    const noHist = !$("#aba-historico").hidden || (!$("#aba-postar").hidden && visaoLista !== "postar"); $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
+    const noHist = !$("#aba-historico").hidden || (!$("#aba-postar").hidden && [...marcados].some((id) => { const i = fila().find((x) => x.id === id); return i && foiCompartilhado(i); })); $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
     const visH = [...document.querySelectorAll("#historico [data-marcar]")].map((x) => x.dataset.marcar);
     $("#hiTodosCx").classList.toggle("on", !!visH.length && visH.every((id) => marcados.has(id)));
     $("#ppTodos").hidden = !modoVarios; $("#ppTotal").hidden = modoVarios; $("#ppFiltrar").hidden = modoVarios;
@@ -1861,10 +1896,7 @@
     desconto: ["5 com maior desconto", (l) => [...l].filter(descontoDe).sort((x, y) => descontoDe(y) - descontoDe(x)).slice(0, 5)],
     recentes: ["5 mais recentes", (l) => [...l].sort((x, y) => (y.criadoEm || 0) - (x.criadoEm || 0)).slice(0, 5)],
     parados: ["Parados há 7+ dias", () => parados()],
-    beleza: ["Beleza", (l) => l.filter((i) => i.categoria === "beleza")],
-    casa: ["Casa", (l) => l.filter((i) => i.categoria === "casa")],
-    moda: ["Moda", (l) => l.filter((i) => i.categoria === "moda")],
-    saude: ["Saúde e fitness", (l) => l.filter((i) => i.categoria === "saude")]
+    ...Object.fromEntries(Object.entries(NOME_CAT).map(([k, n]) => [k, [n, (l) => l.filter((i) => (i.categoria || "outros") === k)]]))
   };
   $("#ppSelecionar").addEventListener("click", () => { if (modoVarios) sairModoVarios(); else entrarModoVarios(); });
   $("#ppTodos").addEventListener("click", () => {
