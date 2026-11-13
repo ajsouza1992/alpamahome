@@ -81,7 +81,7 @@
   /** Ícone pequeno no estilo Selo suave (círculo rosa-claro) para botões e listas */
   const icSelo = (k, extra = "") => ICONES_MIGA[k] ? `<svg class="ic-selo${extra}" viewBox="0 0 24 24" aria-hidden="true">${icPath(k)}</svg>` : "";
   const ICONE_CAT = Object.fromEntries(["looks", "fitness", "calcados", "acessorios", "perfumes", "maquiagem", "skincare", "suplementos", "eletronicos", "casa", "outros"].map((k) => [k, icPath(k)]));
-  ICONE_CAT.cabelo = '<path d="M4 9a5 5 0 0 1 10 0v1H4z"/><path d="M14 8h6v3h-6"/><path d="M8 10v6a2 2 0 0 0 4 0v-6"/>';
+  ICONE_CAT.cabelo = '<circle cx="9" cy="10" r="6"/><circle cx="9" cy="10" r="2"/><path d="M15 8h5.5v4H15"/><path d="M7 16l-1 5h3.5l1-5.2"/>';
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
   const limparNome = (t) => String(t || "").replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "").replace(/\s{2,}/g, " ").trim();
   const viaServidor = (u) => "api/imagem?url=" + encodeURIComponent(u);
@@ -1188,7 +1188,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=162"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=163"; });
     }
     edFoto = null;
     try {
@@ -1562,7 +1562,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=162"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=163"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
