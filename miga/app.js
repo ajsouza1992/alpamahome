@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=132"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=133"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=132"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=133"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3499,7 +3499,7 @@
     document.querySelectorAll("[data-vd-tema]").forEach((b) => quadroVideo(b.querySelector("canvas").getContext("2d"), 270, 480, v, { ...V, tema: b.dataset.vdTema }));
   }
   /* ---------- Reels: abertura, final e a musiquinha do Miga ---------- */
-  const T_ABERTURA = 3.8, T_FINAL = 3.8, T_SO_FOTO = 5;
+  const T_ABERTURA = 3.8, T_FINAL = 5.2, T_SO_FOTO = 5;
   const duracaoMeio = () => { const V = vd(); return V.semVideo ? T_SO_FOTO : (V.duracao || 10); };
   const duracaoReels = () => { const V = vd(); return (V.abertura ? T_ABERTURA : 0) + duracaoMeio() + (V.final ? T_FINAL : 0); };
   async function fotoDoVideo() {
@@ -3817,8 +3817,9 @@
     rec.start(); manterTelaAcesa(true);
     await new Promise((ok) => {
       const passo = async () => {
-        const t = agora();
-        if (t >= total) { ok(); return; }
+        const t = Math.min(agora(), total + 0.5);
+        if (t >= total + 0.45) { ok(); return; } // folga: segura a tela final um pouco, o celular às vezes perde os últimos quadros
+        if (t >= total) { quadroFinal(ctx, W, total - tA - tM, V); previa.drawImage(tela, 0, 0, 540, 960); requestAnimationFrame(passo); return; }
         if (t < tA) { quadroAbertura(ctx, W, Math.max(0, t), V); if (v && !videoTocando && t > tA - 0.15) { videoTocando = true; v.play().catch(() => { v.muted = true; v.play().catch(() => {}); }); } } // começa um tiquinho antes, para cair no tempo
         else if (t < tA + tM) {
           if (v && !videoTocando) { videoTocando = true; try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) { /* segue */ } } }
@@ -4389,14 +4390,14 @@
     aulas: { nome: "Volta às aulas", desc: "house", musica: "house", tag: "Volta às aulas", titulo: "Volta às\n*aulas*", sub: () => "Material e mochila com desconto", icone: "bolsa", cat: true },
     sohoje: { nome: "Só hoje", desc: "Phonk", musica: "phonk", tag: "Só hoje", titulo: "*Só hoje*\nnesse preço", sub: () => "Amanhã pode voltar", icone: "fogo" }
   };
-  let T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 3.4;
+  let T_INTRO = 2.6, T_PROD = 3.6, T_FIM = 4.8;
   /** As telas duram um número exato de tempos da batida do modelo */
   Object.values(MODELOS_REELS).forEach((m) => { if (ALIAS_MUS[m.musica]) m.musica = ALIAS_MUS[m.musica]; if (NOMES_MUSICA[m.musica]) m.desc = NOMES_MUSICA[m.musica][0] + (String(m.desc).includes(" · ") ? " · " + m.desc.split(" · ").slice(1).join(" · ") : ""); });
   Object.values(CAMPANHAS).forEach((c) => { if (ALIAS_MUS[c.musica]) c.musica = ALIAS_MUS[c.musica]; });
   const musicaDe = (R) => MUSICAS[R.musica] ? R.musica : (CAMPANHAS[R.camp] && CAMPANHAS[R.camp].musica) || MODELOS_REELS[R.modelo].musica;
   function temposDoModelo(R) {
     const bt = ajustarGrade(MUSICAS[musicaDe(typeof R === "string" ? { modelo: R } : R)].bpm);
-    T_INTRO = emTempos(2.6, bt); T_PROD = emTempos(3.6, bt); T_FIM = emTempos(3.4, bt);
+    T_INTRO = emTempos(2.6, bt); T_PROD = emTempos(3.6, bt); T_FIM = emTempos(4.8, bt);
   }
   const limiteReels = () => (wz.reels && wz.reels.carrossel ? 8 : 5);
   function rr() { if (!wz.reels) wz.reels = { itens: [], modelo: "achadinho", cor: "rosa", resultado: null }; return wz.reels; }
@@ -5026,8 +5027,8 @@
     await new Promise((ok) => {
       const passo = () => {
         const t = agora();
-        if (parado || t >= total) { ok(); return; }
-        quadroReels(ctx, W, Math.max(0, t), R, l, fotos);
+        if (parado || t >= total + (gravar ? 0.45 : 0)) { ok(); return; } // folga ao gravar: o celular às vezes perde os últimos quadros
+        quadroReels(ctx, W, Math.min(Math.max(0, t), total - 0.01), R, l, fotos);
         if (gravar && previa) previa.drawImage(tela, 0, 0, 540, 960);
         if (btn) btn.textContent = (gravar ? "Gravando… " : "Tocando… ") + Math.min(100, Math.round((t / total) * 100)) + "%";
         if (gravar && barra) barra.querySelector("i").style.width = Math.min(100, (t / total) * 100) + "%";
