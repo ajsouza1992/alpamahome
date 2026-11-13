@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=187"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=188"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=187"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=188"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -5633,13 +5633,24 @@
       for (let i = 0; i < 10; i++) { const g = (i / 10) * Math.PI * 2; ctx.save(); ctx.rotate(g); poli([[-14, -64], [14, -64], [0, -98]], AMAR); ctx.restore(); }
       bola(0, 0, 56, AMAR); brilhoBranco(-20, -22, 12, 7);
     }
-    else if (nome === "pincel") { // pincel de maquiagem em pé: cerdas grandes com pó rosa
-      ctx.rotate(0.28);
-      retArredondado(ctx, -16, 30, 32, 72, 14); contorno(ROSA); brilhoBranco(-6, 60, 4, 16, 0);
-      retArredondado(ctx, -24, 4, 48, 34, 8); contorno(AMAR); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillRect(-14, 10, 6, 22);
-      const cerdas = () => { ctx.beginPath(); ctx.moveTo(-24, 6); ctx.bezierCurveTo(-58, -30, -50, -102, 0, -102); ctx.bezierCurveTo(50, -102, 58, -30, 24, 6); ctx.closePath(); };
-      cerdas(); contorno("#5a4146"); ctx.save(); cerdas(); ctx.clip(); ctx.beginPath(); ctx.ellipse(0, -96, 56, 36, 0, 0, Math.PI * 2); ctx.fillStyle = "#f59ab8"; ctx.fill(); ctx.restore(); cerdas(); ctx.stroke();
-      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-14, -6); ctx.quadraticCurveTo(-24, -40, -10, -64); ctx.moveTo(10, -6); ctx.quadraticCurveTo(18, -36, 12, -56); ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
+    else if (nome === "pincel") { // pincel de blush: cabo afinando, aro dourado e cerdas em degradê com pó rosa
+      ctx.rotate(0.62);
+      // cabo
+      ctx.beginPath(); ctx.moveTo(-17, 18); ctx.lineTo(17, 18); ctx.lineTo(9, 104); ctx.quadraticCurveTo(0, 112, -9, 104); ctx.closePath();
+      { const g = ctx.createLinearGradient(-17, 0, 17, 0); g.addColorStop(0, "#ff7aa6"); g.addColorStop(0.55, "#e8336d"); g.addColorStop(1, "#b81c52"); contorno(g); }
+      ctx.beginPath(); ctx.moveTo(-8, 28); ctx.lineTo(-4, 92); ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineCap = "round"; ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
+      // aro
+      retArredondado(ctx, -22, -14, 44, 36, 6); { const g = ctx.createLinearGradient(-22, 0, 22, 0); g.addColorStop(0, "#fff1b0"); g.addColorStop(0.45, "#ffd23f"); g.addColorStop(1, "#d99a12"); contorno(g); }
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-22, 2); ctx.lineTo(22, 2); ctx.stroke(); ctx.lineWidth = 11;
+      // cerdas
+      const cerdas = () => { ctx.beginPath(); ctx.moveTo(-22, -12); ctx.bezierCurveTo(-34, -40, -52, -76, -38, -96); ctx.quadraticCurveTo(0, -122, 38, -96); ctx.bezierCurveTo(52, -76, 34, -40, 22, -12); ctx.closePath(); };
+      cerdas(); { const g = ctx.createLinearGradient(0, -12, 0, -112); g.addColorStop(0, "#3b2a2e"); g.addColorStop(0.45, "#7a4a58"); g.addColorStop(0.75, "#f08cb0"); g.addColorStop(1, "#ffc2d6"); contorno(g); }
+      ctx.save(); cerdas(); ctx.clip(); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.28)";
+      [-26, -14, -2, 10, 22].forEach((x) => { ctx.beginPath(); ctx.moveTo(x * 0.6, -12); ctx.quadraticCurveTo(x * 1.2, -60, x, -108); ctx.stroke(); }); ctx.restore();
+      cerdas(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-16, -84, 6, 14, -0.4, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fill();
+      // pozinho rosa saindo
+      ctx.fillStyle = "#f59ab8"; [[40, -112, 7], [56, -96, 5], [30, -128, 4.5], [62, -118, 3.5]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
     }
     else if (nome === "balao") {
       poli([[-46, 40], [-66, 92], [-4, 46]], BRANCO);
