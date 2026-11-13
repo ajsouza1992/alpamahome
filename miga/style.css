@@ -1706,3 +1706,10 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .mod-editar__ic { flex: none; display: grid; place-items: center; width: 54px; height: 96px; border-radius: 8px; background: var(--campo); color: var(--preto); }
 .folha-est .mod-editar__ic { width: 78px; height: 139px; }
 .mod-editar__ic svg.ic-mono { width: 28px; height: 28px; }
+/* Quando o nome quebra em 2 linhas, só o texto desce: o ícone fica sempre no mesmo lugar */
+.in-acao, .fi-acao, #folhaItemOps .fi-op, #inCats .pp-cat, .folha-cat .pp-cat, .pp-cat { align-content: start !important; }
+.in-acao { grid-template-rows: 46px auto; padding-top: 14px; }
+.fi-acao { grid-template-rows: 46px auto; }
+#folhaItemOps .fi-op { grid-template-rows: 38px auto; padding-top: 16px; }
+.pp-cat { grid-template-rows: 46px auto; }
+.in-acao > :not(svg), .fi-acao > :not(svg) { line-height: 1.2; }

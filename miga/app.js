@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=182"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=183"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=182"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=183"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3560,7 +3560,7 @@
   /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
   const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
   const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
-  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis"];
+  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "foguete", "bomba", "corra", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao"];
   const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
   let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
@@ -5420,7 +5420,101 @@
       ctx.beginPath(); ctx.moveTo(-96, -6); ctx.lineTo(0, -92); ctx.lineTo(96, -6); ctx.closePath(); contorno(ROSA);
       retArredondado(ctx, -74, -10, 148, 106, 8); contorno("#ffffff"); retArredondado(ctx, -20, 30, 40, 66, 6); contorno(AMAR);
     }
+    else desenharFigNova(ctx, nome, contorno, estrela, ROSA, AMAR, PRETO);
     ctx.restore();
+  }
+  /** Figurinhas novas (mesmo traço: contorno preto grosso, rosa, amarelo e branco). Desenhadas em -100..100. */
+  function desenharFigNova(ctx, nome, contorno, estrela, ROSA, AMAR, PRETO) {
+    const AZUL = "#9fd8ff", BRANCO = "#ffffff";
+    const traco = (pts, cor, larg = 18) => { ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath(); pts.forEach(([x, y], i) => ctx[i ? "lineTo" : "moveTo"](x, y));
+      ctx.lineWidth = larg + 22; ctx.strokeStyle = PRETO; ctx.stroke(); ctx.lineWidth = larg; ctx.strokeStyle = cor; ctx.stroke(); ctx.restore(); };
+    const poli = (pts, cor) => { ctx.beginPath(); pts.forEach(([x, y], i) => ctx[i ? "lineTo" : "moveTo"](x, y)); ctx.closePath(); contorno(cor); };
+    const bola = (x, y, r, cor) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); contorno(cor); };
+    const brilhoBranco = (x, y, rx, ry, g = -0.6) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, g, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fill(); };
+    if (nome === "foguete") {
+      ctx.rotate(0.6);
+      poli([[-38, 30], [-72, 72], [-38, 62]], ROSA); poli([[38, 30], [72, 72], [38, 62]], ROSA);
+      ctx.beginPath(); ctx.moveTo(-22, 62); ctx.quadraticCurveTo(0, 125, 22, 62); ctx.closePath(); contorno(AMAR);
+      ctx.beginPath(); ctx.moveTo(0, -100); ctx.bezierCurveTo(55, -70, 50, 20, 38, 66); ctx.lineTo(-38, 66); ctx.bezierCurveTo(-50, 20, -55, -70, 0, -100); ctx.closePath(); contorno(BRANCO);
+      bola(0, -22, 20, AZUL); brilhoBranco(-6, -28, 7, 4);
+    }
+    else if (nome === "bomba") {
+      ctx.beginPath(); ctx.moveTo(40, -58); ctx.bezierCurveTo(60, -95, 85, -70, 80, -98); ctx.lineWidth = 11; ctx.strokeStyle = PRETO; ctx.stroke();
+      retArredondado(ctx, 18, -70, 40, 34, 6); ctx.save(); ctx.translate(0, 0); contorno("#4a4a50"); ctx.restore();
+      bola(-12, 18, 76, "#2f2f35"); brilhoBranco(-40, -12, 18, 10);
+      estrela(82, -98, 26, AMAR);
+    }
+    else if (nome === "corra") {
+      [[-100, -50, -55], [-104, -18, -70], [-96, 14, -62]].forEach(([x1, y, x2]) => { ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.lineWidth = 11; ctx.strokeStyle = PRETO; ctx.stroke(); });
+      traco([[0, 18], [-34, 44], [-74, 34]], ROSA); traco([[0, 18], [38, 50], [24, 94]], ROSA);
+      traco([[18, -36], [-22, -14], [-44, -36]], ROSA); traco([[18, -36], [52, -6], [80, -26]], ROSA);
+      traco([[22, -44], [0, 18]], ROSA, 26);
+      bola(34, -78, 24, AMAR);
+    }
+    else if (nome === "flor") {
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; bola(Math.cos(a) * 52, Math.sin(a) * 52 - 6, 38, ROSA); }
+      bola(0, -6, 34, AMAR); brilhoBranco(-12, -18, 8, 5);
+    }
+    else if (nome === "sacola") {
+      ctx.beginPath(); ctx.arc(0, -40, 34, Math.PI, 0); ctx.lineWidth = 12; ctx.strokeStyle = PRETO; ctx.stroke();
+      retArredondado(ctx, -72, -40, 144, 132, 14); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(0, 50); ctx.bezierCurveTo(-40, 20, -30, -8, 0, 8); ctx.bezierCurveTo(30, -8, 40, 20, 0, 50); ctx.closePath(); contorno(BRANCO);
+    }
+    else if (nome === "caminhao") {
+      retArredondado(ctx, -98, -60, 122, 100, 10); contorno(AMAR);
+      poli([[24, -28], [66, -28], [96, 8], [96, 40], [24, 40]], ROSA);
+      poli([[38, -16], [62, -16], [82, 8], [38, 8]], AZUL);
+      [[-58, 50], [58, 50]].forEach(([x, y]) => { bola(x, y, 22, "#3a3a40"); bola(x, y, 7, BRANCO); });
+    }
+    else if (nome === "celular") {
+      retArredondado(ctx, -56, -98, 112, 196, 24); contorno("#2f2f35");
+      retArredondado(ctx, -42, -78, 84, 146, 12); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(0, 30); ctx.bezierCurveTo(-40, 0, -28, -36, 0, -18); ctx.bezierCurveTo(28, -36, 40, 0, 0, 30); ctx.closePath(); contorno(BRANCO);
+      bola(0, 84, 7, BRANCO);
+    }
+    else if (nome === "sino") {
+      bola(0, 72, 16, ROSA);
+      ctx.beginPath(); ctx.moveTo(-72, 44); ctx.quadraticCurveTo(-58, 20, -58, -18); ctx.bezierCurveTo(-58, -100, 58, -100, 58, -18); ctx.quadraticCurveTo(58, 20, 72, 44); ctx.closePath(); contorno(AMAR);
+      retArredondado(ctx, -84, 38, 168, 24, 12); contorno(AMAR); bola(0, -92, 11, AMAR); brilhoBranco(-28, -40, 9, 18, 0.3);
+    }
+    else if (nome === "olhos") {
+      [-46, 46].forEach((x) => { ctx.beginPath(); ctx.ellipse(x, 0, 40, 58, 0, 0, Math.PI * 2); contorno(BRANCO); ctx.beginPath(); ctx.arc(x + 10, 16, 20, 0, Math.PI * 2); ctx.fillStyle = PRETO; ctx.fill(); ctx.beginPath(); ctx.arc(x + 16, 8, 6, 0, Math.PI * 2); ctx.fillStyle = BRANCO; ctx.fill(); });
+    }
+    else if (nome === "carteira") {
+      retArredondado(ctx, -62, -86, 112, 44, 8); contorno(BRANCO);
+      retArredondado(ctx, -92, -56, 184, 124, 20); contorno(ROSA);
+      retArredondado(ctx, 28, -20, 74, 52, 14); contorno(AMAR); bola(56, 6, 9, PRETO);
+    }
+    else if (nome === "diamante") {
+      poli([[-84, -28], [-46, -76], [46, -76], [84, -28], [0, 88]], AZUL);
+      ctx.lineWidth = 8; ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(-84, -28); ctx.lineTo(84, -28); ctx.moveTo(-46, -76); ctx.lineTo(-22, -28); ctx.lineTo(0, 88); ctx.lineTo(22, -28); ctx.lineTo(46, -76); ctx.moveTo(-22, -28); ctx.lineTo(0, -76); ctx.lineTo(22, -28); ctx.stroke();
+      brilhoBranco(-40, -52, 10, 5);
+    }
+    else if (nome === "coroa") {
+      poli([[-86, 46], [-86, -44], [-44, 0], [0, -76], [44, 0], [86, -44], [86, 46]], AMAR);
+      retArredondado(ctx, -88, 38, 176, 34, 10); contorno(AMAR);
+      [[-86, -48], [0, -80], [86, -48]].forEach(([x, y]) => bola(x, y, 13, ROSA)); bola(0, 55, 10, ROSA);
+    }
+    else if (nome === "calendario") {
+      retArredondado(ctx, -82, -66, 164, 156, 18); contorno(BRANCO);
+      ctx.save(); ctx.beginPath(); ctx.rect(-90, -80, 180, 56); ctx.clip(); retArredondado(ctx, -82, -66, 164, 156, 18); contorno(ROSA); ctx.restore();
+      ctx.lineWidth = 11; ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(-82, -24); ctx.lineTo(82, -24); ctx.stroke();
+      [-44, 44].forEach((x) => { retArredondado(ctx, x - 9, -90, 18, 40, 8); contorno(AMAR); });
+      ctx.fillStyle = ROSA; ctx.font = "900 74px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("11", 0, 36);
+    }
+    else if (nome === "lupa") {
+      traco([[30, 30], [82, 82]], ROSA, 22);
+      bola(-18, -18, 60, AZUL); brilhoBranco(-40, -42, 16, 9);
+    }
+    else if (nome === "vestido") {
+      poli([[-26, -96], [-22, -52], [-44, -36], [-26, -16], [-84, 92], [84, 92], [26, -16], [44, -36], [22, -52], [26, -96], [12, -96], [10, -58], [-10, -58], [-12, -96]], ROSA);
+      retArredondado(ctx, -32, -24, 64, 16, 6); contorno(AMAR);
+    }
+    else if (nome === "balao") {
+      poli([[-46, 40], [-66, 92], [-4, 46]], BRANCO);
+      retArredondado(ctx, -94, -74, 188, 124, 44); contorno(BRANCO);
+      [-40, 0, 40].forEach((x) => bola(x, -12, 12, ROSA));
+    }
   }
   function tituloReels(ctx, texto, y, C, tam) {
     const linhas = linhasTitulo(texto); ctx.font = `800 ${tam}px Poppins`;
@@ -5674,7 +5768,7 @@
     x.restore();
   }
   /** Prompt para pedir o carrossel a uma IA (Gemini, ChatGPT…) e colar a resposta aqui */
-  const promptCartas = (assunto) => `Você vai criar um carrossel para o Instagram da Miga Promo: perfil de achadinhos e promoções da Shopee, Mercado Livre e Amazon, para mulheres. Tom de amiga, alegre e direto, frases curtas, português do Brasil.
+  const promptCartas = (assunto) => `Você vai criar um carrossel para o Instagram da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}): perfil de achadinhos e promoções da Shopee, Mercado Livre e Amazon, para mulheres. Tom de amiga, alegre e direto, frases curtas, português do Brasil.
 
 ASSUNTO DO CARROSSEL: ${assunto}
 QUANTIDADE DE TELAS: de 5 a 8 (você decide)
@@ -5683,6 +5777,7 @@ Regras:
 - A tela 1 é a capa: um gancho forte que dá vontade de arrastar para o lado.
 - As telas do meio ensinam (uma dica por tela, numeradas: *1.*, *2.*...).
 - A última tela chama para seguir o perfil e entrar no canal do WhatsApp (link na bio).
+- O @ do perfil é ${arroba(config.instagram) || "@migapromo.oficial"}: escreva sempre exatamente assim, completo.
 - Comece pela cor "branco" e depois alterne entre "rosa", "creme" e "preto".
 
 Campos de cada tela:
@@ -5691,7 +5786,6 @@ Campos de cada tela:
 - titulo: até 40 letras. Coloque *asteriscos* em volta de 1 palavra para destacar. Use \\n para quebrar a linha.
 - texto: até 140 letras (pode ser "")
 - botao: até 30 letras, só se fizer sentido (ex.: "Arrasta pro lado →"); senão ""
-- alt: texto alternativo da imagem (descreva a imagem para quem não enxerga: cor do fundo, figurinha e o que está escrito), até 250 letras
 - Pode usar emojis.
 
 Crie também:
@@ -5700,17 +5794,36 @@ Crie também:
 Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
 {"legenda": "Texto da legenda...\\n\\n#tag1 #tag2 #tag3 #tag4 #tag5",
  "telas": [
-  {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →", "alt": "Fundo branco com um ícone de porcentagem e o título Pague menos nas compras online..."},
-  {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": "", "alt": "Fundo rosa com um carrinho de compras..."}
+  {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →"},
+  {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": ""}
  ]}`;
+  const NOME_FIG = { brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa" };
+  const semDestaque = (s) => String(s || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " ").trim();
+  /** Texto alternativo feito pelo app: diz o que aparece e copia exatamente o que está escrito na imagem */
+  function altCarta(tela, i, n) {
+    const cor = { branco: "branco", rosa: "rosa", creme: "creme", preto: "preto" }[tela.cor] || "branco";
+    const partes = [`Imagem ${i + 1} de ${n}. Arte de fundo ${cor}${tela.ic ? ` com a figurinha de ${NOME_FIG[tela.ic] || tela.ic}` : ""}.`];
+    if (tela.titulo) partes.push(`Título: "${semDestaque(tela.titulo)}".`); if (tela.texto) partes.push(`Texto: "${semDestaque(tela.texto)}".`); if (tela.botao) partes.push(`Botão: "${semDestaque(tela.botao)}".`);
+    return partes.join(" ");
+  }
+  function altChamada(CH) {
+    const D = dadosChamada(CH), cor = (CORES_CHAMADA[CH.cor] || CORES_CHAMADA.preto).nome.toLowerCase();
+    return `Vídeo de fundo ${cor}. Tela 1: etiqueta "${D.etiqueta}" e o texto "${semDestaque(D.t1)} ${semDestaque(D.t2)} ${D.palavra}", com figurinhas de ${NOME_FIG[D.ic[0]] || ""} e ${NOME_FIG[D.ic[1]] || ""}, e "${D.sub}". Tela 2: "${D.frase.map(semDestaque).join(" ")}". Tela 3: "${semDestaque(D.lista)}" ${D.itens.filter(Boolean).join(", ")}. Tela 4: "${semDestaque(D.cta1)} ${D.cta2}"${D.arroba ? `, ${D.arroba}` : ""} e "${D.toque}".`.replace(/ ,/g, ",");
+  }
+  /** Aceita a resposta da IA mesmo com quebras de linha dentro dos textos */
+  function jsonTolerante(s) {
+    let out = "", dentro = false, esc2 = false;
+    for (const ch of s.replace(/[“”]/g, '"')) { if (dentro) { if (esc2) { esc2 = false; out += ch; continue; } if (ch === "\\") { esc2 = true; out += ch; continue; } if (ch === '"') dentro = false; if (ch === "\n") { out += "\\n"; continue; } if (ch === "\r") continue; out += ch; } else { if (ch === '"') dentro = true; out += ch; } }
+    return JSON.parse(out);
+  }
   /** Lê a resposta da IA (o bloco [ ... ]) e monta as telas */
   function lerRespostaCartas(txt) {
-    const lim = (s) => s.replace(/[“”]/g, '"'); let l = null, legenda = "";
+    let l = null, legenda = "";
     const i0 = txt.indexOf("{"), j0 = txt.lastIndexOf("}");
-    if (i0 >= 0 && (txt.indexOf("[") < 0 || i0 < txt.indexOf("["))) { try { const o = JSON.parse(lim(txt.slice(i0, j0 + 1))); l = o.telas; legenda = String(o.legenda || ""); } catch (e) { l = null; } }
-    if (!l) { const i = txt.indexOf("["), j = txt.lastIndexOf("]"); if (i < 0 || j < i) return null; try { l = JSON.parse(lim(txt.slice(i, j + 1))); } catch (e) { return null; } }
+    if (i0 >= 0 && (txt.indexOf("[") < 0 || i0 < txt.indexOf("["))) { try { const o = jsonTolerante(txt.slice(i0, j0 + 1)); l = o.telas; legenda = String(o.legenda || ""); } catch (e) { l = null; } }
+    if (!l) { const i = txt.indexOf("["), j = txt.lastIndexOf("]"); if (i < 0 || j < i) return null; try { l = jsonTolerante(txt.slice(i, j + 1)); } catch (e) { return null; } }
     if (!Array.isArray(l) || !l.length) return null;
-    const telas = l.slice(0, 10).map((o) => ({ alt: String(o.alt || "").slice(0, 400), cor: CORES_CARTA[String(o.cor || "").toLowerCase()] ? String(o.cor).toLowerCase() : "branco", ic: FIGURAS.includes(o.figurinha) ? o.figurinha : "",
+    const telas = l.slice(0, 10).map((o) => ({ alt: "", cor: CORES_CARTA[String(o.cor || "").toLowerCase()] ? String(o.cor).toLowerCase() : "branco", ic: FIGURAS.includes(o.figurinha) ? o.figurinha : "",
       titulo: String(o.titulo || "").slice(0, 80), texto: String(o.texto || "").slice(0, 200), botao: String(o.botao || "").slice(0, 34) }));
     return { telas, legenda };
   }
@@ -5723,7 +5836,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="ch-campo"><span>Do que vai falar?</span><input id="kaAssunto" maxlength="120" placeholder="Ex.: como achar cupom na Shopee" value="${esc(K.assunto || "")}"></label>
         <div class="duas"><button type="button" class="btn btn--branco" id="kaPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="kaColar">Colar resposta da IA</button></div></div>
       <div class="ka-previa"><canvas id="kaQuadro" width="540" height="540"></canvas></div>
-      <div class="ka-alt"><span>Texto alternativo da tela ${K.sel + 1}</span><p>${esc(s.alt || "Ainda sem texto alternativo (a IA cria, ou escreva no campo abaixo).")}</p>${s.alt ? '<button type="button" class="link-sel" id="kaCopiarAlt">Copiar</button>' : ""}</div>
+      <div class="ka-alt"><span>Texto alternativo da tela ${K.sel + 1}</span><p>${esc(s.alt || altCarta(s, K.sel, T.length))}</p><button type="button" class="link-sel" id="kaCopiarAlt">Copiar</button></div>
       <div class="ka-telas">${T.map((t, i) => `<button type="button" class="ka-mini${i === K.sel ? " on" : ""}" data-ka-sel="${i}"><canvas width="120" height="120" data-ka-mini="${i}"></canvas><i>${i + 1}</i></button>`).join("")}${T.length < 10 ? '<button type="button" class="ka-mini ka-mais" data-ka-add>＋<small>Nova tela</small></button>' : ""}</div>
       <div class="ka-ops"><button type="button" class="btn btn--branco" data-ka-mover="-1" ${K.sel === 0 ? "disabled" : ""}>← Mover</button><button type="button" class="btn btn--branco" data-ka-mover="1" ${K.sel === T.length - 1 ? "disabled" : ""}>Mover →</button><button type="button" class="btn btn--branco" data-ka-dup>Duplicar</button><button type="button" class="btn btn--branco ka-del" data-ka-del ${T.length <= 1 ? "disabled" : ""}>Excluir</button></div>
       <h3 class="ch-tela">Tela ${K.sel + 1}</h3>
@@ -5733,7 +5846,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       <label class="ch-campo"><span>Texto</span><textarea data-ka-campo="texto" rows="3" maxlength="200">${esc(s.texto || "")}</textarea></label>
       <label class="ch-campo"><span>Botão amarelo (deixe vazio para não ter)</span><input data-ka-campo="botao" maxlength="34" value="${esc(s.botao || "")}"></label>
       <b class="ch-rot">Emojis (entram no campo que você tocou por último)</b><div class="ka-emojis">${EMOJIS_CARTA.map((e) => `<button type="button" data-ka-emoji="${e}">${e}</button>`).join("")}</div>
-      <label class="ch-campo"><span>Texto alternativo desta tela</span><textarea data-ka-campo="alt" rows="2" maxlength="400">${esc(s.alt || "")}</textarea></label>
+      <label class="ch-campo"><span>Texto alternativo desta tela (o app escreve sozinho; se quiser, escreva o seu)</span><textarea data-ka-campo="alt" rows="2" maxlength="400" placeholder="${esc(altCarta(s, K.sel, T.length))}">${esc(s.alt || "")}</textarea></label>
       <label class="ch-campo"><span>Legenda do post</span><textarea id="kaLegenda" rows="6" maxlength="2200" placeholder="A IA cria a legenda com 5 hashtags, ou escreva aqui">${esc(K.legenda || "")}</textarea></label>
       <div class="duas"><button type="button" class="btn btn--branco" id="kaCopiarLeg">Copiar legenda</button><button type="button" class="btn btn--rosa" id="kaSalvarTudo">Salvar alterações</button></div>
       <button type="button" class="btn btn--rosa" id="kaBaixar">${ehComputador() ? `Baixar as ${T.length} imagens (.zip)` : `Salvar as ${T.length} imagens`}</button>
@@ -5760,7 +5873,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const em = t.closest("[data-ka-emoji]"); if (em) { const campo = K.campo || "titulo", el = document.querySelector(`[data-ka-campo="${campo}"]`); if (!el) return;
       const p = el.selectionStart ?? el.value.length; el.value = el.value.slice(0, p) + em.dataset.kaEmoji + el.value.slice(el.selectionEnd ?? p); s[campo] = el.value; guardarCartas(); pintarCartas(true); return; }
     if (t.closest("#kaPrompt")) { const as = ($("#kaAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#kaAssunto").focus(); return; } K.assunto = as; guardarCartas(); if (await copiarTexto(promptCartas(as))) toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie"); return; }
-    if (t.closest("#kaCopiarAlt")) { if (await copiarTexto(s.alt || "")) toast("Texto alternativo copiado"); return; }
+    if (t.closest("#kaCopiarAlt")) { if (await copiarTexto(s.alt || altCarta(s, K.sel, T.length))) toast("Texto alternativo copiado"); return; }
     if (t.closest("#kaCopiarLeg")) { if (await copiarTexto($("#kaLegenda").value || "")) toast("Legenda copiada"); return; }
     if (t.closest("#kaSalvarTudo")) { K.legenda = $("#kaLegenda").value; K.assunto = ($("#kaAssunto").value || "").trim(); guardarCartas(); toast("Carrossel salvo ✓"); return; }
     if (t.closest("#kaColar")) { folhaEst("Colar resposta da IA", `<p class="nota">Cole aqui a resposta inteira da IA (o bloco que começa com [ ). As telas atuais serão trocadas.</p>
@@ -5771,7 +5884,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, `miga-carrossel-${String(i + 1).padStart(2, "0")}.jpg`)); }
       b.disabled = false; b.textContent = txt0; K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas();
       if (zip) {
-        const txt = `LEGENDA\n\n${K.legenda || ""}\n\n\nTEXTO ALTERNATIVO DE CADA IMAGEM\n\n` + T.map((x, i) => `Imagem ${i + 1}: ${x.alt || ""}`).join("\n\n");
+        const txt = `LEGENDA\n\n${K.legenda || ""}\n\n\nTEXTO ALTERNATIVO DE CADA IMAGEM\n\n` + T.map((x, i) => x.alt ? `Imagem ${i + 1}: ${x.alt}` : altCarta(x, i, T.length)).join("\n\n");
         const z = await montarZip([...arqs, new File([txt], "legenda-e-texto-alternativo.txt", { type: "text/plain" })]);
         baixarBlob(z, "miga-carrossel.zip"); toast("Carrossel salvo em .zip (imagens + legenda + textos alternativos)"); return;
       }
@@ -5884,6 +5997,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? "" : `<p class="nota">Música: <b>${esc((NOMES_MUSICA[CH.musica] || [CH.musica])[0])}</b></p>`}
         <button type="button" class="btn btn--branco btn-ic" id="chEditarTx"><svg class="ic-mono"><use href="#i-lapis"/></svg>Editar textos e figurinhas</button>
         ${arroba(config.instagram) ? "" : '<p class="nota">Dica: coloque o seu @ do Instagram em ⚙️ Ajustes para ele aparecer no final.</p>'}
+        <div class="campo"><span>Legenda do Reels</span><textarea id="chLegendaEd" rows="7">${esc(CH.legenda || CH.legendaIA || legendaChamada(CH))}</textarea></div>
+        <div class="duas"><button type="button" class="btn btn--branco" id="chCopiarEd">Copiar legenda</button><button type="button" class="btn btn--rosa" id="chSalvarLeg">Salvar legenda</button></div>
         <button type="button" class="btn btn--branco" id="chPrevia">▶ Ver prévia com música</button>
         <div class="vd-progresso" id="chProgresso" hidden><i></i></div>
         <button type="button" class="btn btn--rosa" id="chGerar">Criar o vídeo</button>
@@ -5906,16 +6021,18 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
           </div>
           <div class="campo"><span>Legenda pronta</span><textarea id="chLegenda" rows="9">${esc(CH.legenda)}</textarea></div>
           <button type="button" class="btn btn--branco" id="chCopiar">Copiar legenda</button>
-          <div class="campo"><span>Texto alternativo</span><textarea id="chAlt" rows="4" placeholder="A IA cria, ou escreva aqui">${esc(CH.alt || "")}</textarea></div>
+          <div class="campo"><span>Texto alternativo</span><textarea id="chAlt" rows="4">${esc(CH.alt || altChamada(CH))}</textarea></div>
           <button type="button" class="btn btn--branco" id="chCopiarAlt">Copiar texto alternativo</button>
           ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
           <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
         </div></div>`;
     }
   }
-  const promptChamada = (assunto) => `Você vai escrever os textos de um Reels da Miga Promo (perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels chama as seguidoras para ver as promoções que acabei de postar nos stories.
+  const promptChamada = (assunto) => `Você vai escrever os textos de um Reels da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}; perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels chama as seguidoras para ver as promoções que acabei de postar nos stories.
 
 ASSUNTO: ${assunto}
+
+O @ do perfil é ${arroba(config.instagram) || "@migapromo.oficial"}: se citar o perfil, escreva sempre exatamente assim, completo.
 
 O vídeo tem 4 telas. Preencha os campos (frases curtas; pode usar emojis; use *asteriscos* em volta de 1 palavra para destacar):
 Tela 1 (capa): etiqueta (até 22 letras, ex.: "ATUALIZEI OS STORIES"), linha1 (até 14 letras), linha2 (até 14 letras), palavra (1 palavra grande, em maiúsculas), frase_baixo (até 24 letras)
@@ -5927,10 +6044,9 @@ Figurinhas (escolha desta lista): ${FIGURAS.join(", ")}
 
 Crie também:
 - legenda: a legenda do Reels (gancho + o que tem nos stories + chamada para ir ver os stories e comentar) e no final exatamente 5 hashtags relacionadas ao assunto.
-- alt: texto alternativo do vídeo (descreva o que aparece nas 4 telas para quem não enxerga), até 300 letras.
 
 Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
-{"legenda": "Texto da legenda...\\n\\n#tag1 #tag2 #tag3 #tag4 #tag5", "alt": "Vídeo com fundo preto...",
+{"legenda": "Texto da legenda...\\n\\n#tag1 #tag2 #tag3 #tag4 #tag5",
  "etiqueta": "ATUALIZEI OS STORIES", "linha1": "Enchi meus", "linha2": "stories de", "palavra": "PERFUME", "frase_baixo": "com preço de amiga",
  "frase": ["Tem perfume", "de *rica*", "com preço", "de *amiga*"],
  "lista_titulo": "Tem de tudo:", "itens": ["Body splash", "Perfume árabe", "Kits pra presente", "Importados"],
@@ -5938,7 +6054,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
  "capa_esquerda": "perfume", "capa_direita": "brilho", "frase_figurinha": "dinheiro", "lista_esquerda": "presente", "lista_direita": "coracao"}`;
   function lerRespostaChamada(txt) {
     const i = txt.indexOf("{"), j = txt.lastIndexOf("}"); if (i < 0 || j < i) return null;
-    let o; try { o = JSON.parse(txt.slice(i, j + 1).replace(/[“”]/g, '"')); } catch (e) { return null; }
+    let o; try { o = jsonTolerante(txt.slice(i, j + 1)); } catch (e) { return null; }
     const s = (v, n) => String(v == null ? "" : v).slice(0, n), f = (v) => (FIGURAS.includes(v) ? v : ""), arr = (v, n) => (Array.isArray(v) ? v : []).slice(0, 4).map((x) => s(x, n));
     const tx = { etiqueta: s(o.etiqueta, 30), t1: s(o.linha1, 30), t2: s(o.linha2, 30), palavra: s(o.palavra, 20), sub: s(o.frase_baixo, 34), lista: s(o.lista_titulo, 24), cta1: s(o.cta1, 24), cta2: s(o.cta2, 16), toque: s(o.toque, 30),
       ic: [f(o.capa_esquerda), f(o.capa_direita)], icFrase: f(o.frase_figurinha), ic2: [f(o.lista_esquerda), f(o.lista_direita)] };
@@ -5973,7 +6089,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (e.target.closest("#chPrompt")) { const as = ($("#chAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#chAssunto").focus(); return; } CH.assunto = as; copiarTexto(promptChamada(as)).then((ok) => ok && toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie")); return; }
     if (e.target.closest("#chSalvarTx")) { $("#folhaEst").close(); toast("Textos salvos ✓"); return; }
     if (e.target.closest("#chColar")) { $("#chColarBox").hidden = false; $("#chResp").focus(); return; }
-    if (e.target.closest("#chAplicar")) { const r = lerRespostaChamada($("#chResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } CH.tx = r.tx; if (r.legenda) CH.legendaIA = r.legenda; if (r.alt) CH.alt = r.alt; CH.legenda = null; folhaTextosChamada(); toast("Textos da IA aplicados" + (r.legenda ? " (com legenda)" : "")); return; }
+    if (e.target.closest("#chAplicar")) { const r = lerRespostaChamada($("#chResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } CH.tx = r.tx; if (r.legenda) CH.legendaIA = r.legenda; CH.legenda = null; folhaTextosChamada(); toast("Textos da IA aplicados" + (r.legenda ? " (com legenda)" : "")); return; }
     const b = e.target.closest("[data-ch-ic]"); if (!b) return; const k = b.dataset.chIc; CH.tx = CH.tx || {};
     if (b.dataset.i != null) { const D = dadosChamada(CH); CH.tx[k] = D[k].slice(); CH.tx[k][+b.dataset.i] = b.dataset.v; } else CH.tx[k] = b.dataset.v;
     b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
@@ -6018,13 +6134,13 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     blob = await somCompativel(blob, tipo, (m) => { if (btn) btn.textContent = m; });
     const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; quadroChamada(tc.getContext("2d"), 1080, 2.6, CH);
     const capa = await telaParaJpeg(tc, "miga-corre-pros-stories-capa.jpg");
-    CH.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-corre-pros-stories.${mp4 ? "mp4" : "webm"}`, capa }; CH.legenda = null;
+    CH.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-corre-pros-stories.${mp4 ? "mp4" : "webm"}`, capa };
     wz.passo = "chPronto"; mostrarPasso();
   }
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "chamada") return;
     const t = e.target, CH = ch();
-    const n = t.closest("[data-ch-nicho]"); if (n) { CH.nicho = n.dataset.chNicho; CH.tx = null; mostrarPasso(); return; }
+    const n = t.closest("[data-ch-nicho]"); if (n) { CH.nicho = n.dataset.chNicho; CH.tx = null; CH.legenda = null; CH.legendaIA = null; mostrarPasso(); return; }
     if (t.closest("#chEditarTx")) { folhaTextosChamada(); return; }
     const co = t.closest("[data-ch-cor]"); if (co) { CH.cor = co.dataset.chCor; mostrarPasso(); return; }
     const mu = t.closest("[data-ch-mus]"); if (mu) {
@@ -6035,6 +6151,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#chRefazer")) { wz.passo = "chEditar"; mostrarPasso(); return; }
     if (t.closest("#chBaixar")) { baixarBlob(CH.resultado.blob, CH.resultado.nome); toast("Vídeo salvo"); return; }
     if (t.closest("#chBaixarCapa")) { baixarBlob(CH.resultado.capa, CH.resultado.capa.name); toast("Capa salva: use em Editar capa"); return; }
+    if (t.closest("#chCopiarEd")) { if (await copiarTexto($("#chLegendaEd").value)) toast("Legenda copiada"); return; }
+    if (t.closest("#chSalvarLeg")) { CH.legenda = $("#chLegendaEd").value; toast("Legenda salva ✓"); return; }
     if (t.closest("#chCopiarAlt")) { CH.alt = $("#chAlt").value; if (await copiarTexto(CH.alt)) toast("Texto alternativo copiado"); return; }
     if (t.closest("#chCopiar")) { if (await copiarTexto($("#chLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#chPostar")) { const r = CH.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
@@ -6095,7 +6213,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (aba === "temas") itens = Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => [k, m.nome, m.sub(), !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, R.camp === k && !R.titulo]);
     folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<div class="tabs-mod">${tabs}</div>
-      <div class="lista-mod lista-mod--mini"><button type="button" class="mod-editar${R.titulo || R.icone ? " on" : ""}" id="estEditarTit"><span class="mod-editar__ic"><svg class="ic-mono"><use href="#i-lapis"/></svg></span><span><b>Editar</b><small>${R.titulo || R.icone ? "Seu título: " + esc(String(R.titulo || "").replace(/\*/g, "").replace(/\n/g, " ") || "figurinha trocada") : "Escreva o título e escolha a figurinha"}</small></span>${R.titulo || R.icone ? "<i>✓</i>" : ""}</button>${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${aba !== "campanhas" && ICONE_MODELO[k] ? icSelo("f_" + ICONE_MODELO[k], " ic-selo--mini") : ""}${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
+      <div class="lista-mod lista-mod--mini"><button type="button" class="mod-editar" id="estEditarTit"><span class="mod-editar__ic"><svg class="ic-mono"><use href="#i-lapis"/></svg></span><span><b>Editar</b><small>${R.titulo || R.icone ? "Seu título: " + esc(String(R.titulo || "").replace(/\*/g, "").replace(/\n/g, " ") || "figurinha trocada") : "Escreva o título e escolha a figurinha"}</small></span></button>${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${aba !== "campanhas" && ICONE_MODELO[k] ? icSelo("f_" + ICONE_MODELO[k], " ic-selo--mini") : ""}${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
     pintarMinis(R);
   }
   async function pintarMinis(R) {
@@ -6201,6 +6319,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const tira = t.closest("[data-lp-tira]"); if (tira) { if (R.itens.length <= 1) { toast("Deixe pelo menos 1 produto"); return; } R.itens = R.itens.filter((x) => x !== tira.dataset.lpTira); folhaProdutos(); return; }
     const poe = t.closest("[data-lp-poe]"); if (poe) { if (R.itens.length >= limiteReels()) { toast(`No máximo ${limiteReels()} produtos`); return; } R.itens.push(poe.dataset.lpPoe); folhaProdutos(); return; }
   });
+  $("#folhaEst").addEventListener("close", () => { if (wz && wz.canal === "chamada" && wz.passo === "chEditar") mostrarPasso(); });
   $("#folhaEst").addEventListener("close", () => { tocarAmostra(""); if ((wz.canal === "reels" && (wz.passo === "rModelo" || wz.passo === "kCarrossel")) || (wz.canal === "video" && wz.passo === "vTema")) aposMudarEstudio(); });
   /** Título digitado: quebra em 2 linhas e destaca a última palavra (ou o que estiver entre *asteriscos*) */
   function tituloDigitado(t) {
