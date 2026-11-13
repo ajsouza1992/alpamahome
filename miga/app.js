@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=186"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=187"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=186"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=187"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3560,7 +3560,7 @@
   /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
   const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
   const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
-  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "setabaixo", "esmalte", "saco", "termometro", "alfinete", "abobora", "lua", "musculo", "boca", "frio", "estrelada", "apaixonada", "descolada", "biquini", "brasil", "laco", "oculos", "espelho", "sol", "pincel", "foguete", "bomba", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao"];
+  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "setabaixo", "cifrao", "esmalte", "saco", "termometro", "alfinete", "abobora", "lua", "musculo", "boca", "frio", "estrelada", "apaixonada", "descolada", "biquini", "brasil", "laco", "oculos", "espelho", "sol", "pincel", "foguete", "bomba", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao"];
   const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
   let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
@@ -5425,6 +5425,16 @@
     ctx.restore();
   }
   /** Figurinhas novas (mesmo traço: contorno preto grosso, rosa, amarelo e branco). Desenhadas em -100..100. */
+  /* Algumas figurinhas usam o emoji do próprio aparelho (fica perfeito em qualquer celular) com contorno de figurinha */
+  const EMOJI_FIG = { esmalte: "💅", musculo: "💪", abobora: "🎃" };
+  let telaEmoji = null;
+  function emojiComContorno(ctx, ch) {
+    const L = 240; telaEmoji = telaEmoji || document.createElement("canvas"); telaEmoji.width = L; telaEmoji.height = L; const e = telaEmoji.getContext("2d");
+    e.font = '170px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; e.textAlign = "center"; e.textBaseline = "middle"; e.fillText(ch, L / 2, L / 2 + 10);
+    const sil = document.createElement("canvas"); sil.width = L; sil.height = L; const s = sil.getContext("2d"); s.drawImage(telaEmoji, 0, 0); s.globalCompositeOperation = "source-in"; s.fillStyle = "#1d1d1f"; s.fillRect(0, 0, L, L);
+    for (let k = 0; k < 16; k++) { const g = (k / 16) * Math.PI * 2; ctx.drawImage(sil, -L / 2 + Math.cos(g) * 6, -L / 2 + Math.sin(g) * 6); }
+    ctx.drawImage(telaEmoji, -L / 2, -L / 2);
+  }
   function desenharFigNova(ctx, nome, contorno, estrela, ROSA, AMAR, PRETO) {
     const AZUL = "#9fd8ff", BRANCO = "#ffffff";
     const traco = (pts, cor, larg = 18) => { ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath(); pts.forEach(([x, y], i) => ctx[i ? "lineTo" : "moveTo"](x, y));
@@ -5518,21 +5528,16 @@
       ctx.beginPath(); ctx.moveTo(-76, -26); ctx.lineTo(76, -26); ctx.lineTo(80, 14); ctx.quadraticCurveTo(0, 48, -80, 14); ctx.closePath(); contorno("#c91f57");
       retArredondado(ctx, -16, 14, 32, 28, 8); contorno(AMAR); brilhoBranco(-56, 46, 8, 18, 0.25);
     }
+    else if (nome === "cifrao") { // $
+      ctx.font = "900 210px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+      ctx.lineWidth = 22; ctx.strokeStyle = PRETO; ctx.strokeText("$", 0, 12); ctx.fillStyle = "#1f9d55"; ctx.fillText("$", 0, 12);
+      ctx.save(); ctx.beginPath(); ctx.rect(-100, -100, 200, 92); ctx.clip(); ctx.fillStyle = "rgba(255,255,255,.22)"; ctx.fillText("$", 0, 12); ctx.restore(); ctx.lineWidth = 11;
+    }
     else if (nome === "setabaixo") {
       poli([[-36, -94], [36, -94], [36, 0], [80, 0], [0, 92], [-80, 0], [-36, 0]], ROSA);
       ctx.fillStyle = "rgba(255,255,255,.75)"; retArredondado(ctx, -18, -80, 12, 60, 6); ctx.fill();
     }
-    else if (nome === "esmalte") { // 💅 mão grande com unhas rosa e o pincel do esmalte
-      const PELE = "#f9cfae", UNHA = "#e8336d";
-      ctx.save(); ctx.translate(-10, 12); ctx.scale(1.08, 1.08);
-      ctx.save(); ctx.translate(-62, 36); ctx.rotate(-0.8); retArredondado(ctx, -19, -56, 38, 80, 19); contorno(PELE); ctx.restore();
-      const dedos = [[-64, -62, 34], [-28, -90, 35], [9, -82, 35], [46, -56, 31]];
-      dedos.forEach(([x, y, w]) => { retArredondado(ctx, x, y, w, 40 - y, w / 2); contorno(PELE); });
-      ctx.lineWidth = 6; dedos.forEach(([x, y, w]) => { retArredondado(ctx, x + 4, y + 4, w - 8, 32, (w - 8) / 2); contorno(UNHA); ctx.beginPath(); ctx.ellipse(x + 12, y + 16, 3.5, 8, 0, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fill(); });
-      ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(-68, 12); ctx.lineTo(77, 12); ctx.quadraticCurveTo(80, 64, 42, 92); ctx.lineTo(-30, 92); ctx.quadraticCurveTo(-70, 64, -68, 12); ctx.closePath(); contorno(PELE);
-      ctx.restore();
-      ctx.save(); ctx.translate(64, -78); ctx.rotate(-0.95); retArredondado(ctx, -14, -40, 28, 56, 8); contorno("#2f2f35"); ctx.beginPath(); ctx.moveTo(0, 16); ctx.lineTo(0, 40); ctx.strokeStyle = PRETO; ctx.lineWidth = 14; ctx.stroke(); ctx.strokeStyle = UNHA; ctx.lineWidth = 7; ctx.stroke(); ctx.restore(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
-    }
+    else if (nome === "esmalte") { emojiComContorno(ctx, EMOJI_FIG.esmalte); }
     else if (nome === "saco") { // 💰
       const SACO = "#f2c14e";
       ctx.beginPath(); ctx.moveTo(-34, -40); ctx.lineTo(-52, -86); ctx.quadraticCurveTo(-30, -74, -18, -78); ctx.quadraticCurveTo(0, -100, 18, -78); ctx.quadraticCurveTo(30, -74, 52, -86); ctx.lineTo(34, -40); ctx.closePath(); contorno(SACO);
@@ -5556,16 +5561,7 @@
       ctx.beginPath(); ctx.ellipse(0, -54, 48, 20, 0, 0, Math.PI * 2); contorno(ROSA);
       brilhoBranco(-12, -12, 6, 16, 0.1);
     }
-    else if (nome === "abobora") { // 🎃 um corpo só, gomos em laranja-escuro e carinha grande
-      const LAR = "#ff8a1f", ESC = "#d9640a";
-      retArredondado(ctx, -10, -98, 22, 36, 8); contorno("#3c9d4b");
-      ctx.beginPath(); ctx.moveTo(10, -78); ctx.quadraticCurveTo(44, -102, 62, -78); ctx.quadraticCurveTo(36, -66, 10, -78); contorno("#5cc06a");
-      ctx.beginPath(); ctx.ellipse(0, 12, 94, 76, 0, 0, Math.PI * 2); contorno(LAR);
-      ctx.lineWidth = 6; ctx.strokeStyle = ESC; ctx.beginPath(); ctx.moveTo(-34, -56); ctx.quadraticCurveTo(-62, 12, -34, 82); ctx.moveTo(34, -56); ctx.quadraticCurveTo(62, 12, 34, 82); ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
-      ctx.fillStyle = PRETO; [[-38, -6], [38, -6]].forEach(([x, y]) => { ctx.beginPath(); ctx.moveTo(x - 20, y + 16); ctx.lineTo(x, y - 18); ctx.lineTo(x + 20, y + 16); ctx.closePath(); ctx.fill(); });
-      ctx.beginPath(); ctx.moveTo(-54, 28); ctx.lineTo(-34, 44); ctx.lineTo(-16, 30); ctx.lineTo(0, 48); ctx.lineTo(16, 30); ctx.lineTo(34, 44); ctx.lineTo(54, 28); ctx.quadraticCurveTo(0, 98, -54, 28); ctx.fill();
-      brilhoBranco(-66, -18, 8, 16, 0.3);
-    }
+    else if (nome === "abobora") { emojiComContorno(ctx, EMOJI_FIG.abobora); }
     else if (nome === "lua") { // 🌙 só a lua
       const R = 88, cx2 = 42, cy2 = -28, r2 = 74, d = Math.hypot(cx2, cy2), aa = (R * R - r2 * r2 + d * d) / (2 * d), h = Math.sqrt(R * R - aa * aa);
       const px = aa * cx2 / d, py = aa * cy2 / d, p1 = [px + h * cy2 / d, py - h * cx2 / d], p2 = [px - h * cy2 / d, py + h * cx2 / d];
@@ -5573,12 +5569,7 @@
       ctx.beginPath(); ctx.arc(0, 0, R, a1, a2, true); ctx.arc(cx2, cy2, r2, b2, b1, false); ctx.closePath(); contorno(AMAR);
       brilhoBranco(-56, 12, 9, 20, 0.2);
     }
-    else if (nome === "musculo") { // 💪 braço dobrado: muque grande e punho fechado
-      ctx.beginPath(); ctx.moveTo(-100, 26); ctx.bezierCurveTo(-84, -34, -10, -48, 18, -6); ctx.lineTo(20, -46); ctx.lineTo(80, -46); ctx.lineTo(84, 40); ctx.quadraticCurveTo(86, 86, 40, 86); ctx.lineTo(-100, 86); ctx.closePath(); contorno(AMAR);
-      retArredondado(ctx, 8, -104, 84, 70, 32); contorno(AMAR);
-      ctx.lineWidth = 7; ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(22, -60); ctx.quadraticCurveTo(40, -48, 60, -58); ctx.moveTo(36, -102); ctx.quadraticCurveTo(30, -84, 40, -70); ctx.moveTo(62, -102); ctx.quadraticCurveTo(56, -84, 66, -70); ctx.moveTo(-60, 20); ctx.quadraticCurveTo(-32, 32, -4, 18); ctx.stroke(); ctx.lineWidth = 11;
-      brilhoBranco(-50, -6, 18, 8, -0.4);
-    }
+    else if (nome === "musculo") { emojiComContorno(ctx, EMOJI_FIG.musculo); }
     else if (nome === "boca") { // 👄
       ctx.beginPath(); ctx.moveTo(-94, 0); ctx.quadraticCurveTo(0, 18, 94, 0); ctx.bezierCurveTo(62, 66, -62, 66, -94, 0); ctx.closePath(); contorno("#c91f57");
       ctx.beginPath(); ctx.moveTo(-94, 0); ctx.bezierCurveTo(-64, -42, -32, -50, -12, -32); ctx.quadraticCurveTo(0, -22, 12, -32); ctx.bezierCurveTo(32, -50, 64, -42, 94, 0); ctx.quadraticCurveTo(0, 14, -94, 0); ctx.closePath(); contorno(ROSA);
@@ -5642,14 +5633,13 @@
       for (let i = 0; i < 10; i++) { const g = (i / 10) * Math.PI * 2; ctx.save(); ctx.rotate(g); poli([[-14, -64], [14, -64], [0, -98]], AMAR); ctx.restore(); }
       bola(0, 0, 56, AMAR); brilhoBranco(-20, -22, 12, 7);
     }
-    else if (nome === "pincel") { // pincel de blush: cerdas fofinhas com pó rosa
-      ctx.rotate(0.5);
-      retArredondado(ctx, -14, 6, 28, 98, 13); contorno(ROSA);
-      ctx.fillStyle = AMAR; ctx.fillRect(-9, 70, 18, 9);
-      retArredondado(ctx, -20, -24, 40, 36, 6); contorno("#d9d9df"); ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(-12, -18, 6, 24);
-      const cerdas = () => { ctx.beginPath(); ctx.moveTo(-20, -24); ctx.bezierCurveTo(-46, -60, -34, -106, 0, -106); ctx.bezierCurveTo(34, -106, 46, -60, 20, -24); ctx.closePath(); };
-      cerdas(); contorno("#4a3b3f"); ctx.save(); cerdas(); ctx.clip(); ctx.beginPath(); ctx.ellipse(0, -100, 42, 28, 0, 0, Math.PI * 2); ctx.fillStyle = "#f59ab8"; ctx.fill(); ctx.restore(); cerdas(); ctx.stroke();
-      ctx.fillStyle = "#f59ab8"; [[34, -96, 5], [44, -78, 4], [26, -114, 3.5]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
+    else if (nome === "pincel") { // pincel de maquiagem em pé: cerdas grandes com pó rosa
+      ctx.rotate(0.28);
+      retArredondado(ctx, -16, 30, 32, 72, 14); contorno(ROSA); brilhoBranco(-6, 60, 4, 16, 0);
+      retArredondado(ctx, -24, 4, 48, 34, 8); contorno(AMAR); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillRect(-14, 10, 6, 22);
+      const cerdas = () => { ctx.beginPath(); ctx.moveTo(-24, 6); ctx.bezierCurveTo(-58, -30, -50, -102, 0, -102); ctx.bezierCurveTo(50, -102, 58, -30, 24, 6); ctx.closePath(); };
+      cerdas(); contorno("#5a4146"); ctx.save(); cerdas(); ctx.clip(); ctx.beginPath(); ctx.ellipse(0, -96, 56, 36, 0, 0, Math.PI * 2); ctx.fillStyle = "#f59ab8"; ctx.fill(); ctx.restore(); cerdas(); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-14, -6); ctx.quadraticCurveTo(-24, -40, -10, -64); ctx.moveTo(10, -6); ctx.quadraticCurveTo(18, -36, 12, -56); ctx.stroke(); ctx.lineWidth = 11; ctx.strokeStyle = PRETO;
     }
     else if (nome === "balao") {
       poli([[-46, 40], [-66, 92], [-4, 46]], BRANCO);
@@ -5851,10 +5841,12 @@
   const ehComputador = () => !window.matchMedia("(pointer: coarse)").matches;
   async function montarZip(arquivos) {
     const partes = [], central = []; let pos = 0; const enc = new TextEncoder();
+    let ordem = 0;
     for (const f of arquivos) {
+      const hora = (12 << 11) | ((ordem++ % 60) << 5); // 12:00, 12:01, 12:02… (a ordem também vale por data)
       const dados = new Uint8Array(await f.arrayBuffer()), nome = enc.encode(f.name); let crc = 0xffffffff; for (let i = 0; i < dados.length; i++) crc = CRC_T[(crc ^ dados[i]) & 0xff] ^ (crc >>> 8); crc = (crc ^ 0xffffffff) >>> 0;
-      const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 23585, true); h.setUint32(14, crc, true); h.setUint32(18, dados.length, true); h.setUint32(22, dados.length, true); h.setUint16(26, nome.length, true);
-      const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 23585, true); c.setUint32(16, crc, true); c.setUint32(20, dados.length, true); c.setUint32(24, dados.length, true); c.setUint16(28, nome.length, true); c.setUint32(42, pos, true);
+      const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(10, hora, true); h.setUint16(12, 23585, true); h.setUint32(14, crc, true); h.setUint32(18, dados.length, true); h.setUint32(22, dados.length, true); h.setUint16(26, nome.length, true);
+      const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(12, hora, true); c.setUint16(14, 23585, true); c.setUint32(16, crc, true); c.setUint32(20, dados.length, true); c.setUint32(24, dados.length, true); c.setUint16(28, nome.length, true); c.setUint32(42, pos, true);
       partes.push(h.buffer, nome, dados); central.push(c.buffer, nome); pos += 30 + nome.length + dados.length;
     }
     const tam = central.reduce((s, x) => s + (x.byteLength || x.length), 0), fim = new DataView(new ArrayBuffer(22));
@@ -5938,7 +5930,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →"},
   {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": ""}
  ]}`;
-  const NOME_FIG = { brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", setabaixo: "seta para baixo", esmalte: "mão passando esmalte", saco: "saco de dinheiro", termometro: "termômetro", alfinete: "alfinete", abobora: "abóbora", lua: "lua", musculo: "braço forte", boca: "boca", frio: "carinha com frio", estrelada: "carinha com olhos de estrela", apaixonada: "carinha apaixonada", descolada: "carinha de óculos escuros", biquini: "biquíni", brasil: "bandeira do Brasil", laco: "laço", oculos: "óculos de sol", espelho: "espelho de mão", sol: "sol", pincel: "pincel de maquiagem", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa" };
+  const NOME_FIG = { brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", setabaixo: "seta para baixo", cifrao: "cifrão", esmalte: "mão passando esmalte", saco: "saco de dinheiro", termometro: "termômetro", alfinete: "alfinete", abobora: "abóbora", lua: "lua", musculo: "braço forte", boca: "boca", frio: "carinha com frio", estrelada: "carinha com olhos de estrela", apaixonada: "carinha apaixonada", descolada: "carinha de óculos escuros", biquini: "biquíni", brasil: "bandeira do Brasil", laco: "laço", oculos: "óculos de sol", espelho: "espelho de mão", sol: "sol", pincel: "pincel de maquiagem", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa" };
   const semDestaque = (s) => String(s || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " ").trim();
   /** Texto alternativo feito pelo app: diz o que aparece e copia exatamente o que está escrito na imagem */
   function altCarta(tela, i, n) {
@@ -6022,7 +6014,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#kaZerar")) { try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } abrirCartas(); return; }
     if (t.closest("#kaBaixar") || t.closest("#kaZip")) {
       const zip = !!t.closest("#kaZip") || ehComputador(), b = t.closest("button"); const txt0 = b.textContent; b.disabled = true; b.textContent = "Preparando…"; await carregarMarca(); const arqs = [];
-      for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, `miga-carrossel-${String(i + 1).padStart(2, "0")}.jpg`)); }
+      for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, `${String(i + 1).padStart(2, "0")}-miga-carrossel.jpg`)); }
       b.disabled = false; b.textContent = txt0; K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas();
       if (zip) {
         const txt = `LEGENDA\n\n${K.legenda || ""}\n\n\nTEXTO ALTERNATIVO DE CADA IMAGEM\n\n` + T.map((x, i) => x.alt ? `Imagem ${i + 1}: ${x.alt}` : altCarta(x, i, T.length)).join("\n\n");
