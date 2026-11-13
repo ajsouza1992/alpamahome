@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=134"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=135"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=134"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=135"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2117,8 +2117,11 @@
   const PASSOS_FINAIS = ["resumo", "canal"];
   function guardarProgresso() {
     try {
-      if (!wz.canal || !wz.passo || PASSOS_FINAIS.includes(wz.passo) || (wz.reels && wz.reels.resultado) || (wz.video && wz.video.resultado)) { localStorage.removeItem("miga_progresso"); return; }
-      const ids = wz.canal === "reels" ? (wz.reels && wz.reels.itens) || [] : wz.canal === "livre" ? (wz.livre ? wz.livre.itens.filter((x) => x.itemId).map((x) => x.itemId) : []) : wz.canal === "cupons" ? [] : [wz.itemId].filter(Boolean);
+      // Terminou (chegou no resumo ou o vídeo/Reels ficou pronto): não tem mais o que continuar
+      if (wz.passo === "resumo" || (wz.reels && wz.reels.resultado) || (wz.video && wz.video.resultado)) { localStorage.removeItem("miga_progresso"); return; }
+      // Voltar para a lista (ou abrir o app de novo) NÃO apaga onde você parou
+      if (!wz.canal || !wz.passo || PASSOS_FINAIS.includes(wz.passo)) return;
+      const ids = wz.canal === "reels" ? (wz.reels && wz.reels.itens) || [] : wz.canal === "livre" ? (wz.livre ? wz.livre.itens.filter((x) => x.itemId).map((x) => x.itemId) : []) : wz.canal === "cupons" ? [] : wz.canal === "video" ? [wz.video && wz.video.itemId].filter(Boolean) : [wz.itemId].filter(Boolean);
       const nomes = ids.map((id) => (fila().find((x) => x.id === id) || {}).nome).filter(Boolean);
       const rotulo = `${CANAIS[wz.canal] ? CANAIS[wz.canal].nome : ""}${nomes.length ? " · " + (nomes.length > 1 ? nomes.length + " produtos" : limparNome(nomes[0]).slice(0, 40)) : ""}`;
       localStorage.setItem("miga_progresso", JSON.stringify({ canal: wz.canal, passo: wz.passo, ids, camp: wz.camp || "", modelo: wz.modelo, cor: wz.cor, lugares: wz.lugares, reels: wz.reels ? { modelo: wz.reels.modelo, cor: wz.reels.cor } : null, cup: wz.cup ? { sel: wz.cup.sel, cor: wz.cup.cor } : null, rotulo, quando: Date.now() }));
@@ -2132,6 +2135,8 @@
     const p = lerProgresso(); if (!p) return;
     if (p.canal === "cupons") { abrirPostarCupons(); if (p.cup) Object.assign(wz.cup, p.cup); wz.passo = p.passo; mostrarPasso(); return; }
     const l = p.ids.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
+    // Vídeo: o arquivo de vídeo não fica guardado, então volta para a escolha do vídeo (com o produto, se tiver)
+    if (p.canal === "video") { if (l.length) criarAPartirDaLista("video", l, p.camp); else abrirVideoLivre(); return; }
     if (!l.length) { try { localStorage.removeItem("miga_progresso"); } catch (e) { /* segue */ } renderFila(); toast("Os produtos dessa criação não estão mais na lista"); return; }
     criarAPartirDaLista(p.canal, l, p.camp);
     if (p.canal === "roteiro") { wz.modelo = p.modelo || wz.modelo; wz.cor = p.cor || wz.cor; if (p.lugares) wz.lugares = p.lugares; }
