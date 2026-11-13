@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=146"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=147"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=146"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=147"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2470,10 +2470,37 @@
     const M = MODELOS[modelo];
     return { previa, insta: "", titulo: linhasTitulo(wz.tituloArte ? tituloDigitado(wz.tituloArte) : campanha() ? campanha().titulo : M.padrao.titulo), texto: wz.tituloArte || campanha() ? "" : M.padrao.texto, botao: "", logo: false, espaco: wz.formato === "story", cupom: it.cupom || "", loja: it.loja || "", foto: ppFotos[it.id] || null, produto: { nome: limparNome(it.nome), antigo: it.precoAntigo, novo: it.precoNovo } };
   }
-  function desenharMontagem(tela, previa, modelo, cor, formato) {
+  const arteR = (modelo, cor) => { const mk = MODELOS_REELS[modelo || wz.modelo] ? (modelo || wz.modelo) : "achadinho", c = CORES_VIDEO[cor || wz.cor] ? (cor || wz.cor) : (DECOR[mk] || {}).cor || "rosa"; return { modelo: mk, camp: wz.camp || "", titulo: wz.tituloArte || "", cor: c }; };
+  function desenharMontagem(tela, previa, modelo, cor, formato, tAnim) {
     const it = wzItem(); if (!it || !tela) return;
-    const f = formato || wz.formato, mk = MODELOS_REELS[modelo || wz.modelo] ? (modelo || wz.modelo) : "achadinho", c = CORES_VIDEO[cor || wz.cor] ? (cor || wz.cor) : (DECOR[mk] || {}).cor || "rosa";
-    artePost(tela, { modelo: mk, camp: wz.camp || "", titulo: wz.tituloArte || "", cor: c }, it, ppFotos[it.id], f === "story" || f === "status" ? "story" : f);
+    const f = formato || wz.formato;
+    artePost(tela, arteR(modelo, cor), it, ppFotos[it.id], f === "story" || f === "status" ? "story" : f, tAnim);
+  }
+  /** Arte em movimento: a mesma arte do story/status, se mexendo no ritmo da música, por 20 segundos (sem abertura e sem final) */
+  const SEG_MOV = 20;
+  async function gravarArteMovimento(botao) {
+    const it = wzItem(), tipo = formatoGravacao(); if (!it) return null;
+    if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return null; }
+    let ac = null; try { ac = new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) { ac = null; }
+    await prepararFoto(it); await carregarMarca();
+    const R = arteR(), E = MUSICAS[musicaDe(R)], tela = document.createElement("canvas"); tela.width = 1080; tela.height = 1920; const ctx = tela.getContext("2d");
+    const previa = $("#rtTela"); const pctx = previa && previa.getContext("2d");
+    let t0 = 0, dest = null;
+    try { if (!ac) throw 0; if (ac.state === "suspended") await ac.resume(); dest = ac.createMediaStreamDestination(); if (botao) botao.textContent = "Preparando a música…"; await carregarSons(ac, E); t0 = tocarTrilha(ac, dest, SEG_MOV, [], [], null, E, null); } catch (e) { t0 = 0; }
+    artePost(tela, R, it, ppFotos[it.id], "story", 0);
+    const fluxo = tela.captureStream(30); if (dest && dest.stream) dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
+    const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 }), partes = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
+    const fim = new Promise((ok) => { rec.onstop = ok; });
+    if (ac && t0) await new Promise((ok) => { const e = () => (ac.currentTime >= t0 - 0.02 ? ok() : requestAnimationFrame(e)); e(); });
+    rec.start(); manterTelaAcesa(true); const ini = performance.now();
+    const agora = () => (ac && t0 ? ac.currentTime - t0 : (performance.now() - ini) / 1000);
+    await new Promise((ok) => { const passo = () => { const t = agora(); if (t >= SEG_MOV + 0.4) { ok(); return; }
+      artePost(tela, R, it, ppFotos[it.id], "story", Math.min(t, SEG_MOV)); if (pctx) { if (previa.width !== 540) { previa.width = 540; previa.height = 960; } pctx.drawImage(tela, 0, 0, 540, 960); }
+      if (botao) botao.textContent = `Criando o vídeo… ${Math.min(100, Math.round((t / SEG_MOV) * 100))}%`; requestAnimationFrame(passo); }; passo(); });
+    rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); if (ac) ac.close().catch(() => {});
+    const mp4 = tipo.startsWith("video/mp4"); let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), SEG_MOV);
+    blob = await somCompativel(blob, tipo, (m) => { if (botao) botao.textContent = m; });
+    return { blob, url: URL.createObjectURL(blob), nome: nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + (mp4 ? ".mp4" : ".webm"), chave: [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|") };
   }
   async function desenharMiniaturas(porCor) {
     const it = wzItem();
@@ -2548,10 +2575,14 @@
       const proxProd = proximoDaFila();
       const pular = `<button type="button" class="btn ${feito ? "btn--rosa" : "btn--branco"} rt-proximo" id="rtPular">${wz.idx === n - 1 ? (proxProd ? "Próximo produto" : "Ver o resumo") : "Próximo"}</button>`;
       let meio = "", botao = "", dica = "";
+      if (wz.mov === undefined) wz.mov = movSalvo();
+      const podeMov = k === "story" || k === "status", vMov = podeMov && wz.mov ? vidMovAtual() : null;
       if (L.arte) {
-        meio = `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`;
+        meio = (podeMov ? `<label class="rt-mov"><input type="checkbox" id="rtMov"${wz.mov ? " checked" : ""}><span><b>Em movimento</b><small>${wz.mov ? `Vídeo de ${SEG_MOV} s com música, a arte se mexendo` : "Desmarcado: vai a imagem parada"}</small></span></label>` : "")
+          + (vMov ? `<div class="wz-previa rt-video"><video src="${vMov.url}" controls playsinline loop></video></div>` : `<div class="wz-previa"><canvas id="rtTela"></canvas></div>`);
         if (k === "story") { botao = "Postar no Instagram"; dica = "O link já vai copiado: no story, toque no adesivo de Link e cole."; }
         if (k === "status") { botao = "Postar no Status"; dica = "Escolha o WhatsApp com “B” e depois Meu status. O texto com o link vai junto."; }
+        if (podeMov && wz.mov && !vMov) { botao = `Criar o vídeo (${SEG_MOV} s)`; dica = `O app grava a arte se mexendo com música (leva ${SEG_MOV} segundos). Depois é só postar.`; }
         if (k === "feed") { botao = "Postar no feed"; dica = "Ao postar, a legenda já vai copiada: no Instagram é só colar."; }
         if (k === "feed") meio += `<div class="leg-bloco"><div class="leg-topo"><span>Legenda do feed</span><div><button type="button" class="leg-btn" id="rtCopiarLegFeed"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button></div></div><textarea id="rtLegFeed" rows="8">${esc(wz.legFeed && wz.legFeedId === item.id ? wz.legFeed : (wz.legFeedId = item.id, wz.legFeed = legendaFeed(item)))}</textarea></div><p class="nota">No feed o link não fica clicável: a legenda avisa que o link está na bio.</p>`;
         else meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
@@ -2589,6 +2620,7 @@
     wz.passo = "resumo"; mostrarPasso();
   }
   /** Depois do Reels, Carrossel ou Vídeo: posta os mesmos produtos no WhatsApp (canal e grupos), um por um */
+  const movSalvo = () => { try { return !!localStorage.getItem("miga_mov"); } catch (e) { return false; } };
   function postarProdutosNoWhats(ids, base = {}) {
     ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
     const lug = lugaresSalvos().filter((k) => LUGARES[k].texto);
@@ -2617,10 +2649,20 @@
   }
   /** Legenda do feed: igual à do Reels (chamada, preço, aviso do link na bio, seu @ e hashtags) */
   const legendaFeed = (it) => legendaReels({ modelo: wz.modelo || "achadinho", camp: wz.camp || "", titulo: wz.tituloArte || "" }, [it]);
+  /** Vídeo "em movimento" já criado para esta arte (mesmo produto, modelo, cor e título) */
+  function vidMovAtual() { const it = wzItem(), R = arteR(); const ch = it && [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|"); return wz.vidMov && wz.vidMov.chave === ch ? wz.vidMov : null; }
   async function postarLugar() {
     const it = wzItem(), k = wz.lugares[wz.idx], L = LUGARES[k];
     let r = "sem";
-    if (L.arte) {
+    if (L.arte && (k === "story" || k === "status") && wz.mov) {
+      const v = vidMovAtual();
+      if (!v) { const b = $("#rtPostar"); if (b) b.disabled = true; const novo = await gravarArteMovimento(b); if (novo) wz.vidMov = novo; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+      const arq = new File([v.blob], v.nome, { type: v.blob.type }); let texto = "";
+      if (k === "story") await copiarTexto(it.link);
+      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
+      r = await compartilharArquivo(arq, texto);
+      if (r === "sem") { baixarBlob(v.blob, v.nome); if (texto) await copiarTexto(texto); toast("Vídeo salvo: abra o app e escolha da galeria"); }
+    } else if (L.arte) {
       const tela = document.createElement("canvas"); desenharMontagem(tela, false, null, null, L.arte);
       const arq = await telaParaArquivo(tela, nomeArquivo(it.nome));
       let texto = "";
@@ -2642,6 +2684,10 @@
     const y = scrollY; mostrarPasso(); scrollTo(0, y);
   }
   $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "rtLegFeed") wz.legFeed = e.target.value; });
+  $("#wzCorpo").addEventListener("change", (e) => {
+    if (e.target.id !== "rtMov") return; wz.mov = e.target.checked; try { localStorage.setItem("miga_mov", wz.mov ? "1" : ""); } catch (er) { /* segue */ }
+    const y = scrollY; mostrarPasso(); scrollTo(0, y);
+  });
   // Voltou do outro app: segue o roteiro
 
   $("#wzCorpo").addEventListener("click", async (e) => {
@@ -4807,11 +4853,20 @@
   }
   /** Arte parada (Status, Story, feed) com o mesmo modelo dos Reels */
   let telaArte = null;
-  function artePost(tela, R, it, bmp, formato) {
+  function artePost(tela, R, it, bmp, formato, tAnim) {
     const W = 1080, H = formato === "post" ? 1350 : formato === "quadrado" ? 1080 : 1920;
-    tela.width = W; tela.height = H; const ctx = tela.getContext("2d");
+    if (tela.width !== W) tela.width = W; if (tela.height !== H) tela.height = H; const ctx = tela.getContext("2d");
     temposDoModelo(R); const C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, M = modeloEfetivo(R);
     relogioReels = 0; decorAtual = decorDe(R); pulsoTela = 0;
+    if (tAnim != null) { // arte em movimento: entra no ritmo, depois "respira" com a batida e vai chegando perto devagar
+      const E = MUSICAS[musicaDe(R)], bt = 60 / E.bpm, fase = (tAnim % bt) / bt;
+      relogioReels = tAnim; pulsoTela = Math.exp(-fase * 7); acentoCena = acentosDe(E, 0, 8);
+      const z = 1 + 0.07 * Math.min(1, tAnim / 20) + 0.008 * pulsoTela;
+      ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
+      try { if (H === 1920) produtoReels(ctx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor); else comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor)); }
+      finally { ctx.restore(); pulsoTela = 0; acentoCena = null; }
+      return;
+    }
     if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); return; }
     // Feed/quadrado: fundo no tamanho certo e o conteúdo um pouco menor no meio
     comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor));

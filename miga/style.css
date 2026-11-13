@@ -1299,3 +1299,8 @@ body.modo-selecao main { padding-bottom: 200px; }
 .pp-lapis.hi-restaurar { right: 60px; }
 #historico .pp-linha:has(.hi-restaurar) .pp-item { padding-right: 108px; }
 .barra-selecao.bs-hist .bs-duas { grid-template-columns: 1fr 1fr 1.3fr; }
+/* Postar: caixinha "Em movimento" (vídeo de 20 s) no story/status */
+.rt-mov { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: var(--campo); cursor: pointer; }
+.rt-mov input { flex: none; width: 24px; height: 24px; accent-color: var(--rosa); }
+.rt-mov span { display: grid; gap: 1px; } .rt-mov b { font-size: 15px; } .rt-mov small { font-size: 12.5px; color: var(--cinza); }
+.rt-video video { width: 100%; max-height: 62vh; aspect-ratio: 9 / 16; object-fit: contain; border-radius: 18px; background: #000; }
