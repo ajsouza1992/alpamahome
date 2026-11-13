@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=139"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=140"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=139"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=140"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3720,8 +3720,133 @@
     ctx.restore();
   }
 
+  /* =========== Músicas com instrumentos de verdade (amostras gravadas do GeneralUser GS, uso livre) =========== */
+  const RAIZES = { piano: [48, 54, 60, 66, 72, 78], ep: [48, 54, 60, 66, 72], metais: [54, 60, 66, 72], synbrass: [48, 54, 60, 66, 72], cordas: [48, 55, 62, 69, 76],
+    pad: [48, 55, 62, 69], poly: [48, 55, 62, 69], serra: [60, 66, 72, 78, 84], quadrada: [60, 66, 72, 78, 84], baixo: [28, 33, 38, 43, 48], slap: [28, 33, 38, 43, 48],
+    synbaixo: [28, 33, 38, 43, 48], synbaixo2: [28, 33, 38, 43, 48], orq: [60], glock: [72, 79, 84, 91], orgao: [48, 55, 62, 69], wah: [52, 59, 64] };
+  const GUITARRA = [40, 44, 48, 52];
+  const PECAS_KIT = ["bumbo", "caixa", "aro", "palma", "chimbal", "aberto", "prato", "conducao", "tomG", "tomM", "tomA", "cowbell"];
+  const arquivosSons = {}; const sonsDoContexto = new WeakMap();
+  const baixarSom = (n) => arquivosSons[n] || (arquivosSons[n] = fetch(`sons/${n}.mp3?v=1`).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null));
+  /** Quais arquivos de som a música precisa (sempre inclui os do toque do @) */
+  function sonsDaMusica(E) {
+    const l = new Set(["m-glock-72", "m-glock-79", "m-glock-84", "m-glock-91", "d-std-prato"]);
+    if (!E || !E.real) return [...l];
+    PECAS_KIT.forEach((p) => l.add(`d-${E.kit}-${p}`));
+    if (E.kit === "std" || E.perc) ["pandeiro", "chocalho", "conga", "congaB"].forEach((p) => l.add(`d-std-${p}`));
+    if (E.sc) { l.add("d-sfx-scratch1"); l.add("d-sfx-scratch2"); }
+    [E.bx, E.ac, E.ac2, E.ld && E.ld.inst, E.oh ? "orq" : null, E.ck ? "wah" : null].forEach((i) => { if (i && RAIZES[i]) RAIZES[i].forEach((r) => l.add(`m-${i}-${r}`)); });
+    if (E.gt) GUITARRA.forEach((r) => { l.add(`g-${E.gtTipo || "dist"}-${r}`); l.add(`g-muda-${r}`); });
+    return [...l];
+  }
+  /** Baixa e prepara os sons para este AudioContext (o começo de cada som é achado na hora, para cair certinho no tempo) */
+  async function carregarSons(ac, E) {
+    if (!ac) return {};
+    let B = sonsDoContexto.get(ac); if (!B) { B = {}; sonsDoContexto.set(ac, B); }
+    await Promise.all(sonsDaMusica(E).map(async (n) => {
+      if (B[n]) return; const ab = await baixarSom(n); if (!ab) return;
+      try {
+        const buf = await new Promise((ok, erro) => { const p = ac.decodeAudioData(ab.slice(0), ok, erro); if (p && p.then) p.then(ok, erro); });
+        const d = buf.getChannelData(0); let i = 0; const lim = Math.min(d.length, Math.round(buf.sampleRate * 0.12)); while (i < lim && Math.abs(d[i]) < 0.004) i++;
+        B[n] = { buf, off: i < lim ? Math.max(0, i - 8) / buf.sampleRate : 0 };
+      } catch (e) { /* som que não abriu fica de fora */ }
+    }));
+    return B;
+  }
+  /** O toque do seu @ no final: sininho (glockenspiel) subindo + prato ao contrário entrando nele */
+  function toqueArroba(ac, B, saida, sala, tp) {
+    const pr = B["d-std-prato"];
+    if (pr) { // prato invertido: "fuuum" que cresce até o toque
+      const b = pr.buf, n = b.length, r = ac.createBuffer(1, n, b.sampleRate), o = b.getChannelData(0), d = r.getChannelData(0); for (let i = 0; i < n; i++) d[i] = o[n - 1 - i];
+      const s = ac.createBufferSource(), g = ac.createGain(), f = ac.createBiquadFilter(); s.buffer = r; f.type = "highpass"; f.frequency.value = 900; g.gain.value = 0.55;
+      s.connect(f).connect(g).connect(saida); const ini = tp - b.duration + 0.02; s.start(Math.max(ac.currentTime, ini), Math.max(0, ac.currentTime - ini)); }
+    [["m-glock-79", 0], ["m-glock-84", 0.07], ["m-glock-91", 0.14], ["m-glock-84", 0.3]].forEach(([n, d], q) => {
+      const x = B[n]; if (!x) return; const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = x.buf; g.gain.value = q === 3 ? 0.5 : 0.75;
+      if (q === 3) s.playbackRate.value = Math.pow(2, 4 / 12); // fecha num acorde maior
+      s.connect(g); g.connect(saida); g.connect(sala); s.start(tp + d, x.off);
+    });
+    return !!B["m-glock-84"];
+  }
+  function tocarTrilhaReal(ac, saida, total, pops, whooshes, meio, E, plim) {
+    const t0 = ac.currentTime + 0.35, SR = ac.sampleRate, B = sonsDoContexto.get(ac) || {};
+    const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 6; comp.ratio.value = 3.5; comp.attack.value = 0.006; comp.release.value = 0.16; comp.connect(saida);
+    const mestre = ac.createGain(); mestre.gain.value = 0.85; mestre.connect(comp);
+    const musica = ac.createGain(); musica.connect(mestre);
+    const ir = (seg, curva, corte) => { const b = ac.createBuffer(2, Math.floor(SR * seg), SR); for (let ch = 0; ch < 2; ch++) { const q = b.getChannelData(ch); for (let i = 0; i < q.length; i++) q[i] = (Math.random() * 2 - 1) * (corte ? (i / q.length < 0.9 ? 0.6 : 0) : Math.pow(1 - i / q.length, curva)); } return b; };
+    const sala = ac.createConvolver(); sala.buffer = ir(1.8, 3.2); const salaVolta = ac.createGain(); salaVolta.gain.value = E.eco ?? 0.18; sala.connect(salaVolta).connect(musica);
+    const portao = ac.createConvolver(); portao.buffer = ir(0.32, 1, true); const portaoVolta = ac.createGain(); portaoVolta.gain.value = 0.5; portao.connect(portaoVolta).connect(musica); // reverb "gated" dos anos 80
+    const bomba = ac.createGain(); bomba.connect(musica); // instrumentos que "respiram" com o bumbo (dance)
+    const lado = (no, p) => { if (!p || !ac.createStereoPanner) return no; const s = ac.createStereoPanner(); s.pan.value = p; s.connect(no); return s; };
+    if (meio) { const [ini, fim, vol] = meio; musica.gain.setValueAtTime(1, t0 + Math.max(0, ini - 0.3)); musica.gain.linearRampToValueAtTime(vol, t0 + ini); musica.gain.setValueAtTime(vol, t0 + Math.max(ini, fim - 0.3)); musica.gain.linearRampToValueAtTime(1, t0 + fim); }
+    mestre.gain.setValueAtTime(0.85, t0 + total - 0.7); mestre.gain.linearRampToValueAtTime(0.0001, t0 + total);
+    const som = (n, t, vol, o = {}) => {
+      const x = B[n]; if (!x || vol <= 0) return; const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = x.buf; const rate = o.rate || 1; s.playbackRate.value = rate;
+      g.gain.setValueAtTime(vol, t); if (o.dur) { g.gain.setValueAtTime(vol, t + o.dur); g.gain.linearRampToValueAtTime(0.0001, t + o.dur + (o.rel || 0.08)); }
+      s.connect(g); g.connect(lado(o.destino || musica, o.pan || 0)); if (o.sala) { const w = ac.createGain(); w.gain.value = o.sala; g.connect(w).connect(sala); } if (o.portao) { const w = ac.createGain(); w.gain.value = o.portao; g.connect(w).connect(portao); }
+      s.start(t, x.off); s.stop(t + (o.dur ? o.dur + (o.rel || 0.08) + 0.05 : (x.buf.duration - x.off) / rate + 0.05));
+    };
+    const nota = (inst, m, t, vol, o = {}) => { const rz = RAIZES[inst]; if (!rz) return; let r = rz[0]; rz.forEach((x) => { if (Math.abs(x - m) < Math.abs(r - m)) r = x; }); som(`m-${inst}-${r}`, t, vol, { ...o, rate: Math.pow(2, (m - r) / 12) }); };
+    const guitarra = (m, t, dur, muda, vol) => { while (m < 38) m += 12; while (m > 55) m -= 12; let r = GUITARRA[0]; GUITARRA.forEach((x) => { if (Math.abs(x - m) < Math.abs(r - m)) r = x; });
+      som(`g-${muda ? "muda" : E.gtTipo || "dist"}-${r}`, t, vol, { rate: Math.pow(2, (m - r) / 12), dur: muda ? null : dur, rel: 0.06, pan: muda ? -0.25 : -0.3 }); if (!muda) som(`g-${E.gtTipo || "dist"}-${r}`, t + 0.012, vol * 0.8, { rate: Math.pow(2, (m - r) / 12), dur, rel: 0.06, pan: 0.3 }); };
+    // 808 sintetizado (grave que desliza), igual ao do trap
+    const dist = ac.createWaveShaper(); const cv = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; cv[i] = Math.tanh(x * 2.2); } dist.curve = cv; dist.connect(musica);
+    const b808 = (m, t, dur, prox) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; const f = 440 * Math.pow(2, (m - 69) / 12); o.frequency.setValueAtTime(f, t);
+      if (prox) { o.frequency.setValueAtTime(f, t + dur * 0.6); o.frequency.exponentialRampToValueAtTime(440 * Math.pow(2, (prox - 69) / 12), t + dur * 0.9); }
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.3, t + 0.006); g.gain.setValueAtTime(0.26, t + dur * 0.8); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.08); o.connect(g).connect(dist); o.start(t); o.stop(t + dur + 0.1); };
+    const kit = (p) => `d-${E.kit}-${p}`, V = E.vol || {}, hum = E.humano ?? 0.5;
+    const passo = 60 / E.bpm / 4, fimMusica = total - 0.3, P = (s, i) => (s || "")[i % 16] || ".", nb = (E.raiz || [36]).length;
+    const longo = (s, i) => { let len = 1; while (len < 16 && P(s, i + len) === "-") len++; return len; };
+    for (let st = 0; st * passo < fimMusica; st++) {
+      const i = st % 16, bar = Math.floor(st / 16), bc = bar % nb, sw = i % 2 ? (E.balanco || 0) * passo : 0;
+      const tt = t0 + st * passo + sw, j = () => tt + (Math.random() - 0.5) * 0.008 * hum, vel = (v) => v * (1 - hum * 0.14 * Math.random());
+      const b8 = bar % 8, virada = E.virada && b8 === 7 && i >= 12;
+      if (i === 0 && (b8 === 0 || (E.pratoTodo && bar % 4 === 0)) && E.prato !== false) som(kit("prato"), tt, vel(V.prato ?? 0.42), { pan: 0.25 });
+      if (P(E.k, i) === "x") { som(kit("bumbo"), j(), vel(V.k ?? 1)); if (E.pump) { bomba.gain.setValueAtTime(0.25, tt); bomba.gain.linearRampToValueAtTime(1, tt + passo * 3); } }
+      if (P(E.s, i) === "x" && !virada) som(kit("caixa"), j(), vel(V.s ?? 0.85), { sala: E.gate ? 0 : 0.25, portao: E.gate ? 0.9 : 0 });
+      if (P(E.s, i) === "g") som(kit("caixa"), j(), vel(0.22)); // nota fantasma
+      if (P(E.p, i) === "x") som(kit("palma"), j(), vel(V.p ?? 0.7), { sala: 0.3, pan: 0.05 });
+      const h = P(E.h, i); if (h === "x" || h === "X") som(kit("chimbal"), j(), vel((V.h ?? 0.38) * (h === "X" ? 1.25 : i % 4 === 0 ? 1 : 0.8)), { pan: 0.2 });
+      else if (h === "r") for (let q = 0; q < 3; q++) som(kit("chimbal"), tt + q * passo / 3, vel((V.h ?? 0.38) * 0.75), { pan: 0.2 });
+      if (P(E.o, i) === "o") som(kit("aberto"), j(), vel(V.o ?? 0.33), { pan: 0.2, dur: passo * 1.8, rel: 0.05 });
+      if (P(E.r, i) === "x") som(kit("conducao"), j(), vel(V.r ?? 0.32), { pan: -0.2 });
+      if (P(E.aro, i) === "x") som(kit("aro"), j(), vel(0.45));
+      if (P(E.cb, i) === "x") som(kit("cowbell"), j(), vel(0.3), { pan: -0.3 });
+      if (P(E.sh, i) === "x") som("d-std-chocalho", j(), vel(0.3), { pan: -0.35 });
+      if (P(E.tb, i) === "x") som("d-std-pandeiro", j(), vel(0.32), { pan: 0.35 });
+      const cg = P(E.cg, i); if (cg === "x" || cg === "X") som(cg === "X" ? "d-std-conga" : "d-std-congaB", j(), vel(0.45), { pan: -0.2 });
+      if (virada) som(kit(["tomA", "tomM", "tomG", "tomG"][i - 12]), j(), vel(0.8), { sala: 0.2, pan: [0.3, 0.1, -0.2, -0.3][i - 12] });
+      const sc = P(E.sc, i); if ((sc === "1" || sc === "2") && bar % 2 === 1) som(`d-sfx-scratch${sc}`, tt, 0.7);
+      // baixo
+      const bx = P(E.b, i);
+      if (bx === "x" || bx === "X" || bx === "o") {
+        const len = longo(E.b, i), m = E.raiz[bc] + (bx === "X" ? 12 : bx === "o" ? 7 : 0), dur = passo * Math.max(1, len) * 0.92;
+        if (E.bx === "808") { const prox = E.raiz[(bc + (i + len >= 16 ? 1 : 0)) % nb]; b808(m, tt, Math.max(dur, passo * 2), prox !== m ? prox : null); }
+        else nota(E.bx || "baixo", m, tt, V.b ?? 0.75, { dur, rel: 0.05, destino: E.pump ? bomba : musica });
+      }
+      // acordes (piano, teclado, cordas, metais…)
+      const cx = P(E.cp, i);
+      if (cx === "x" && E.acordes) { const len = longo(E.cp, i), dur = passo * len * 0.95; E.acordes[bc].forEach((m, q) => nota(E.ac, m, tt + q * (E.arpejo || 0.004), (V.ac ?? 0.32) * (1 - hum * 0.1 * Math.random()), { dur, rel: 0.18, pan: (q - 1) * 0.22, sala: 0.25, destino: E.pump ? bomba : musica })); }
+      const cx2 = P(E.cp2, i);
+      if (cx2 === "x" && E.acordes && E.ac2) { const len = longo(E.cp2, i), dur = passo * len * 0.95; E.acordes[bc].forEach((m, q) => nota(E.ac2, m + (E.oit2 || 0), tt, V.ac2 ?? 0.22, { dur, rel: 0.3, pan: (q - 1) * 0.4, sala: 0.3, destino: E.pump ? bomba : musica })); }
+      // guitarra elétrica: x = acorde aberto (- segura), m = abafado
+      const gx = P(E.gt, i);
+      if ((gx === "x" || gx === "m") && E.raiz) guitarra(E.raiz[bc] + 12, j(), passo * longo(E.gt, i) * 0.95, gx === "m", V.gt ?? 0.42);
+      if (P(E.oh, i) === "x" && E.acordes) E.acordes[bc].forEach((m) => nota("orq", m, tt, 0.22, { sala: 0.3 }));
+      if (P(E.ck, i) === "x" && E.acordes) nota("wah", E.acordes[bc][0], j(), 0.32, { pan: -0.3 }); // guitarra "tchic" do funk/disco
+      // melodia (só nas que pedem: sintetizador dos anos 80, assobio do G-funk…)
+      if (E.ld && st >= (E.ld.entra ?? 16)) { const ml = E.ld.notas, k = (st - (E.ld.entra ?? 16)) % ml.length, m = ml[k];
+        if (m) { let len = 1; while (len < 8 && !ml[(k + len) % ml.length]) len++; if (E.ld.inst === "apito") { const o = ac.createOscillator(), g = ac.createGain(), f = 440 * Math.pow(2, (m - 69) / 12); o.frequency.setValueAtTime(f * 0.94, tt); o.frequency.exponentialRampToValueAtTime(f, tt + 0.07);
+            const vb = ac.createOscillator(), vg = ac.createGain(); vb.frequency.value = 5.5; vg.gain.value = f * 0.012; vb.connect(vg).connect(o.frequency); g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(V.ld ?? 0.12, tt + 0.05); g.gain.setValueAtTime(V.ld ?? 0.12, tt + passo * len * 0.85); g.gain.linearRampToValueAtTime(0.0001, tt + passo * len); o.connect(g); g.connect(musica); g.connect(sala); [o, vb].forEach((x) => { x.start(tt); x.stop(tt + passo * len + 0.05); }); }
+          else nota(E.ld.inst, m, tt, V.ld ?? 0.3, { dur: passo * len * 0.9, rel: 0.12, sala: 0.3, pan: 0.1 }); } }
+    }
+    if (plim != null) { const tp = t0 + plim; musica.gain.setValueAtTime(1, tp - 0.25); musica.gain.linearRampToValueAtTime(0.35, tp + 0.02); musica.gain.setValueAtTime(0.35, tp + 0.8); musica.gain.linearRampToValueAtTime(1, tp + 1.5); toqueArroba(ac, B, mestre, sala, tp); }
+    whooshes.forEach((w) => { const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), nb2 = ac.createBuffer(1, SR, SR), dd = nb2.getChannelData(0); for (let q = 0; q < dd.length; q++) dd[q] = Math.random() * 2 - 1; s.buffer = nb2;
+      f.type = "bandpass"; f.Q.value = 1.4; f.frequency.setValueAtTime(300, t0 + w); f.frequency.exponentialRampToValueAtTime(3200, t0 + w + 0.4); g.gain.setValueAtTime(0.0001, t0 + w); g.gain.linearRampToValueAtTime(0.22, t0 + w + 0.3); g.gain.linearRampToValueAtTime(0.0001, t0 + w + 0.45); s.connect(f).connect(g).connect(mestre); s.start(t0 + w); s.stop(t0 + w + 0.5); });
+    return t0;
+  }
   /** A musiquinha do Miga, tocada pelo próprio celular (Web Audio) e gravada junto com o vídeo */
   function tocarTrilha(ac, saida, total, pops, whooshes, meio, E = MUSICAS.house, plim = null) {
+    if (E && E.real) return tocarTrilhaReal(ac, saida, total, pops, whooshes, meio, E, plim);
     const t0 = ac.currentTime + 0.35, SR = ac.sampleRate; // respiro para o áudio "acordar": as primeiras batidas não encavalam
     const ruido = ac.createBuffer(1, SR, SR), d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     // Compressor no fim (som "cheio" de música pronta) e reverb para dar espaço
@@ -3872,14 +3997,11 @@
       if (E.melodiaReal && E.melodia && st >= (E.entra ?? 32)) { const m = E.melodia[(st - (E.entra ?? 32)) % E.melodia.length]; if (m) { let len = 1; const ml = E.melodia.length, j = (st - (E.entra ?? 32)) % ml; if (E.lider === "flauta" || E.lider === "super") while (len < 6 && !E.melodia[(j + len) % ml]) len++; lider(m, t, E.lider === "flauta" || E.lider === "super" ? passo * len * 0.92 : passo * 1.6); } }
       if (E.chiado && i % 4 === 0) barulho(t, 0.03, 0.025, "highpass", 3000);
     }
-    // "Plim" na hora que aparece o seu @
+    // Toque do seu @: sininho subindo + prato ao contrário (o mesmo em todas as músicas)
     if (plim != null) {
       const tp = t0 + plim;
-      // a música abaixa um instante para o toque do @ aparecer bem
-      musica.gain.setValueAtTime(1, tp - 0.03); musica.gain.linearRampToValueAtTime(0.4, tp + 0.04); musica.gain.setValueAtTime(0.4, tp + 0.7); musica.gain.linearRampToValueAtTime(1, tp + 1.4);
-      [72, 76, 79, 84].forEach((m, q) => corda(nota(m + 12), tp, 1.6, 0.6, (q - 1.5) * 0.3, "piano", mestre));
-      { const g = ac.createGain(); env(g, tp, 0.12, 1.4, 0.003); g.connect(mestre); g.connect(sala); const o = ac.createOscillator(); o.frequency.value = nota(96); const md = ac.createOscillator(), mg = ac.createGain(); md.frequency.value = nota(96) * 3.5; mg.gain.setValueAtTime(nota(96), tp); mg.gain.exponentialRampToValueAtTime(1, tp + 0.9); md.connect(mg).connect(o.frequency); o.connect(g); [o, md].forEach((x) => { x.start(tp); x.stop(tp + 1.5); }); }
-      guizo(tp, true);
+      musica.gain.setValueAtTime(1, tp - 0.25); musica.gain.linearRampToValueAtTime(0.35, tp + 0.02); musica.gain.setValueAtTime(0.35, tp + 0.8); musica.gain.linearRampToValueAtTime(1, tp + 1.5);
+      toqueArroba(ac, sonsDoContexto.get(ac) || {}, mestre, sala, tp);
     }
     // "Toc" macio quando algo aparece (no lugar do assobio)
     // As aparições não têm som próprio: acontecem no tempo da batida da música (pops fica só para marcar o tempo)
@@ -3924,6 +4046,7 @@
       if (V.abertura) whooshes.push(tA - 0.3);
       // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
       const temTrilha = V.abertura || V.final || V.musica;
+      if (temTrilha) { btn.textContent = "Preparando a música…"; await carregarSons(ac, MUSICAS[V.batida || "house"]); }
       if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + acentosDe(MUSICAS[V.batida || "house"], tA + tM, 8)[arroba(config.instagram) ? 2 : 3] : null);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
     } catch (e) { if (v) v.muted = true; }
@@ -4467,18 +4590,68 @@
     natalpop: { ...MUSICAS.natalpop, pump: true, riser: true, acordeTipo: "super", lider: "super", liderVol: 0.05, h: "xxxxxxxxxxxxxxxx", chVol: 0.4, o: "..o...o...o...o." },
     anonovo: { ...MUSICAS.anonovo, pump: true, riser: true, acordeTipo: "super", lider: "super", liderVol: 0.05, sh: "" }
   });
+  // Músicas com instrumentos de verdade. k = bumbo e s = caixa: são as batidas fortes onde os selos e as imagens aparecem
+  const AM = [[57, 60, 64], [53, 57, 60], [55, 60, 64], [55, 59, 62]];
+  Object.assign(MUSICAS, {
+    // ---- Rap / hip-hop americano
+    boombap: { real: true, bpm: 90, kit: "room", balanco: 0.16, humano: 0.8, k: "x.......x.x.....", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", vol: { h: 0.3 }, b: "x.....x...x.....", bx: "baixo", raiz: [45, 38, 43, 40],
+      cp: "x-------x-------", ac: "ep", acordes: [[57, 60, 64, 67], [50, 53, 57, 60], [55, 59, 62, 65], [52, 55, 59, 62]], sc: "............1.2." },
+    gfunk: { real: true, bpm: 94, kit: "808", balanco: 0.1, k: "x......x..x.....", s: "....x.......x...", p: "....x.......x...", h: "x.x.x.x.x.x.x.x.", b: "x..x....x.x..x..", bx: "synbaixo", raiz: [38, 38, 43, 45],
+      cp: "x-------x-------", ac: "ep", acordes: [[57, 60, 65], [57, 60, 65], [55, 59, 62], [57, 61, 64]], ld: { inst: "apito", entra: 32, notas: [81, 0, 0, 0, 0, 0, 79, 0, 77, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 0, 77, 0, 0, 0, 74, 0, 0, 0, 0, 0, 0, 0] } },
+    oldschool: { real: true, bpm: 102, kit: "808", k: "x.....x.x.......", s: "....x.......x...", p: "....x.......x...", h: "x.x.x.x.x.x.x.x.", cb: "..x.......x.x...", b: "x.....x.x.......", bx: "synbaixo2", raiz: [33, 33, 36, 31],
+      acordes: [[57, 60, 64], [57, 60, 64], [60, 64, 67], [55, 59, 62]], oh: "x...............", sc: "..........1.2.1." },
+    drill: { real: true, bpm: 142, kit: "808", k: "x......x..x.....", s: "........x.....g.", h: "x..x..x.x..x.rx.", b: "x------x--x-----", bx: "808", raiz: [33, 29, 31, 28],
+      cp: "x---------------", ac: "cordas", acordes: [[57, 60, 64], [53, 57, 60], [55, 58, 62], [52, 56, 59]], vol: { ac: 0.24 } },
+    crunk: { real: true, bpm: 100, kit: "808", k: "x..x..x...x..x..", s: "....x.......x...", p: "....x.......x...", h: "x.x.x.x.x.x.x.x.", b: "x--x--x---x--x--", bx: "808", raiz: [28, 28, 31, 26],
+      cp: "x..x....x..x....", ac: "synbrass", acordes: [[52, 55, 59], [52, 55, 59], [55, 59, 62], [50, 54, 57]], oh: "x.......x.......", vol: { ac: 0.3 } },
+    poprap: { real: true, bpm: 92, kit: "std", balanco: 0.08, k: "x......x..x.....", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", tb: "....x.......x...", b: "x.....x.x.......", bx: "baixo", raiz: [36, 43, 45, 41],
+      cp: "x...x...x...x...", ac: "piano", acordes: [[60, 64, 67], [59, 62, 67], [57, 60, 64], [57, 60, 65]] },
+    chill: { real: true, bpm: 84, kit: "room", balanco: 0.18, humano: 0.8, k: "x......x..x.....", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", sh: "..x...x...x...x.", vol: { h: 0.24 }, b: "x.......x.......", bx: "baixo", raiz: [41, 40, 38, 36],
+      cp: "x-------x-------", ac: "ep", acordes: [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]] },
+    // ---- Dance
+    dancepop: { real: true, bpm: 124, kit: "dance", pump: true, k: "x...x...x...x...", s: "....x.......x...", p: "....x.......x...", h: "x.x.x.x.x.x.x.x.", o: "..o...o...o...o.", vol: { h: 0.22 }, b: "..x...x...x...x.", bx: "synbaixo", raiz: [45, 41, 48, 43],
+      cp: "x..x..x...x..x..", ac: "piano", cp2: "x---------------", ac2: "pad", acordes: AM, vol: { h: 0.22, ac: 0.3, ac2: 0.14 } },
+    eurodance: { real: true, bpm: 138, kit: "dance", pump: true, k: "x...x...x...x...", p: "....x.......x...", s: "....x.......x...", h: "xxxxxxxxxxxxxxxx", o: "..o...o...o...o.", b: "..x-..x-..x-..x-", bx: "synbaixo2", raiz: [45, 41, 43, 40],
+      cp2: "x---------------", ac2: "pad", acordes: [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]], ld: { inst: "serra", entra: 16, notas: [69, 0, 72, 0, 76, 0, 72, 0, 74, 0, 72, 0, 71, 0, 67, 0, 69, 0, 72, 0, 76, 0, 79, 0, 77, 0, 76, 0, 74, 0, 72, 0] }, vol: { h: 0.18, ac2: 0.16, ld: 0.2 } },
+    disco: { real: true, bpm: 118, kit: "std", k: "x...x...x...x...", s: "....x.......x...", o: "..o...o...o...o.", h: "x.x.x.x.x.x.x.x.", tb: "....x.......x...", b: "x.X.x.X.x.X.x.X.", bx: "baixo", raiz: [38, 43, 36, 45],
+      cp: "x-------x-------", ac: "cordas", cp2: "......x.......x.", ac2: "metais", ck: "..x...x...x...x.", acordes: [[62, 65, 69, 72], [55, 59, 62, 65], [60, 64, 67, 71], [57, 60, 64, 67]], vol: { ac: 0.2, ac2: 0.3 } },
+    housepiano: { real: true, bpm: 122, kit: "808", pump: true, k: "x...x...x...x...", p: "....x.......x...", h: "..x...x...x...x.", b: "x..x..x.x..x..x.", bx: "synbaixo", raiz: [45, 45, 43, 41],
+      cp: "x..x..x...x.x...", ac: "piano", acordes: [[57, 61, 64, 69], [57, 61, 64, 69], [55, 59, 62, 67], [53, 57, 60, 65]], vol: { ac: 0.34 } },
+    funk80: { real: true, bpm: 108, kit: "ele", k: "x.....x...x.x...", s: "....x.......x...", h: "xxxxxxxxxxxxxxxx", vol: { h: 0.22, ac: 0.26 }, b: "x.xX..x.x..X.x..", bx: "slap", raiz: [40, 40, 43, 45],
+      cp: "x.......x..x....", ac: "synbrass", ck: "..x...x...x...x.", acordes: [[52, 55, 59, 62], [52, 55, 59, 62], [55, 59, 62, 65], [57, 60, 64, 67]] },
+    // ---- Anos 80
+    synthpop: { real: true, bpm: 118, kit: "ele", gate: true, k: "x.......x.x.....", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", b: "x.x.x.x.x.x.x.x.", bx: "synbaixo2", raiz: [45, 41, 48, 43],
+      cp: "x---------------", ac: "poly", acordes: AM, ld: { inst: "serra", entra: 32, notas: [76, 0, 0, 0, 74, 0, 72, 0, 74, 0, 0, 0, 0, 0, 0, 0, 72, 0, 0, 0, 71, 0, 67, 0, 69, 0, 0, 0, 0, 0, 0, 0] }, vol: { ac: 0.24, ld: 0.2 } },
+    poprock80: { real: true, bpm: 128, kit: "rock", gate: true, virada: true, k: "x.......x.x.....", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", gt: "x.x.x.x.x.x.x.x.", gtTipo: "over", b: "x.x.x.x.x.x.x.x.", bx: "baixo", raiz: [40, 36, 43, 38],
+      cp: "x---------------", ac: "synbrass", acordes: [[64, 67, 71], [60, 64, 67], [62, 67, 71], [62, 66, 69]], vol: { ac: 0.16, gt: 0.36 } },
+    italo: { real: true, bpm: 120, kit: "ele", gate: true, k: "x...x...x...x...", s: "....x.......x...", h: "..x...x...x...x.", b: "x.X.x.X.x.X.x.X.", bx: "synbaixo", raiz: [45, 41, 43, 40],
+      cp2: "x---------------", ac2: "pad", acordes: [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]], ld: { inst: "serra", entra: 16, notas: [81, 0, 0, 0, 79, 0, 0, 0, 77, 0, 0, 0, 76, 0, 0, 0, 74, 0, 0, 0, 76, 0, 0, 0, 77, 0, 0, 0, 79, 0, 0, 0] }, vol: { ac2: 0.18, ld: 0.18 } },
+    dance80: { real: true, bpm: 124, kit: "808", gate: true, k: "x...x...x...x...", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", oh: "x.......x.......", b: "xxxxxxxxxxxxxxxx", bx: "synbaixo2", raiz: [38, 38, 41, 43],
+      cp: "x---------------", ac: "poly", acordes: [[62, 65, 69], [62, 65, 69], [60, 65, 69], [62, 67, 71]], vol: { b: 0.5, ac: 0.2 } },
+    // ---- Rock
+    rock: { real: true, bpm: 130, kit: "rock", virada: true, k: "x.....x.x.......", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", gt: "x.x.x.x.x.x.x.x.", b: "x.x.x.x.x.x.x.x.", bx: "baixo", raiz: [40, 36, 43, 38] },
+    poppunk: { real: true, bpm: 168, kit: "rock", virada: true, pratoTodo: true, k: "x.....x.x.....x.", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", gt: "x.x.x.x.x.x.x.x.", b: "x.x.x.x.x.x.x.x.", bx: "baixo", raiz: [36, 43, 45, 41] },
+    hardrock: { real: true, bpm: 112, kit: "rock", virada: true, k: "x.x...x.x.x...x.", s: "....x.......x...", r: "x.x.x.x.x.x.x.x.", gt: "m.m.m.m.x---m.m.", b: "x.x.x.x.x---x.x.", bx: "baixo", raiz: [40, 40, 43, 45] },
+    rockalegre: { real: true, bpm: 140, kit: "rock", virada: true, k: "x.....x...x.....", s: "....x.......x...", h: "x.x.x.x.x.x.x.x.", tb: "x.x.x.x.x.x.x.x.", gt: "x---x---x---x---", gtTipo: "over", b: "x.x.x.x.x.x.x.x.", bx: "baixo", raiz: [43, 38, 40, 36] },
+    indie: { real: true, bpm: 126, kit: "std", virada: true, k: "x...x...x...x...", s: "....x.......x...", h: "..x...x...x...x.", gt: "x..x..x.x..x..x.", gtTipo: "over", b: "x..x..x.x..x..x.", bx: "baixo", raiz: [45, 41, 36, 43], vol: { gt: 0.34 } }
+  });
   // Estilos antigos apontam para os novos (Reels e vídeos que já usavam continuam funcionando)
-  const ALIAS_MUS = { house: "balada", eletronica: "electro", eletrodrop: "bigroom", housegrave: "brazilianbass", tropical: "slaphouse", disco: "techhouse", funk: "brazilianbass",
-    lofi: "deephouse", boombap: "deephouse", drill: "futurehouse", dembow: "slaphouse", reggaetonromantico: "deephouse", perreosuave: "deephouse", reggaetonpop: "slaphouse",
-    reggaetonnoite: "deephouse", bachata: "deephouse", afrobeat: "techhouse", reggaetonmoderno: "slaphouse", latinpop: "progressive", moombahton: "electro", cumbiapop: "slaphouse",
-    latintrap: "trap", trapmelodico: "trap", natalreggaeton: "natalpop", natallofi: "natalpop", trapflauta: "trap", reggaetonflauta: "slaphouse", violaograve: "brazilianbass" };
+  const ALIAS_MUS = { house: "dancepop", balada: "dancepop", slaphouse: "dancepop", reggaetonpop: "dancepop", tropical: "dancepop", latinpop: "dancepop", cumbiapop: "dancepop",
+    eletronica: "eurodance", electro: "eurodance", eletrodrop: "eurodance", bigroom: "eurodance", progressive: "eurodance", moombahton: "eurodance",
+    housegrave: "housepiano", techhouse: "housepiano", afrobeat: "funk80", funk: "crunk", funkmandela: "crunk", brazilianbass: "crunk",
+    lofi: "chill", deephouse: "chill", reggaetonromantico: "chill", perreosuave: "chill", reggaetonnoite: "chill", bachata: "chill",
+    futurehouse: "synthpop", dembow: "gfunk", reggaetonmoderno: "gfunk", reggaetonflauta: "gfunk", violaograve: "rockalegre",
+    trappesado: "drill", phonk: "drill", latintrap: "trap", trapmelodico: "trap", trapflauta: "trap", natalreggaeton: "natalpop", natallofi: "natalpop" };
   Object.entries(ALIAS_MUS).forEach(([v, n]) => { MUSICAS[v] = MUSICAS[n]; });
   const NOMES_MUSICA = {
-    balada: ["Balada", "house de pista, grave pulsando"], electro: ["Electro house", "pesada e agitada"], bigroom: ["Big room", "bumbo forte de festival"],
-    brazilianbass: ["Brazilian bass", "grave que mexe"], slaphouse: ["Slap house", "grave saltado, do momento"], techhouse: ["Tech house", "batida que não para"],
-    deephouse: ["Deep house", "mais suave, de lounge"], futurehouse: ["Future house", "grave metálico"], progressive: ["Progressive", "acordes de festival"],
-    trap: ["Trap", "grave que desliza"], trappesado: ["Trap pesado", "grave com muita ênfase"], phonk: ["Phonk", "grave sujo"], funkmandela: ["Funk mandelão", "grave estourado"],
-    natalpop: ["Natal eletrônico", "Jingle Bells na balada"], anonovo: ["Ano novo", "festa de virada"]
+    boombap: ["Boom bap", "rap americano dos anos 90"], gfunk: ["West Coast", "hip-hop da Califórnia"], oldschool: ["Old school", "hip-hop raiz, com scratch"],
+    drill: ["Drill", "rap pesado de Nova York"], crunk: ["Rap de festa", "808 e metais"], poprap: ["Pop rap", "piano e batida forte"], chill: ["Hip-hop chill", "suave, de fundo"],
+    trap: ["Trap", "grave que desliza"],
+    dancepop: ["Dance pop", "pista, alegre"], eurodance: ["Eurodance", "dance dos anos 90"], disco: ["Disco", "baixo, cordas e metais"],
+    housepiano: ["House piano", "piano de balada"], funk80: ["Funk anos 80", "baixo slap"],
+    synthpop: ["Synthpop 80", "sintetizadores retrô"], poprock80: ["Pop rock 80", "guitarra e bateria com eco"], italo: ["Italo disco", "dance retrô"], dance80: ["Dance 80", "808 retrô"],
+    rock: ["Rock", "guitarra distorcida"], poppunk: ["Pop punk", "rápida e animada"], hardrock: ["Hard rock", "pesada"], rockalegre: ["Rock alegre", "guitarra aberta"], indie: ["Indie rock", "leve e dançante"],
+    natalpop: ["Natal", "Jingle Bells"], anonovo: ["Ano novo", "festa de virada"]
   };
   const LISTA_MUSICAS = Object.keys(NOMES_MUSICA);
   Object.entries(ALIAS_MUS).forEach(([v, n]) => { NOMES_MUSICA[v] = NOMES_MUSICA[n]; });
@@ -4924,7 +5097,8 @@
     if (!k || k === amostraK) { parar(); return; }
     parar(); amostraK = k;
     const b = document.querySelector(`[data-ouvir="${k}"]`); if (b) { b.innerHTML = ICO_PAUSA; b.classList.add("tocando"); }
-    try { amostra = new (window.AudioContext || window.webkitAudioContext)(); tocarTrilha(amostra, amostra.destination, 8, [], [], null, MUSICAS[k], null); const ac = amostra; amostraT = setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } parar(); }, 8300); } catch (e) { parar(); }
+    try { amostra = new (window.AudioContext || window.webkitAudioContext)(); const ac = amostra; amostra.resume && amostra.resume();
+      carregarSons(ac, MUSICAS[k]).then(() => { if (amostra === ac) tocarTrilha(ac, ac.destination, 8, [], [], null, MUSICAS[k], null); }); amostraT = setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } parar(); }, 8300); } catch (e) { parar(); }
   }
   /** Folha genérica do estúdio */
   function folhaEst(titulo, html) {
@@ -5133,6 +5307,7 @@
       dest = gravar ? ac.createMediaStreamDestination() : ac.destination;
       const { pops, whooshes } = efeitosReels(R, n);
       const f = T_INTRO + T_PROD * n;
+      await carregarSons(ac, MUSICAS[musicaDe(R)]);
       t0 = tocarTrilha(ac, dest, total, pops, whooshes, null, MUSICAS[musicaDe(R)], f + acentosDe(MUSICAS[musicaDe(R)], f, 8)[arroba(config.instagram) ? 2 : 3]);
     } catch (e) { t0 = 0; }
     if (gravar) {
