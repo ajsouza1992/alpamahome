@@ -1611,3 +1611,21 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 .frases-lista { display: grid; gap: 8px; margin-bottom: 12px; }
 .frases-lista button { min-height: 50px; padding: 10px 16px; border: 0; border-radius: 16px; background: var(--campo); box-shadow: inset 0 0 0 1px var(--linha); font: inherit; font-size: 15px; font-weight: 600; color: var(--preto); text-align: left; cursor: pointer; }
 .frases-lista button:active { background: var(--rosa-claro); }
+/* Menu ⋮: opções uma ao lado da outra */
+#folhaItemOps { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+#folhaItemOps .fi-op { display: grid; grid-template-columns: 1fr; justify-items: center; align-content: center; row-gap: 6px; min-height: 96px; padding: 12px 6px; text-align: center; }
+#folhaItemOps .fi-op small { grid-column: 1; font-size: 11px; line-height: 1.2; }
+/* Postar vários: ordem dos produtos */
+.rt-ordem { display: grid; gap: 8px; margin-bottom: 12px; }
+.rt-ordem-tit { font-size: 15px; }
+.rt-ordem-chips { flex-wrap: wrap; overflow: visible; }
+.rt-ordem-chips button.on { background: var(--rosa); color: #fff; }
+.rt-ordem-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 420px; overflow-y: auto; }
+.rt-ordem-lista li { display: grid; grid-template-columns: 26px 44px 1fr 40px 40px; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 14px; background: var(--branco); box-shadow: inset 0 0 0 1px var(--linha); }
+.rt-ordem-lista li > i { font-style: normal; font-weight: 800; color: var(--rosa); text-align: center; }
+.rt-ordem-lista li > img, .rt-ordem-lista li > .sem-foto { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; font-size: 9px; display: grid; place-items: center; background: var(--campo); }
+.rt-ordem-lista li span { min-width: 0; display: grid; }
+.rt-ordem-lista li b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rt-ordem-lista li small { font-size: 12.5px; color: var(--rosa-escuro); font-weight: 700; }
+.rt-ordem-lista li button { width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--rosa-claro); color: var(--rosa-escuro); font: 800 18px Poppins, sans-serif; cursor: pointer; }
+.rt-ordem-lista li button:disabled { opacity: .3; cursor: default; }

@@ -1188,7 +1188,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=172"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=173"; });
     }
     edFoto = null;
     try {
@@ -1562,7 +1562,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=172"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=173"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2824,7 +2824,7 @@
     if (wz.passo === "lugares") {
       if (!wz.lugares) wz.lugares = lugaresSalvos();
       c.innerHTML = `<h2 class="wz-titulo">Onde vai postar?</h2>
-        <div class="wz-prod on" style="cursor:default">${miniLoja(item, fotoMini(item))}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small></span></div>
+        ${wz.filaRoteiro && wz.filaRoteiro.length > 1 ? blocoOrdemRoteiro() : `<div class="wz-prod on" style="cursor:default">${miniLoja(item, fotoMini(item))}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small></span></div>`}
         <p class="nota">Marque tudo de uma vez. O app guarda sua escolha para a próxima.</p>
         <div class="wz-ops">${Object.entries(LUGARES).map(([k, v]) => `<button type="button" class="rt-lugar${wz.lugares.includes(k) ? " on" : ""}" data-lugar="${k}"><i></i><span><b>${v.nome}</b><small>${v.desc}</small></span></button>`).join("")}</div>
         ${botaoContinuar(wz.lugares.length > 0, `Começar (${wz.lugares.length} ${wz.lugares.length === 1 ? "lugar" : "lugares"})`)}`;
@@ -2880,6 +2880,20 @@
     return false;
   }
   /** Próximo produto da sequência (quando você escolheu vários) */
+  /** Postar vários: escolher a ordem (menor preço, maior preço, maior desconto ou na mão com ↑ ↓) */
+  const ORDENS_RT = [["menor", "Menor preço"], ["maior", "Maior preço"], ["desconto", "Maior desconto"], ["nome", "A a Z"]];
+  function ordenarRoteiro(k) {
+    const its = wz.filaRoteiro.map((id) => fila().find((x) => x.id === id)).filter(Boolean), p = (x) => x.precoNovo || Infinity, off = (x) => x.precoAntigo && x.precoNovo ? (x.precoAntigo - x.precoNovo) / x.precoAntigo : 0;
+    const f = { menor: (a, b) => p(a) - p(b), maior: (a, b) => (b.precoNovo || 0) - (a.precoNovo || 0), desconto: (a, b) => off(b) - off(a), nome: (a, b) => limparNome(a.nome || "").localeCompare(limparNome(b.nome || ""), "pt-BR") }[k];
+    if (!f) return; its.sort(f); wz.filaRoteiro = its.map((x) => x.id); wz.ordemRt = k; wz.itemId = wz.filaRoteiro[0];
+  }
+  function blocoOrdemRoteiro() {
+    const its = wz.filaRoteiro.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
+    return `<div class="rt-ordem"><b class="rt-ordem-tit">Ordem de postagem · ${its.length} produtos</b>
+      <div class="ed-chips rt-ordem-chips">${ORDENS_RT.map(([k, n]) => `<button type="button" data-rt-ordem="${k}" class="${wz.ordemRt === k ? "on" : ""}">${n}</button>`).join("")}</div>
+      <p class="nota">Ou use as setinhas para mudar a ordem do seu jeito.</p>
+      <ol class="rt-ordem-lista">${its.map((it, i) => `<li><i>${i + 1}</i>${fotoMini(it)}<span><b>${esc(limparNome(it.nome || "Sem nome"))}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small></span><button type="button" data-rt-mover="${i}:-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">↑</button><button type="button" data-rt-mover="${i}:1" ${i === its.length - 1 ? "disabled" : ""} aria-label="Descer">↓</button></li>`).join("")}</ol></div>`;
+  }
   const proximoDaFila = () => { if (!wz.filaRoteiro) return null; const i = wz.filaRoteiro.indexOf(wz.itemId); return fila().find((x) => x.id === wz.filaRoteiro[i + 1]) || null; };
   function avancarRoteiro() {
     wz.aguardando = false;
@@ -2963,6 +2977,8 @@
     if (wz.canal !== "roteiro") return;
     const t = e.target;
     if (t.closest("#rtCopiarLegFeed")) { if (await copiarTexto($("#rtLegFeed").value)) toast("Legenda copiada"); return; }
+    const ro = t.closest("[data-rt-ordem]"); if (ro && wz.filaRoteiro) { ordenarRoteiro(ro.dataset.rtOrdem); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const mv = t.closest("[data-rt-mover]"); if (mv && wz.filaRoteiro) { const [i, d] = mv.dataset.rtMover.split(":").map(Number), f = wz.filaRoteiro; if (f[i + d] === undefined) return; [f[i], f[i + d]] = [f[i + d], f[i]]; wz.ordemRt = ""; wz.itemId = f[0]; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const lg = t.closest("[data-lugar]");
     if (lg) {
       const k = lg.dataset.lugar;
