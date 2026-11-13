@@ -1435,7 +1435,7 @@ body.modo-selecao main { padding-bottom: 200px; }
 .dialogo.folha { box-sizing: border-box; max-height: 92dvh; overflow-y: auto; }
 .folha-item, .folha-cat { width: 100%; }
 #ppListaBloco .barra-filtro { flex-wrap: wrap; row-gap: 2px; column-gap: 12px; }
-#ppListaBloco .barra-filtro #ppTotal { flex: 1 1 100%; order: -1; }
+
 #ppFiltrar { display: none !important; }
 #ppListaBloco .barra-filtro { justify-content: flex-start !important; }
 #ppListaBloco .barra-filtro .pp-ordem { margin-left: auto; }
@@ -1479,7 +1479,7 @@ body.modo-selecao main { padding-bottom: 200px; }
   .cat-sel, .cat-limpar { display: none; }
   .pp-chips-pc { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 }
-#ppListaBloco .barra-filtro #ppSelecionar { margin-right: 0; padding-left: 0; }
+
 .cat-sel__trocar { flex: none; font-style: normal; font-size: 13px; font-weight: 700; color: var(--rosa); }
 /* Categoria sem produto: ícone e nome em cinza (com produto: rosa) */
 .pp-cat.vazia { opacity: 1; }
@@ -1488,3 +1488,13 @@ body.modo-selecao main { padding-bottom: 200px; }
 .chip-cat.vazia:not(.on) { color: #a39b93; }
 .chip-cat.vazia:not(.on) svg { stroke: #b4aca4; }
 .folha-cat .pp-cat.on svg.pp-cat__ic { stroke: var(--rosa); }
+
+/* Lista: total à esquerda e dois botões pequenos à direita, numa linha só */
+#ppListaBloco .barra-filtro { display: flex !important; flex-wrap: nowrap !important; align-items: center; justify-content: flex-start !important; gap: 8px; min-height: 40px; }
+#ppListaBloco .barra-filtro #ppTotal { flex: 1 1 auto; min-width: 0; order: 0; font-size: 13.5px; color: var(--cinza); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ppListaBloco .barra-filtro #ppSelecionar, #ppListaBloco .barra-filtro .pp-ordem { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 36px; margin: 0; padding: 0 12px; border: 0; border-radius: 999px; background: var(--campo); font: inherit; font-size: 13px; font-weight: 600; color: var(--preto); cursor: pointer; }
+#ppListaBloco .barra-filtro .pp-ordem svg { width: 16px; height: 16px; stroke: var(--rosa); }
+#ppListaBloco .barra-filtro #ppSelecionar[hidden], #ppListaBloco .barra-filtro .pp-ordem[hidden] { display: none; }
+body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { background: var(--rosa); color: #fff; }
+#ppDica { font-size: 12.5px; }
+.vazio-bt { margin-top: 12px; min-height: 44px; padding: 0 22px; }

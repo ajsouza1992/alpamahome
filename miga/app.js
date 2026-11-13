@@ -854,7 +854,7 @@
       for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); todos.push(p); });
       d = { configurado: ok.reduce((m, x) => ({ ...m, ...(x.configurado || {}) }), {}), produtos: todos, avisos: ok.flatMap((x) => x.avisos || []) };
     } catch (e) {
-      if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; }
+      if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); $("#catalogo").innerHTML = '<p class="vazio-lista">Os achados aparecem quando a sua conta estiver liberada no servidor (MIGA_EMAILS no Cloudflare).</p>'; return; }
       $("#catalogo").innerHTML = `<p class="vazio-lista">${e.codigo === "offline" ? "O catálogo só funciona no app publicado." : "Não consegui carregar o catálogo agora."}</p>`;
       return;
     }
@@ -1181,7 +1181,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=156"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=157"; });
     }
     edFoto = null;
     try {
@@ -1554,7 +1554,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=156"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=157"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1806,6 +1806,7 @@
     const l0 = ordenar(base), l = [...l0.filter((i) => !foiCompartilhado(i)), ...l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0))];
     pintarCats();
     const np = l.filter((i) => !foiCompartilhado(i)).length, nd = l.length - np;
+    $("#ppSelecionar").hidden = !l.length && !modoVarios; $("#ppOrdem").hidden = l.length < 2; $("#ppDica").hidden = !l.length;
     $("#ppOrdemTxt").textContent = ({ recentes: "Recentes", antigos: "Antigos", preco: "Menor preço", desconto: "Desconto" })[ordemLista] || "Recentes";
     $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}`;
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
@@ -1818,8 +1819,8 @@
         <span class="seta">›</span>
       </button>${i.carregando ? "" : modoVarios ? `<button type="button" class="pp-caixa" data-marcar="${esc(i.id)}" aria-label="Marcar ${esc(i.nome || "produto")}" aria-pressed="${marcados.has(i.id)}"></button>`
         : `<button type="button" class="pp-pontos" data-menu-item="${esc(i.id)}" aria-label="Opções de ${esc(i.nome || "produto")}"><svg><use href="#i-pontos"/></svg></button>`}</div>`; };
-    const vazio = termoBusca.trim() ? (ehLink(termoBusca) ? "" : "Nada encontrado com essa busca.") : filtroLista !== "todas" ? `Nenhum produto em ${NOME_CAT[filtroLista] || "nessa categoria"} ainda.` : "Cole no Início os links dos produtos que você vai divulgar.";
-    $("#ppLista").innerHTML = (l.length ? l.map(linha).join("") : vazio ? `<p class="vazio-lista">${vazio}</p>` : "");
+    const vazio = termoBusca.trim() ? (ehLink(termoBusca) ? "" : "Nada encontrado com essa busca.") : filtroLista !== "todas" ? `Nenhum produto em ${NOME_CAT[filtroLista] || "nessa categoria"} ainda.` : "Sua lista está vazia. Cole o link de um produto para começar.";
+    $("#ppLista").innerHTML = (l.length ? l.map(linha).join("") : vazio ? `<p class="vazio-lista">${vazio}${!termoBusca.trim() && filtroLista === "todas" ? '<br><button type="button" class="btn btn--rosa vazio-bt" data-ir-inicio>Colar um link</button>' : ""}</p>` : "");
     pintarMarcados();
   }
   /** Início: blocos das categorias, com quantos faltam postar em cada */
@@ -2089,6 +2090,7 @@
   $("#ppLista").addEventListener("click", async (e) => {
     if (e.target.closest("[data-completar]")) { const p = incompletos()[0]; if (p) { modoCompletar = true; abrirItemFila(p, true); } else toast("Todos os produtos estão completos"); return; }
     if (e.target.closest("[data-continuar]")) { continuarProgresso(); return; }
+    if (e.target.closest("[data-ir-inicio]")) { irPara("inicio"); setTimeout(() => $("#inLink").focus(), 150); return; }
     const ph = e.target.closest("[data-ph]");
     if (ph) {
       if (ph.dataset.ph === "postar") { toast("A Lista mostra só o que falta postar. O que já foi postado fica no Histórico"); }
