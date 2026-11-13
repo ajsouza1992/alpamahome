@@ -1098,7 +1098,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=133"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=134"; });
     }
     edFoto = null;
     try {
@@ -1471,7 +1471,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=133"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=134"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3396,6 +3396,10 @@
             </div>
             ${V.itemId ? `<button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>Grupos e canal, com a mensagem pronta</small></span></button>` : ""}
             ${r.mp4 ? "" : '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>'}
+            <div class="leg-bloco">
+              <div class="leg-topo"><span>Legenda do Instagram</span><div><button type="button" class="leg-btn" id="vdCopiarLegenda"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button><button type="button" class="leg-btn" id="vdRefazerLegenda"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Refazer</button></div></div>
+              <textarea id="vdLegendaInsta" rows="9">${esc(V.legendaInsta || (V.legendaInsta = legendaVideo()))}</textarea></div>
+            <p class="nota">Ao tocar em "Postar / compartilhar" a legenda já vai copiada: no Instagram é só colar.</p>
             <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
           </div>
         </div>`;
@@ -3850,6 +3854,7 @@
     blob = await somCompativel(blob, tipo, (m) => { btn.textContent = m; });
     // Capa no modelo e na cor escolhidos (dá para trocar na tela de pronto)
     const capa = await telaParaJpeg(capaDoVideo(V.capaTipo || "titulo"), "miga-promo-capa.jpg");
+    V.legendaInsta = null; // legenda nova, com os textos atuais do vídeo
     V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-video.${mp4 ? "mp4" : "webm"}`, capa };
     V.gravando = false; wz.passo = "vPronto"; mostrarPasso();
   }
@@ -3895,8 +3900,11 @@
     if (t.closest("#vdRefazer")) { V.resultado = null; mostrarPasso(); return; }
     if (t.closest("#vdBaixar")) { baixarBlob(V.resultado.blob, V.resultado.nome); toast("Vídeo salvo"); return; }
     if (t.closest("#vdBaixarCapa")) { baixarBlob(V.resultado.capa, V.resultado.capa.name); toast("Capa salva: use em Editar capa"); return; }
+    if (t.closest("#vdCopiarLegenda")) { if (await copiarTexto($("#vdLegendaInsta").value)) toast("Legenda copiada"); return; }
+    if (t.closest("#vdRefazerLegenda")) { V.legendaInsta = legendaVideo(); $("#vdLegendaInsta").value = V.legendaInsta; toast("Legenda refeita"); return; }
     if (t.closest("#vdPostar")) {
       const r = V.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
+      if (await copiarTexto(V.legendaInsta || legendaVideo())) toast("Legenda copiada: é só colar no Instagram");
       if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
       baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram ou o WhatsApp e escolha da galeria");
     }
@@ -3908,6 +3916,7 @@
     if (wz.canal === "reels" && e.target.id === "rTitulo") { const R = rr(); R.titulo = e.target.value.trim(); document.querySelectorAll("[data-r-titulo]").forEach((b) => b.classList.toggle("on", b.dataset.rTitulo === R.titulo)); R.legenda = null; R.resultado = null; clearTimeout(R.tt); R.tt = setTimeout(() => { document.querySelectorAll("[data-r-modelo]").forEach((b) => { const m = MODELOS_REELS[b.dataset.rModelo]; b.querySelector("span").innerHTML = R.titulo || CAMPANHAS[R.camp] ? `${esc(m.desc)}<small>animação ${esc(m.nome)}</small>` : `${esc(m.nome)}<small>${esc(m.desc)}</small>`; }); pintarModelosReels(); }, 400); return; }
     if (wz.canal !== "video") return;
     const V = vd(), id = e.target.id, v = e.target.value;
+    if (id === "vdLegendaInsta") { V.legendaInsta = v; return; }
     if (id === "vdTitulo") V.titulo = v;
     if (id === "vdNome") V.nome = v.trim();
     if (id === "vdAntigo") V.antigo = lerPreco(v);
@@ -5198,11 +5207,13 @@
     aulas: { um: (p) => `🎒 Volta às aulas com desconto! ${p}`, varios: () => "🎒 Volta às aulas com desconto! Olha esses achadinhos:", tags: "#voltaasaulas #material #escola #achadinhos" },
     sohoje: { um: (p) => `🔥 Só hoje nesse preço! ${p} Amanhã pode voltar ao normal!`, varios: () => "🔥 Só hoje nesses preços! Amanhã pode voltar ao normal:", tags: "#sóhoje #promoção #achadinhos #ofertas" }
   };
-  function legendaReels() {
-    const R = rr(), l = itensReels(), L = LEGENDA_REELS[R.modelo] || LEGENDA_REELS.achadinho, insta = arroba(config.instagram);
+  function legendaReels(R = rr(), l = itensReels()) {
+    const L = LEGENDA_REELS[R.modelo] || LEGENDA_REELS.achadinho, insta = arroba(config.instagram);
     const preco = (it) => it.precoNovo ? (it.precoAntigo > it.precoNovo ? `de ${brl(it.precoAntigo)} por ${brl(it.precoNovo)}` : `por ${brl(it.precoNovo)}`) : "";
     const linhas = [];
-    if (l.length === 1) {
+    if (!l.length) { // vídeo sem produto: só a chamada
+      linhas.push(R.titulo ? `✨ ${R.titulo.replace(/[*]/g, "")}` : CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].chamada.replace(/[*]/g, "") : R.chamada || "Olha o que eu separei pra você, miga! 💖");
+    } else if (l.length === 1) {
       const it = l[0], nome = limparNome(it.nome || "Produto");
       const proprio = R.titulo ? `✨ ${R.titulo.replace(/[*]/g, "")}` : CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].chamada.replace(/[*]/g, "") : "";
       if (proprio) linhas.push(proprio, "", `${nome} ${preco(it)}`.trim());
@@ -5218,12 +5229,18 @@
       });
       if (linhas[linhas.length - 1] === "") linhas.pop();
     }
-    linhas.push("", l.length > 1 ? "📲 Os links estão no meu canal do WhatsApp: toca no link da bio!" : AVISO_BIO);
+    linhas.push("", R.semLink ? "" : l.length > 1 ? "📲 Os links estão no meu canal do WhatsApp: toca no link da bio!" : AVISO_BIO);
     if (insta) linhas.push(`👉 Segue a ${insta} pra não perder nenhum achadinho`);
     // Instagram: no máximo 5 hashtags (a #migapromo sempre vai)
     const tags = [...new Set(`${CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].tags + " #achadinhos" : L.tags}`.split(/\s+/).filter((x) => x.startsWith("#") && x !== "#migapromo"))].slice(0, 4);
     linhas.push("", [...tags, "#migapromo"].join(" "));
     return linhas.join("\n").replace(/\n{3,}/g, "\n\n");
+  }
+  /** Legenda do Instagram para o "Publicar vídeo" (com ou sem produto) */
+  function legendaVideo() {
+    const V = vd(), tit = String(V.titulo || "").replace(/[*]/g, "").replace(/\s*\n\s*/g, " ").trim();
+    const l = V.nome || V.novo ? [{ nome: V.nome, precoNovo: V.novo, precoAntigo: V.antigo, cupom: V.cupom }] : [];
+    return legendaReels({ modelo: V.modelo || "achadinho", camp: V.camp || "", titulo: V.tituloProp || "", chamada: tit ? `✨ ${tit}` : "", semLink: !l.length && !V.itemId }, l);
   }
   const blocoLegenda = (R) => `<div class="leg-bloco">
       <div class="leg-topo"><span>Legenda pronta</span><div><button type="button" class="leg-btn" id="rCopiarLegenda"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button><button type="button" class="leg-btn" id="rRefazerLegenda"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Refazer</button></div></div>
