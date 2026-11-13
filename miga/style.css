@@ -1281,3 +1281,10 @@ body.modo-selecao main { padding-bottom: 200px; }
   .wz__corpo:has(.wz-rodape) { padding-bottom: 0 !important; }
   .wz__corpo:has(.barra-cores) { padding-bottom: 90px !important; }
 }
+/* Fim da página: só reserva espaço para o que está fixo embaixo naquela tela (menu, botões do passo, barra de selecionados) */
+@media (max-width: 959px) {
+  .conteudo { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .conteudo:has(#aba-criar:not([hidden]) .wz-rodape), .conteudo:has(.barra-marcados:not([hidden])), body:has(#barraGerar:not([hidden])) .conteudo { padding-bottom: calc(176px + env(safe-area-inset-bottom)); }
+  .conteudo:has(#aba-criar:not([hidden]) .barra-cores) { padding-bottom: calc(260px + env(safe-area-inset-bottom)); }
+  body.modo-selecao .conteudo { padding-bottom: calc(200px + env(safe-area-inset-bottom)); }
+}
