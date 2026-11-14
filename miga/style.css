@@ -1723,3 +1723,5 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .ka-alt__bt { min-height: 38px; padding: 0 16px; font-size: 13.5px; flex: none; }
 .ka-alt .ka-alt__bt { width: auto !important; margin: 0 !important; background: #fff; box-shadow: 0 8px 18px -10px rgba(29,29,31,.45), inset 0 0 0 1px var(--linha); }
 .ka-alt__topo span { flex: 1; }
+/* Copiar embaixo do texto, igual ao "Copiar legenda" */
+.ka-alt .ka-alt__bt { width: 100% !important; min-height: 46px; margin-top: 6px !important; font-size: 14.5px; }
