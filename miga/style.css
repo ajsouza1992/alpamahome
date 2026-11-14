@@ -1758,3 +1758,22 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 /* Achados: botão escolhido em rosa; ordem em 2 x 2 */
 #catLoja button[aria-checked="true"], #catOrdem button[aria-checked="true"] { background: var(--rosa); color: #fff; }
 .alternar--ordem { display: grid !important; grid-template-columns: 1fr 1fr; gap: 4px; }
+/* Computador: Lista e Achados com a foto maior e o texto no tamanho padrão */
+@media (min-width: 960px) {
+  .pp-linha .pp-item { grid-template-columns: 136px minmax(0, 1fr) !important; gap: 16px !important; align-items: center; }
+  .pp-linha .pp-item .pp-mini, .pp-linha .pp-item .pp-mini > img, .pp-linha .pp-item .pp-mini .sem-foto { width: 136px !important; height: 136px !important; max-width: none !important; max-height: none !important; border-radius: 18px; }
+  .pp-linha .pp-item strong { font-size: 15px !important; }
+  .pp-linha .pp-item .pp-preco { font-size: 17px; white-space: nowrap; }
+  .pp-linha .pp-item .pp-preco s { font-size: 12.5px; }
+  .pp-linha .pp-item .meta { font-size: 13px !important; }
+}
+/* Cartão estreito no computador (2 colunas ou com o produto aberto ao lado): foto em cima, grande */
+@media (min-width: 960px) {
+  .pp-linha { container-type: inline-size; }
+  @container (max-width: 420px) {
+    .pp-linha .pp-item { grid-template-columns: minmax(0, 1fr) !important; justify-items: stretch; padding: 12px 12px 14px !important; }
+    .pp-linha .pp-item .pp-mini { width: 100% !important; height: 180px !important; }
+    .pp-linha .pp-item .pp-mini > img, .pp-linha .pp-item .pp-mini .sem-foto { width: 100% !important; height: 180px !important; }
+    .pp-linha .pp-pontos { top: 12px; transform: none; }
+  }
+}
