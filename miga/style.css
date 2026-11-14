@@ -1777,3 +1777,4 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
     .pp-linha .pp-pontos { top: 12px; transform: none; }
   }
 }
+#catOrdem .ord-todos { grid-column: 1 / -1; }
