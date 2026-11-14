@@ -233,13 +233,13 @@
       leitor.onload = () => {
         const im = new Image();
         im.onload = () => {
-          const k = Math.min(1, 800 / Math.max(im.width, im.height));
+          const k = Math.min(1, 1280 / Math.max(im.width, im.height));
           const tela = document.createElement("canvas");
           tela.width = Math.round(im.width * k); tela.height = Math.round(im.height * k);
           const ctx = tela.getContext("2d");
           ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, tela.width, tela.height);
           ctx.drawImage(im, 0, 0, tela.width, tela.height);
-          ok(tela.toDataURL("image/jpeg", 0.72));
+          ok(tela.toDataURL("image/jpeg", 0.88));
         };
         im.onerror = erro;
         im.src = leitor.result;
@@ -274,9 +274,17 @@
     } catch (e) { return arq; }
   }
   const noComputador = () => matchMedia("(pointer: fine)").matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+  /** Endereço da foto na maior resolução que a loja oferece (Mercado Livre e Shopee mandam miniaturas às vezes) */
+  function fotoAlta(src) {
+    let u = String(src || "");
+    if (/mlstatic\.com/.test(u)) u = (/_2X_/.test(u) ? u : u.replace(/\/D_(NQ_NP_)?(?=\d)/, "/D_NQ_NP_2X_")).replace(/-[A-Z]\.(webp|jpe?g|png)(\?.*)?$/i, "-F.$1");
+    if (/susercontent\.com|shopee/.test(u)) u = u.replace(/_tn(\.\w+)?$/, "$1").replace(/@resize_w\d+_nl/, "");
+    return u;
+  }
   async function arquivoDaImagem(src) {
     if (!src) return null;
-    const tentativas = src.startsWith("data:") ? [src] : [viaServidor(src), src];
+    const alta = fotoAlta(src);
+    const tentativas = src.startsWith("data:") ? [src] : [...new Set([viaServidor(alta), viaServidor(src), alta, src])];
     for (const u of tentativas) {
       try {
         const r = await fetch(u);
@@ -1281,7 +1289,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=210"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=211"; });
     }
     edFoto = null;
     try {
@@ -1655,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=210"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=211"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -5300,7 +5308,7 @@
   let telaArte = null;
   function artePost(tela, R, it, bmp, formato, tAnim) {
     const W = 1080, H = formato === "post" ? 1350 : formato === "quadrado" ? 1080 : 1920;
-    if (tela.width !== W) tela.width = W; if (tela.height !== H) tela.height = H; const ctx = tela.getContext("2d");
+    if (tela.width !== W) tela.width = W; if (tela.height !== H) tela.height = H; const ctx = tela.getContext("2d"); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
     temposDoModelo(R); const C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, M = modeloEfetivo(R);
     relogioReels = 0; decorAtual = decorDe(R); pulsoTela = 0;
     if (tAnim != null) { // arte em movimento: entra no ritmo, depois "respira" com a batida e vai chegando perto devagar
