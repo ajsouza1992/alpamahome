@@ -880,7 +880,7 @@
   /* =========================== Catálogo (mais vendidos) =========================== */
   const catFiltro = grupoBotoes("#catFiltro", "v");
   const catLoja = grupoBotoes("#catLoja", "v"), catOrdem = grupoBotoes("#catOrdem", "v");
-  let catalogoAtual = [], catalogoCarregado = false, catPagina = 1, catTemMais = false;
+  let catalogoAtual = [], catalogoCarregado = false, catPagina = 1, catTemMais = false, catBusca = "";
   const FILTROS_CAT = ["moda", "beleza", "perfumes", "maquiagem", "cabelo", "acessorios", "bolsas", "calcados", "fitness", "saude", "casa", "cozinha", "eletronicos"];
 
   function esqueletoCatalogo() {
@@ -894,7 +894,7 @@
     let d;
     try {
       // Sem categorias: junta os mais vendidos de todas, só filtrando pela loja
-      catPagina = 1;
+      catPagina = 1; catBusca = "";
       const rs = await Promise.allSettled(FILTROS_CAT.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`)));
       catTemMais = rs.some((r) => r.status === "fulfilled" && r.value.temMais);
       const ok = rs.filter((r) => r.status === "fulfilled").map((r) => r.value);
@@ -925,15 +925,27 @@
   }
   /** Achados no mesmo jeito da Lista (foto, nome, preço, loja) com o ⋮ */
   function pintarAchados() {
-    const t = semAcento($("#acBusca").value.trim()), l = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t));
+    const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t));
+    const botaoBusca = bruto.length >= 3 && !daBusca ? `<button type="button" class="btn btn--rosa ac-buscar" id="acBuscarLojas"><svg class="ic-mono"><use href="#i-busca"/></svg>Buscar “${esc(bruto)}” nas lojas</button>` : "";
     $("#acTotal").textContent = `${l.length} ${l.length === 1 ? "achado" : "achados"}`;
-    $("#catalogo").innerHTML = l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
+    $("#catalogo").innerHTML = botaoBusca + (daBusca ? `<p class="nota ac-busca-info">Resultados das lojas para “${esc(catBusca)}”. Apague a busca para voltar aos achados.</p>` : "") + (l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
       return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
-      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${catTemMais && !t ? '<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais achados</button>' : ""}` : '<p class="vazio-lista">Nada encontrado nos achados.</p>';
+      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${catTemMais && !t ? `<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais ${daBusca ? `de “${esc(catBusca)}”` : "achados"}</button>` : ""}` : `<p class="vazio-lista">${bruto && !daBusca ? "Nada com essa palavra nos achados carregados: toque em Buscar nas lojas." : "Nada encontrado nos achados."}</p>`);
   }
-  $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(pintarAchados, 150); });
-  [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
+  $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(() => { if (catBusca && !$("#acBusca").value.trim()) { carregarCatalogo(); return; } pintarAchados(); }, 150); });
+  $("#acBusca").addEventListener("keydown", (e) => { if (e.key === "Enter" && $("#acBusca").value.trim().length >= 2) { e.preventDefault(); buscarNasLojas($("#acBusca").value.trim()); } });
+  /** Busca a palavra direto nas lojas (Shopee pela palavra, Mercado Livre pelos mais vendidos da categoria dela) */
+  async function buscarNasLojas(termo) {
+    catBusca = termo; catPagina = 1; esqueletoCatalogo(); $("#acBusca").blur();
+    try {
+      const d = await api(`catalogo?busca=${encodeURIComponent(termo)}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`);
+      catalogoAtual = d.produtos || []; catTemMais = !!d.temMais;
+      const ord = catOrdem.valor(); if (ord === "comissao") catalogoAtual.sort((a, b) => (b.comissao || 0) - (a.comissao || 0)); if (ord === "preco") catalogoAtual.sort((a, b) => (a.preco || 1e9) - (b.preco || 1e9));
+      pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
+    } catch (e) { if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; } toast("Não consegui buscar nas lojas agora"); catBusca = ""; carregarCatalogo(); }
+  }
+  [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(() => (catBusca ? buscarNasLojas(catBusca) : carregarCatalogo()), 0); }));
   // Aba de categoria escolhida sempre visível (desliza até ela)
   $("#catFiltro").addEventListener("click", (e) => {
     const b = e.target.closest("button");
@@ -969,7 +981,7 @@
   /** Próxima página da Shopee (de 50 em 50 por categoria), juntando sem repetir */
   async function maisAchados(btn) {
     btn.disabled = true; btn.textContent = "Carregando…";
-    const pg = catPagina + 1, rs = await Promise.allSettled(FILTROS_CAT.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}&pagina=${pg}`)));
+    const pg = catPagina + 1, rs = await Promise.allSettled((catBusca ? [`busca=${encodeURIComponent(catBusca)}`] : FILTROS_CAT.map((f) => `filtro=${f}`)).map((f) => api(`catalogo?${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}&pagina=${pg}`)));
     const vistos = new Set(catalogoAtual.map((p) => p.id || p.link)), listas = rs.filter((r) => r.status === "fulfilled").map((r) => r.value.produtos || []); let novos = 0;
     for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); catalogoAtual.push(p); novos++; });
     catPagina = pg; catTemMais = novos > 0 && rs.some((r) => r.status === "fulfilled" && r.value.temMais);
@@ -977,6 +989,7 @@
   }
   $("#catalogo").addEventListener("click", async (e) => {
     const mais = e.target.closest("#acMais"); if (mais) { maisAchados(mais); return; }
+    if (e.target.closest("#acBuscarLojas")) { buscarNasLojas($("#acBusca").value.trim()); return; }
     const am = e.target.closest("[data-achado-menu], [data-achado]");
     if (am) {
       const p = catalogoAtual[Number(am.dataset.achadoMenu ?? am.dataset.achado)]; if (!p) return;
@@ -1243,7 +1256,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=203"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=204"; });
     }
     edFoto = null;
     try {
@@ -1617,7 +1630,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=203"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=204"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {

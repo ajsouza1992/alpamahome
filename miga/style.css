@@ -1750,3 +1750,6 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pp-item .tags-ex .tag-ex { display: inline-block !important; width: auto; }
 .meta-ex { display: block; font-size: 12.5px; }
 .ac-mais { margin-top: 14px; width: 100%; }
+.ac-buscar { width: 100%; margin: 4px 0 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.ac-buscar svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+.ac-busca-info { margin: 0 0 10px; }

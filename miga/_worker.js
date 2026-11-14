@@ -823,7 +823,8 @@ async function catalogoShopee(filtro, env, ordem = "vendidos", pagina = 1) {
 async function rotaCatalogo(request, env) {
   if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
   const q = new URL(request.url).searchParams;
-  const nomeFiltro = FILTROS_CATALOGO[q.get("filtro")] ? q.get("filtro") : "moda";
+  const busca = String(q.get("busca") || "").replace(/[^\p{L}\p{N} %&.,-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 60);
+  const nomeFiltro = busca ? "busca:" + busca.toLowerCase() : FILTROS_CATALOGO[q.get("filtro")] ? q.get("filtro") : "moda";
   const loja = ["mercadolivre", "shopee"].includes(q.get("loja")) ? q.get("loja") : "todas";
   const ordem = ORDEM_SHOPEE[q.get("ordem")] ? q.get("ordem") : "vendidos";
   const pagina = Math.max(1, Math.min(20, parseInt(q.get("pagina"), 10) || 1));
@@ -834,7 +835,8 @@ async function rotaCatalogo(request, env) {
   const guardado = await lerCache("catalogo", chave);
   if (guardado) return json({ ...guardado, doCache: true });
 
-  const filtro = FILTROS_CATALOGO[nomeFiltro];
+  // Busca livre: a Shopee procura pela palavra; o Mercado Livre acha a categoria da palavra e traz os mais vendidos dela
+  const filtro = busca ? { categoria: "outros", ml: "", busca, shopee: busca } : FILTROS_CATALOGO[nomeFiltro];
   const tarefas = [];
   // Mercado Livre: mais vendidos da categoria e subcategorias, 12 por página; Shopee: 50 por página
   if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env, pagina));
