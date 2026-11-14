@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=230"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=231"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=230"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=231"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6294,6 +6294,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   };
   const CENA_PT = { perfumes: "borrifa no pulso e sorri", looks: "vestindo a peça no espelho", fitness: "vestindo e alongando", calcados: "calçando e dando dois passos", acessorios: "usando e ajeitando", maquiagem: "passando no espelho", skincare: "aplicando no rosto", cabelo: "passando no cabelo", suplementos: "mostrando e preparando", eletronicos: "usando e reagindo", casa: "usando em casa", outros: "mostrando para a câmera" };
   const LIMITE_PROMPT = 900;
+  // Espaço para a montagem (textos, logo, @) em todos os prompts
+  const ESPACO_PERS = "Deixe espaço livre acima da cabeça e embaixo para textos (sem textos na imagem)";
+  const quadradoPers = (P) => P && (P.tipo === "imagem" || P.formato === "quadrado");
+  const abreVideo = (P) => quadradoPers(P) ? "Vídeo hiper-realista quadrado 1:1 para post do feed" : "Vídeo hiper-realista vertical 9:16";
   /* Estúdio com o fundo nas cores da Miga + o jeito certo de USAR cada tipo de produto (boné na cabeça, óculos no rosto...) */
   const FUNDOS_PERS = { creme: ["Creme", "#fff3c4", "creme suave (#fff3c4)", "white"], branco: ["Branco", "#ffffff", "branco puro", "black"], preto: ["Preto", "#1d1d1f", "preto fosco (#1d1d1f)", "white"], rosa: ["Rosa", "#e8336d", "rosa pink (#e8336d)", "white"] };
   const USOS_PERS = [
@@ -6334,7 +6338,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const veste = it.categoria === "looks" || it.categoria === "fitness" || ROUPA_PROD.test(n) && !uso;
     const F = FUNDOS_PERS[fundo];
     if (veste) C.roupa = null;
-    else C.roupa = `look estiloso e atual, com cores que combinam com ${F ? "o fundo" : "o cenário"} e valorizam o produto`;
+    else C.roupa = `look estiloso e atual, combinando com ${F ? "o fundo" : "o cenário"} e com o produto`;
     if (F) C.lugar = `estúdio com fundo infinito ${F[2]} e luz suave de estúdio`;
     return C;
   }
@@ -6377,8 +6381,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const C = cenaDoItem(it, fundo === "cenario" ? "" : fundo), ficha0 = ""; // como ela é: as fotos de referência já mostram
     const roupa = C.roupa ? `Roupa: ${C.roupa}.` : "Ela veste a roupa da foto do produto anexada.";
     const monta = (ficha, nomeMax) => tipo === "video"
-      ? `Vídeo hiper-realista vertical 9:16, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Produto: o da foto anexada, idêntico (formato, cor, rótulo, tamanho). Ação: ela ${C.acao}. Fala em português do Brasil, voz feminina natural e animada: "${falaPersonagem(it, nomeMax)}" No final, posa com o produto bem visível, sorrindo. Sem textos, logos ou legendas adicionados; espaço livre em cima e embaixo; sem cortes ou zoom; mãos naturais; o produto não muda; boca sincronizada com a fala.`
-      : `Foto quadrada 1:1 (1080 × 1080), para post do feed do Instagram, hiper-realista, estilo influenciadora. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Ela está posando, ${C.foto}, olhando para a câmera com um sorriso natural; o produto sempre bem visível e em foco. O produto é idêntico ao da foto do produto anexada (formato, cor, rótulo e tamanho). Sem textos, logos ou marca d'água adicionados (mantenha o design do produto); deixe um pouco de espaço livre em volta dela para os textos; foco nítido, alta resolução. Formato obrigatório: quadrado 1:1, não vertical.`;
+      ? `${abreVideo(P0)}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Produto: o da foto anexada, idêntico. Ação: ela ${C.acao}. Fala em português do Brasil, voz natural e animada: "${falaPersonagem(it, nomeMax)}" No final, posa com o produto bem visível, sorrindo. Sem textos, logos ou legendas adicionados. ${ESPACO_PERS}. Sem cortes ou zoom; mãos naturais; produto não muda; boca sincronizada.`
+      : `Foto quadrada 1:1 (1080 × 1080), para post do feed do Instagram, hiper-realista, estilo influenciadora. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Ela está posando, ${C.foto}, olhando para a câmera com um sorriso natural; o produto sempre bem visível e em foco. O produto é idêntico ao da foto do produto anexada (formato, cor, rótulo e tamanho). Sem textos, logos ou marca d'água adicionados (mantenha o design do produto); foco nítido, alta resolução. ${ESPACO_PERS}. Formato obrigatório: quadrado 1:1, não vertical.`;
     let ficha = ficha0, nomeMax = 5, p = monta(ficha, nomeMax);
     while (p.length > LIMITE_PROMPT && ficha.length > 40) { const corte = ficha.slice(0, ficha.length - 15); ficha = corte.includes(",") ? corte.replace(/,[^,]*$/, "") : corte.replace(/\s+\S*$/, ""); p = monta(ficha, nomeMax); }
     while (p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(ficha, nomeMax); }
@@ -6400,7 +6404,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const falaChamadaPers = (P) => `Oi, miga! ${String(P.falaMeio != null ? P.falaMeio : assuntoDe(P)[2]).trim()} Segue a Miga Promo pra mais promoções!`;
   function promptChamadaPers(P) {
     const fundo = P.fundo === "auto" || !P.fundo ? "rosa" : P.fundo, F = FUNDOS_PERS[fundo] || FUNDOS_PERS.rosa;
-    return `Vídeo hiper-realista vertical 9:16, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). Roupa: look estiloso e atual, com cores que combinam com o fundo. Cenário: estúdio com fundo infinito ${F[2]} e luz suave de estúdio. Ela olha para a câmera, sorri e fala em português do Brasil, com voz feminina natural e animada: "${falaChamadaPers(P)}" Ela gesticula de forma natural e, no final, acena e fica parada sorrindo. Sem textos, logos ou legendas adicionados; espaço livre em cima e embaixo; sem cortes nem zoom; mãos naturais; sincronia labial perfeita.`.slice(0, LIMITE_PROMPT);
+    return `${abreVideo(P)}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). Roupa: look estiloso e atual, com cores que combinam com o fundo. Cenário: estúdio com fundo infinito ${F[2]} e luz suave de estúdio. Ela olha para a câmera, sorri e fala em português do Brasil, com voz feminina natural e animada: "${falaChamadaPers(P)}" Ela gesticula de forma natural e, no final, acena e fica parada sorrindo. Sem textos, logos ou legendas adicionados. ${ESPACO_PERS}. Sem cortes nem zoom; mãos naturais; sincronia labial perfeita.`.slice(0, LIMITE_PROMPT);
   }
   const semProduto = () => wz.pe && wz.pe.tipo === "chamada";
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
@@ -6439,6 +6443,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
           <p class="nota">Ela chama a galera. Começa com "Oi, miga!" e termina com "Segue a Miga Promo pra mais promoções!".</p>
           <div class="pe-roupa"><span><b>Assunto:</b> ${esc(a[1])}</span><button type="button" class="btn btn--branco" id="peAssunto">Trocar</button></div>
           <div class="campo"><span>O que ela fala no meio (pode editar)</span><textarea id="peFalaMeio" rows="2" maxlength="140">${esc(P.falaMeio != null ? P.falaMeio : a[2])}</textarea></div>
+          ${P.tipo === "imagem" ? "" : `<b class="ch-rot">Formato</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-formato="vertical" aria-checked="${!quadradoPers(P)}">Vertical (Reels)</button><button type="button" role="radio" data-pe-formato="quadrado" aria-checked="${quadradoPers(P)}">Quadrado 1:1 (post)</button></div>`}
           <b class="ch-rot">Fundo do estúdio</b>
           <div class="ed-chips pe-fundos">${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo === "auto" || !P.fundo ? "rosa" : P.fundo) === k ? "on" : ""}"><i style="background:${x[1]}"></i>${x[0]}</button>`).join("")}</div>
           <p class="nota pe-roupa-nota">Roupa: a IA escolhe um look que combina com o fundo.</p>
@@ -6469,6 +6474,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `<h2 class="wz-titulo">Prompt d${P.tipo === "video" ? "o vídeo" : "a imagem"}</h2>
         <p class="nota">Copie o prompt (dá para editar), envie para a IA com a foto do produto e anexe as fotos dela pela galeria.</p>
         ${prodHtml}
+        ${P.tipo === "imagem" ? "" : `<b class="ch-rot">Formato</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-formato="vertical" aria-checked="${!quadradoPers(P)}">Vertical (Reels)</button><button type="button" role="radio" data-pe-formato="quadrado" aria-checked="${quadradoPers(P)}">Quadrado 1:1 (post)</button></div>`}
         <b class="ch-rot">Fundo do estúdio</b>
         <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, x]) => [k, x[0], x[1]])].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
         <p class="nota pe-roupa-nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto (a roupa da foto do produto)." : "Roupa: a IA escolhe um look que combina com o fundo e com o produto."}</p>
@@ -6513,17 +6519,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function quebraLinhas(x, txt, larg, max) { const out = []; let l = ""; String(txt || "").split(/\s+/).filter(Boolean).forEach((p) => { const t = l ? l + " " + p : p; if (x.measureText(t).width > larg && l) { out.push(l); l = p; } else l = t; }); if (l) out.push(l); if (out.length > max) { out.length = max; out[max - 1] = out[max - 1].replace(/\s*\S*$/, "") + "…"; } return out; }
   /** Imagem = post quadrado 1:1 (1080 × 1080); vídeo e "sem produto" = 9:16 (1080 × 1920) */
-  const altPers = (P) => (P && P.tipo === "imagem" ? 1080 : 1920);
+  const altPers = (P) => (quadradoPers(P) ? 1080 : 1920);
   /* Editor livre: cada item tem posição (x, y em 0–1), tamanho e se aparece. Arrasta com o dedo ou o mouse. */
   const ITENS_LIVRE = { chamada: "Chamada", nome: "Nome", preco: "Preço", cupom: "Cupom", selo: "Selo %", logo: "Logo Miga", arroba: "@ da Miga" };
   // posições iniciais [x, y, tamanho]: em pé (vídeo) e quadrado (post)
   const LIVRE_PADRAO = { chamada: [0.42, 0.075, 1], nome: [0.5, 0.74, 1], preco: [0.5, 0.82, 1], cupom: [0.5, 0.895, 1], selo: [0.84, 0.1, 1], logo: [0.86, 0.935, 1], arroba: [0.36, 0.95, 1] };
   const LIVRE_QUADRADO = { chamada: [0.4, 0.07, 1], nome: [0.5, 0.63, 1], preco: [0.5, 0.755, 1], cupom: [0.5, 0.885, 1], selo: [0.87, 0.11, 0.9], logo: [0.9, 0.92, 0.8], arroba: [0.32, 0.965, 1] };
   function livreDe(P) {
-    if (!P.livre) { const g = lsPers.ler("livre_" + (P.tipo === "imagem" ? "q" : "v"), null) || {}; P.livre = {}; Object.keys(ITENS_LIVRE).forEach((k) => { const d = (P.tipo === "imagem" ? LIVRE_QUADRADO : LIVRE_PADRAO)[k], v = g[k] || {}; P.livre[k] = { x: v.x != null ? v.x : d[0], y: v.y != null ? v.y : d[1], s: v.s || d[2], on: v.on !== false }; }); }
+    if (!P.livre) { const g = lsPers.ler("livre_" + (quadradoPers(P) ? "q" : "v"), null) || {}; P.livre = {}; Object.keys(ITENS_LIVRE).forEach((k) => { const d = (quadradoPers(P) ? LIVRE_QUADRADO : LIVRE_PADRAO)[k], v = g[k] || {}; P.livre[k] = { x: v.x != null ? v.x : d[0], y: v.y != null ? v.y : d[1], s: v.s || d[2], on: v.on !== false }; }); }
     return P.livre;
   }
-  const guardarLivre = (P) => lsPers.gravar("livre_" + (P.tipo === "imagem" ? "q" : "v"), P.livre);
+  const guardarLivre = (P) => lsPers.gravar("livre_" + (quadradoPers(P) ? "q" : "v"), P.livre);
   function barraLivre(P) {
     if (!P.midia) return "";
     const L = livreDe(P), sel = P.selLivre, fora = Object.keys(ITENS_LIVRE).filter((k) => !L[k].on);
@@ -6613,7 +6619,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.canal !== "personagem") return; const P = pe(); if (!P || !P.midia) return;
     const b = e.target.closest("[data-livre], [data-livre-por]"); if (!b) return; const L = livreDe(P);
     if (b.dataset.livrePor) { L[b.dataset.livrePor].on = true; P.selLivre = b.dataset.livrePor; }
-    else if (b.dataset.livre === "padrao") { lsPers.gravar("livre_" + (P.tipo === "imagem" ? "q" : "v"), {}); P.livre = null; P.selLivre = null; livreDe(P); }
+    else if (b.dataset.livre === "padrao") { lsPers.gravar("livre_" + (quadradoPers(P) ? "q" : "v"), {}); P.livre = null; P.selLivre = null; livreDe(P); }
     else if (P.selLivre) { const it = L[P.selLivre]; if (b.dataset.livre === "maior") it.s = Math.min(2.2, it.s + 0.15); if (b.dataset.livre === "menor") it.s = Math.max(0.45, it.s - 0.15); if (b.dataset.livre === "tirar") { it.on = false; P.selLivre = null; } }
     P.resultado = null; guardarLivre(P); $("#peBarra").innerHTML = barraLivre(P);
   });
@@ -6661,6 +6667,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const sr = t.closest("#peSelCima, #peSelCorCima, #peSelBaixo, #peSelCorBaixo"); if (sr) { selRoupa(sr.id); return; }
     const es = t.closest("[data-pe-estilo]"); if (es) { P.estilo = es.dataset.peEstilo; P.roupasAbertas = true; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const cr = t.closest("[data-pe-cor]"); if (cr) { P.corRoupa = cr.dataset.peCor; P.roupasAbertas = true; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const fm = t.closest("[data-pe-formato]"); if (fm) { P.formato = fm.dataset.peFormato; P.promptEd = null; P.livre = null; P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const fd = t.closest("[data-pe-fundo]"); if (fd) { P.fundo = fd.dataset.peFundo; P.promptEd = null; lsPers.gravar("fundo", P.fundo); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const ps = t.closest("[data-pe-pos]"); if (ps) { const [k, v] = ps.dataset.pePos.split(":"); P.pos[k] = v; lsPers.gravar("pos", P.pos); ps.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ps)); P.resultado = null; return; }
     if (t.closest("#peLimparCopiar")) {
