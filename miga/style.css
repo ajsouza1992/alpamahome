@@ -1854,3 +1854,10 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pe-cantos-l > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .pe-cantos-l .ch-rot { margin: 0; }
 .pe-cantos { margin: 0 !important; gap: 6px; }
+.pe-selo-txt { width: 110px; border: 0; border-radius: 12px; background: var(--campo); padding: 8px 12px; font: 700 15px Poppins, sans-serif; text-align: center; }
+.pe-molduras { flex-wrap: wrap !important; justify-content: flex-end; }
+.pe-cantos-l > .pe-mold-l { display: block; }
+.pe-mold-l .pe-molduras { justify-content: flex-start; margin-top: 6px; }
+.pe-cantos { flex-wrap: nowrap !important; }
+.pe-cantos button { min-width: 40px; padding: 0 8px; }
+.pe-selo-txt { width: 120px !important; flex: none; }
