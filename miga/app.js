@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=227"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=228"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=227"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=228"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6488,10 +6488,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="image/*,video/*" id="peMidia" hidden>${P.midia ? "Trocar a foto/vídeo da IA" : "Escolher a foto ou o vídeo da IA"}</label>
         <div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${r ? `<figure class="rp-video"><video src="${r.url}" controls playsinline></video></figure>` : ""}
-        <b class="ch-rot">Onde fica cada coisa</b>
-        ${ch("logo", cantos)}${ch("selo", [...cantos, ["nao", "Sem selo"]])}${ch("arroba", [["topo", "Em cima"], ["base", "Embaixo"], ["logo", "Junto do logo"]])}
-        ${ch("preco", [["base", "Embaixo"], ["topo", "Em cima"], ["dc", "Lado ↗"], ["db", "Lado ↘"], ["ec", "Lado ↖"], ["eb", "Lado ↙"]])}
-        ${ch("nome", [["preco", "Junto do preço"], ["topo", "Em cima"], ["base", "Embaixo"], ["nao", "Sem nome"]])}${ch("chamada", [["topo", "Em cima"], ["preco", "Junto do preço"], ["nao", "Sem chamada"]])}${ch("cupom", [["preco", "Junto do preço"], ["base", "Embaixo"], ["nao", "Sem cupom"]])}
+        <p class="nota pe-dica">${P.midia ? "Arraste os textos, o logo e o selo para onde quiser. Toque em um item para aumentar, diminuir ou tirar." : ""}</p>
+        <div class="pe-barra" id="peBarra">${barraLivre(P)}</div>
         <b class="ch-rot">Textos</b>
         <div class="campo"><span>Chamada</span><input data-pe-tx="chamada" value="${esc(P.tx.chamada)}" maxlength="40"></div>
         <div class="campo"><span>Nome</span><input data-pe-tx="nome" value="${esc(P.tx.nome)}" maxlength="80"></div>
@@ -6514,65 +6512,58 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     x.restore();
   }
   function quebraLinhas(x, txt, larg, max) { const out = []; let l = ""; String(txt || "").split(/\s+/).filter(Boolean).forEach((p) => { const t = l ? l + " " + p : p; if (x.measureText(t).width > larg && l) { out.push(l); l = p; } else l = t; }); if (l) out.push(l); if (out.length > max) { out.length = max; out[max - 1] = out[max - 1].replace(/\s*\S*$/, "") + "…"; } return out; }
-  /** Um quadro 1080 × 1920: a foto/vídeo da IA inteira + textos, selos, logo e @ nas posições fixas */
-  /** Imagem = post quadrado 1:1 (1080 × 1080); vídeo = 9:16 (1080 × 1920) */
-  const altPers = (P) => (P && P.tipo === "imagem" ? 1080 : 1920); // vídeo e "sem produto" = 9:16
-  function quadroPersonagem(ctx, W, fonte, P) {
+  /** Imagem = post quadrado 1:1 (1080 × 1080); vídeo e "sem produto" = 9:16 (1080 × 1920) */
+  const altPers = (P) => (P && P.tipo === "imagem" ? 1080 : 1920);
+  /* Editor livre: cada item tem posição (x, y em 0–1), tamanho e se aparece. Arrasta com o dedo ou o mouse. */
+  const ITENS_LIVRE = { chamada: "Chamada", nome: "Nome", preco: "Preço", cupom: "Cupom", selo: "Selo %", logo: "Logo Miga", arroba: "@ da Miga" };
+  // posições iniciais [x, y, tamanho]: em pé (vídeo) e quadrado (post)
+  const LIVRE_PADRAO = { chamada: [0.42, 0.075, 1], nome: [0.5, 0.74, 1], preco: [0.5, 0.82, 1], cupom: [0.5, 0.895, 1], selo: [0.84, 0.1, 1], logo: [0.86, 0.935, 1], arroba: [0.36, 0.95, 1] };
+  const LIVRE_QUADRADO = { chamada: [0.4, 0.07, 1], nome: [0.5, 0.63, 1], preco: [0.5, 0.755, 1], cupom: [0.5, 0.885, 1], selo: [0.87, 0.11, 0.9], logo: [0.9, 0.92, 0.8], arroba: [0.32, 0.965, 1] };
+  function livreDe(P) {
+    if (!P.livre) { const g = lsPers.ler("livre_" + (P.tipo === "imagem" ? "q" : "v"), null) || {}; P.livre = {}; Object.keys(ITENS_LIVRE).forEach((k) => { const d = (P.tipo === "imagem" ? LIVRE_QUADRADO : LIVRE_PADRAO)[k], v = g[k] || {}; P.livre[k] = { x: v.x != null ? v.x : d[0], y: v.y != null ? v.y : d[1], s: v.s || d[2], on: v.on !== false }; }); }
+    return P.livre;
+  }
+  const guardarLivre = (P) => lsPers.gravar("livre_" + (P.tipo === "imagem" ? "q" : "v"), P.livre);
+  function barraLivre(P) {
+    if (!P.midia) return "";
+    const L = livreDe(P), sel = P.selLivre, fora = Object.keys(ITENS_LIVRE).filter((k) => !L[k].on);
+    return (sel ? `<div class="pe-sel-it"><b>${ITENS_LIVRE[sel]}</b><button type="button" class="pe-mini" data-livre="menor">Menor</button><button type="button" class="pe-mini" data-livre="maior">Maior</button><button type="button" class="pe-mini" data-livre="tirar">Tirar</button></div>` : "")
+      + (fora.length ? `<div class="pe-fora"><span>Pôr de volta:</span>${fora.map((k) => `<button type="button" class="pe-mini" data-livre-por="${k}">${ITENS_LIVRE[k]}</button>`).join("")}</div>` : "")
+      + `<button type="button" class="link-sel" data-livre="padrao">Voltar às posições padrão</button>`;
+  }
+  /** Um quadro: a foto/vídeo da IA inteira + os itens nas posições que você arrastou */
+  function quadroPersonagem(ctx, W, fonte, P, previa) {
     const x = ctx, k = W / 1080, H = altPers(P); x.save(); x.scale(k, k);
     x.fillStyle = "#1d1d1f"; x.fillRect(0, 0, 1080, H);
     const fw = fonte ? (fonte.videoWidth || fonte.width) : 0, fh = fonte ? (fonte.videoHeight || fonte.height) : 0;
     if (fw) { const s = Math.max(1080 / fw, H / fh); x.imageSmoothingQuality = "high"; x.drawImage(fonte, (1080 - fw * s) / 2, (H - fh * s) / 2, fw * s, fh * s); }
     else { const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#cfc6b4"); g.addColorStop(1, "#a99f8c"); x.fillStyle = g; x.fillRect(0, 0, 1080, H); x.font = "700 46px Poppins"; x.fillStyle = "rgba(255,255,255,.85)"; x.textAlign = "center"; x.fillText("Foto ou vídeo da IA aqui", 540, H / 2); }
-    const pos = P.pos, T = P.tx, M = 56, at = arroba(config.instagram) || "@migapromo.oficial";
-    const AM = "#ffd23f", RS = "#ff5c93", BR = "#ffffff";
-    const canto = (c, w, h, dy = 0) => ({ x: c[1] === "l" ? M : 1080 - M - w, y: c[0] === "t" ? M + 30 + dy : H - M - h - dy });
-    // pilhas de cima e de baixo (centralizadas)
-    const topo = [], base = [];
-    if (T.chamada && pos.chamada === "topo") topo.push(["chamada", T.chamada]);
-    if (T.nome && pos.nome === "topo") topo.push(["nome", T.nome]);
-    if (pos.arroba === "topo") topo.push(["arroba", at]);
-    if (T.nome && pos.nome === "base") base.push(["nome", T.nome]);
-    if (T.cupom && P.mostrar.cupom !== false && pos.cupom === "base") base.push(["cupom", T.cupom]);
-    if (pos.arroba === "base") base.push(["arroba", at]);
-    const estilo = { chamada: [66, RS, 900], nome: [44, BR, 800], arroba: [40, BR, 800] };
-    const alturaItem = ([t, v], larg) => { if (t === "cupom") return 86; const [tam] = estilo[t]; x.font = `${estilo[t][2]} ${tam}px Poppins`; return quebraLinhas(x, v, larg, t === "arroba" ? 1 : 2).length * tam * 1.15 + 14; };
-    const desenhaItem = ([t, v], px, y, al, larg) => { // y = topo do item; devolve a altura
-      if (t === "cupom") { const tx = "cupom " + v; x.save(); x.font = "800 40px Poppins"; const w = x.measureText(tx).width + 48, h = 70, x0 = al === "center" ? px - w / 2 : al === "right" ? px - w : px; retArredondado(x, x0, y, w, h, 14); x.fillStyle = "#fff"; x.fill(); x.setLineDash([14, 9]); x.lineWidth = 5; x.strokeStyle = "#1d1d1f"; x.stroke(); x.setLineDash([]); x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(tx, x0 + w / 2, y + h / 2 + 2); x.restore(); return 86; }
-      const [tam, cor, peso] = estilo[t]; x.font = `${peso} ${tam}px Poppins`; const ls = quebraLinhas(x, v, larg, t === "arroba" ? 1 : 2);
-      ls.forEach((l, i) => textoContorno(x, l, px, y + tam * (i + 1) * 1.1, tam, cor, peso, al)); return ls.length * tam * 1.15 + 14;
-    };
-    const cantoCima = pos.logo[0] === "t" || (pos.selo[0] === "t" && pos.selo !== "nao" && P.mostrar.selo !== false && T.selo);
-    let yT = M + 40; topo.forEach((i) => { yT += desenhaItem(i, 540, yT, "center", cantoCima ? 500 : 900); });
-    const cantoBaixo = pos.logo[0] === "b" || (pos.selo[0] === "b" && pos.selo !== "nao" && P.mostrar.selo !== false && T.selo), lb = cantoBaixo ? 500 : 900;
-    let hB = base.reduce((s, i) => s + alturaItem(i, lb), 0), yB = H - M - 20 - hB;
-    const yBaseLivre = yB; base.forEach((i) => { yB += desenhaItem(i, 540, yB, "center", lb); });
-    // bloco do preço
-    const bloco = []; if (T.chamada && pos.chamada === "preco") bloco.push(["chamada", T.chamada]); if (T.nome && pos.nome === "preco") bloco.push(["nome", T.nome]);
-    const lado = { base: "center", topo: "center", dc: "right", db: "right", ec: "left", eb: "left" }[pos.preco] || "center", larg = lado === "center" ? 900 : 600;
-    const px = lado === "center" ? 540 : lado === "right" ? 1080 - M : M;
-    let tamPor = H < 1500 ? 92 : 104; x.font = `900 ${tamPor}px Poppins`; const tPor = T.por ? (T.de ? "por " : "") + T.por : ""; while (tPor && x.measureText(tPor).width > larg && tamPor > 60) { tamPor -= 4; x.font = `900 ${tamPor}px Poppins`; }
-    const hBloco = bloco.reduce((s, i) => s + alturaItem(i, larg), 0) + (T.de ? 56 : 0) + (tPor ? tamPor * 1.12 : 0) + (T.cupom && P.mostrar.cupom !== false && pos.cupom === "preco" ? 90 : 0);
-    let yP = { base: yBaseLivre - 24 - hBloco, topo: yT + 10, dc: H * 0.31, db: H * 0.55, ec: H * 0.31, eb: H * 0.55 }[pos.preco] || H * 0.31;
-    bloco.forEach((i) => { yP += desenhaItem(i, px, yP, lado, larg); });
-    if (T.de) { textoContorno(x, "de " + T.de, px, yP + 44, 42, BR, 700, lado, true); yP += 56; }
-    if (tPor) { textoContorno(x, tPor, px, yP + tamPor * 0.92, tamPor, AM, 900, lado); yP += tamPor * 1.12; }
-    if (T.cupom && P.mostrar.cupom !== false && pos.cupom === "preco") desenhaItem(["cupom", T.cupom], px, yP + 8, lado, larg);
-    // logo, selo e @ junto do logo
-    const tamLogo = 190;
-    if (edMarca) { const p0 = canto(pos.logo, tamLogo, tamLogo); x.drawImage(edMarca, p0.x, p0.y, tamLogo, tamLogo);
-      if (pos.arroba === "logo") { x.font = "800 40px Poppins"; const w = x.measureText(at).width, dentro = pos.logo[1] === "l"; textoContorno(x, at, dentro ? p0.x + tamLogo + 18 : p0.x - 18, p0.y + tamLogo / 2 + 14, 40, BR, 800, dentro ? "left" : "right"); void w; } }
-    if (T.selo && P.mostrar.selo !== false && pos.selo !== "nao") {
-      const r = 92, mesmo = pos.selo === pos.logo, p0 = canto(pos.selo, r * 2, r * 2, mesmo ? tamLogo + 24 : 0);
-      x.save(); x.translate(p0.x + r, p0.y + r); x.rotate(0.08); x.shadowColor = "rgba(0,0,0,.25)"; x.shadowBlur = 20; x.shadowOffsetY = 6;
-      x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.fillStyle = AM; x.fill(); x.shadowColor = "transparent"; x.lineWidth = 8; x.strokeStyle = "#1d1d1f"; x.stroke();
-      x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.textBaseline = "middle"; x.font = "900 56px Poppins"; x.fillText(T.selo, 0, -8); x.font = "800 24px Poppins"; x.fillText("OFF", 0, 40); x.restore();
-    }
+    const T = P.tx, L = livreDe(P), at = arroba(config.instagram) || "@migapromo.oficial", AM = "#ffd23f", RS = "#ff5c93", BR = "#ffffff";
+    const caixas = {};
+    const linhas = (txt, tam, peso, larg, max) => { x.font = `${peso} ${tam}px Poppins`; return quebraLinhas(x, txt, larg, max); };
+    const textoBloco = (k, txt, tam0, cor, peso, larg, max) => { const it = L[k], tam = tam0 * it.s, cx = it.x * 1080, cy = it.y * H; const ls = linhas(txt, tam, peso, larg * it.s, max), h = ls.length * tam * 1.15;
+      ls.forEach((l, i) => textoContorno(x, l, cx, cy - h / 2 + tam * (i + 0.95) * 1.1, tam, cor, peso, "center"));
+      x.font = `${peso} ${tam}px Poppins`; const w = Math.max(...ls.map((l) => x.measureText(l).width), 40); caixas[k] = [cx - w / 2 - 14, cy - h / 2 - 10, w + 28, h + 20]; };
+    if (L.chamada.on && T.chamada) textoBloco("chamada", T.chamada, 66, RS, 900, 900, 2);
+    if (L.nome.on && T.nome) textoBloco("nome", T.nome, 44, BR, 800, 860, 2);
+    if (L.preco.on && (T.por || T.de)) { const it = L.preco, cx = it.x * 1080, cy = it.y * H, tPor = T.por ? (T.de ? "por " : "") + T.por : ""; let tam = 104 * it.s; x.font = `900 ${tam}px Poppins`; while (tPor && x.measureText(tPor).width > 980 && tam > 40) { tam -= 4; x.font = `900 ${tam}px Poppins`; }
+      const hDe = T.de ? 52 * it.s : 0, h = hDe + (tPor ? tam * 1.05 : 0); let y = cy - h / 2;
+      if (T.de) { textoContorno(x, "de " + T.de, cx, y + 40 * it.s, 42 * it.s, BR, 700, "center", true); y += hDe; }
+      if (tPor) textoContorno(x, tPor, cx, y + tam * 0.88, tam, AM, 900, "center");
+      x.font = `900 ${tam}px Poppins`; const w = Math.max(tPor ? x.measureText(tPor).width : 0, 200 * it.s); caixas.preco = [cx - w / 2 - 14, cy - h / 2 - 10, w + 28, h + 20]; }
+    if (L.cupom.on && T.cupom) { const it = L.cupom, cx = it.x * 1080, cy = it.y * H, tx = "cupom " + T.cupom, f = 40 * it.s; x.save(); x.font = `800 ${f}px Poppins`; const w = x.measureText(tx).width + 48 * it.s, h = 70 * it.s; retArredondado(x, cx - w / 2, cy - h / 2, w, h, 14 * it.s); x.fillStyle = "#fff"; x.fill(); x.setLineDash([14 * it.s, 9 * it.s]); x.lineWidth = 5 * it.s; x.strokeStyle = "#1d1d1f"; x.stroke(); x.setLineDash([]); x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(tx, cx, cy + 2); x.restore(); caixas.cupom = [cx - w / 2, cy - h / 2, w, h]; }
+    if (L.selo.on && T.selo) { const it = L.selo, cx = it.x * 1080, cy = it.y * H, r = 92 * it.s; x.save(); x.translate(cx, cy); x.rotate(0.08); x.shadowColor = "rgba(0,0,0,.25)"; x.shadowBlur = 20; x.shadowOffsetY = 6; x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.fillStyle = AM; x.fill(); x.shadowColor = "transparent"; x.lineWidth = 8 * it.s; x.strokeStyle = "#1d1d1f"; x.stroke();
+      x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.textBaseline = "middle"; x.font = `900 ${56 * it.s}px Poppins`; x.fillText(T.selo, 0, -8 * it.s); x.font = `800 ${24 * it.s}px Poppins`; x.fillText("OFF", 0, 40 * it.s); x.restore(); caixas.selo = [cx - r, cy - r, r * 2, r * 2]; }
+    if (L.logo.on && edMarca) { const it = L.logo, t = 190 * it.s, cx = it.x * 1080, cy = it.y * H; x.drawImage(edMarca, cx - t / 2, cy - t / 2, t, t); caixas.logo = [cx - t / 2, cy - t / 2, t, t]; }
+    if (L.arroba.on) textoBloco("arroba", at, 40, BR, 800, 900, 1);
+    P._caixas = caixas;
+    if (previa && P.selLivre && caixas[P.selLivre]) { const [bx, by, bw, bh] = caixas[P.selLivre]; x.save(); x.setLineDash([16, 10]); x.lineWidth = 5; x.strokeStyle = "#ffffff"; x.strokeRect(bx, by, bw, bh); x.strokeStyle = "#e8336d"; x.lineDashOffset = 13; x.strokeRect(bx, by, bw, bh); x.restore(); }
     x.restore();
   }
   function loopPersonagem() {
     const cv = $("#peQuadro"); if (!cv) return; const cx = cv.getContext("2d"), P = pe();
     const passo = () => { if ($("#peQuadro") !== cv || wz.canal !== "personagem" || wz.passo !== "peMontar") { if (P.midia && P.midia.video) P.midia.video.pause(); return; }
-      if (!P.gravando) quadroPersonagem(cx, 540, P.midia ? (P.midia.video || P.midia.bmp) : null, P); requestAnimationFrame(passo); };
+      if (!P.gravando) quadroPersonagem(cx, 540, P.midia ? (P.midia.video || P.midia.bmp) : null, P, true); requestAnimationFrame(passo); };
     if (P.midia && P.midia.video) { P.midia.video.muted = true; P.midia.video.loop = true; P.midia.video.play().catch(() => {}); }
     passo();
   }
@@ -6605,6 +6596,27 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
     baixarBlob(arq, arq.name); toast("Salvo: abra o Instagram e escolha da galeria");
   }
+  let arrastoPe = null;
+  const pontoPe = (e, cv, P) => { const r = cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * 1080, ((e.clientY - r.top) / r.height) * altPers(P)]; };
+  $("#wzCorpo").addEventListener("pointerdown", (e) => {
+    const cv = e.target.closest && e.target.closest("#peQuadro"); if (!cv || wz.canal !== "personagem") return; const P = pe(); if (!P.midia) return;
+    const [px, py] = pontoPe(e, cv, P), cx = P._caixas || {}, ordem = ["arroba", "logo", "selo", "cupom", "preco", "nome", "chamada"];
+    const k = ordem.find((n) => cx[n] && px >= cx[n][0] && px <= cx[n][0] + cx[n][2] && py >= cx[n][1] && py <= cx[n][1] + cx[n][3]);
+    if (P.selLivre !== (k || null)) { P.selLivre = k || null; $("#peBarra").innerHTML = barraLivre(P); }
+    if (!k) return; e.preventDefault(); const L = livreDe(P), H = altPers(P);
+    arrastoPe = { k, dx: px - L[k].x * 1080, dy: py - L[k].y * H, cv }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* segue */ }
+  });
+  $("#wzCorpo").addEventListener("pointermove", (e) => { if (!arrastoPe) return; const P = pe(), [px, py] = pontoPe(e, arrastoPe.cv, P), H = altPers(P), it = livreDe(P)[arrastoPe.k];
+    it.x = Math.max(0.03, Math.min(0.97, (px - arrastoPe.dx) / 1080)); it.y = Math.max(0.02, Math.min(0.98, (py - arrastoPe.dy) / H)); P.resultado = null; });
+  ["pointerup", "pointercancel"].forEach((ev) => $("#wzCorpo").addEventListener(ev, () => { if (arrastoPe) { guardarLivre(pe()); arrastoPe = null; } }));
+  $("#wzCorpo").addEventListener("click", (e) => {
+    if (wz.canal !== "personagem") return; const P = pe(); if (!P || !P.midia) return;
+    const b = e.target.closest("[data-livre], [data-livre-por]"); if (!b) return; const L = livreDe(P);
+    if (b.dataset.livrePor) { L[b.dataset.livrePor].on = true; P.selLivre = b.dataset.livrePor; }
+    else if (b.dataset.livre === "padrao") { lsPers.gravar("livre_" + (P.tipo === "imagem" ? "q" : "v"), {}); P.livre = null; P.selLivre = null; livreDe(P); }
+    else if (P.selLivre) { const it = L[P.selLivre]; if (b.dataset.livre === "maior") it.s = Math.min(2.2, it.s + 0.15); if (b.dataset.livre === "menor") it.s = Math.max(0.45, it.s - 0.15); if (b.dataset.livre === "tirar") { it.on = false; P.selLivre = null; } }
+    P.resultado = null; guardarLivre(P); $("#peBarra").innerHTML = barraLivre(P);
+  });
   $("#wzCorpo").addEventListener("change", async (e) => {
     if (wz.canal !== "personagem") return; const P = pe();
     const fo = e.target.dataset && e.target.dataset.peFoto; if (fo != null && e.target.files[0]) {
