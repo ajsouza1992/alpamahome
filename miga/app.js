@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=223"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=224"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=223"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=224"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6331,8 +6331,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const veste = it.categoria === "looks" || it.categoria === "fitness" || ROUPA_PROD.test(n) && !uso;
     const F = FUNDOS_PERS[fundo];
     if (veste) { C.roupa = null; C.acao = C.acao.replace("the outfit", "the clothes"); }
-    else if (wz.pe && wz.pe.estilo === "foto") C.roupa = "";
-    else C.roupa = wz.pe && wz.pe.estilo ? roupaDe(wz.pe).en : ROUPAS_PERS[0];
+    else C.roupa = `a stylish, trendy outfit whose style and colors match the ${F ? F[2] + " backdrop" : "setting"} and complement the product`;
     if (F) C.lugar = `a professional photo studio with a seamless ${F[2]} backdrop, soft even studio lighting`;
     return C;
   }
@@ -6432,11 +6431,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${prodHtml}
         <b class="ch-rot">Fundo do estúdio</b>
         <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, x]) => [k, x[0], x[1]])].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
-        ${cenaDoItem(it, "").roupa !== null ? (() => { const sel = (id, rot, val, cor) => `<button type="button" class="pe-sel" id="${id}"><small>${rot}</small><span>${cor ? `<i style="background:${cor}"></i>` : ""}${esc(val)}</span><b>▾</b></button>`;
-          const foto = P.estilo === "foto", e = ESTILOS_ROUPA.find((x) => x[0] === P.estilo), b = BAIXOS_ROUPA.find((x) => x[0] === P.baixo), peca = e && SO_PECA.includes(e[0]);
-          return `<div class="pe-roupa-t"><b class="ch-rot">Roupa</b><button type="button" class="link-sel" id="peRoupa">Sortear</button></div>
-          <div class="pe-sels">${sel("peSelCima", "Parte de cima", foto ? "Da foto dela" : e[1])}${foto ? "" : sel("peSelCorCima", "Cor", corDe(P.corRoupa)[1], corDe(P.corRoupa)[3])}
-          ${foto || peca ? "" : sel("peSelBaixo", "Parte de baixo", b ? b[1] : "Nenhuma") + (b ? sel("peSelCorBaixo", "Cor", corDe(P.corBaixo)[1], corDe(P.corBaixo)[3]) : "")}</div>`; })() : '<p class="nota">Roupa: ela veste o próprio produto (a roupa já é a referência).</p>'}
+        <p class="nota pe-roupa-nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto (a roupa da foto do produto)." : "Roupa: a IA escolhe um look que combina com o fundo e com o produto."}</p>
         <div class="campo"><span>Como ela é (vai no prompt, opcional)</span><textarea id="peFicha" rows="2" maxlength="220" placeholder="Ex.: 27 anos, cabelo castanho ondulado no ombro, sardas leves, argolas douradas">${esc(lsPers.ler("ficha", ""))}</textarea></div>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
         <div class="campo"><span>Prompt pronto (${pr.length}/900 caracteres)</span><textarea id="pePrompt" rows="8" readonly>${esc(pr)}</textarea></div>
