@@ -1725,3 +1725,13 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .ka-alt__topo span { flex: 1; }
 /* Copiar embaixo do texto, igual ao "Copiar legenda" */
 .ka-alt .ka-alt__bt { width: 100% !important; min-height: 46px; margin-top: 6px !important; font-size: 14.5px; }
+/* Barrinha de cor (campanhas especiais e temas prontos) */
+.cor-propria { display: grid; gap: 10px; margin: 10px 0 4px; padding: 12px 14px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1.5px #eee6d4; }
+.cor-propria.on { box-shadow: 0 0 0 2.5px var(--rosa); }
+.cor-propria > span { font-size: 14px; font-weight: 600; color: #6f6862; }
+.barra-cor { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; border-radius: 999px; margin: 6px 0; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.barra-cor::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 4px solid #1d1d1f; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+.barra-cor::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 4px solid #1d1d1f; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+#folhaOpcoes .cor-propria #corUsar { display: flex; justify-content: center; align-items: center; gap: 10px; padding-right: 16px !important; background: var(--rosa); color: #fff; font-weight: 700; }
+#folhaOpcoes .cor-propria #corUsar::after { display: none; }
+#folhaOpcoes .cor-propria #corUsar .op-cor { box-shadow: 0 0 0 2px #fff; }

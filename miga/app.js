@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=195"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=196"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=195"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=196"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3251,12 +3251,42 @@
   const TEMAS_VIDEO = {
     cheia: "Tela cheia", vidro: "Moldura texto livre", desfoque: "Desfoque", legenda: "Legenda", manchete: "Manchete", contagem: "Contagem", neon: "Neon", quadrado: "Quadrado", story: "Story", gradiente: "Gradiente", faixa: "Faixa", selo: "Etiqueta", cinema: "Cinema", moldura: "Moldura", polaroid: "Polaroid", circulo: "Círculo", dividido: "Dividido", minimal: "Mínimo"
   };
-  const CORES_VIDEO = {
+  const CORES_VIDEO_BASE = {
     creme: { nome: "Creme", antigo: "#8a817b", fundo: "#fff3c4", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff", bola: "rgba(255,210,63,.45)" },
     rosa: { nome: "Rosa", antigo: "rgba(255,255,255,.85)", fundo: "#e8336d", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f", bola: "rgba(255,255,255,.9)" },
     branco: { nome: "Branco", antigo: "#8a817b", fundo: "#ffffff", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff", bola: "rgba(255,210,63,.35)" },
     preto: { nome: "Preto", antigo: "rgba(255,255,255,.75)", fundo: "#1d1d1f", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f", bola: "rgba(232,51,109,.85)" }
   };
+  /* Cor própria das campanhas especiais e dos temas: a barrinha escolhe o tom ("h0" a "h359"),
+     o brilho é sempre o mesmo do rosa da Miga. Tons claros (amarelo, verde-limão...) ganham texto escuro. */
+  const corPropria = (k) => /^h\d{1,3}$/.test(String(k || ""));
+  const tomDe = (k) => (parseInt(String(k).slice(1), 10) || 0) % 360;
+  function hslHex(h, sa, l) { sa /= 100; l /= 100; const f = (n) => { const k = (n + h / 30) % 12, c = l - sa * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(c * 255).toString(16).padStart(2, "0"); }; return "#" + f(0) + f(8) + f(4); }
+  function luzDe(hex) { const v = [1, 3, 5].map((i) => { const c = parseInt(hex.slice(i, i + 2), 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }
+  const fundoProprio = (k) => hslHex(tomDe(k), 78, 55);
+  const corClara = (k) => luzDe(fundoProprio(k)) > 0.3;
+  function paletaPropria(k) {
+    const fundo = fundoProprio(k);
+    return corClara(k) ? { ...CORES_VIDEO_BASE.creme, nome: "Cor própria", fundo, antigo: "rgba(29,29,31,.65)", bola: "rgba(255,255,255,.55)" }
+      : { ...CORES_VIDEO_BASE.rosa, nome: "Cor própria", fundo, destaque: "#ffd23f" };
+  }
+  const CORES_VIDEO = new Proxy(CORES_VIDEO_BASE, { get: (o, k) => (k in o ? o[k] : corPropria(k) ? paletaPropria(k) : undefined) });
+  /** Barrinha de cor (o arco-íris com o mesmo brilho das cores da Miga) */
+  const GRAD_BARRA = `linear-gradient(90deg, ${[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 359].map((h) => hslHex(h, 78, 55)).join(", ")})`;
+  const barraCor = (id, k) => `<input type="range" class="barra-cor" id="${id}" min="0" max="359" step="1" value="${corPropria(k) ? tomDe(k) : 341}" style="background:${GRAD_BARRA}" aria-label="Escolher a cor">`;
+  /** Cor das campanhas especiais: as 4 cores padrão + a barrinha para fazer na cor que quiser */
+  function escolherCorCampanha(atual) {
+    const d = $("#folhaEscolha"), lista = Object.entries(CORES_VIDEO_BASE);
+    $("#folhaTitulo").textContent = "Cor da campanha";
+    const k0 = corPropria(atual) ? atual : "h341";
+    $("#folhaOpcoes").innerHTML = lista.map(([v, x]) => `<button type="submit" value="${v}" class="${v === atual ? "on" : ""}"><i class="op-cor" style="background:${x.fundo}"></i><span>${esc(x.nome)}</span></button>`).join("")
+      + `<div class="cor-propria${corPropria(atual) ? " on" : ""}"><span>Ou deslize a barrinha e faça na cor que quiser:</span>${barraCor("corBarra", k0)}
+        <button type="submit" class="btn btn--rosa" id="corUsar" value="${k0}"><i class="op-cor" id="corAmostra" style="background:${fundoProprio(k0)}"></i>Usar esta cor</button></div>`;
+    const barra = $("#corBarra"), usar = $("#corUsar");
+    barra.addEventListener("input", () => { const k = "h" + barra.value; usar.value = k; $("#corAmostra").style.background = fundoProprio(k); });
+    d.returnValue = ""; d.showModal();
+    return new Promise((ok) => d.addEventListener("close", () => ok(d.returnValue || null), { once: true }));
+  }
   /** Prompts prontos para pedir o vídeo a uma IA (Veo/Gemini, Sora, Kling, Runway...) levando a foto do produto */
   const PROMPTS_VIDEO = [
     ["Produto em destaque", (n) => `Crie um vídeo vertical 9:16 de 8 segundos mostrando o produto da imagem anexada (${n}) girando devagar sobre um fundo creme claro, com luz suave de estúdio e closes nos detalhes. Estilo propaganda elegante e delicada. Mantenha o produto igual ao da foto. Sem textos na tela e deixe espaço livre em cima e embaixo.`],
@@ -6038,7 +6068,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     return partes.join(" ");
   }
   function altChamada(CH) {
-    const D = dadosChamada(CH), cor = (CORES_CHAMADA[CH.cor] || CORES_CHAMADA.preto).nome.toLowerCase();
+    const D = dadosChamada(CH), cor = (CORES_CHAMADA_P[CH.cor] || CORES_CHAMADA.preto).nome.toLowerCase();
     if (CH.tipo === "seg") return `Vídeo de comemoração com fundo ${cor} e confetes. Tela 1: etiqueta "${D.etiqueta}", o texto "${semDestaque(D.t1)}", o número ${D.numero} em dourado e a palavra ${D.palavra}, com figurinhas de ${NOME_FIG[D.ic[0]] || ""} e ${NOME_FIG[D.ic[1]] || ""}, e "${semDestaque(D.sub)}". Tela 2: "${D.frase.map(semDestaque).join(" ")}". Tela 3: "${semDestaque(D.lista)}" ${D.itens.filter(Boolean).join(", ")}. Tela 4: "${semDestaque(D.cta1)} ${D.cta2}", o logo da Miga${D.arroba ? `, ${D.arroba}` : ""} e "${semDestaque(D.toque)}".`.replace(/ ,/g, ",");
     return `Vídeo de fundo ${cor}. Tela 1: etiqueta "${D.etiqueta}" e o texto "${semDestaque(D.t1)} ${semDestaque(D.t2)} ${D.palavra}", com figurinhas de ${NOME_FIG[D.ic[0]] || ""} e ${NOME_FIG[D.ic[1]] || ""}, e "${D.sub}". Tela 2: "${D.frase.map(semDestaque).join(" ")}". Tela 3: "${semDestaque(D.lista)}" ${D.itens.filter(Boolean).join(", ")}. Tela 4: "${semDestaque(D.cta1)} ${D.cta2}"${D.arroba ? `, ${D.arroba}` : ""} e "${D.toque}".`.replace(/ ,/g, ",");
   }
@@ -6157,11 +6187,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.45)", bola2: "#efeae0", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" },
     // cores extras: só nos temas de campanha (Corre pros Stories e Seguidores), as artes dos produtos seguem com as 4 cores
     rose: { nome: "Rosê", fundo: "#f6c9d3", texto: "#1d1d1f", d1: "#b0124a", d2: "#b0124a", bolaC: "rgba(255,255,255,.7)", bolaC2: "#ffffff", suave: "#6b3a48", extra: true },
-    vermelho: { nome: "Vermelho", fundo: "#d62839", texto: "#ffffff", d1: "#ffd23f", d2: "#1d1d1f", bolaC: "rgba(255,255,255,.22)", bolaC2: "rgba(255,255,255,.22)", suave: "rgba(255,255,255,.88)", extra: true, pilEscura: true },
-    dourado: { nome: "Dourado", fundo: "#e3b23c", fundo2: "#f7da7a", texto: "#1d1d1f", d1: "#8a1538", d2: "#8a1538", bolaC: "rgba(255,255,255,.45)", bolaC2: "#fff3c4", suave: "#4a3510", extra: true },
-    azul: { nome: "Azul", fundo: "#1f4fd1", texto: "#ffffff", d1: "#ffd23f", d2: "#9fd8ff", bolaC: "rgba(255,255,255,.2)", bolaC2: "rgba(159,216,255,.45)", suave: "rgba(255,255,255,.88)", extra: true },
-    verde: { nome: "Verde", fundo: "#138a4b", texto: "#ffffff", d1: "#ffd23f", d2: "#ffd23f", bolaC: "rgba(255,255,255,.2)", bolaC2: "rgba(255,210,63,.5)", suave: "rgba(255,255,255,.88)", extra: true }
   };
+  // na barrinha: qualquer tom com o brilho padrão da Miga
+  const CORES_CHAMADA_P = new Proxy(CORES_CHAMADA, { get: (o, k) => (k in o ? o[k] : corPropria(k) ? (corClara(k)
+    ? { nome: "Cor própria", fundo: fundoProprio(k), texto: "#1d1d1f", d1: "#b0124a", d2: "#b0124a", bolaC: "rgba(255,255,255,.55)", bolaC2: "#ffffff", suave: "#3d3a36" }
+    : { nome: "Cor própria", fundo: fundoProprio(k), texto: "#ffffff", d1: "#ffd23f", d2: "#1d1d1f", bolaC: "rgba(255,255,255,.22)", bolaC2: "rgba(255,255,255,.22)", suave: "rgba(255,255,255,.9)", pilEscura: true }) : undefined) });
   const T_CHAMADA = 12.4, T_PLIM_CHAMADA = 10.0;
   /** Textos do tema: o padrão do nicho + o que você editou (use *palavra* para destacar) */
   function dadosChamada(CH) {
@@ -6183,7 +6213,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const easeC = (t) => t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);
   const puloC = (t) => { t = Math.max(0, Math.min(1, t)); const s = 1.70158 * 1.6; return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2); };
   function quadroChamada(ctx, W, t, CH) {
-    const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, C = CORES_CHAMADA[CH.cor] || CORES_CHAMADA.preto, x = ctx;
+    const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, C = CORES_CHAMADA_P[CH.cor] || CORES_CHAMADA.preto, x = ctx;
     x.save(); x.scale(W / 1080, W / 1080);
     if (C.fundo2) { const g = x.createLinearGradient(0, 0, 1080, 1920); g.addColorStop(0, C.fundo2); g.addColorStop(0.55, C.fundo); g.addColorStop(1, C.fundo2); x.fillStyle = g; } else x.fillStyle = C.fundo;
     x.fillRect(0, 0, 1080, 1920);
@@ -6331,6 +6361,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="wz-previa"><canvas id="chQuadro" width="540" height="960"></canvas></div>
         ${seg ? `<b class="ch-rot">Seguidores</b>${chips("data-ch-num", nums.map((n) => [n, n]), nums.includes(CH.numero) ? CH.numero : "")}<label class="ch-campo"><span>Outro número</span><input id="chNumero" inputmode="numeric" maxlength="12" value="${nums.includes(CH.numero) ? "" : esc(CH.numero)}" placeholder="Ex.: 2.500"></label>` : `<b class="ch-rot">Nicho</b>${chips("data-ch-nicho", nichos, CH.nicho)}`}
         <b class="ch-rot">Cor</b>${chips("data-ch-cor", Object.entries(CORES_CHAMADA).map(([k, v]) => [k, v.nome]), CH.cor)}
+        <div class="cor-propria cor-propria--ch${corPropria(CH.cor) ? " on" : ""}"><span>Ou deslize a barrinha e faça na cor que quiser:</span>${barraCor("chBarra", CH.cor)}</div>
         <b class="ch-rot">Música</b>${chips("data-ch-mus", [["dancepop", "Dance pop"], ["traparabe", "Trap árabe"], ["trap", "Trap"], ["funkphonk", "Funk phonk"], ["mais", "Mais músicas…"]], ["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? CH.musica : "mais")}
         ${["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? "" : `<p class="nota">Música: <b>${esc((NOMES_MUSICA[CH.musica] || [CH.musica])[0])}</b></p>`}
         <button type="button" class="btn btn--branco btn-ic" id="chEditarTx"><svg class="ic-mono"><use href="#i-lapis"/></svg>Editar textos e figurinhas</button>
@@ -6501,6 +6532,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram e escolha da galeria"); }
   });
   $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal === "chamada" && e.target.id === "chLegenda") ch().legenda = e.target.value;
+    if (wz.canal === "chamada" && e.target.id === "chBarra") { ch().cor = "h" + e.target.value; document.querySelectorAll("[data-ch-cor]").forEach((b) => b.classList.remove("on")); e.target.parentElement.classList.add("on"); return; }
     if (wz.canal === "chamada" && e.target.id === "chNumero") { const v = e.target.value.trim(); ch().numero = v || "500"; ch().legenda = null; ch().legendaIA = null; if (ch().tx) delete ch().tx.cta2; document.querySelectorAll("[data-ch-num]").forEach((b) => b.classList.toggle("on", b.dataset.chNum === v)); const le = $("#chLegendaEd"); if (le) le.value = legendaChamada(ch()); } });
   /** Barra de "criando o vídeo": rosa, com o texto branco e o percentual (o botão some enquanto grava) */
   function ligarBarra(btn, barra) {
@@ -6614,7 +6646,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       if (k === "musica" && wz.canal === "reels") folhaMusica();
       if (k === "produtos") folhaProdutos();
       if (k === "estilo") { const v = await escolherOpcao("Estilo da arte", MONTAGENS.map((m) => [m, ESTILO_MONTAGEM[m]]), wz.modelo); if (v) { wz.modelo = v; aposMudarEstudio(); } }
-      if (k === "cor") { const lista = Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome, x.fundo]); const e = estLer(); const v = await escolherOpcao("Cor", lista, e.cor); if (v) { e.cor = v; estGravar(e); aposMudarEstudio(); } }
+      if (k === "cor") { const lista = Object.entries(CORES_VIDEO).map(([c, x]) => [c, x.nome, x.fundo]); const e = estLer(); const v = CAMPANHAS[e.camp] ? await escolherCorCampanha(e.cor) : await escolherOpcao("Cor", lista, e.cor); if (v) { e.cor = v; estGravar(e); aposMudarEstudio(); } }
       if (k === "musica" && wz.canal === "video") { folhaMusica(); return; }
       if (k === "ajustesVideo") { folhaAjustesVideo(); return; }
       if (k === "estiloVideo") { folhaEstiloVideo(); return; }
