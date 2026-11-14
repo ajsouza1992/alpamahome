@@ -782,8 +782,8 @@ async function catalogoML(filtro, env, pagina = 1) {
     saida.push({ id: b.id, nome: b.name, preco, precoAntigo: antigo, imagem: mlHttps(((b.pictures || [])[0] || {}).url), link: b.permalink || `https://www.mercadolivre.com.br/p/${b.id}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false, ...(bw.shipping && bw.shipping.free_shipping ? { freteGratis: true } : {}), ...(bw.official_store_id ? { lojaOficial: true } : {}) });
   }
 
-  // Produtos de vendedor (USER_PRODUCT)
-  for (const id of ids("USER_PRODUCT")) {
+  // Produtos de vendedor (USER_PRODUCT): a API não traz o preço deles, então ficam de fora (economiza chamadas)
+  for (const id of []) {
     const r = await getML(`/user-products/${id}`, token);
     const b = r.dados || {};
     if (r.status !== 200 || !b.name) { if (r.status) diag.push("user-product " + r.status); continue; }
@@ -798,7 +798,8 @@ async function catalogoML(filtro, env, pagina = 1) {
   }
   if (!saida.length && pagina === 1) throw new Error("Mercado Livre não trouxe produtos (" + diag.join(" · ") + ")");
   // Os com preço primeiro
-  const lista = saida.sort((a, b) => (b.preco ? 1 : 0) - (a.preco ? 1 : 0));
+  // Sem preço não serve para postar: só entram os que vieram com preço
+  const lista = saida.filter((p) => p.preco);
   lista.temMais = todos.length > pagina * POR_PAGINA_ML;
   return lista;
 }

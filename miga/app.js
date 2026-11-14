@@ -928,7 +928,7 @@
       return;
     }
     if (d.avisos && d.avisos.length) console.info("Catálogo:", d.avisos.join(" | "));
-    catalogoAtual = d.produtos || [];
+    catalogoAtual = (d.produtos || []).filter((p) => p.preco);
     ordenarAchados();
     if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Sem achados nessa loja agora. Escolha outra loja.</p>'; return; }
     pintarAchados();
@@ -950,7 +950,7 @@
     catBusca = termo; catPagina = 1; esqueletoCatalogo(); $("#acBusca").blur();
     try {
       const d = await api(`catalogo?busca=${encodeURIComponent(termo)}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`);
-      catalogoAtual = d.produtos || []; catTemMais = !!d.temMais;
+      catalogoAtual = (d.produtos || []).filter((p) => p.preco); catTemMais = !!d.temMais;
       ordenarAchados();
       pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
     } catch (e) { if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; } toast("Não consegui buscar nas lojas agora"); catBusca = ""; carregarCatalogo(); }
@@ -993,7 +993,7 @@
     btn.disabled = true; btn.textContent = "Carregando…";
     const pg = catPagina + 1, rs = await Promise.allSettled((catBusca ? [`busca=${encodeURIComponent(catBusca)}`] : FILTROS_CAT.map((f) => `filtro=${f}`)).map((f) => api(`catalogo?${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}&pagina=${pg}`)));
     const vistos = new Set(catalogoAtual.map((p) => p.id || p.link)), listas = rs.filter((r) => r.status === "fulfilled").map((r) => r.value.produtos || []); let novos = 0;
-    for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); catalogoAtual.push(p); novos++; });
+    for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p || !p.preco) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); catalogoAtual.push(p); novos++; });
     ordenarAchados();
     catPagina = pg; catTemMais = novos > 0 && rs.some((r) => r.status === "fulfilled" && r.value.temMais);
     const y = scrollY; pintarAchados(); scrollTo(0, y); toast(novos ? `+${novos} achados` : "Não tem mais achados novos agora");
@@ -1267,7 +1267,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=208"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=209"; });
     }
     edFoto = null;
     try {
@@ -1641,7 +1641,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=208"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=209"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
