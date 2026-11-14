@@ -711,13 +711,28 @@ async function precoML(id, token) {
   if (r.status === 200 && r.dados.amount) return { preco: r.dados.amount, precoAntigo: r.dados.regular_amount || null };
   return null;
 }
-async function catalogoML(filtro, env) {
+/** Lista grande de mais vendidos: a categoria + as subcategorias (guardada 30 min para as próximas páginas) */
+async function listaDestaquesML(filtro, token, diag) {
+  const chave = filtro.ml || filtro.busca, guardada = await lerCache("ml-destaques", chave);
+  if (guardada && guardada.l && guardada.l.length) return guardada.l;
+  let l = [];
+  const junta = (c) => { for (const x of c || []) if (x && x.id && !l.some((y) => y.id === x.id)) l.push({ id: x.id, type: x.type }); };
+  if (filtro.ml) {
+    const r = await getML(`/highlights/MLB/category/${filtro.ml}`, token); diag.push("destaques " + r.status); if (r.status === 200) junta(r.dados.content);
+    const cat = await getML(`/categories/${filtro.ml}`, token);
+    for (const f of (cat.dados.children_categories || []).slice(0, 8)) { const h = await getML(`/highlights/MLB/category/${f.id}`, token); if (h.status === 200) junta(h.dados.content); if (l.length >= 120) break; }
+  }
+  if (l.length < 20 && filtro.busca) junta(await destaquesPorBusca(filtro.busca, token, diag));
+  if (l.length) await gravarCache("ml-destaques", chave, { l }, 1800);
+  return l;
+}
+const POR_PAGINA_ML = 12; // cabe no limite de chamadas do Cloudflare
+async function catalogoML(filtro, env, pagina = 1) {
   chamadasML = 0;
   const token = await tokenML(env);
   const diag = [];
-  let destaques = filtro.ml ? await destaquesML(filtro.ml, token, diag) : [];
-  if (!destaques.length && filtro.busca) destaques = await destaquesPorBusca(filtro.busca, token, diag);
-  destaques = destaques.slice(0, 20);
+  const todos = await listaDestaquesML(filtro, token, diag);
+  let destaques = todos.slice((pagina - 1) * POR_PAGINA_ML, pagina * POR_PAGINA_ML);
   const tipos = {};
   for (const d of destaques) tipos[d.type] = (tipos[d.type] || 0) + 1;
   diag.push("tipos " + (Object.entries(tipos).map(([t, n]) => t + ":" + n).join(",") || "nenhum"));
@@ -767,14 +782,16 @@ async function catalogoML(filtro, env) {
   }
 
   // Plano B: busca da categoria ordenada por vendas
-  if (!saida.length) {
+  if (!saida.length && pagina === 1 && filtro.ml) {
     const r = await getML(`/sites/MLB/search?category=${filtro.ml}&sort=sold_quantity_desc&limit=20`, token);
     diag.push("busca " + r.status);
     for (const b of (r.dados && r.dados.results) || []) if (b.title) saida.push(itemML(b, filtro));
   }
-  if (!saida.length) throw new Error("Mercado Livre não trouxe produtos (" + diag.join(" · ") + ")");
+  if (!saida.length && pagina === 1) throw new Error("Mercado Livre não trouxe produtos (" + diag.join(" · ") + ")");
   // Os com preço primeiro
-  return saida.sort((a, b) => (b.preco ? 1 : 0) - (a.preco ? 1 : 0));
+  const lista = saida.sort((a, b) => (b.preco ? 1 : 0) - (a.preco ? 1 : 0));
+  lista.temMais = todos.length > pagina * POR_PAGINA_ML;
+  return lista;
 }
 
 /** Shopee Affiliate Open API (GraphQL, assinatura SHA256) — o link já vem como link de afiliado */
@@ -810,20 +827,20 @@ async function rotaCatalogo(request, env) {
 
   const filtro = FILTROS_CATALOGO[nomeFiltro];
   const tarefas = [];
-  // O Mercado Livre só tem a lista dos mais vendidos (vem toda na 1ª página); a Shopee vai de 50 em 50
-  if (configurado.mercadolivre && loja !== "shopee" && pagina === 1) tarefas.push(catalogoML(filtro, env));
+  // Mercado Livre: mais vendidos da categoria e subcategorias, 12 por página; Shopee: 50 por página
+  if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env, pagina));
   if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem, pagina));
   const resultados = await Promise.allSettled(tarefas);
-  const produtos = [], avisos = [];
+  const produtos = [], avisos = []; let maisML = false;
   for (const r of resultados) {
-    if (r.status === "fulfilled") produtos.push(...r.value);
+    if (r.status === "fulfilled") { produtos.push(...r.value); if (r.value.temMais) maisML = true; }
     else avisos.push(r.reason && r.reason.message ? r.reason.message : "Uma loja não respondeu.");
   }
   // Intercala as lojas para a grade não ficar com uma loja só no topo
   const ml = produtos.filter((p) => p.loja === "mercadolivre"), sh = produtos.filter((p) => p.loja === "shopee");
   const mistura = [];
   for (let i = 0; i < Math.max(ml.length, sh.length); i++) { if (sh[i]) mistura.push(sh[i]); if (ml[i]) mistura.push(ml[i]); }
-  const resposta = { configurado, produtos: mistura, avisos, temMais: configurado.shopee && loja !== "mercadolivre" && sh.length >= 40 };
+  const resposta = { configurado, produtos: mistura, avisos, temMais: maisML || (configurado.shopee && loja !== "mercadolivre" && sh.length >= 40) };
   if (mistura.length) await gravarCache("catalogo", chave, resposta, 1800); // 30 minutos
   return json(resposta);
 }

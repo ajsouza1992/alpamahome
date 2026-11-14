@@ -930,7 +930,7 @@
     $("#catalogo").innerHTML = l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
       return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
-      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${catTemMais && !t ? '<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais achados da Shopee</button>' : ""}` : '<p class="vazio-lista">Nada encontrado nos achados.</p>';
+      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${catTemMais && !t ? '<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais achados</button>' : ""}` : '<p class="vazio-lista">Nada encontrado nos achados.</p>';
   }
   $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(pintarAchados, 150); });
   [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
@@ -969,7 +969,7 @@
   /** Próxima página da Shopee (de 50 em 50 por categoria), juntando sem repetir */
   async function maisAchados(btn) {
     btn.disabled = true; btn.textContent = "Carregando…";
-    const pg = catPagina + 1, rs = await Promise.allSettled(FILTROS_CAT.map((f) => api(`catalogo?filtro=${f}&loja=shopee&ordem=${catOrdem.valor()}&pagina=${pg}`)));
+    const pg = catPagina + 1, rs = await Promise.allSettled(FILTROS_CAT.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}&pagina=${pg}`)));
     const vistos = new Set(catalogoAtual.map((p) => p.id || p.link)), listas = rs.filter((r) => r.status === "fulfilled").map((r) => r.value.produtos || []); let novos = 0;
     for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); catalogoAtual.push(p); novos++; });
     catPagina = pg; catTemMais = novos > 0 && rs.some((r) => r.status === "fulfilled" && r.value.temMais);
@@ -1243,7 +1243,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=199"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=200"; });
     }
     edFoto = null;
     try {
@@ -1617,7 +1617,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=199"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=200"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
