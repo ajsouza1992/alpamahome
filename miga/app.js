@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=219"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=220"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=219"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=220"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6380,7 +6380,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const it = wzItem(), P = pe();
     const f = P.fotosAgora || fotosPers(), tipoTxt = P.tipo === "video" ? "vídeo" : "imagem";
     const prodHtml = it ? `<div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.fotoLimpa ? " · foto refeita ✓" : ""}</small></span></div>` : "";
-    const nav = (cont, txt = "Continuar →", rosa = true) => `<div class="duas pe-nav"><button type="button" class="btn btn--branco" id="peVoltar">← Voltar</button><button type="button" class="btn ${rosa ? "btn--rosa" : "btn--branco"}" id="${cont}">${txt}</button></div>`;
+    const nav = (cont, txt = "Continuar", rosa = true) => `<div class="duas pe-nav"><button type="button" class="btn btn--branco" id="peVoltar">Voltar</button><button type="button" class="btn ${rosa ? "btn--rosa" : "btn--branco"}" id="${cont}">${txt}</button></div>`;
+    const apps = `<span class="pe-apps"><button type="button" class="pe-app" id="peAbrirGemini" aria-label="Abrir o Gemini" title="Abrir o Gemini"><svg viewBox="0 0 24 24"><path d="M12 3c.6 4.6 3.4 7.4 9 9-5.6 1.6-8.4 4.4-9 9-.6-4.6-3.4-7.4-9-9 5.6-1.6 8.4-4.4 9-9z"/></svg><small>Gemini</small></button><button type="button" class="pe-app" id="peAbrirGPT" aria-label="Abrir o ChatGPT" title="Abrir o ChatGPT"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/><path d="M8.5 9.5h7M8.5 12.5h4"/></svg><small>GPT</small></button></span>`;
+    const etapa = (n, txt, acao) => `<div class="pe-etapa"><b class="pe-num">${n}</b><span class="pe-etxt">${txt}</span>${acao}</div>`;
     if (wz.passo === "peEscolher") {
       c.innerHTML = `<h2 class="wz-titulo">Criação IA</h2>
         <p class="nota">Escolha o que vai criar, as 2 fotos dela e o produto.</p>
@@ -6398,11 +6400,12 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `<h2 class="wz-titulo">Refazer a foto do produto</h2>
         <p class="nota">Deixe a foto do produto limpa e com qualidade antes de criar ${P.tipo === "video" ? "o vídeo" : "a imagem"}.</p>
         ${prodHtml}
-        <ol class="pe-passos"><li>Baixe a foto do produto.</li><li>Copie o prompt e cole no ChatGPT ou no Gemini junto com a foto.</li><li>Salve a foto refeita e toque em <b>Usar a foto refeita</b>.</li></ol>
-        <div class="duas"><button type="button" class="btn btn--branco" id="peLimparBaixar">Baixar foto do produto</button><button type="button" class="btn btn--branco" id="peLimparCopiar">Copiar prompt da foto</button></div>
-        <div class="duas"><button type="button" class="btn btn--branco" id="peAbrirGPT">Abrir o ChatGPT</button><button type="button" class="btn btn--branco" id="peAbrirGemini">Abrir o Gemini</button></div>
-        <label class="btn btn--rosa pe-escolher"><input type="file" accept="image/*" id="peLimparFoto" hidden>${it.fotoLimpa ? "Trocar a foto refeita" : "Usar a foto refeita"}</label>
-        ${nav("peIr3", it.fotoLimpa ? "Continuar →" : "Pular →", !!it.fotoLimpa)}`;
+        <div class="pe-etapas">
+          ${etapa(1, "Baixe a foto do produto", '<button type="button" class="pe-mini" id="peLimparBaixar">Baixar</button>')}
+          ${etapa(2, `Copie o prompt e cole na IA com a foto<span class="pe-abrir">Abrir: ${apps}</span>`, '<button type="button" class="pe-mini" id="peLimparCopiar">Copiar</button>')}
+          ${etapa(3, it.fotoLimpa ? "Foto refeita escolhida ✓" : "Escolha a foto refeita que a IA criou", `<label class="pe-mini pe-mini--rosa"><input type="file" accept="image/*" id="peLimparFoto" hidden>${it.fotoLimpa ? "Trocar" : "Escolher"}</label>`)}
+        </div>
+        ${nav("peIr3", it.fotoLimpa ? "Continuar" : "Pular", !!it.fotoLimpa)}`;
       return;
     }
     if (wz.passo === "pePrompt") {
@@ -6416,10 +6419,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="campo"><span>Como ela é (vai no prompt, opcional)</span><textarea id="peFicha" rows="2" maxlength="220" placeholder="Ex.: 27 anos, cabelo castanho ondulado no ombro, sardas leves, argolas douradas">${esc(lsPers.ler("ficha", ""))}</textarea></div>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
         <div class="campo"><span>Prompt pronto (${pr.length}/900 caracteres)</span><textarea id="pePrompt" rows="8" readonly>${esc(pr)}</textarea></div>
-        <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt e baixar as 3 fotos</button>
-        <div class="duas"><button type="button" class="btn btn--branco" id="peAbrirGPT">Abrir o ChatGPT</button><button type="button" class="btn btn--branco" id="peAbrirGemini">Abrir o Gemini</button></div>
+        <div class="pe-copiar"><button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt e baixar as 3 fotos</button>${apps}</div>
         <p class="nota">Anexe na ordem: <b>foto 1, foto 2 e a foto do produto</b>.</p>
-        ${nav("peJaCriei", "Já criei: editar →")}`;
+        ${nav("peJaCriei", "Já criei: editar")}`;
       return;
     }
     if (wz.passo === "peMontar") {
@@ -6443,7 +6445,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${!P.midia ? "" : P.midia.tipo === "video"
           ? `<div class="vd-progresso" id="peProgresso" hidden><i></i></div><button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`
           : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}
-        <button type="button" class="btn btn--branco pe-nav" id="peVoltar">← Voltar ao prompt</button>`;
+        <button type="button" class="btn btn--branco pe-nav" id="peVoltar">Voltar ao prompt</button>`;
       carregarMarca().then(() => loopPersonagem());
     }
   }

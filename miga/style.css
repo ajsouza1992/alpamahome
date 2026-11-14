@@ -1809,3 +1809,21 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pe-fundos { flex-wrap: wrap !important; overflow: visible !important; }
 .pe-roupa { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--campo); border-radius: 14px; padding: 8px 10px; margin: 10px 0; font-size: 14px; } .pe-roupa .btn { width: auto; margin: 0; padding: 8px 14px; font-size: 13px; flex: none; }
 .pe-nav { margin-top: 14px; }
+/* Criação IA: passos organizados e atalhos pequenos do Gemini e do ChatGPT */
+.pe-etapas { display: grid; gap: 8px; margin: 14px 0 4px; }
+.pe-etapa { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--campo); border-radius: 16px; padding: 10px 12px; }
+.pe-num { width: 28px; height: 28px; border-radius: 50%; background: var(--rosa); color: #fff; display: grid; place-items: center; font-size: 14px; }
+.pe-etxt { font-size: 14px; line-height: 1.3; }
+.pe-etapa > :last-child { display: flex; gap: 6px; align-items: center; }
+.pe-etapa .pe-apps { margin-left: 2px; }
+.pe-mini { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #fff; color: var(--preto); font: 700 13px Poppins, sans-serif; box-shadow: 0 0 0 1.5px var(--linha), 0 6px 14px -8px rgba(0,0,0,.25); cursor: pointer; white-space: nowrap; }
+.pe-mini--rosa { background: var(--rosa); color: #fff; box-shadow: 0 8px 18px -10px rgba(232,51,109,.8); }
+.pe-apps { display: inline-flex; gap: 6px; }
+.pe-app { display: grid; place-items: center; gap: 0; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px var(--linha); cursor: pointer; }
+.pe-app svg { width: 18px; height: 18px; fill: none; stroke: var(--rosa); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; margin-top: 3px; }
+.pe-app small { font: 600 8px Poppins, sans-serif; color: var(--cinza); margin-top: -3px; }
+.pe-copiar { display: flex; gap: 8px; align-items: center; }
+.pe-copiar .btn { flex: 1; margin: 0; }
+.pe-etapa .pe-mini input { display: none; }
+.pe-app { flex: none; }
+.pe-abrir { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--cinza); }
