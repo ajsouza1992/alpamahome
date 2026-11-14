@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=215"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=216"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=215"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=216"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6290,6 +6290,39 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   };
   const CENA_PT = { perfumes: "borrifa no pulso e sorri", looks: "vestindo a peça no espelho", fitness: "vestindo e alongando", calcados: "calçando e dando dois passos", acessorios: "usando e ajeitando", maquiagem: "passando no espelho", skincare: "aplicando no rosto", cabelo: "passando no cabelo", suplementos: "mostrando e preparando", eletronicos: "usando e reagindo", casa: "usando em casa", outros: "mostrando para a câmera" };
   const LIMITE_PROMPT = 900;
+  /* Estúdio com o fundo nas cores da Miga + o jeito certo de USAR cada tipo de produto (boné na cabeça, óculos no rosto...) */
+  const FUNDOS_PERS = { creme: ["Creme", "#fff3c4", "soft cream (#fff3c4)", "white"], branco: ["Branco", "#ffffff", "pure white", "black"], preto: ["Preto", "#1d1d1f", "matte black (#1d1d1f)", "white"], rosa: ["Rosa", "#e8336d", "hot pink (#e8336d)", "white"] };
+  const USOS_PERS = [
+    [/(^|[^a-zà-ú])bon[eé]s?([^a-zà-ú]|$)|chap[eé]u|viseira|touca|gorro|boina|bucket/i, "is wearing the hat from image 3 on her head, adjusts the brim with one hand and smiles", "wearing the hat from image 3 on her head"],
+    [/[óo]culos/i, "puts on the sunglasses from image 3 and smiles", "wearing the sunglasses from image 3"],
+    [/rel[óo]gio|smartwatch|smartband/i, "is wearing the watch from image 3 and shows her wrist near her face", "wearing the watch from image 3, wrist raised near her face"],
+    [/colar|corrente|gargantilha|choker|brinco|argola|anel|pulseira|bracelete|tornozeleira|piercing|bijuteria|joia/i, "is wearing the jewelry from image 3 and touches it gently", "wearing the jewelry from image 3, clearly visible"],
+    [/bolsa|mochila|necessaire|carteira|clutch|pochete/i, "carries the bag from image 3 on her shoulder, adjusts the strap and smiles", "with the bag from image 3 on her shoulder"],
+    [/cinto|len[çc]o|cachecol|echarpe|tiara|presilha|piranha|scrunchie/i, "is wearing the accessory from image 3 and shows it", "wearing the accessory from image 3, clearly visible"],
+    [/t[êe]nis|sand[áa]lia|sapat|bota|chinelo|rasteir|salto|scarpin|mule|papete/i, "is wearing the shoes from image 3 and takes two steps; the camera shows the shoes and her face", "wearing the shoes from image 3, full body, shoes clearly visible"],
+    [/batom|gloss|lip|lábios|labial/i, "applies the lipstick from image 3 on her lips and smiles", "applying the lipstick from image 3 on her lips"],
+    [/secador|chapinha|prancha|babyliss|modelador|escova (secadora|alisadora|rotativa)/i, "uses the hair tool from image 3 on her hair", "using the hair tool from image 3 on her hair"],
+    [/fone|headphone|earbud|airpods/i, "is wearing the headphones from image 3, enjoys the music and smiles", "wearing the headphones from image 3"]
+  ];
+  const ROUPA_PROD = /vestido|blusa|cal[çc]a|saia|short|conjunto|cropped|camis|body|macac|jaqueta|casaco|biqu|mai[ôo]|suti[ãa]|lingerie|pijama|legging|(^|[^a-z])top([^a-z]|$)|moletom|regata|blazer|kimono/i;
+  function cenaDoItem(it, fundo) {
+    const C = { ...(CENAS_PERS[it.categoria] || CENAS_PERS.outros) }, n = String(it.nome || "");
+    const uso = USOS_PERS.find(([re]) => re.test(n)); if (uso) { C.acao = uso[1]; C.foto = uso[2]; }
+    const veste = it.categoria === "looks" || it.categoria === "fitness" || ROUPA_PROD.test(n) && !uso;
+    const F = FUNDOS_PERS[fundo];
+    if (veste) { C.roupa = null; C.acao = C.acao.replace("the outfit", "the clothes"); }
+    else if (F) C.roupa = `a simple fitted plain ${F[3]} top, no prints or logos`;
+    if (F) C.lugar = `a professional photo studio with a seamless ${F[2]} backdrop, soft even studio lighting`;
+    return C;
+  }
+  /** Fundo automático pela cor do produto (para o produto aparecer bem) */
+  function fundoAuto(bmp) {
+    try { const c = document.createElement("canvas"); c.width = c.height = 48; const x = c.getContext("2d"); x.drawImage(bmp, 0, 0, 48, 48); const d = x.getImageData(0, 0, 48, 48).data;
+      let r = 0, g = 0, b = 0, n = 0; for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 128 || (d[i] > 235 && d[i + 1] > 235 && d[i + 2] > 235)) continue; r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+      if (!n) return "rosa"; r /= n; g /= n; b /= n; const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+      const rosado = sat > 0.3 && r > g + 30 && r >= b; if (lum < 0.3) return "creme"; if (rosado) return "creme"; if (lum > 0.72) return "preto"; return sat > 0.35 ? "branco" : "rosa";
+    } catch (e) { return "rosa"; }
+  }
   // Detalhe de cada categoria para a foto limpa do produto
   const LIMPAR_CAT = { perfumes: "Mostre o frasco sem a tampa, com o borrifador à mostra.", looks: "Mostre só a peça, sem modelo e sem manequim, de frente, bem esticada e sem amassados.", fitness: "Mostre só as peças, sem modelo, de frente, bem esticadas.", calcados: "Mostre o par, de lado, com o solado aparecendo.", acessorios: "Mostre o acessório inteiro, de frente, com as alças ou correntes à mostra.", maquiagem: "Mostre a embalagem aberta ao lado da tampa, com o produto aparecendo.", skincare: "Mostre a embalagem de frente, com o rótulo bem legível.", cabelo: "Mostre a embalagem de frente, com o rótulo bem legível.", suplementos: "Mostre o pote de frente, com o rótulo bem legível.", eletronicos: "Mostre o aparelho inteiro, de frente, com acabamento brilhante.", casa: "Mostre o produto inteiro, de frente.", outros: "Mostre o produto inteiro, de frente." };
   function promptLimparProduto(it) {
@@ -6317,11 +6350,12 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   /** Prompt padrão (imagem ou vídeo), sempre com no máximo 900 caracteres */
   function promptPersonagem(it, tipo) {
-    const C = CENAS_PERS[it.categoria] || CENAS_PERS.outros, ficha0 = String(lsPers.ler("ficha", "") || "").replace(/\s+/g, " ").trim();
+    const P0 = wz.pe || {}, fundo = P0.fundo === "auto" || !P0.fundo ? (P0.fundoAuto || "rosa") : P0.fundo;
+    const C = cenaDoItem(it, fundo === "cenario" ? "" : fundo), ficha0 = String(lsPers.ler("ficha", "") || "").replace(/\s+/g, " ").trim();
     const roupa = C.roupa ? `New outfit: ${C.roupa}.` : "She wears the product from image 3.";
     const monta = (ficha, nomeMax) => tipo === "video"
-      ? `Hyper-realistic vertical 9:16 video, 8 seconds, one continuous shot, still camera. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}, soft natural light. Product: image 3, identical (shape, color, label, size). Action: she ${C.acao}. She says in Brazilian Portuguese, warm natural voice: "${falaPersonagem(it, nomeMax)}" Then she stays still, smiling. No text, logos or subtitles; empty space at top and bottom; no cuts or zoom; natural hands; the product never changes; perfect lip sync.`
-      : `Hyper-realistic vertical 9:16 photo, influencer style. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}, soft natural light. She is ${C.foto}, looking at the camera with a natural smile. The product is identical to image 3 (shape, color, label, size). No text, no logos, no watermark; empty space at the top and bottom; sharp focus, high resolution.`;
+      ? `Hyper-realistic vertical 9:16 video, 8 seconds, one continuous shot, still camera. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. Product: image 3, identical (shape, color, label, size). Action: she ${C.acao}. She says in Brazilian Portuguese, warm natural voice: "${falaPersonagem(it, nomeMax)}" Then she stays still, smiling. No added text, logos or subtitles (keep the product's own design); empty space at top and bottom; no cuts or zoom; natural hands; the product never changes; perfect lip sync.`
+      : `Hyper-realistic vertical 9:16 photo, influencer style. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. She is ${C.foto}, looking at the camera with a natural smile. The product is identical to image 3 (shape, color, label, size). No added text, logos or watermark (keep the product's own design); empty space at the top and bottom; sharp focus, high resolution.`;
     let ficha = ficha0, nomeMax = 5, p = monta(ficha, nomeMax);
     while (p.length > LIMITE_PROMPT && ficha.length > 40) { ficha = ficha.slice(0, ficha.length - 20).replace(/\s+\S*$/, ""); p = monta(ficha, nomeMax); }
     while (p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(ficha, nomeMax); }
@@ -6329,7 +6363,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     return p.slice(0, LIMITE_PROMPT);
   }
   function abrirPersonagem(it) {
-    wz = { canal: "personagem", passo: "pePrompt", veioDaLista: true, itemId: it.id, pe: { tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
+    prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } });
+    wz = { canal: "personagem", passo: "pePrompt", veioDaLista: true, itemId: it.id, pe: { fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const fotosPers = () => lsPers.ler("fotos", [null, null]);
@@ -6347,12 +6382,14 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <b class="ch-rot">Fotos dela (da galeria)</b>
         <div class="pe-fotos">${[0, 1].map((i) => `<label class="pe-foto${f[i] ? " on" : ""}"${f[i] ? ` style="background-image:url(${f[i]})"` : ""}><input type="file" accept="image/*" data-pe-foto="${i}" hidden><span>${f[i] ? `Foto ${i + 1} · trocar` : `+ Foto ${i + 1}`}</span></label>`).join("")}</div>
         <b class="ch-rot">Produto</b>
-        <div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>Categoria: ${esc(NOME_CAT[it.categoria] || "Outros")} · cena: ${esc(CENA_PT[it.categoria] || CENA_PT.outros)} · roupa nova</small></span></div>
+        <div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>Categoria: ${esc(NOME_CAT[it.categoria] || "Outros")} · cena: ${esc(USOS_PERS.some(([re]) => re.test(it.nome || "")) ? "usando o produto" : CENA_PT[it.categoria] || CENA_PT.outros)} · roupa nova</small></span></div>
         <details class="pe-limpar"${it.fotoLimpa ? "" : " open"}><summary>${it.fotoLimpa ? "✓ Foto do produto limpa" : "Antes: deixe a foto do produto limpa"}</summary>
           <p class="nota">Use no ChatGPT ou no Gemini com a foto do produto: ele refaz a foto com fundo branco e mais qualidade, sem mudar o produto.</p>
           <div class="duas"><button type="button" class="btn btn--branco" id="peLimparCopiar">Copiar prompt da foto</button><button type="button" class="btn btn--branco" id="peLimparBaixar">Baixar foto do produto</button></div>
           <label class="btn btn--rosa pe-escolher"><input type="file" accept="image/*" id="peLimparFoto" hidden>Já limpei: usar a foto nova</label>
         </details>
+        <b class="ch-rot">Fundo do estúdio</b>
+        <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, f]) => [k, f[0], f[1]]), ["cenario", "Cenário", ""]].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
         <div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-tipo="imagem" aria-checked="${P.tipo === "imagem"}">📸 Imagem</button><button type="button" role="radio" data-pe-tipo="video" aria-checked="${P.tipo === "video"}">🎬 Vídeo</button></div>
         <div class="campo"><span>Como ela é (vai no prompt, opcional)</span><textarea id="peFicha" rows="2" maxlength="220" placeholder="Ex.: 27 anos, cabelo castanho ondulado no ombro, sardas leves, argolas douradas">${esc(lsPers.ler("ficha", ""))}</textarea></div>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
@@ -6510,6 +6547,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "personagem") return; const t = e.target, P = pe(), it = wzItem();
     const tp = t.closest("[data-pe-tipo]"); if (tp) { P.tipo = tp.dataset.peTipo; mostrarPasso(); return; }
+    const fd = t.closest("[data-pe-fundo]"); if (fd) { P.fundo = fd.dataset.peFundo; lsPers.gravar("fundo", P.fundo); mostrarPasso(); return; }
     const ps = t.closest("[data-pe-pos]"); if (ps) { const [k, v] = ps.dataset.pePos.split(":"); P.pos[k] = v; lsPers.gravar("pos", P.pos); ps.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ps)); P.resultado = null; return; }
     if (t.closest("#peLimparCopiar")) { if (await copiarTexto(promptLimparProduto(it))) toast("Prompt copiado: cole no ChatGPT com a foto do produto"); return; }
     if (t.closest("#peLimparBaixar")) { const a = await arquivoDaImagem(it.imagem); if (a) { baixarBlob(a, nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + "-produto." + (a.type.split("/")[1] || "jpg").replace("jpeg", "jpg")); toast("Foto do produto salva"); } else toast("Não consegui baixar a foto"); return; }
