@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=234"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=235"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=234"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=235"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6791,10 +6791,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const linha = (partes, y, tam, t0, u) => { const k = easeC((u - t0) / 0.45); if (k <= 0) return; x.save(); x.globalAlpha = k; x.translate(540, y + (1 - k) * 60); let f = tam; x.font = `900 ${f}px Poppins`;
       let w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); if (w > 960) { f = Math.floor(f * 960 / w); x.font = `900 ${f}px Poppins`; w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); }
       let xx = -w / 2; x.textAlign = "left"; x.textBaseline = "middle"; partes.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, 0); xx += x.measureText(p).width; }); x.restore(); };
-    const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); if (C.texto === "#ffffff") iconeAdesivo(x, nome, tam); else iconeReels(x, nome, tam); x.restore(); };
+    const pm = pulsoMusica(MUSICAS[CH.musica] || MUSICAS.traparabe, t);
+    const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k) * (1 + 0.14 * pm); x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); if (C.texto === "#ffffff") iconeAdesivo(x, nome, tam); else iconeReels(x, nome, tam); x.restore(); };
     const pilula = (txt, cx, cy, bg, fg, tam, t0, u, giro = -0.03, borda = true) => { const k = (u - t0) / 0.45; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy); x.rotate(giro); x.scale(s, s); x.font = `800 ${tam}px Poppins`; const w = x.measureText(txt).width + tam * 1.4, h = tam * 1.9; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = bg; x.fill(); if (borda) { x.lineWidth = 7; x.strokeStyle = "#1d1d1f"; x.stroke(); } x.fillStyle = fg; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(txt, 0, 3); x.restore(); };
     const T = C.texto, A = C.d1, D = dadosChamada(CH);
-    if (CH.tipo === "seg") { quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula); if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160); x.restore(); return; }
+    if (CH.tipo === "seg") { quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula, pm); if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160); x.restore(); return; }
     if (t < 3.2) {
       if (D.etiqueta) pilula(D.etiqueta, 540, 520, "#ffd23f", "#1d1d1f", 44, 0.05, t, -0.04);
       linha(partesDestaque(D.t1, T, A), 760, 118, 0.2, t); linha(partesDestaque(D.t2, T, A), 900, 118, 0.35, t);
@@ -6833,6 +6834,18 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       ic: ["trofeu", "confete"], icFrase: "curtida", ic2: ["notificacao", "baloes"] };
   }
   /** Confetes caindo (sempre iguais em cada quadro, para a prévia e o vídeo baterem) */
+  /** Pulso da batida (1 no bumbo, caindo até 0), igual às animações do Reels */
+  function pulsoMusica(E, t) {
+    if (!E || !E.bpm || t < 0) return 0; const p = 60 / E.bpm / 4, k = E.k || "x...x...x...x...", st = Math.floor(t / p);
+    for (let j = 0; j < 16; j++) { const s = st - j; if (s < 0) break; if ((k[s % 16] || ".") === "x") return Math.exp(-(t - s * p) * 7); }
+    return 0;
+  }
+  /** Estouro de confete saindo do centro (abertura e final) */
+  function estouroConfete(x, u, cx, cy, qtd = 60) {
+    if (u < 0 || u > 2.2) return; const cores = ["#e8336d", "#ffd23f", "#ffffff", "#4f7cff", "#2fa35a", "#f59ab8"];
+    for (let i = 0; i < qtd; i++) { const ang = (i / qtd) * Math.PI * 2 + i * 0.37, v = 700 + (i * 53) % 600, px = cx + Math.cos(ang) * v * u, py = cy + Math.sin(ang) * v * u + 900 * u * u;
+      x.save(); x.globalAlpha = Math.max(0, 1 - u / 2.2); x.translate(px, py); x.rotate(u * 9 + i); x.fillStyle = cores[i % cores.length]; if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 12, 0, 7); x.fill(); } else x.fillRect(-18, -8, 36, 16); x.restore(); }
+  }
   function confetes(x, u, qtd, ini = 0) {
     const cores = ["#e8336d", "#ffd23f", "#ffffff", "#4f7cff", "#2fa35a", "#f59ab8"];
     for (let i = 0; i < qtd; i++) {
@@ -6853,15 +6866,15 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     x.save(); x.beginPath(); x.rect(-w, -tam, w * 2, tam * 0.62); x.clip(); x.fillStyle = "rgba(255,255,255,.28)"; x.fillText(txt, 0, 0); x.restore();
     x.restore(); return tam;
   }
-  function quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula) {
+  function quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula, pm = 0) {
     const T = C.texto, A = C.d1, brilha = (bx, by, r, t0, u) => { const k = (u - t0) % 1.4; if (u < t0 || k > 0.7) return; const s = Math.sin(k / 0.7 * Math.PI); x.save(); x.translate(bx, by); x.scale(s, s); x.beginPath(); for (let i = 0; i < 8; i++) { const g = i * Math.PI / 4 - Math.PI / 2, q = i % 2 ? r * 0.28 : r; x.lineTo(Math.cos(g) * q, Math.sin(g) * q); } x.closePath(); x.fillStyle = "#ffffff"; x.shadowColor = "rgba(255,210,63,.9)"; x.shadowBlur = 18; x.fill(); x.restore(); };
     if (t < 3.2) {
-      confetes(x, t, 46, 0.5);
+      estouroConfete(x, t - 1.65, 540, 905, 70); confetes(x, t, 46, 0.5);
       if (D.etiqueta) pilula(D.etiqueta, 540, 430, "#ffd23f", "#1d1d1f", 46, 0.05, t, -0.04);
       linha(partesDestaque(D.t1, T, A), 640, 104, 0.2, t);
       const k = easeC((t - 0.35) / 0.4); if (k > 0) {
         const alvo = numSeg(D.numero), conta = alvo && /^[\d.]+$/.test(D.numero) ? fmtSeg(Math.round(alvo * easeC((t - 0.35) / 1.3))) : D.numero, pul = t > 1.65 ? 1 + 0.12 * Math.max(0, 1 - (t - 1.65) / 0.35) : 1;
-        x.save(); x.globalAlpha = k; x.translate(540, 905); x.scale(pul * (0.6 + 0.4 * k), pul * (0.6 + 0.4 * k)); numeroDourado(x, conta, 0, 0, 380, -0.03); x.restore();
+        x.save(); x.globalAlpha = k; x.translate(540, 905); const bat = t > 1.65 ? 1 + 0.07 * pm : 1; x.scale(pul * bat * (0.6 + 0.4 * k), pul * bat * (0.6 + 0.4 * k)); numeroDourado(x, conta, 0, 0, 380, -0.03); x.restore();
         brilha(190, 740, 44, 1.7, t); brilha(905, 1020, 38, 1.95, t); brilha(880, 730, 30, 2.2, t);
       }
       linha([[D.palavra, A]], 1150, 124, 1.0, t);
@@ -6876,9 +6889,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       D.itens.forEach((it, i) => { if (!it) return; const [bg, fg, bd] = (CH.cor === "rosa" || C.pilEscura) && (i === 0 || i === 3) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
       if (D.ic2[0]) adesivo(D.ic2[0], 220, 1500, 210, 1.3, u, -0.15); if (D.ic2[1]) adesivo(D.ic2[1], 860, 1500, 190, 1.45, u, 0.12);
     } else { const u = t - 9.6;
-      confetes(x, u, 34, 0.2);
+      estouroConfete(x, u - 1.3, 540, 640, 60); confetes(x, u, 34, 0.2);
       linha(partesDestaque(D.cta1, T, A), 470, 100, 0.05, u);
-      const k0 = easeC((u - 0.2) / 0.4); if (k0 > 0) { x.save(); x.globalAlpha = k0; x.translate(540, 640); const s = puloC((u - 0.2) / 0.5); x.scale(s, s); numeroDourado(x, D.cta2, 0, 0, 190, -0.03); x.restore(); }
+      const k0 = easeC((u - 0.2) / 0.4); if (k0 > 0) { x.save(); x.globalAlpha = k0; x.translate(540, 640); const s = puloC((u - 0.2) / 0.5) * (1 + 0.07 * pm); x.scale(s, s); const meta = numSeg(D.cta2), de = numSeg(D.numero), cnt = meta && /^[\d.]+$/.test(D.cta2) ? fmtSeg(Math.round(de + (meta - de) * easeC((u - 0.2) / 1.1))) : D.cta2; numeroDourado(x, cnt, 0, 0, 190, -0.03); x.restore(); }
       const k = easeC((u - 0.4) / 0.5);
       if (k > 0) { const pr = 1 + 0.05 * Math.sin(u * 6); x.save(); x.translate(540, 1030); x.scale(k * pr, k * pr); const g = x.createLinearGradient(-170, -170, 170, 170); g.addColorStop(0, "#ffd23f"); g.addColorStop(0.5, "#e8336d"); g.addColorStop(1, "#7b3fe4"); x.lineWidth = 22; x.strokeStyle = g; x.beginPath(); x.arc(0, 0, 170, 0, 7); x.stroke(); x.fillStyle = "#fff"; x.beginPath(); x.arc(0, 0, 145, 0, 7); x.fill(); if (edMarca) x.drawImage(edMarca, -115, -115, 230, 230); x.restore(); }
       const at = D.arroba; if (at) pilula(at, 540, 1340, "#ffd23f", "#1d1d1f", 56, 0.8, u, -0.03);
