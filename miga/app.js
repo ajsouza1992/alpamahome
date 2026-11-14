@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=236"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=237"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=236"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=237"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6380,6 +6380,13 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const P0 = wz.pe || {}, fundo = P0.fundo === "auto" || !P0.fundo ? (P0.fundoAuto || "rosa") : P0.fundo;
     const C = cenaDoItem(it, fundo === "cenario" ? "" : fundo), ficha0 = ""; // como ela é: as fotos de referência já mostram
     const roupa = C.roupa ? `Roupa: ${C.roupa}.` : "Ela veste a roupa da foto do produto anexada.";
+    if (tipo === "video" && it.categoria === "perfumes" && !USOS_PERS.some(([re]) => re.test(it.nome || ""))) {
+      const formato = quadradoPers(P0) ? "quadrado 1:1 para post do feed" : "vertical 9:16";
+      const monta2 = (nm) => `Vídeo hiper-realista ${formato}, 8 s, tomada única, sem cortes. Modelo fictícia (IA), a mesma das fotos anexadas, roupa nova combinando com o fundo. Cenário: ${C.lugar.replace(" e luz suave de estúdio", "").replace(/ \(#\w+\)/, "")}. Segura o perfume da foto na mão direita o vídeo todo. Fala em português: "Oi, miga! Hoje vim mostrar esse perfume maravilhoso, o ${nm}!" Borrifa uma única vez na parte interna do pulso esquerdo, aproxima exatamente esse local do nariz, cheira e sorri: "Nossa, miga! Que perfume delicioso!" Finaliza: "Segue a Miga Promo pra encontrar produtos incríveis no melhor precinho!" Sem legendas, textos ou perguntas. Não borrifar no rosto, não cheirar o outro pulso, não trocar o frasco de mão, não duplicar o produto, não adicionar tampa. Manter o rosto, o frasco original e a continuidade. Espaço livre abaixo dos pés. Voz feminina natural, sincronia labial perfeita.`;
+      const nomeP = (n) => nomeFala(String(it.nome || "").replace(/\s*\d+\s*(ml|g|oz)\b.*$/i, "").replace(/^\s*(perfume|body splash|col[oô]nia|deo col[oô]nia)\s+(feminino|masculino|unissex)?\s*/i, ""), n);
+      let nm = 6, p2 = monta2(nomeP(nm)); while (p2.length > LIMITE_PROMPT && nm > 2) { nm--; p2 = monta2(nomeP(nm)); }
+      return p2.slice(0, LIMITE_PROMPT);
+    }
     const monta = (ficha, nomeMax) => tipo === "video"
       ? `${abreVideo(P0)}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Produto: o da foto anexada, idêntico. Ação: ela ${C.acao}. Fala em português do Brasil, voz natural e animada: "${falaPersonagem(it, nomeMax)}" No final, posa com o produto bem visível, sorrindo. Sem textos, logos ou legendas adicionados. ${ESPACO_PERS}. Sem cortes ou zoom; mãos naturais; produto não muda; boca sincronizada.`
       : `Foto quadrada 1:1 (1080 × 1080), para post do feed do Instagram, hiper-realista, estilo influenciadora. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Ela está posando, ${C.foto}, olhando para a câmera com um sorriso natural; o produto sempre bem visível e em foco. O produto é idêntico ao da foto do produto anexada (formato, cor, rótulo e tamanho). Sem textos, logos ou marca d'água adicionados (mantenha o design do produto); foco nítido, alta resolução. ${ESPACO_PERS}. Formato obrigatório: quadrado 1:1, não vertical.`;
@@ -6832,7 +6839,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         [1568, 2093, 2637].forEach((fr, i) => tic(t + 0.05 + i * 0.07, fr, 0.12)); };
       const conta = (ini, fim) => { for (let k = 0, tt = ini; tt < fim; k++, tt += 0.075) tic(t0 + tt, 520 + k * 38); };
       conta(0.4, 1.6); estouro(t0 + 1.65);
-      const D = dadosChamada(CH); if (/^[\d.]+$/.test(String(D.cta2))) { conta(9.85, 10.9); estouro(t0 + 10.9); } else estouro(t0 + 10.1);
+      const D = dadosChamada(CH); if (/^[\d.]+$/.test(String(D.cta2))) conta(9.85, 10.9);
     } catch (e) { /* sem efeitos */ }
   }
   /** Pulso da batida (1 no bumbo, caindo até 0), igual às animações do Reels */
@@ -6890,7 +6897,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       D.itens.forEach((it, i) => { if (!it) return; const [bg, fg, bd] = (CH.cor === "rosa" || C.pilEscura) && (i === 0 || i === 3) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
       if (D.ic2[0]) adesivo(D.ic2[0], 220, 1500, 210, 1.3, u, -0.15); if (D.ic2[1]) adesivo(D.ic2[1], 860, 1500, 190, 1.45, u, 0.12);
     } else { const u = t - 9.6;
-      estouroConfete(x, u - 1.3, 540, 640, 60); confetes(x, u, 34, 0.2);
+      confetes(x, u, 34, 0.2);
       linha(partesDestaque(D.cta1, T, A), 470, 100, 0.05, u);
       const k0 = easeC((u - 0.2) / 0.4); if (k0 > 0) { x.save(); x.globalAlpha = k0; x.translate(540, 640); const s = puloC((u - 0.2) / 0.5); x.scale(s, s); const meta = numSeg(D.cta2), de = numSeg(D.numero), cnt = meta && /^[\d.]+$/.test(D.cta2) ? fmtSeg(Math.round(de + (meta - de) * easeC((u - 0.2) / 1.1))) : D.cta2; numeroDourado(x, cnt, 0, 0, 190, -0.03); x.restore(); }
       const k = easeC((u - 0.4) / 0.5);
