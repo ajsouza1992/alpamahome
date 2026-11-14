@@ -1749,3 +1749,4 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pp-item .tags-ex { display: flex !important; flex-wrap: wrap; flex-direction: row; }
 .pp-item .tags-ex .tag-ex { display: inline-block !important; width: auto; }
 .meta-ex { display: block; font-size: 12.5px; }
+.ac-mais { margin-top: 14px; width: 100%; }

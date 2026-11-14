@@ -880,7 +880,8 @@
   /* =========================== Catálogo (mais vendidos) =========================== */
   const catFiltro = grupoBotoes("#catFiltro", "v");
   const catLoja = grupoBotoes("#catLoja", "v"), catOrdem = grupoBotoes("#catOrdem", "v");
-  let catalogoAtual = [], catalogoCarregado = false;
+  let catalogoAtual = [], catalogoCarregado = false, catPagina = 1, catTemMais = false;
+  const FILTROS_CAT = ["moda", "beleza", "perfumes", "maquiagem", "cabelo", "acessorios", "bolsas", "calcados", "fitness", "saude", "casa", "cozinha", "eletronicos"];
 
   function esqueletoCatalogo() {
     $("#catalogo").innerHTML = Array.from({ length: 6 }, () =>
@@ -893,8 +894,9 @@
     let d;
     try {
       // Sem categorias: junta os mais vendidos de todas, só filtrando pela loja
-      const FILTROS = ["moda", "beleza", "perfumes", "acessorios", "fitness", "saude", "casa"];
-      const rs = await Promise.allSettled(FILTROS.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`)));
+      catPagina = 1;
+      const rs = await Promise.allSettled(FILTROS_CAT.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`)));
+      catTemMais = rs.some((r) => r.status === "fulfilled" && r.value.temMais);
       const ok = rs.filter((r) => r.status === "fulfilled").map((r) => r.value);
       if (!ok.length) throw (rs[0] && rs[0].reason) || new Error("catálogo");
       const vistos = new Set(), listas = ok.map((x) => x.produtos || []), todos = [];
@@ -928,7 +930,7 @@
     $("#catalogo").innerHTML = l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
       return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
-      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>` : '<p class="vazio-lista">Nada encontrado nos achados.</p>';
+      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${catTemMais && !t ? '<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais achados da Shopee</button>' : ""}` : '<p class="vazio-lista">Nada encontrado nos achados.</p>';
   }
   $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(pintarAchados, 150); });
   [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
@@ -964,7 +966,17 @@
     if (m[0] === $("#pedirLinkAbrir").getAttribute("href")) { e.preventDefault(); aviso($("#pedirLinkAviso"), "Esse ainda é o link normal do produto. Gere o seu link de afiliado e cole aqui."); }
   });
 
+  /** Próxima página da Shopee (de 50 em 50 por categoria), juntando sem repetir */
+  async function maisAchados(btn) {
+    btn.disabled = true; btn.textContent = "Carregando…";
+    const pg = catPagina + 1, rs = await Promise.allSettled(FILTROS_CAT.map((f) => api(`catalogo?filtro=${f}&loja=shopee&ordem=${catOrdem.valor()}&pagina=${pg}`)));
+    const vistos = new Set(catalogoAtual.map((p) => p.id || p.link)), listas = rs.filter((r) => r.status === "fulfilled").map((r) => r.value.produtos || []); let novos = 0;
+    for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); catalogoAtual.push(p); novos++; });
+    catPagina = pg; catTemMais = novos > 0 && rs.some((r) => r.status === "fulfilled" && r.value.temMais);
+    const y = scrollY; pintarAchados(); scrollTo(0, y); toast(novos ? `+${novos} achados` : "Não tem mais achados novos agora");
+  }
   $("#catalogo").addEventListener("click", async (e) => {
+    const mais = e.target.closest("#acMais"); if (mais) { maisAchados(mais); return; }
     const am = e.target.closest("[data-achado-menu], [data-achado]");
     if (am) {
       const p = catalogoAtual[Number(am.dataset.achadoMenu ?? am.dataset.achado)]; if (!p) return;
@@ -1231,7 +1243,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=198"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=199"; });
     }
     edFoto = null;
     try {
@@ -1605,7 +1617,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=198"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=199"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1940,7 +1952,7 @@
       if (d.precoAntigo) item.precoAntigo = d.precoAntigo;
       if (d.imagem) item.imagem = d.imagem;
       if (d.urlFinal) item.urlFinal = d.urlFinal;
-      Object.assign(item, extrasDe(d));
+      Object.assign(item, extrasDe(d)); if (d.diag) item.diag = d.diag; else delete item.diag;
       if (d.linkAfiliado && d.linkAfiliado !== item.link) { item.linkOriginal = item.link; item.link = d.linkAfiliado; toast("Link trocado pelo seu link de afiliado da Shopee ✓"); }
       // O link encurtado levou a um produto que já está na lista
       const repetido = fila().find((i) => i !== item && mesmoProduto(i, item.urlFinal || item.link));
@@ -2295,7 +2307,7 @@
     const it = ppAtual; if (!it) return;
     const falta = [!it.imagem && "a foto", !it.nome && "o nome", !it.precoNovo && "o preço"].filter(Boolean);
     const loja = NOME_LOJA[it.loja] || "A loja";
-    aviso($("#ppFalta"), falta.length ? `${loja} não mandou ${falta.join(", ").replace(/, ([^,]*)$/, " e $1")}. Complete aqui:${!it.imagem ? " toque em “Escolher foto” (salve a imagem do produto na galeria antes)." : ""}${!it.precoNovo ? " Digite o preço novo." : ""}` : "");
+    aviso($("#ppFalta"), falta.length ? `${loja} não mandou ${falta.join(", ").replace(/, ([^,]*)$/, " e $1")}. Complete aqui:${!it.imagem ? " toque em “Escolher foto” (salve a imagem do produto na galeria antes)." : ""}${!it.precoNovo ? " Digite o preço novo." : ""}${it.diag ? ` (Motivo: ${it.diag}.)` : ""}` : "");
     $("#ppFotoBtn").classList.toggle("pedir", !it.imagem && !!destacar);
     $("#ppNovo").classList.toggle("pedir", !it.precoNovo && !!destacar);
     $("#ppNome").classList.toggle("pedir", !it.nome && !!destacar);

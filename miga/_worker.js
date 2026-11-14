@@ -165,11 +165,24 @@ async function extrairProduto(url) {
 
 /** Shopee: completa nome, preço e foto pela API de Afiliados (quando SHOPEE_APP_ID e SHOPEE_SECRET estão cadastrados) */
 function idsShopee(texto) {
-  const t = decodeURIComponent(String(texto || "").replace(/%25/g, "%"));
+  let t = String(texto || ""); for (let i = 0; i < 3; i++) { try { const d = decodeURIComponent(t); if (d === t) break; t = d; } catch (e) { break; } }
   const m = t.match(/-i\.(\d{3,})\.(\d{3,})/) || t.match(/\/product\/(\d{3,})\/(\d{3,})/) || t.match(/shopid=(\d{3,})[^\d]+itemid=(\d{3,})/i);
   if (m) return { loja: m[1], item: m[2] };
-  const m2 = t.match(/itemid=(\d{3,})[^\d]+shopid=(\d{3,})/i);
-  return m2 ? { loja: m2[2], item: m2[1] } : null;
+  const m2 = t.match(/itemid=(\d{3,})[^\d]+shopid=(\d{3,})/i) || t.match(/"itemid"\s*:\s*(\d{3,})[^}]{0,200}?"shopid"\s*:\s*(\d{3,})/i);
+  if (m2) return { loja: m2[2], item: m2[1] };
+  const m3 = t.match(/"shopid"\s*:\s*(\d{3,})[^}]{0,200}?"itemid"\s*:\s*(\d{3,})/i) || t.match(/\/(\d{4,})\/(\d{6,})(?:[/?#"]|$)/);
+  return m3 ? { loja: m3[1], item: m3[2] } : null;
+}
+/** Segue o link curto da Shopee só pelos redirecionamentos (sem abrir a página), guardando cada endereço */
+async function cadeiaShopee(url) {
+  const lista = [url]; let atual = url;
+  for (let pulo = 0; pulo < 8; pulo++) {
+    let r; try { r = await fetch(atual, { redirect: "manual", headers: { "user-agent": UA_PREVIA, accept: "text/html" } }); } catch (e) { break; }
+    const destino = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
+    if (!destino) break;
+    atual = new URL(destino, atual).toString(); lista.push(atual);
+  }
+  return lista;
 }
 /** Chamada assinada à API de Afiliados da Shopee (GraphQL) */
 async function shopeeGQL(query, env) {
@@ -197,22 +210,24 @@ async function linkAfiliadoShopee(url, env) {
   const d = await shopeeGQL(`mutation { generateShortLink(input: { originUrl: ${JSON.stringify(url)}, subIds: ["miga"] }) { shortLink } }`, env);
   return (d.generateShortLink && d.generateShortLink.shortLink) || "";
 }
-async function completarPelaApiShopee(dados, env, html) {
-  if (dados.loja !== "shopee" || !(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) return dados;
-  const ids = idsShopee(dados.urlFinal) || idsShopee(html);
-  try { const l = await linkAfiliadoShopee(dados.urlFinal || dados.url || "", env); if (l) dados.linkAfiliado = l; } catch (e) { /* segue sem trocar o link */ }
+async function completarPelaApiShopee(dados, env, html, urlColado) {
+  if (dados.loja !== "shopee") return dados;
+  if (!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) { dados.diag = "chaves da Shopee não cadastradas no Cloudflare"; return dados; }
+  let ids = idsShopee(dados.urlFinal) || idsShopee(urlColado) || idsShopee(html);
+  if (!ids && urlColado) { const cad = await cadeiaShopee(urlColado); ids = idsShopee(cad.join(" ")); if (!ids) dados.diag = "não achei o código do produto no link (" + cad.map((u) => new URL(u).hostname + new URL(u).pathname.slice(0, 30)).join(" → ") + ")"; }
+  try { const l = await linkAfiliadoShopee(ids ? `https://shopee.com.br/product/${ids.loja}/${ids.item}` : (dados.urlFinal || urlColado || ""), env); if (l) dados.linkAfiliado = l; } catch (e) { dados.diag = (dados.diag ? dados.diag + "; " : "") + "link de afiliado: " + e.message; }
   if (!ids) return dados;
   try {
     const d = await shopeeGQL(`{ productOfferV2(shopId: ${Number(ids.loja)}, itemId: ${Number(ids.item)}, page: 1, limit: 1) { nodes { ${CAMPOS_SHOPEE} } } }`, env);
     const n = d.productOfferV2 && d.productOfferV2.nodes && d.productOfferV2.nodes[0];
-    if (!n) return dados;
+    if (!n) { dados.diag = "a Shopee não tem esse produto no programa de afiliados"; return dados; }
     const preco = Number(n.priceMin) || null, desc = Number(n.priceDiscountRate) || 0;
-    const novo = { ...dados, ...extrasShopee(n), nome: dados.nome || limparTitulo(n.productName || ""), preco: dados.preco || preco, imagem: dados.imagem || n.imageUrl || "" };
+    const novo = { ...dados, ...extrasShopee(n), diag: undefined, nome: dados.nome || limparTitulo(n.productName || ""), preco: dados.preco || preco, imagem: dados.imagem || n.imageUrl || "" };
     if (!novo.precoAntigo && preco && desc > 0 && desc < 95) novo.precoAntigo = Math.round(preco / (1 - desc / 100) * 100) / 100;
     if (!novo.linkAfiliado && n.offerLink) novo.linkAfiliado = n.offerLink;
     novo.completo = !!(novo.nome && novo.preco && novo.imagem);
     return novo;
-  } catch (e) { return dados; }
+  } catch (e) { dados.diag = e.message; return dados; }
 }
 
 /** Mercado Livre: completa preço e foto pela API oficial (quando as chaves estão cadastradas) */
@@ -538,9 +553,11 @@ async function rotaProduto(request, env) {
   try {
     const guardado = await lerCache("produto", url);
     if (guardado) return json({ ...guardado, doCache: true });
-    let dados = await extrairProduto(url);
+    let dados;
+    try { dados = await extrairProduto(url); }
+    catch (e) { if (lojaDaUrl(url) !== "shopee") throw e; dados = { loja: "shopee", urlFinal: url, pista: "" }; } // a Shopee às vezes bloqueia a página: a API resolve
     if (dados.loja === "mercadolivre") dados = await completarPelaApiML(dados, env);
-    if (dados.loja === "shopee") dados = await completarPelaApiShopee(dados, env, dados.pista);
+    if (dados.loja === "shopee") dados = await completarPelaApiShopee(dados, env, dados.pista, url);
     delete dados.pista;
     if (dados.nome) await gravarCache("produto", url, dados, 1800); // 30 minutos
     return json(dados);
@@ -609,7 +626,13 @@ const FILTROS_CATALOGO = {
   casa: { categoria: "casa", ml: "MLB1574", busca: "decoração casa", shopee: "decoração casa" },
   fitness: { categoria: "saude", ml: "MLB1276", busca: "roupa fitness feminina", shopee: "roupa fitness feminina" },
   saude: { categoria: "saude", ml: "MLB264586", busca: "suplemento vitamina", shopee: "suplemento vitamina" },
-  bebes: { categoria: "outros", ml: "MLB1384", busca: "enxoval bebê", shopee: "bebê enxoval" }
+  bebes: { categoria: "outros", ml: "MLB1384", busca: "enxoval bebê", shopee: "bebê enxoval" },
+  maquiagem: { categoria: "beleza", ml: "", busca: "maquiagem", shopee: "maquiagem" },
+  cabelo: { categoria: "beleza", ml: "", busca: "cuidados com o cabelo", shopee: "cabelo" },
+  calcados: { categoria: "moda", ml: "", busca: "tênis feminino", shopee: "tênis feminino" },
+  bolsas: { categoria: "moda", ml: "", busca: "bolsa feminina", shopee: "bolsa feminina" },
+  eletronicos: { categoria: "outros", ml: "", busca: "fone de ouvido bluetooth", shopee: "fone bluetooth" },
+  cozinha: { categoria: "casa", ml: "", busca: "utensílios de cozinha", shopee: "cozinha utensílios" }
 };
 const ML_API = "https://api.mercadolibre.com";
 const mlHttps = (u) => String(u || "").replace(/^http:/, "https:").replace(/-I\.(jpg|webp|png)$/i, "-O.$1");
@@ -692,7 +715,7 @@ async function catalogoML(filtro, env) {
   chamadasML = 0;
   const token = await tokenML(env);
   const diag = [];
-  let destaques = await destaquesML(filtro.ml, token, diag);
+  let destaques = filtro.ml ? await destaquesML(filtro.ml, token, diag) : [];
   if (!destaques.length && filtro.busca) destaques = await destaquesPorBusca(filtro.busca, token, diag);
   destaques = destaques.slice(0, 20);
   const tipos = {};
@@ -761,8 +784,8 @@ async function sha256Hex(texto) {
 }
 // Ordem da Shopee: 2 = mais vendidos, 5 = maior comissão, 4 = menor preço, 1 = relevância
 const ORDEM_SHOPEE = { vendidos: 2, comissao: 5, preco: 4, relevancia: 1 };
-async function catalogoShopee(filtro, env, ordem = "vendidos") {
-  const d = await shopeeGQL(`{ productOfferV2(keyword: ${JSON.stringify(filtro.shopee)}, sortType: ${ORDEM_SHOPEE[ordem] || 2}, page: 1, limit: 20) { nodes { ${CAMPOS_SHOPEE} } } }`, env);
+async function catalogoShopee(filtro, env, ordem = "vendidos", pagina = 1) {
+  const d = await shopeeGQL(`{ productOfferV2(keyword: ${JSON.stringify(filtro.shopee)}, sortType: ${ORDEM_SHOPEE[ordem] || 2}, page: ${pagina}, limit: 50) { nodes { ${CAMPOS_SHOPEE} } } }`, env);
   const nos = (d.productOfferV2 && d.productOfferV2.nodes) || [];
   return nos.filter((n) => n.productName && n.offerLink).map((n) => {
     const preco = Number(n.priceMin) || null, desc = Number(n.priceDiscountRate) || 0;
@@ -777,17 +800,19 @@ async function rotaCatalogo(request, env) {
   const nomeFiltro = FILTROS_CATALOGO[q.get("filtro")] ? q.get("filtro") : "moda";
   const loja = ["mercadolivre", "shopee"].includes(q.get("loja")) ? q.get("loja") : "todas";
   const ordem = ORDEM_SHOPEE[q.get("ordem")] ? q.get("ordem") : "vendidos";
+  const pagina = Math.max(1, Math.min(20, parseInt(q.get("pagina"), 10) || 1));
   const configurado = { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) };
   if (!configurado.mercadolivre && !configurado.shopee) return json({ configurado, produtos: [], avisos: [] });
 
-  const chave = `v2-${nomeFiltro}-${loja}-${ordem}-${configurado.mercadolivre}-${configurado.shopee}`;
+  const chave = `v3-${nomeFiltro}-${loja}-${ordem}-${pagina}-${configurado.mercadolivre}-${configurado.shopee}`;
   const guardado = await lerCache("catalogo", chave);
   if (guardado) return json({ ...guardado, doCache: true });
 
   const filtro = FILTROS_CATALOGO[nomeFiltro];
   const tarefas = [];
-  if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env));
-  if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem));
+  // O Mercado Livre só tem a lista dos mais vendidos (vem toda na 1ª página); a Shopee vai de 50 em 50
+  if (configurado.mercadolivre && loja !== "shopee" && pagina === 1) tarefas.push(catalogoML(filtro, env));
+  if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem, pagina));
   const resultados = await Promise.allSettled(tarefas);
   const produtos = [], avisos = [];
   for (const r of resultados) {
@@ -798,7 +823,7 @@ async function rotaCatalogo(request, env) {
   const ml = produtos.filter((p) => p.loja === "mercadolivre"), sh = produtos.filter((p) => p.loja === "shopee");
   const mistura = [];
   for (let i = 0; i < Math.max(ml.length, sh.length); i++) { if (sh[i]) mistura.push(sh[i]); if (ml[i]) mistura.push(ml[i]); }
-  const resposta = { configurado, produtos: mistura.slice(0, 30), avisos };
+  const resposta = { configurado, produtos: mistura, avisos, temMais: configurado.shopee && loja !== "mercadolivre" && sh.length >= 40 };
   if (mistura.length) await gravarCache("catalogo", chave, resposta, 1800); // 30 minutos
   return json(resposta);
 }
