@@ -136,12 +136,12 @@
     b.addEventListener("click", () => { t.classList.remove("show"); acao(); }, { once: true }); t.append(s, b); t.classList.add("show", "com-bt");
     clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove("show", "com-bt"), 5000);
   }
-  /** Aviso rápido: cartão com ícone (✓ deu certo, ! atenção, ✕ erro), texto com espaço para respirar; toque para fechar */
+  /** Aviso rápido: cartão com ícone (deu certo, ! atenção, ✕ erro), texto com espaço para respirar; toque para fechar */
   function toast(msg) {
     const t = $("#toast"), m = String(msg || "");
     const tipo = /^(não |nao |erro|falh|ops)|inválid|não consegui|não está configurad|não tem /i.test(m) ? "erro" : /^(escolha|escreva|marque|toque|use |coloque|preencha|complete|abra|selecione)/i.test(m) ? "info" : "ok";
     t.classList.remove("com-bt", "toast--ok", "toast--erro", "toast--info"); t.classList.add("toast--" + tipo);
-    t.innerHTML = `<i class="toast__ic" aria-hidden="true">${tipo === "ok" ? "✓" : tipo === "erro" ? "✕" : "!"}</i><span></span>`; t.querySelector("span").textContent = m;
+    t.innerHTML = `${tipo === "ok" ? "" : `<i class="toast__ic" aria-hidden="true">${tipo === "erro" ? "✕" : "!"}</i>`}<span></span>`; t.querySelector("span").textContent = m;
     t.classList.add("show");
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => t.classList.remove("show"), tipo === "erro" ? 4500 : 3000);
@@ -167,18 +167,20 @@
     if (!r.ok) throw Object.assign(new Error(d.erro || "Erro " + r.status), { codigo: d.codigo || (r.status === 404 ? "offline" : "erro") });
     return d;
   }
-  /* Botão de copiar: depois de copiar mostra "✓ Copiado" (ou "✓ Link copiado") e fica opaco por um instante */
+  /* Botões de copiar e de baixar: depois de usar, ficam opacos com "Copiado" / "Link copiado" / "Baixado" até sair da tela.
+     Dá para tocar de novo (copia ou baixa de novo). Sem o símbolo de certo. */
   let ultimoBotao = null, ultimoToque = 0;
   document.addEventListener("click", (e) => { const b = e.target.closest("button, .btn, [role=button]"); if (b) { ultimoBotao = b; ultimoToque = Date.now(); } }, true);
-  function marcarCopiado() {
-    const b = ultimoBotao; if (!b || Date.now() - ultimoToque > 4000 || !document.body.contains(b) || b.classList.contains("copiado")) return;
-    if (!/copiar/i.test(b.textContent + " " + (b.id || ""))) return; // só os botões de copiar mudam; Postar, Gerar etc. ficam como estão (o aviso aparece em cima)
+  function marcarFeito(tipo) {
+    const b = ultimoBotao; if (!b || Date.now() - ultimoToque > 8000 || !document.body.contains(b)) return;
+    const rot = (b.textContent + " " + (b.id || "")).toLowerCase();
+    if (tipo === "copia" && !/copiar|copiado/.test(rot)) return; // Postar, Gerar etc. ficam como estão (o aviso aparece em cima)
+    if (tipo === "baixa" && !/baixar|baixado|salvar imagem|salvar v/.test(rot)) return;
     const alvo = [...b.childNodes].reverse().find((n) => n.nodeType === 3 && n.textContent.trim()) || (b.children.length ? null : b);
-    const antes = alvo ? alvo.textContent : null, link = /link/i.test(b.textContent);
-    if (alvo) alvo.textContent = link ? "✓ Link copiado" : "✓ Copiado";
+    if (alvo) alvo.textContent = tipo === "baixa" ? "Baixado" : /link/.test(rot) ? "Link copiado" : "Copiado";
     b.classList.add("copiado");
-    setTimeout(() => { if (alvo && antes != null) alvo.textContent = antes; b.classList.remove("copiado"); }, 1800);
   }
+  const marcarCopiado = () => marcarFeito("copia");
   async function copiarTexto(texto) {
     const ok = await copiarTexto0(texto); if (ok) marcarCopiado(); return ok;
   }
@@ -718,7 +720,7 @@
       if (d.preco) c.precoNovo.value = paraCampo(d.preco);
       if (d.precoAntigo) c.precoAntigo.value = paraCampo(d.precoAntigo);
       if (d.imagem) { c.imagemUrl.value = d.imagem; definirFoto(d.imagem); }
-      if (d.linkAfiliado && d.linkAfiliado !== link) { c.link.value = d.linkAfiliado; toast("Link trocado pelo seu link de afiliado da Shopee ✓"); }
+      if (d.linkAfiliado && d.linkAfiliado !== link) { c.link.value = d.linkAfiliado; toast("Link trocado pelo seu link de afiliado da Shopee"); }
       atualizarSelo();
       const falta = [!d.imagem && "foto", !d.nome && "nome", !d.preco && "preço"].filter(Boolean);
       if (d.loja === "shopee" && falta.length) {
@@ -1290,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=225"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=226"; });
     }
     edFoto = null;
     try {
@@ -1344,6 +1346,7 @@
     }, "image/jpeg", 0.92);
   }
   function baixarBlob(blob, nome) {
+    marcarFeito("baixa");
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: nome });
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
@@ -1664,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=225"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=226"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1785,7 +1788,7 @@
     const f = i.feito || {};
     if (!Object.values(f).some(Boolean)) return "";
     return `<span class="selo-comp">Compartilhado</span>` + ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span>${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]}</span>`).join("");
-    return ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span class="ok">${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]} ✓</span>`).join("");
+    return ["whatsapp", "instagram", "telegram"].filter((c) => f[c]).map((c) => `<span class="ok">${{ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[c]}</span>`).join("");
   };
   /** Foto do produto com o ícone da loja no canto: tocar no ícone abre o link */
   const miniLoja = (i, foto) => `<span class="pp-mini">${foto}${i.link && LOGO_LOJA[i.loja] ? `<a class="selo-link" href="${esc(i.link)}" target="_blank" rel="noopener" data-abrir-link title="Abrir na ${esc(NOME_LOJA[i.loja])}">${seloLojaHtml(i.loja)}</a>` : seloLojaHtml(i.loja)}</span>`;
@@ -1796,7 +1799,7 @@
   function escolherOpcao(titulo, opcoes, atual) {
     const d = $("#folhaEscolha");
     $("#folhaTitulo").textContent = titulo;
-    $("#folhaOpcoes").innerHTML = opcoes.map(([v, n, cor]) => `<button type="submit" value="${esc(v)}" class="${v === atual ? "on" : ""}">${cor ? `<i class="op-cor" style="background:${cor}"></i>` : ""}<span>${esc(n)}</span>${v === atual ? "<b>✓</b>" : ""}</button>`).join("");
+    $("#folhaOpcoes").innerHTML = opcoes.map(([v, n, cor]) => `<button type="submit" value="${esc(v)}" class="${v === atual ? "on" : ""}">${cor ? `<i class="op-cor" style="background:${cor}"></i>` : ""}<span>${esc(n)}</span>${v === atual ? "" : ""}</button>`).join("");
     d.returnValue = "";
     d.showModal();
     return new Promise((ok) => d.addEventListener("close", () => ok(d.returnValue || null), { once: true }));
@@ -1905,7 +1908,7 @@
   const marcaBusca = (txt) => { const s = esc(txt); const t = termoBusca.trim(); if (!t || ehLink(t)) return s; let out = s;
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
-  $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value); config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos ✓"); });
+  $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value); config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
   $("#ajOcultarPostados").addEventListener("change", (e) => { config.ocultarPostados = e.target.checked; gravarConfig(); renderFila(); toast(e.target.checked ? "Postados ocultos da Lista" : "Postados de volta na Lista"); });
   function renderFila() {
     migrarCategorias(); renderCatsLista(); pintarMarcados();
@@ -1999,7 +2002,7 @@
       if (d.imagem) item.imagem = d.imagem;
       if (d.urlFinal) item.urlFinal = d.urlFinal;
       Object.assign(item, extrasDe(d)); if (d.diag) item.diag = d.diag; else delete item.diag;
-      if (d.linkAfiliado && d.linkAfiliado !== item.link) { item.linkOriginal = item.link; item.link = d.linkAfiliado; toast("Link trocado pelo seu link de afiliado da Shopee ✓"); }
+      if (d.linkAfiliado && d.linkAfiliado !== item.link) { item.linkOriginal = item.link; item.link = d.linkAfiliado; toast("Link trocado pelo seu link de afiliado da Shopee"); }
       // O link encurtado levou a um produto que já está na lista
       const repetido = fila().find((i) => i !== item && mesmoProduto(i, item.urlFinal || item.link));
       if (repetido) {
@@ -2396,7 +2399,7 @@
     it.categoria = ppCategoria.valor();
     if (!it.textoEditado) it.texto = ""; // a mensagem é refeita com os dados novos
     salvarFila(logo); mostrarFalta(false);
-    $("#ppSalvo").textContent = "Salvo ✓"; clearTimeout(aplicarCamposPp.t); aplicarCamposPp.t = setTimeout(() => { $("#ppSalvo").textContent = "As mudanças são salvas sozinhas."; }, 1500);
+    $("#ppSalvo").textContent = "Salvo"; clearTimeout(aplicarCamposPp.t); aplicarCamposPp.t = setTimeout(() => { $("#ppSalvo").textContent = "As mudanças são salvas sozinhas."; }, 1500);
   }
   ["#ppNome", "#ppNovo", "#ppAntigo", "#ppCupom", "#ppLinkItem"].forEach((s) => $(s).addEventListener("input", () => { clearTimeout(aplicarCamposPp.d); aplicarCamposPp.d = setTimeout(() => aplicarCamposPp(), 500); }));
   $("#ppCategoria").addEventListener("click", () => setTimeout(() => aplicarCamposPp(), 0));
@@ -2409,7 +2412,7 @@
   }
   $("#ppSalvar").addEventListener("click", () => {
     const it = ppAtual; if (!it) return; aplicarCamposPp(true);
-    if (ppEditando) { ppEditando = false; fecharItemFila(true); toast("Alterações salvas ✓"); return; }
+    if (ppEditando) { ppEditando = false; fecharItemFila(true); toast("Alterações salvas"); return; }
     if (ppNovo) { ppNovo = false; $("#ppNovoTopo").hidden = true; fecharItemFila(true); toast(`Salvo em ${NOME_CAT[it.categoria] || "Outros"}`); return; }
     const p = incompletos().find((x) => x !== it);
     if (p) { abrirItemFila(p, true); toast("Próximo para completar"); } else { modoCompletar = false; fecharItemFila(); toast("Pronto! Todos completos"); }
@@ -2997,7 +3000,7 @@
     }
     if (wz.passo === "resumo") {
       const prox = fila().find((x) => x.id !== item.id && !x.carregando && !Object.values(x.feito || {}).some(Boolean));
-      c.innerHTML = `<div class="rt-fim"><div class="rt-big">✓</div><h2 class="wz-titulo">${wz.lugares.every((k) => wz.res[k] === "feito") ? "Tudo postado!" : "Roteiro concluído"}</h2>
+      c.innerHTML = `<div class="rt-fim"><div class="rt-big">🎉</div><h2 class="wz-titulo">${wz.lugares.every((k) => wz.res[k] === "feito") ? "Tudo postado!" : "Roteiro concluído"}</h2>
         <div class="rt-lista">${wz.lugares.map((k) => `<div><span>${LUGARES[k].nome}</span><b class="${wz.res[k] === "feito" ? "ok" : ""}">${wz.res[k] === "feito" ? "Postado" : "Pulado"}</b></div>`).join("")}</div></div>
         ${prox ? `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="rtProximo">Próximo produto da lista</button></div><p class="nota wz-centro">Próximo: <b>${esc(prox.nome || "produto")}</b></p>` : '<p class="nota wz-centro">Não há mais produtos para postar na lista.</p>'}
         <button type="button" class="btn btn--branco" id="rtLista">Voltar para a lista</button>`;
@@ -6249,7 +6252,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#kaPrompt")) { const as = ($("#kaAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#kaAssunto").focus(); return; } K.assunto = as; guardarCartas(); if (await copiarTexto(promptCartas(as))) toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie"); return; }
     if (t.closest("#kaCopiarAlt")) { if (await copiarTexto(s.alt || altCarta(s, K.sel, T.length))) toast("Texto alternativo copiado"); return; }
     if (t.closest("#kaCopiarLeg")) { if (await copiarTexto($("#kaLegenda").value || "")) toast("Legenda copiada"); return; }
-    if (t.closest("#kaSalvarTudo")) { K.legenda = $("#kaLegenda").value; K.assunto = ($("#kaAssunto").value || "").trim(); guardarCartas(); toast("Carrossel salvo ✓"); return; }
+    if (t.closest("#kaSalvarTudo")) { K.legenda = $("#kaLegenda").value; K.assunto = ($("#kaAssunto").value || "").trim(); guardarCartas(); toast("Carrossel salvo"); return; }
     if (t.closest("#kaColar")) { folhaEst("Colar resposta da IA", `<p class="nota">Cole aqui a resposta inteira da IA (o bloco que começa com [ ). As telas atuais serão trocadas.</p>
       <label class="ch-campo"><span>Resposta</span><textarea id="kaResp" rows="9"></textarea></label><button type="button" class="btn btn--rosa" id="kaAplicar">Montar o carrossel</button>`); return; }
     if (t.closest("#kaZerar")) { try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } abrirCartas(); return; }
@@ -6396,7 +6399,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function telaPersonagem(c) {
     const it = wzItem(), P = pe();
     const f = P.fotosAgora || fotosPers(), tipoTxt = P.tipo === "video" ? "vídeo" : "imagem";
-    const prodHtml = it ? `<div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.fotoLimpa ? " · foto refeita ✓" : ""}</small></span></div>` : "";
+    const prodHtml = it ? `<div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.fotoLimpa ? " · foto refeita" : ""}</small></span></div>` : "";
     const nav = (cont, txt = "Continuar", rosa = true) => `<div class="duas pe-nav"><button type="button" class="btn btn--branco" id="peVoltar">Voltar</button><button type="button" class="btn ${rosa ? "btn--rosa" : "btn--branco"}" id="${cont}">${txt}</button></div>`;
     const etapa = (n, txt, acao) => `<div class="pe-etapa"><b class="pe-num">${n}</b><span class="pe-etxt">${txt}</span>${acao}</div>`;
     if (wz.passo === "peEscolher") {
@@ -6419,7 +6422,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="pe-etapas">
           ${etapa(1, "Baixe a foto do produto", '<button type="button" class="pe-mini" id="peLimparBaixar">Baixar</button>')}
           ${etapa(2, "Copie o prompt e envie para a IA com a foto", '<button type="button" class="pe-mini" id="peLimparCopiar">Copiar</button>')}
-          ${etapa(3, it.fotoLimpa ? "Foto refeita escolhida ✓" : "Escolha a foto refeita que a IA criou", `<label class="pe-mini pe-mini--rosa"><input type="file" accept="image/*" id="peLimparFoto" hidden>${it.fotoLimpa ? "Trocar" : "Escolher"}</label>`)}
+          ${etapa(3, it.fotoLimpa ? "Foto refeita escolhida" : "Escolha a foto refeita que a IA criou", `<label class="pe-mini pe-mini--rosa"><input type="file" accept="image/*" id="peLimparFoto" hidden>${it.fotoLimpa ? "Trocar" : "Escolher"}</label>`)}
         </div>
         ${nav("peIr3", it.fotoLimpa ? "Continuar" : "Pular", !!it.fotoLimpa)}`;
       return;
@@ -6558,7 +6561,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const mp4 = tipo.startsWith("video/mp4"); let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
     blob = await somCompativel(blob, tipo, (m) => { if (btn) btn.textContent = m; });
     const nome = nomeArquivo(wzItem().nome).replace(/\.jpe?g$/i, "") + "-personagem." + (mp4 ? "mp4" : "webm");
-    P.resultado = { blob, url: URL.createObjectURL(blob), nome, mp4 }; mostrarPasso(); toast("Vídeo pronto ✓");
+    P.resultado = { blob, url: URL.createObjectURL(blob), nome, mp4 }; mostrarPasso(); toast("Vídeo pronto");
   }
   async function imagemPersonagem() { const tela = document.createElement("canvas"); tela.width = 1080; tela.height = altPers(pe()); await carregarMarca(); quadroPersonagem(tela.getContext("2d"), 1080, pe().midia && pe().midia.bmp, pe()); return telaParaJpeg(tela, nomeArquivo(wzItem().nome).replace(/\.jpe?g$/i, "") + "-personagem.jpg"); }
   async function compartilharArquivo(arq) {
@@ -6571,7 +6574,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       try { const f = fotosPers(); f[+fo] = await compactarArquivo(e.target.files[0]); if (!lsPers.gravar("fotos", f)) toast("Foto grande demais para guardar: ela vale só agora"); P.fotosAgora = f; mostrarPasso(); } catch (err) { toast("Não consegui abrir a foto"); } return; }
     if (e.target.id === "peLimparFoto" && e.target.files[0]) {
       const it = wzItem(), f = e.target.files[0];
-      try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); it.fotoLimpa = true; salvarFila(true); toast("Foto refeita ✓ · agora o prompt dela com o produto"); wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); } catch (err) { toast("Não consegui abrir a foto"); }
+      try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); it.fotoLimpa = true; salvarFila(true); toast("Foto refeita · agora o prompt dela com o produto"); wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); } catch (err) { toast("Não consegui abrir a foto"); }
       return;
     }
     if (e.target.id === "peMidia" && e.target.files[0]) {
@@ -6619,7 +6622,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#peJaCriei")) { wz.passo = "peMontar"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peCopiar")) {
       const f = P.fotosAgora || fotosPers(); if (!f[0] || !f[1]) { toast("Escolha as 2 fotos dela primeiro"); return; }
-      await copiarTexto($("#pePrompt").value); toast("Prompt copiado ✓ · escolha a IA para enviar as 3 fotos");
+      await copiarTexto($("#pePrompt").value); toast("Prompt copiado · escolha a IA para enviar as 3 fotos");
       const arqs = []; for (const [i, src] of f.entries()) { const r = await fetch(src); const b = await r.blob(); arqs.push(new File([b], `${i + 1}-personagem.jpg`, { type: "image/jpeg" })); }
       const prod = await arquivoDaImagem(it.imagem); if (prod) arqs.push(new File([prod], "3-produto." + (prod.type.split("/")[1] || "jpg").replace("jpeg", "jpg"), { type: prod.type || "image/jpeg" }));
       if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs, text: $("#pePrompt").value }); return; } catch (err) { if (err.name === "AbortError") return; } }
@@ -6923,7 +6926,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.canal !== "chamada") return; const CH = ch();
     if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast(CH.tipo === "seg" ? "Textos padrão de volta" : "Textos do nicho de volta"); return; }
     if (e.target.closest("#chPrompt")) { const as = ($("#chAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#chAssunto").focus(); return; } CH.assunto = as; copiarTexto(promptChamada(as)).then((ok) => ok && toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie")); return; }
-    if (e.target.closest("#chSalvarTx")) { $("#folhaEst").close(); toast("Textos salvos ✓"); return; }
+    if (e.target.closest("#chSalvarTx")) { $("#folhaEst").close(); toast("Textos salvos"); return; }
     if (e.target.closest("#chColar")) { $("#chColarBox").hidden = false; $("#chResp").focus(); return; }
     if (e.target.closest("#chAplicar")) { const r = lerRespostaChamada($("#chResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } if (r.tx.numero) { CH.numero = r.tx.numero; } delete r.tx.numero; CH.tx = r.tx; if (r.legenda) CH.legendaIA = r.legenda; CH.legenda = null; folhaTextosChamada(); toast("Textos da IA aplicados" + (r.legenda ? " (com legenda)" : "")); return; }
     const b = e.target.closest("[data-ch-ic]"); if (!b) return; const k = b.dataset.chIc; CH.tx = CH.tx || {};
@@ -6990,7 +6993,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#chBaixar")) { baixarBlob(CH.resultado.blob, CH.resultado.nome); toast("Vídeo salvo"); return; }
     if (t.closest("#chBaixarCapa")) { baixarBlob(CH.resultado.capa, CH.resultado.capa.name); toast("Capa salva: use em Editar capa"); return; }
     if (t.closest("#chCopiarEd")) { if (await copiarTexto($("#chLegendaEd").value)) toast("Legenda copiada"); return; }
-    if (t.closest("#chSalvarLeg")) { CH.legenda = $("#chLegendaEd").value; toast("Legenda salva ✓"); return; }
+    if (t.closest("#chSalvarLeg")) { CH.legenda = $("#chLegendaEd").value; toast("Legenda salva"); return; }
     if (t.closest("#chCopiarAlt")) { CH.alt = $("#chAlt").value; if (await copiarTexto(CH.alt)) toast("Texto alternativo copiado"); return; }
     if (t.closest("#chCopiar")) { if (await copiarTexto($("#chLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#chPostar")) { const r = CH.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
@@ -7057,7 +7060,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       <div class="cor-pontos">${pontos.map(([k, n]) => `<button type="button" data-camp-cor="${k}" class="${corCampanha === k ? "on" : ""}"><i class="op-cor" style="background:${k ? CORES_VIDEO_BASE[k].fundo : "conic-gradient(#e8336d 0 25%, #1d1d1f 0 50%, #fff3c4 0 75%, #fff 0)"}"></i>${n}</button>`).join("")}</div>
       <span>Ou deslize a barrinha e faça na cor que quiser:</span>${barraCor("campBarra", corCampanha)}</div>` : "";
     folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<div class="tabs-mod">${tabs}</div>${blocoCor}
-      <div class="lista-mod lista-mod--mini"><button type="button" class="mod-editar" id="estEditarTit"><span class="mod-editar__ic"><svg class="ic-mono"><use href="#i-lapis"/></svg></span><span><b>Editar</b><small>${R.titulo || R.icone ? "Seu título: " + esc(String(R.titulo || "").replace(/\*/g, "").replace(/\n/g, " ") || "figurinha trocada") : "Escreva o título e escolha a figurinha"}</small></span></button>${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${aba !== "campanhas" && ICONE_MODELO[k] ? icSelo("f_" + ICONE_MODELO[k], " ic-selo--mini") : ""}${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
+      <div class="lista-mod lista-mod--mini"><button type="button" class="mod-editar" id="estEditarTit"><span class="mod-editar__ic"><svg class="ic-mono"><use href="#i-lapis"/></svg></span><span><b>Editar</b><small>${R.titulo || R.icone ? "Seu título: " + esc(String(R.titulo || "").replace(/\*/g, "").replace(/\n/g, " ") || "figurinha trocada") : "Escreva o título e escolha a figurinha"}</small></span></button>${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${aba !== "campanhas" && ICONE_MODELO[k] ? icSelo("f_" + ICONE_MODELO[k], " ic-selo--mini") : ""}${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "" : ""}</button>`).join("")}</div>`);
     pintarMinis(R);
   }
   /** Barrinha/pontos de cor na aba Campanhas: guarda a cor e já aplica se a arte atual é de campanha */
