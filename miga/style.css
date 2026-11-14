@@ -1735,3 +1735,8 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 #folhaOpcoes .cor-propria #corUsar { display: flex; justify-content: center; align-items: center; gap: 10px; padding-right: 16px !important; background: var(--rosa); color: #fff; font-weight: 700; }
 #folhaOpcoes .cor-propria #corUsar::after { display: none; }
 #folhaOpcoes .cor-propria #corUsar .op-cor { box-shadow: 0 0 0 2px #fff; }
+.cor-camp { margin: 4px 0 12px; }
+.cor-pontos { display: flex; flex-wrap: wrap; gap: 8px; }
+.cor-pontos button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px 7px 8px; border-radius: 999px; border: 1.5px solid #e8dfcc; background: #fff; font: 600 14px Poppins, sans-serif; color: #1d1d1f; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+.cor-pontos button.on { border-color: var(--rosa); box-shadow: 0 0 0 2px var(--rosa); }
+.cor-pontos .op-cor { width: 18px; height: 18px; margin: 0; border-radius: 50%; }

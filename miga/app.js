@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=196"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=197"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=196"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=197"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2046,7 +2046,10 @@
     beleza: { nome: "Especial beleza", tag: "Especial beleza", titulo: "Especial\n*beleza*", sub: "Autocuidado com desconto", cor: "rosa", chamada: "💄 *ESPECIAL BELEZA* 💄", tags: "#beleza #skincare" },
     casa: { nome: "Especial casa", tag: "Especial casa", titulo: "Especial\n*casa*", sub: "Casa linda gastando pouco", cor: "creme", chamada: "🏠 *ESPECIAL CASA* 🏠", tags: "#casa #organização" }
   };
-  let campanhaEscolhida = "";
+  let campanhaEscolhida = "", corCampanha = "";
+  try { corCampanha = localStorage.getItem("miga_cor_camp") || ""; } catch (e) { /* segue */ }
+  /** Cor que vale para todas as campanhas especiais (Reels, post, story, vídeo...): "" = a cor padrão de cada campanha */
+  const corDaCampanha = (k) => corCampanha || (CAMPANHAS[k] ? CAMPANHAS[k].cor : "rosa");
   try { campanhaEscolhida = localStorage.getItem("miga_campanha") || ""; } catch (e) { /* segue */ }
   const campanha = () => CAMPANHAS[wz.camp] || null;
   campanhaEscolhida = ""; // campanhas agora ficam dentro de "Modelo"
@@ -2100,9 +2103,9 @@
   function criarAPartirDaLista(canal, l, camp) {
     if (!l.length) return;
     const ids = l.map((x) => x.id), C = CAMPANHAS[camp === undefined ? campanhaEscolhida : camp] || null;
-    wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? C.cor : proximaCor(), idx: 0, res: {}, lugares: lugaresSalvos() };
-    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? C.cor : proximaCor(), camp: wz.camp, resultado: null, iniciado: true }; wz.passo = "rModelo"; }
-    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? C.cor : proximaCor(), camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.passo = "kCarrossel"; }
+    wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), idx: 0, res: {}, lugares: lugaresSalvos() };
+    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true }; wz.passo = "rModelo"; }
+    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.passo = "kCarrossel"; }
     else if (canal === "video") { usarProdutoNoVideo(l[0]); const V = vd(); V.iniciado = true; if (C) { V.titulo = C.titulo; V.cor = C.cor; } if (!V.modelo) { V.modelo = "achadinho"; V.titulo = V.titulo || MODELOS_REELS.achadinho.titulo; } wz.passo = "vArquivo"; }
     else if (canal === "livre") {
       const L = livre(); L.itens = l.slice(0, 6).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
@@ -2513,7 +2516,7 @@
       c.innerHTML = `${qualProd}<div class="estudio">
         ${semArte ? `<p class="nota wz-centro">Para grupos e canal vai a <b>foto do produto</b> com a <b>mensagem</b> (sem arte).</p><div class="est-previa est-previa--foto">${item.imagem ? `<img src="${esc(item.imagem)}" alt="Foto do produto" referrerpolicy="no-referrer">` : '<p class="nota">Produto sem foto: vai só a mensagem.</p>'}</div>
         <div class="est-ctrl est-ctrl--1">${botaoEst("modelo", "Estilo da mensagem", nomeModelo)}</div>` : `<div class="est-previa est-previa--img${wz.formato === "post" ? " est-previa--post" : ""}"><canvas id="wzEstTela"></canvas></div>
-        <div class="est-ctrl est-ctrl--${mostraFmt ? 3 : 2}">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor])}${mostraFmt ? botaoEst("formato", wz.canal === "roteiro" ? "Ver como" : "Formato", wz.formato === "post" ? "Feed · 4:5" : "Story · em pé") : ""}</div>
+        <div class="est-ctrl est-ctrl--${mostraFmt ? 3 : 2}">${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_NOME[wz.cor] || (CORES_VIDEO[wz.cor] || {}).nome || "")}${mostraFmt ? botaoEst("formato", wz.canal === "roteiro" ? "Ver como" : "Formato", wz.formato === "post" ? "Feed · 4:5" : "Story · em pé") : ""}</div>
         ${fmtsRt.length > 1 ? '<p class="nota wz-centro">A mesma arte sai em pé para o story/status e 4:5 para o feed.</p>' : ""}`}
       </div>
       ${comTexto ? blocoMensagem(item) : ""}
@@ -6585,10 +6588,25 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (aba === "sugestoes") itens = Object.entries(MODELOS_REELS).filter(([, m]) => !m.cat).map(([k, m]) => [k, m.nome, DECOR[k].frase, !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "temas") itens = Object.entries(MODELOS_REELS).filter(([, m]) => m.cat).map(([k, m]) => [k, m.nome, m.sub(), !R.titulo && !R.camp && R.modelo === k]);
     if (aba === "campanhas") itens = Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome, c.sub, R.camp === k && !R.titulo]);
-    folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<div class="tabs-mod">${tabs}</div>
+    const pontos = [["", "Padrão"], ...Object.entries(CORES_VIDEO_BASE).map(([k, x]) => [k, x.nome])];
+    const blocoCor = aba === "campanhas" ? `<div class="cor-propria cor-camp${corPropria(corCampanha) ? " on" : ""}"><span>Cor das campanhas (vale para Reels, post, story, vídeo e cupons)</span>
+      <div class="cor-pontos">${pontos.map(([k, n]) => `<button type="button" data-camp-cor="${k}" class="${corCampanha === k ? "on" : ""}"><i class="op-cor" style="background:${k ? CORES_VIDEO_BASE[k].fundo : "conic-gradient(#e8336d 0 25%, #1d1d1f 0 50%, #fff3c4 0 75%, #fff 0)"}"></i>${n}</button>`).join("")}</div>
+      <span>Ou deslize a barrinha e faça na cor que quiser:</span>${barraCor("campBarra", corCampanha)}</div>` : "";
+    folhaEst(wz.canal === "video" ? "Título do vídeo" : "Modelo", `<div class="tabs-mod">${tabs}</div>${blocoCor}
       <div class="lista-mod lista-mod--mini"><button type="button" class="mod-editar" id="estEditarTit"><span class="mod-editar__ic"><svg class="ic-mono"><use href="#i-lapis"/></svg></span><span><b>Editar</b><small>${R.titulo || R.icone ? "Seu título: " + esc(String(R.titulo || "").replace(/\*/g, "").replace(/\n/g, " ") || "figurinha trocada") : "Escreva o título e escolha a figurinha"}</small></span></button>${itens.map(([k, n, d, on]) => `<button type="button" class="${on ? "on" : ""}" data-escolhe-mod="${aba}:${k}"><canvas class="mini-mod" width="108" height="192" data-mini="${aba}:${k}"></canvas><span><b>${aba !== "campanhas" && ICONE_MODELO[k] ? icSelo("f_" + ICONE_MODELO[k], " ic-selo--mini") : ""}${esc(n)}</b><small>${esc(d || "")}</small></span>${on ? "<i>✓</i>" : ""}</button>`).join("")}</div>`);
     pintarMinis(R);
   }
+  /** Barrinha/pontos de cor na aba Campanhas: guarda a cor e já aplica se a arte atual é de campanha */
+  let tCorCamp = 0;
+  function mudarCorCampanha(k) {
+    corCampanha = k; try { localStorage.setItem("miga_cor_camp", k); } catch (e) { /* segue */ }
+    document.querySelectorAll("[data-camp-cor]").forEach((b) => b.classList.toggle("on", b.dataset.campCor === k));
+    const caixa = document.querySelector(".cor-camp"); if (caixa) caixa.classList.toggle("on", corPropria(k));
+    const e = estLer(); if (CAMPANHAS[e.camp]) { e.cor = corDaCampanha(e.camp); estGravar(e); wz.corMudou = true; }
+    clearTimeout(tCorCamp); tCorCamp = setTimeout(() => pintarMinis(estLer()), 120);
+  }
+  $("#folhaEst").addEventListener("input", (e) => { if (e.target.id === "campBarra") mudarCorCampanha("h" + e.target.value); });
+  $("#folhaEst").addEventListener("close", () => { if (wz && wz.corMudou) { wz.corMudou = false; aposMudarEstudio(); } });
   async function pintarMinis(R) {
     const lista = wz.canal === "reels" ? itensReels() : wz.canal === "livre" ? livre().itens.map((x) => fila().find((y) => y.id === x.itemId)).filter(Boolean) : wz.canal === "video" ? [vdItem()].filter(Boolean) : wz.canal === "cupons" ? fila().slice(0, 1) : [wzItem()].filter(Boolean);
     const it = lista[0] || { nome: "Seu achadinho", precoNovo: 29.9, precoAntigo: 49.9, imagem: "", loja: "" };
@@ -6603,7 +6621,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         const V = vd(), e = aba === "campanhas" ? { modelo: V.modelo || "achadinho", camp: k, titulo: "" } : { modelo: k, camp: "", titulo: "" };
         quadroVideo(cv.getContext("2d"), 108, 192, quadro, { ...V, titulo: tituloDoModelo(e, 1) }); await new Promise((ok) => setTimeout(ok, 0)); continue;
       }
-      const r = aba === "campanhas" ? { modelo: R.modelo, camp: k, titulo: "", cor: CAMPANHAS[k].cor } : { modelo: k, camp: "", titulo: "", cor: DECOR[k].cor };
+      const r = aba === "campanhas" ? { modelo: R.modelo, camp: k, titulo: "", cor: corDaCampanha(k) } : { modelo: k, camp: "", titulo: "", cor: DECOR[k].cor };
       artePost(tmp, r, it, bmp, "story"); cv.getContext("2d").drawImage(tmp, 0, 0, 108, 192);
       await new Promise((ok) => setTimeout(ok, 0));
     }
@@ -6663,11 +6681,12 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   $("#folhaEst").addEventListener("click", (e) => {
     const t = e.target, reels = wz.canal === "reels", R = reels ? rr() : null;
     const ab = t.closest("[data-aba-mod]"); if (ab) { folhaModelo(ab.dataset.abaMod); return; }
+    const pc = t.closest("[data-camp-cor]"); if (pc) { mudarCorCampanha(pc.dataset.campCor); return; }
     const em = t.closest("[data-escolhe-mod]");
     if (em) {
       const [aba, k] = em.dataset.escolheMod.split(":"), e = estLer();
       e.titulo = ""; e.icone = ""; // a cor fica como está (sequência das 4 cores); para mudar, use o botão Cor
-      if (aba === "campanhas") e.camp = k; else { e.camp = ""; e.modelo = k; }
+      if (aba === "campanhas") { e.camp = k; e.cor = corDaCampanha(k); } else { e.camp = ""; e.modelo = k; }
       estGravar(e); $("#folhaEst").close(); aposMudarEstudio(); return;
     }
     if (t.closest("#estEditarTit")) { folhaTituloModelo(); return; }
