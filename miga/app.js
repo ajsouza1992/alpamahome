@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=224"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=225"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=224"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=225"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6371,7 +6371,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /** Prompt padrão (imagem ou vídeo), sempre com no máximo 900 caracteres */
   function promptPersonagem(it, tipo) {
     const P0 = wz.pe || {}, fundo = P0.fundo === "auto" || !P0.fundo ? (P0.fundoAuto || "rosa") : P0.fundo;
-    const C = cenaDoItem(it, fundo === "cenario" ? "" : fundo), ficha0 = String(lsPers.ler("ficha", "") || "").replace(/\s+/g, " ").trim();
+    const C = cenaDoItem(it, fundo === "cenario" ? "" : fundo), ficha0 = ""; // como ela é: as fotos de referência já mostram
     const roupa = C.roupa ? `New outfit: ${C.roupa}.` : C.roupa === "" ? "Same outfit as in images 1 and 2." : "She wears the product from image 3.";
     const monta = (ficha, nomeMax) => tipo === "video"
       ? `Hyper-realistic vertical 9:16 video, 8 seconds, one continuous shot, still camera. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. Product: image 3, identical (shape, color, label, size). Action: she ${C.acao}. She says in Brazilian Portuguese, warm natural voice: "${falaPersonagem(it, nomeMax)}" Then she poses with the product clearly visible, smiling. No added text, logos or subtitles (keep the product's own design); empty space at top and bottom; no cuts or zoom; natural hands; the product never changes; perfect lip sync.`
@@ -6432,7 +6432,6 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <b class="ch-rot">Fundo do estúdio</b>
         <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, x]) => [k, x[0], x[1]])].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
         <p class="nota pe-roupa-nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto (a roupa da foto do produto)." : "Roupa: a IA escolhe um look que combina com o fundo e com o produto."}</p>
-        <div class="campo"><span>Como ela é (vai no prompt, opcional)</span><textarea id="peFicha" rows="2" maxlength="220" placeholder="Ex.: 27 anos, cabelo castanho ondulado no ombro, sardas leves, argolas douradas">${esc(lsPers.ler("ficha", ""))}</textarea></div>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
         <div class="campo"><span>Prompt pronto (${pr.length}/900 caracteres)</span><textarea id="pePrompt" rows="8" readonly>${esc(pr)}</textarea></div>
         <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt e enviar as 3 fotos</button>
