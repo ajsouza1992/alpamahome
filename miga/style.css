@@ -1718,3 +1718,8 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .ka-alt span { font-size: 12.5px; font-weight: 700; color: var(--rosa-escuro); }
 .ka-alt p { margin: 0; font-size: 14px; color: var(--preto); }
 .ka-alt:active { background: var(--rosa-claro); }
+.ka-alt { cursor: default; }
+.ka-alt__topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ka-alt__bt { min-height: 38px; padding: 0 16px; font-size: 13.5px; flex: none; }
+.ka-alt .ka-alt__bt { width: auto !important; margin: 0 !important; background: #fff; box-shadow: 0 8px 18px -10px rgba(29,29,31,.45), inset 0 0 0 1px var(--linha); }
+.ka-alt__topo span { flex: 1; }

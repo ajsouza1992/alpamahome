@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=192"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=193"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=192"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=193"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6017,7 +6017,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="ch-campo"><span>Do que vai falar?</span><input id="kaAssunto" maxlength="120" placeholder="Ex.: como achar cupom na Shopee" value="${esc(K.assunto || "")}"></label>
         <div class="duas"><button type="button" class="btn btn--branco" id="kaPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="kaColar">Colar resposta da IA</button></div></div>
       <div class="ka-previa"><canvas id="kaQuadro" width="540" height="540"></canvas></div>
-      <div class="ka-alt" id="kaCopiarAlt" role="button" tabindex="0" title="Toque para copiar"><span>Texto alternativo da tela ${K.sel + 1} · toque para copiar</span><p>${esc(s.alt || altCarta(s, K.sel, T.length))}</p></div>
+      <div class="ka-alt"><div class="ka-alt__topo"><span>Texto alternativo da tela ${K.sel + 1}</span><button type="button" class="btn btn--branco ka-alt__bt" id="kaCopiarAlt">Copiar</button></div><p>${esc(s.alt || altCarta(s, K.sel, T.length))}</p></div>
       <div class="ka-telas">${T.map((t, i) => `<button type="button" class="ka-mini${i === K.sel ? " on" : ""}" data-ka-sel="${i}"><canvas width="120" height="120" data-ka-mini="${i}"></canvas><i>${i + 1}</i></button>`).join("")}${T.length < 10 ? '<button type="button" class="ka-mini ka-mais" data-ka-add>＋<small>Nova tela</small></button>' : ""}</div>
       <div class="ka-ops"><button type="button" class="btn btn--branco" data-ka-mover="-1" ${K.sel === 0 ? "disabled" : ""}>← Mover</button><button type="button" class="btn btn--branco" data-ka-mover="1" ${K.sel === T.length - 1 ? "disabled" : ""}>Mover →</button><button type="button" class="btn btn--branco" data-ka-dup>Duplicar</button><button type="button" class="btn btn--branco ka-del" data-ka-del ${T.length <= 1 ? "disabled" : ""}>Excluir</button></div>
       <h3 class="ch-tela">Tela ${K.sel + 1}</h3>
