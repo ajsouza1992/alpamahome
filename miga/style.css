@@ -1803,3 +1803,7 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pe-limpar .duas .btn { font-size: 13px; }
 .pe-fundos button { display: inline-flex; align-items: center; gap: 6px; }
 .pe-fundos button i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.2); }
+.pe-passos { margin: 10px 0; padding-left: 20px; font-size: 14px; color: #4a4540; }
+.pe-passos li { margin: 4px 0; }
+.pe-esc { width: 100%; text-align: left; border: 0; background: var(--campo); border-radius: 14px; padding: 6px 10px; margin-bottom: 6px; cursor: pointer; font: inherit; }
+.pe-fundos { flex-wrap: wrap !important; overflow: visible !important; }
