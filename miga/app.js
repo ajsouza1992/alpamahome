@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=235"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=236"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=235"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=236"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6295,7 +6295,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const CENA_PT = { perfumes: "borrifa no pulso e sorri", looks: "vestindo a peça no espelho", fitness: "vestindo e alongando", calcados: "calçando e dando dois passos", acessorios: "usando e ajeitando", maquiagem: "passando no espelho", skincare: "aplicando no rosto", cabelo: "passando no cabelo", suplementos: "mostrando e preparando", eletronicos: "usando e reagindo", casa: "usando em casa", outros: "mostrando para a câmera" };
   const LIMITE_PROMPT = 900;
   // Espaço para a montagem (textos, logo, @) em todos os prompts
-  const ESPACO_PERS = "Deixe espaço livre acima da cabeça e embaixo para textos (sem textos na imagem)";
+  const ESPACO_PERS = "Deixe espaço livre embaixo, abaixo dos pés, para textos (sem textos na imagem)";
   const quadradoPers = (P) => P && (P.tipo === "imagem" || P.formato === "quadrado");
   const abreVideo = (P) => quadradoPers(P) ? "Vídeo hiper-realista quadrado 1:1 para post do feed" : "Vídeo hiper-realista vertical 9:16";
   /* Estúdio com o fundo nas cores da Miga + o jeito certo de USAR cada tipo de produto (boné na cabeça, óculos no rosto...) */
@@ -6448,11 +6448,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
           <div class="ed-chips pe-fundos">${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo === "auto" || !P.fundo ? "rosa" : P.fundo) === k ? "on" : ""}"><i style="background:${x[1]}"></i>${x[0]}</button>`).join("")}</div>
           <p class="nota pe-roupa-nota">Roupa: a IA escolhe um look que combina com o fundo.</p>
           <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/900)</span><textarea id="pePrompt" rows="9" maxlength="900">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
-          <button type="button" class="btn btn--rosa" id="peCopiar">Copiar e enviar o prompt</button>
-          <p class="nota">Na IA, anexe as fotos dela pela galeria e envie.</p>
-          <b class="ch-rot">O que a IA criou</b>
-          <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="image/*,video/*" id="peMidia" hidden>${P.midia ? "Trocar o vídeo da IA" : "Anexar o vídeo que a IA criou"}</label>
-          ${nav("peJaCriei", "Continuar para editar", !!P.midia)}`;
+          <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt</button>
+          <p class="nota">Envie o prompt para a IA com as fotos da modelo.</p>
+          ${nav("peJaCriei", "Continuar")}`;
         return;
       }
     }
@@ -6461,27 +6459,22 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.passo === "pePrompt") {
       const pr = promptPersonagem(it, P.tipo);
       c.innerHTML = `<h2 class="wz-titulo">Prompt d${P.tipo === "video" ? "o vídeo" : "a imagem"}</h2>
-        <p class="nota">1) Refaça a foto do produto. 2) Copie o prompt e envie para a IA com a foto do produto e as fotos dela. 3) Anexe aqui o que a IA criou.</p>
+        <p class="nota">Siga as 3 etapas e toque em Continuar para anexar o que a IA criou e editar.</p>
         ${prodHtml}
-        <b class="ch-rot">Foto do produto</b>
         <div class="pe-etapas">
-          ${etapa(1, "Baixe a foto do produto", '<button type="button" class="pe-mini" id="peLimparBaixar">Baixar</button>')}
-          ${etapa(2, "Copie o prompt e envie para a IA com a foto", '<button type="button" class="pe-mini" id="peLimparCopiar">Copiar</button>')}
+          ${etapa(1, "Baixe a foto original do produto", '<button type="button" class="pe-mini" id="peLimparBaixar">Baixar</button>')}
+          ${etapa(2, "Copie o prompt e envie para a IA com a foto do produto, para refazer a foto", '<button type="button" class="pe-mini" id="peLimparCopiar">Copiar</button>')}
           <div class="campo pe-pr-limpar"><span>Prompt da foto (pode editar)</span><textarea id="peLimparTxt" rows="6">${esc(P.limparTxt != null ? P.limparTxt : promptLimparProduto(it))}</textarea></div>
-          ${etapa(3, it.fotoLimpa ? "Foto refeita escolhida" : "Escolha a foto do produto refeita", `<label class="pe-mini pe-mini--rosa"><input type="file" accept="image/*" id="peLimparFoto" hidden>${it.fotoLimpa ? "Trocar" : "Escolher"}</label>`)}
         </div>
-        <b class="ch-rot">Prompt d${P.tipo === "video" ? "o vídeo" : "a imagem"}</b>
+        <div class="pe-etapa pe-etapa--3"><b class="pe-num">3</b><span class="pe-etxt">Copie o prompt e envie para a IA a foto do produto refeita e as fotos da modelo, para criar ${P.tipo === "video" ? "o vídeo" : "a imagem"}</span></div>
         ${P.tipo === "imagem" ? "" : `<b class="ch-rot">Formato</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-formato="vertical" aria-checked="${!quadradoPers(P)}">Vertical (Reels)</button><button type="button" role="radio" data-pe-formato="quadrado" aria-checked="${quadradoPers(P)}">Quadrado 1:1 (post)</button></div>`}
         <b class="ch-rot">Fundo do estúdio</b>
         <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, x]) => [k, x[0], x[1]])].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
         <p class="nota pe-roupa-nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto (a roupa da foto do produto)." : "Roupa: a IA escolhe um look que combina com o fundo e com o produto."}</p>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
         <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/900)</span><textarea id="pePrompt" rows="9" maxlength="900">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
-        <button type="button" class="btn btn--rosa" id="peCopiar">Copiar e enviar o prompt com a foto do produto</button>
-        <p class="nota">Na IA, anexe também as fotos dela pela galeria e envie.</p>
-        <b class="ch-rot">O que a IA criou</b>
-        <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="image/*,video/*" id="peMidia" hidden>${P.midia ? "Trocar a foto/vídeo da IA" : "Anexar a foto ou o vídeo que a IA criou"}</label>
-        ${nav("peJaCriei", "Continuar para editar", !!P.midia)}`;
+        <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt</button>
+        ${nav("peJaCriei", "Continuar")}`;
       return;
     }
     if (wz.passo === "peMontar") {
@@ -6492,8 +6485,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       if (P.legenda == null) P.legenda = legendaCriacao(P, it);
       if (P.seloTxt == null) P.seloTxt = it && it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? `-${Math.round((1 - it.precoNovo / it.precoAntigo) * 100)}%` : "";
       c.innerHTML = `<h2 class="wz-titulo">Logo, @ e legenda</h2>
-        ${P.midia ? "" : '<p class="nota">Escolha a foto ou o vídeo que a IA criou. Ela fica inteira; a Miga só coloca o logo e o @ num canto.</p>'}
-        <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="image/*,video/*" id="peMidia" hidden>${P.midia ? "Trocar a foto/vídeo da IA" : "Escolher a foto ou o vídeo da IA"}</label>
+        ${P.midia ? "" : `<p class="nota">Anexe ${P.tipo === "imagem" ? "a foto" : "o vídeo"} que a IA criou para começar a edição.</p>`}
+        <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>
         <div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${r ? `<figure class="rp-video"><video src="${r.url}" controls playsinline></video></figure>` : ""}
         <div class="pe-cantos-l"><div><b class="ch-rot">Logo Miga</b>${cc("logo", P.cantoLogo || "br")}</div><div><b class="ch-rot">@ da Miga</b>${cc("arroba", P.cantoArroba || "bl")}</div>
@@ -6519,7 +6512,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const tags = (TAGS[it.categoria] || TAGS.outros).split(" ").slice(0, 3).join(" ") + " #achadinhos #promocao";
     return [`✨ ${nome}`, "", preco, it.cupom ? `🎟️ Cupom: ${String(it.cupom).toUpperCase()}` : "", "", FRASES[it.categoria] || "Achadinho com preço de amiga 💖", "", `🔗 Link na bio (${at})`, "Corre que esse preço não costuma durar ⏳", "", tags].filter((l, i, a) => l !== "" || (a[i - 1] !== "" && i > 0)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
   }
-  const MOLDURAS_PERS = { nao: ["Sem", ""], rosa: ["Rosa", "#e8336d"], preto: ["Preto", "#1d1d1f"], creme: ["Creme", "#fff3c4"], branco: ["Branco", "#ffffff"], amarelo: ["Amarelo", "#ffd23f"] };
+  const MOLDURAS_PERS = { nao: ["Sem", ""], rosa: ["Rosa", "#e8336d"], preto: ["Preto", "#1d1d1f"], creme: ["Creme", "#fff3c4"], branco: ["Branco", "#ffffff"] };
   /** A foto/vídeo da IA + moldura (opcional) + logo, @ e selo de desconto nos cantos escolhidos */
   function quadroLogoArroba(ctx, W, fonte, P) {
     const x = ctx, k = W / 1080, H = altPers(P); x.save(); x.scale(k, k);
@@ -6717,13 +6710,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#peLimparBaixar")) { const a = await arquivoDaImagem(it.imagem); if (a) { baixarBlob(a, nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + "-produto." + (a.type.split("/")[1] || "jpg").replace("jpeg", "jpg")); toast("Foto do produto salva"); } else toast("Não consegui baixar a foto"); return; }
     if (t.closest("#peAbrirGPT")) { window.open("https://chatgpt.com/", "_blank", "noopener"); return; }
     if (t.closest("#peAbrirGemini")) { window.open("https://gemini.google.com/app", "_blank", "noopener"); return; }
-    if (t.closest("#peJaCriei")) { if (!P.midia) { toast("Anexe a foto ou o vídeo que a IA criou"); return; } wz.passo = "peMontar"; mostrarPasso(); scrollTo(0, 0); return; }
-    if (t.closest("#peCopiar")) {
-      const txt = $("#pePrompt").value; await copiarTexto(txt);
-      let arq = null; if (!semProduto() && it && it.imagem) { const prod = await arquivoDaImagem(it.imagem); if (prod) arq = new File([prod], "produto." + (prod.type.split("/")[1] || "jpg").replace("jpeg", "jpg"), { type: prod.type || "image/jpeg" }); }
-      if (navigator.share) { try { await navigator.share(arq && navigator.canShare && navigator.canShare({ files: [arq] }) ? { files: [arq], text: txt } : { text: txt }); toast("Prompt copiado: na IA, anexe as fotos dela e envie"); return; } catch (err) { if (err.name === "AbortError") return; } }
-      if (arq) baixarBlob(arq, arq.name); toast(arq ? "Prompt copiado e foto do produto salva: anexe as fotos dela na IA" : "Prompt copiado: cole na IA e anexe as fotos dela"); return;
-    }
+    if (t.closest("#peJaCriei")) { wz.passo = "peMontar"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#peCopiar")) { if (await copiarTexto($("#pePrompt").value)) toast("Prompt copiado: cole na IA com as fotos"); return; }
+
 
     const cn = t.closest("[data-pe-canto]"); if (cn) { const [k, v] = cn.dataset.peCanto.split(":"); if (k === "logo") P.cantoLogo = v; else if (k === "selo") P.cantoSelo = v; else P.cantoArroba = v; lsPers.gravar("cantos", { logo: P.cantoLogo, arroba: P.cantoArroba, selo: P.cantoSelo }); P.resultado = null; if (k === "selo") { const y = scrollY; mostrarPasso(); scrollTo(0, y); } else cn.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === cn)); return; }
     const ml = t.closest("[data-pe-moldura]"); if (ml) { P.moldura = ml.dataset.peMoldura; lsPers.gravar("moldura", P.moldura); P.resultado = null; ml.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ml)); return; }
@@ -6792,7 +6781,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       let w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); if (w > 960) { f = Math.floor(f * 960 / w); x.font = `900 ${f}px Poppins`; w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); }
       let xx = -w / 2; x.textAlign = "left"; x.textBaseline = "middle"; partes.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, 0); xx += x.measureText(p).width; }); x.restore(); };
     const pm = pulsoMusica(MUSICAS[CH.musica] || MUSICAS.traparabe, t);
-    const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k) * (1 + 0.14 * pm); x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); if (C.texto === "#ffffff") iconeAdesivo(x, nome, tam); else iconeReels(x, nome, tam); x.restore(); };
+    const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k), bpm = (MUSICAS[CH.musica] || MUSICAS.traparabe).bpm || 120, fase = (u * bpm / 60) * Math.PI; x.save(); x.translate(cx, cy - Math.abs(Math.sin(fase)) * 14); x.rotate(giro + Math.sin(fase) * 0.07); x.scale(s, s); if (C.texto === "#ffffff") iconeAdesivo(x, nome, tam); else iconeReels(x, nome, tam); x.restore(); return; const _n = 0; x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); if (C.texto === "#ffffff") iconeAdesivo(x, nome, tam); else iconeReels(x, nome, tam); x.restore(); };
     const pilula = (txt, cx, cy, bg, fg, tam, t0, u, giro = -0.03, borda = true) => { const k = (u - t0) / 0.45; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy); x.rotate(giro); x.scale(s, s); x.font = `800 ${tam}px Poppins`; const w = x.measureText(txt).width + tam * 1.4, h = tam * 1.9; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = bg; x.fill(); if (borda) { x.lineWidth = 7; x.strokeStyle = "#1d1d1f"; x.stroke(); } x.fillStyle = fg; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(txt, 0, 3); x.restore(); };
     const T = C.texto, A = C.d1, D = dadosChamada(CH);
     if (CH.tipo === "seg") { quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula, pm); if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160); x.restore(); return; }
@@ -6825,15 +6814,27 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /* ===================== Tema pronto: "Seguidores" (comemorar uma marca de seguidores) ===================== */
   const numSeg = (v) => { const n = parseInt(String(v || "").replace(/\D/g, ""), 10); return isFinite(n) ? n : 0; };
   const fmtSeg = (n) => n.toLocaleString("pt-BR");
-  function metaSeguinte(v) { const n = numSeg(v); const m = [100, 250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 250000, 500000, 1000000].find((k) => k > n); return m ? fmtSeg(m) : fmtSeg(n * 2); }
+  function metaSeguinte(v) { const n = numSeg(v); const m = [100, 250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 250000, 500000, 1000000].find((k) => k > n); return m ? fmtSeg(m) : ""; }
   function baseSeguidores(CH, at) {
     const numero = /^\d[\d.\s]*$/.test(String(CH.numero || "").trim()) ? fmtSeg(numSeg(CH.numero)) : String(CH.numero || "500").trim();
     return { etiqueta: "UHUUL, MIGAS!", t1: "Chegamos a", t2: "", numero, palavra: "SEGUIDORES", sub: "obrigada de *coração*",
       frase: ["Obrigada por", "cada *curtida*", "e cada", "*comentário*"], lista: "Vem muito mais:", itens: ["Achadinhos", "Cupons", "Promoções", "Novidades"],
-      cta1: "Rumo aos", cta2: metaSeguinte(CH.numero), toque: "compartilha com uma miga", arroba: at,
+      cta1: metaSeguinte(CH.numero) ? "Rumo aos" : "Obrigada,", cta2: metaSeguinte(CH.numero) || "MIGAS!", toque: "compartilha com uma miga", arroba: at,
       ic: ["trofeu", "confete"], icFrase: "curtida", ic2: ["notificacao", "baloes"] };
   }
   /** Confetes caindo (sempre iguais em cada quadro, para a prévia e o vídeo baterem) */
+  /** Sons do Seguidores: "tic" subindo enquanto o número conta e estouro de confete */
+  function sonsSeguidores(ac, dest, t0, CH) {
+    try {
+      const tic = (t, f, v = 0.16) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = "triangle"; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07); o.connect(g).connect(dest); o.start(t); o.stop(t + 0.09); };
+      const estouro = (t) => { const SR = ac.sampleRate, b = ac.createBuffer(1, SR * 0.6, SR), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+        const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = b; f.type = "bandpass"; f.frequency.value = 2400; f.Q.value = 0.7; g.gain.value = 0.9; s.connect(f).connect(g).connect(dest); s.start(t);
+        [1568, 2093, 2637].forEach((fr, i) => tic(t + 0.05 + i * 0.07, fr, 0.12)); };
+      const conta = (ini, fim) => { for (let k = 0, tt = ini; tt < fim; k++, tt += 0.075) tic(t0 + tt, 520 + k * 38); };
+      conta(0.4, 1.6); estouro(t0 + 1.65);
+      const D = dadosChamada(CH); if (/^[\d.]+$/.test(String(D.cta2))) { conta(9.85, 10.9); estouro(t0 + 10.9); } else estouro(t0 + 10.1);
+    } catch (e) { /* sem efeitos */ }
+  }
   /** Pulso da batida (1 no bumbo, caindo até 0), igual às animações do Reels */
   function pulsoMusica(E, t) {
     if (!E || !E.bpm || t < 0) return 0; const p = 60 / E.bpm / 4, k = E.k || "x...x...x...x...", st = Math.floor(t / p);
@@ -6874,7 +6875,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       linha(partesDestaque(D.t1, T, A), 640, 104, 0.2, t);
       const k = easeC((t - 0.35) / 0.4); if (k > 0) {
         const alvo = numSeg(D.numero), conta = alvo && /^[\d.]+$/.test(D.numero) ? fmtSeg(Math.round(alvo * easeC((t - 0.35) / 1.3))) : D.numero, pul = t > 1.65 ? 1 + 0.12 * Math.max(0, 1 - (t - 1.65) / 0.35) : 1;
-        x.save(); x.globalAlpha = k; x.translate(540, 905); const bat = t > 1.65 ? 1 + 0.07 * pm : 1; x.scale(pul * bat * (0.6 + 0.4 * k), pul * bat * (0.6 + 0.4 * k)); numeroDourado(x, conta, 0, 0, 380, -0.03); x.restore();
+        x.save(); x.globalAlpha = k; x.translate(540, 905); const bat = 1; x.scale(pul * bat * (0.6 + 0.4 * k), pul * bat * (0.6 + 0.4 * k)); numeroDourado(x, conta, 0, 0, 380, -0.03); x.restore();
         brilha(190, 740, 44, 1.7, t); brilha(905, 1020, 38, 1.95, t); brilha(880, 730, 30, 2.2, t);
       }
       linha([[D.palavra, A]], 1150, 124, 1.0, t);
@@ -6891,7 +6892,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     } else { const u = t - 9.6;
       estouroConfete(x, u - 1.3, 540, 640, 60); confetes(x, u, 34, 0.2);
       linha(partesDestaque(D.cta1, T, A), 470, 100, 0.05, u);
-      const k0 = easeC((u - 0.2) / 0.4); if (k0 > 0) { x.save(); x.globalAlpha = k0; x.translate(540, 640); const s = puloC((u - 0.2) / 0.5) * (1 + 0.07 * pm); x.scale(s, s); const meta = numSeg(D.cta2), de = numSeg(D.numero), cnt = meta && /^[\d.]+$/.test(D.cta2) ? fmtSeg(Math.round(de + (meta - de) * easeC((u - 0.2) / 1.1))) : D.cta2; numeroDourado(x, cnt, 0, 0, 190, -0.03); x.restore(); }
+      const k0 = easeC((u - 0.2) / 0.4); if (k0 > 0) { x.save(); x.globalAlpha = k0; x.translate(540, 640); const s = puloC((u - 0.2) / 0.5); x.scale(s, s); const meta = numSeg(D.cta2), de = numSeg(D.numero), cnt = meta && /^[\d.]+$/.test(D.cta2) ? fmtSeg(Math.round(de + (meta - de) * easeC((u - 0.2) / 1.1))) : D.cta2; numeroDourado(x, cnt, 0, 0, 190, -0.03); x.restore(); }
       const k = easeC((u - 0.4) / 0.5);
       if (k > 0) { const pr = 1 + 0.05 * Math.sin(u * 6); x.save(); x.translate(540, 1030); x.scale(k * pr, k * pr); const g = x.createLinearGradient(-170, -170, 170, 170); g.addColorStop(0, "#ffd23f"); g.addColorStop(0.5, "#e8336d"); g.addColorStop(1, "#7b3fe4"); x.lineWidth = 22; x.strokeStyle = g; x.beginPath(); x.arc(0, 0, 170, 0, 7); x.stroke(); x.fillStyle = "#fff"; x.beginPath(); x.arc(0, 0, 145, 0, 7); x.fill(); if (edMarca) x.drawImage(edMarca, -115, -115, 230, 230); x.restore(); }
       const at = D.arroba; if (at) pilula(at, 540, 1340, "#ffd23f", "#1d1d1f", 56, 0.8, u, -0.03);
@@ -6900,7 +6901,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function legendaSeguidores(CH) {
     const D = dadosChamada(CH), at = arroba(config.instagram) || "@migapromo.oficial";
-    return `🎉 ${D.numero} SEGUIDORES! 🎉\n\nMigas, chegamos a ${D.numero} e eu tô muito feliz! Obrigada por cada curtida, comentário e compartilhamento 💖\n\nAqui vai continuar tendo achadinhos, cupons e promoções com preço de amiga todo dia. Bora juntas rumo aos ${D.cta2}! 🚀\n\nMarca aquela miga que ama uma promoção e chama ela pra seguir ${at} 👇\n\n#seguidores #obrigada #achadinhos #promoção #cupomdedesconto`;
+    return `🎉 ${D.numero} SEGUIDORES! 🎉\n\nMigas, chegamos a ${D.numero} e eu tô muito feliz! Obrigada por cada curtida, comentário e compartilhamento 💖\n\nAqui vai continuar tendo achadinhos, cupons e promoções com preço de amiga todo dia. ${/^[\d.]+$/.test(String(D.cta2)) ? `Bora juntas rumo aos ${D.cta2}! 🚀` : "Vocês são demais, obrigada por tudo! 🚀"}\n\nMarca aquela miga que ama uma promoção e chama ela pra seguir ${at} 👇\n\n#seguidores #obrigada #achadinhos #promoção #cupomdedesconto`;
   }
   const promptSeguidores = (assunto) => `Você vai escrever os textos de um Reels da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}; perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels comemora uma marca de seguidores e agradece as seguidoras.
 
@@ -7063,7 +7064,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const btn = gravar ? $("#chGerar") : $("#chPrevia"), barra = $("#chProgresso"), total = T_CHAMADA;
     if (btn) btn.disabled = true; if (gravar && barra) ligarBarra(btn, barra);
     let t0 = 0, dest = null, rec = null, partes = [], fim = null; const E = MUSICAS[CH.musica] || MUSICAS.traparabe;
-    try { if (!ac) throw new Error("sem som"); if (ac.state === "suspended") await ac.resume(); dest = gravar ? ac.createMediaStreamDestination() : ac.destination; await carregarSons(ac, E); t0 = tocarTrilha(ac, dest, total, [], [], null, E, T_PLIM_CHAMADA); } catch (e) { t0 = 0; }
+    try { if (!ac) throw new Error("sem som"); if (ac.state === "suspended") await ac.resume(); dest = gravar ? ac.createMediaStreamDestination() : ac.destination; await carregarSons(ac, E); t0 = tocarTrilha(ac, dest, total, [], [], null, E, T_PLIM_CHAMADA); if (CH.tipo === "seg") sonsSeguidores(ac, dest, t0, CH); } catch (e) { t0 = 0; }
     if (gravar) {
       const fluxo = tela.captureStream(30); if (dest && dest.stream) dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
       rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 }); rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); }; fim = new Promise((ok) => { rec.onstop = ok; });
