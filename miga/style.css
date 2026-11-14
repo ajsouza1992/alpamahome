@@ -1779,3 +1779,22 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 }
 #catOrdem .ord-todos { grid-column: 1 / -1; }
 .copiado { opacity: .55 !important; pointer-events: none; transition: opacity .2s; }
+/* Personagem */
+.pe-fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pe-foto { position: relative; display: grid; place-items: center; height: 170px; border-radius: 16px; background: #fff center/cover no-repeat; border: 2px dashed #f3c2d3; color: var(--rosa); font-weight: 700; cursor: pointer; }
+.pe-foto.on { border: 0; box-shadow: 0 0 0 3px var(--rosa); }
+.pe-foto span { font-size: 13px; }
+.pe-foto.on span { position: absolute; left: 8px; right: 8px; bottom: 8px; text-align: center; background: #fff; color: var(--preto); border-radius: 999px; padding: 3px 6px; font-size: 12px; }
+.pe-prod { display: flex; gap: 12px; align-items: center; background: var(--campo); border-radius: 16px; padding: 8px; }
+.pe-prod img { width: 56px; height: 56px; object-fit: contain; background: #fff; border-radius: 12px; flex: none; }
+.pe-prod span { display: grid; gap: 2px; min-width: 0; } .pe-prod b { font-size: 14px; } .pe-prod small { color: var(--cinza); font-size: 12px; }
+.pe-tipo { margin: 12px 0 4px; }
+.pe-tipo button[aria-checked="true"] { background: var(--rosa); color: #fff; }
+.pe-fala { background: #fff3c4; border-radius: 14px; padding: 10px 12px; font-size: 14px; margin: 8px 0; }
+.pe-fala i { font-style: normal; background: var(--rosa); color: #fff; border-radius: 6px; padding: 0 4px; font-weight: 700; }
+.pe-fala small { display: block; color: var(--cinza); font-size: 12px; margin-top: 4px; }
+#pePrompt { font-size: 12.5px; line-height: 1.4; }
+.pe-escolher { display: flex; justify-content: center; align-items: center; cursor: pointer; margin: 6px 0 10px; }
+.pe-linha { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; align-items: center; margin: 6px 0; }
+.pe-linha > b { font-size: 13px; }
+.pe-linha .ed-chips { margin: 0; }
