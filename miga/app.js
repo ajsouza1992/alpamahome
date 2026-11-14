@@ -172,6 +172,7 @@
   document.addEventListener("click", (e) => { const b = e.target.closest("button, .btn, [role=button]"); if (b) { ultimoBotao = b; ultimoToque = Date.now(); } }, true);
   function marcarCopiado() {
     const b = ultimoBotao; if (!b || Date.now() - ultimoToque > 4000 || !document.body.contains(b) || b.classList.contains("copiado")) return;
+    if (!/copiar/i.test(b.textContent + " " + (b.id || ""))) return; // só os botões de copiar mudam; Postar, Gerar etc. ficam como estão (o aviso aparece em cima)
     const alvo = [...b.childNodes].reverse().find((n) => n.nodeType === 3 && n.textContent.trim()) || (b.children.length ? null : b);
     const antes = alvo ? alvo.textContent : null, link = /link/i.test(b.textContent);
     if (alvo) alvo.textContent = link ? "✓ Link copiado" : "✓ Copiado";
@@ -1289,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=211"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=212"; });
     }
     edFoto = null;
     try {
@@ -1663,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=211"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=212"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
