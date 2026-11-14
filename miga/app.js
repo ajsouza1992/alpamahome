@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=220"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=221"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=220"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=221"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6381,7 +6381,6 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const f = P.fotosAgora || fotosPers(), tipoTxt = P.tipo === "video" ? "vídeo" : "imagem";
     const prodHtml = it ? `<div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.fotoLimpa ? " · foto refeita ✓" : ""}</small></span></div>` : "";
     const nav = (cont, txt = "Continuar", rosa = true) => `<div class="duas pe-nav"><button type="button" class="btn btn--branco" id="peVoltar">Voltar</button><button type="button" class="btn ${rosa ? "btn--rosa" : "btn--branco"}" id="${cont}">${txt}</button></div>`;
-    const apps = `<span class="pe-apps"><button type="button" class="pe-app" id="peAbrirGemini" aria-label="Abrir o Gemini" title="Abrir o Gemini"><svg viewBox="0 0 24 24"><path d="M12 3c.6 4.6 3.4 7.4 9 9-5.6 1.6-8.4 4.4-9 9-.6-4.6-3.4-7.4-9-9 5.6-1.6 8.4-4.4 9-9z"/></svg><small>Gemini</small></button><button type="button" class="pe-app" id="peAbrirGPT" aria-label="Abrir o ChatGPT" title="Abrir o ChatGPT"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/><path d="M8.5 9.5h7M8.5 12.5h4"/></svg><small>GPT</small></button></span>`;
     const etapa = (n, txt, acao) => `<div class="pe-etapa"><b class="pe-num">${n}</b><span class="pe-etxt">${txt}</span>${acao}</div>`;
     if (wz.passo === "peEscolher") {
       c.innerHTML = `<h2 class="wz-titulo">Criação IA</h2>
@@ -6402,7 +6401,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${prodHtml}
         <div class="pe-etapas">
           ${etapa(1, "Baixe a foto do produto", '<button type="button" class="pe-mini" id="peLimparBaixar">Baixar</button>')}
-          ${etapa(2, `Copie o prompt e cole na IA com a foto<span class="pe-abrir">Abrir: ${apps}</span>`, '<button type="button" class="pe-mini" id="peLimparCopiar">Copiar</button>')}
+          ${etapa(2, "Copie o prompt e envie para a IA com a foto", '<button type="button" class="pe-mini" id="peLimparCopiar">Copiar</button>')}
           ${etapa(3, it.fotoLimpa ? "Foto refeita escolhida ✓" : "Escolha a foto refeita que a IA criou", `<label class="pe-mini pe-mini--rosa"><input type="file" accept="image/*" id="peLimparFoto" hidden>${it.fotoLimpa ? "Trocar" : "Escolher"}</label>`)}
         </div>
         ${nav("peIr3", it.fotoLimpa ? "Continuar" : "Pular", !!it.fotoLimpa)}`;
@@ -6419,7 +6418,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="campo"><span>Como ela é (vai no prompt, opcional)</span><textarea id="peFicha" rows="2" maxlength="220" placeholder="Ex.: 27 anos, cabelo castanho ondulado no ombro, sardas leves, argolas douradas">${esc(lsPers.ler("ficha", ""))}</textarea></div>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
         <div class="campo"><span>Prompt pronto (${pr.length}/900 caracteres)</span><textarea id="pePrompt" rows="8" readonly>${esc(pr)}</textarea></div>
-        <div class="pe-copiar"><button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt e baixar as 3 fotos</button>${apps}</div>
+        <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt e enviar as 3 fotos</button>
         <p class="nota">Anexe na ordem: <b>foto 1, foto 2 e a foto do produto</b>.</p>
         ${nav("peJaCriei", "Já criei: editar")}`;
       return;
@@ -6582,17 +6581,22 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#peRoupa")) { P.roupa = (P.roupa + 1 + Math.floor(Math.random() * (ROUPAS_PERS.length - 1))) % ROUPAS_PERS.length; mostrarPasso(); return; }
     const fd = t.closest("[data-pe-fundo]"); if (fd) { P.fundo = fd.dataset.peFundo; lsPers.gravar("fundo", P.fundo); mostrarPasso(); return; }
     const ps = t.closest("[data-pe-pos]"); if (ps) { const [k, v] = ps.dataset.pePos.split(":"); P.pos[k] = v; lsPers.gravar("pos", P.pos); ps.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ps)); P.resultado = null; return; }
-    if (t.closest("#peLimparCopiar")) { if (await copiarTexto(promptLimparProduto(it))) toast("Prompt copiado: cole no ChatGPT com a foto do produto"); return; }
+    if (t.closest("#peLimparCopiar")) {
+      const txt = promptLimparProduto(it); await copiarTexto(txt);
+      const prod = await arquivoDaImagem(it.imagem), arq = prod && new File([prod], "produto." + (prod.type.split("/")[1] || "jpg").replace("jpeg", "jpg"), { type: prod.type || "image/jpeg" });
+      if (navigator.share) { try { await navigator.share(arq && navigator.canShare && navigator.canShare({ files: [arq] }) ? { files: [arq], text: txt } : { text: txt }); toast("Prompt copiado: se a IA não colar sozinha, cole o texto"); return; } catch (err) { if (err.name === "AbortError") return; } }
+      toast("Prompt copiado: cole na IA junto com a foto do produto"); return;
+    }
     if (t.closest("#peLimparBaixar")) { const a = await arquivoDaImagem(it.imagem); if (a) { baixarBlob(a, nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + "-produto." + (a.type.split("/")[1] || "jpg").replace("jpeg", "jpg")); toast("Foto do produto salva"); } else toast("Não consegui baixar a foto"); return; }
     if (t.closest("#peAbrirGPT")) { window.open("https://chatgpt.com/", "_blank", "noopener"); return; }
     if (t.closest("#peAbrirGemini")) { window.open("https://gemini.google.com/app", "_blank", "noopener"); return; }
     if (t.closest("#peJaCriei")) { wz.passo = "peMontar"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peCopiar")) {
       const f = P.fotosAgora || fotosPers(); if (!f[0] || !f[1]) { toast("Escolha as 2 fotos dela primeiro"); return; }
-      await copiarTexto($("#pePrompt").value); toast("Prompt copiado ✓ · agora as 3 fotos");
+      await copiarTexto($("#pePrompt").value); toast("Prompt copiado ✓ · escolha a IA para enviar as 3 fotos");
       const arqs = []; for (const [i, src] of f.entries()) { const r = await fetch(src); const b = await r.blob(); arqs.push(new File([b], `${i + 1}-personagem.jpg`, { type: "image/jpeg" })); }
       const prod = await arquivoDaImagem(it.imagem); if (prod) arqs.push(new File([prod], "3-produto." + (prod.type.split("/")[1] || "jpg").replace("jpeg", "jpg"), { type: prod.type || "image/jpeg" }));
-      if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs }); return; } catch (err) { if (err.name === "AbortError") return; } }
+      if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs, text: $("#pePrompt").value }); return; } catch (err) { if (err.name === "AbortError") return; } }
       arqs.forEach((a, i) => setTimeout(() => baixarBlob(a, a.name), i * 400)); toast("3 fotos salvas: anexe na ordem 1, 2 e 3"); return;
     }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
