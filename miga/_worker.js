@@ -174,13 +174,22 @@ function idsShopee(texto) {
   return m3 ? { loja: m3[1], item: m3[2] } : null;
 }
 /** Segue o link curto da Shopee só pelos redirecionamentos (sem abrir a página), guardando cada endereço */
+const UA_CELULAR = "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36";
 async function cadeiaShopee(url) {
-  const lista = [url]; let atual = url;
-  for (let pulo = 0; pulo < 8; pulo++) {
-    let r; try { r = await fetch(atual, { redirect: "manual", headers: { "user-agent": UA_PREVIA, accept: "text/html" } }); } catch (e) { break; }
-    const destino = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
-    if (!destino) break;
-    atual = new URL(destino, atual).toString(); lista.push(atual);
+  const lista = [url];
+  // o link de afiliado (s.shopee.com.br) às vezes manda para o produto por redirecionamento, às vezes por um script na página
+  for (const ua of [UA_PREVIA, UA_CELULAR, UA]) {
+    let atual = url;
+    for (let pulo = 0; pulo < 8; pulo++) {
+      let r; try { r = await fetch(atual, { redirect: "manual", headers: { "user-agent": ua, accept: "text/html,application/xhtml+xml", "accept-language": "pt-BR,pt;q=0.9" } }); } catch (e) { break; }
+      const destino = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
+      if (destino) { atual = new URL(destino, atual).toString(); lista.push(atual); if (idsShopee(atual)) return lista; continue; }
+      const html = (await r.text().catch(() => "")).slice(0, 400000);
+      if (idsShopee(html)) { lista.push(html); return lista; }
+      const prox = (html.match(/http-equiv=["']?refresh["']?[^>]*url=([^"'>\s]+)/i) || html.match(/location(?:\.href)?\s*=\s*["']([^"']+)["']/i) || html.match(/"(?:redirect_?url|url|link)"\s*:\s*"(https?:[^"]+shopee[^"]+)"/i) || [])[1];
+      if (!prox) break;
+      atual = new URL(prox.replace(/\\\//g, "/"), atual).toString(); lista.push(atual); if (idsShopee(atual)) return lista;
+    }
   }
   return lista;
 }
@@ -214,7 +223,7 @@ async function completarPelaApiShopee(dados, env, html, urlColado) {
   if (dados.loja !== "shopee") return dados;
   if (!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) { dados.diag = "chaves da Shopee não cadastradas no Cloudflare"; return dados; }
   let ids = idsShopee(dados.urlFinal) || idsShopee(urlColado) || idsShopee(html);
-  if (!ids && urlColado) { const cad = await cadeiaShopee(urlColado); ids = idsShopee(cad.join(" ")); if (!ids) dados.diag = "não achei o código do produto no link (" + cad.map((u) => new URL(u).hostname + new URL(u).pathname.slice(0, 30)).join(" → ") + ")"; }
+  if (!ids && urlColado) { const cad = await cadeiaShopee(urlColado); ids = idsShopee(cad.join(" ")); if (!ids) dados.diag = "não achei o código do produto no link (" + cad.filter((u) => /^https?:/.test(u)).map((u) => { try { const x = new URL(u); return x.hostname + x.pathname.slice(0, 30); } catch (e) { return ""; } }).join(" → ") + ")"; }
   try { const l = await linkAfiliadoShopee(ids ? `https://shopee.com.br/product/${ids.loja}/${ids.item}` : (dados.urlFinal || urlColado || ""), env); if (l) dados.linkAfiliado = l; } catch (e) { dados.diag = (dados.diag ? dados.diag + "; " : "") + "link de afiliado: " + e.message; }
   if (!ids) return dados;
   try {
