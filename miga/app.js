@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=214"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=215"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=214"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=215"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6294,14 +6294,14 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const LIMPAR_CAT = { perfumes: "Mostre o frasco sem a tampa, com o borrifador à mostra.", looks: "Mostre só a peça, sem modelo e sem manequim, de frente, bem esticada e sem amassados.", fitness: "Mostre só as peças, sem modelo, de frente, bem esticadas.", calcados: "Mostre o par, de lado, com o solado aparecendo.", acessorios: "Mostre o acessório inteiro, de frente, com as alças ou correntes à mostra.", maquiagem: "Mostre a embalagem aberta ao lado da tampa, com o produto aparecendo.", skincare: "Mostre a embalagem de frente, com o rótulo bem legível.", cabelo: "Mostre a embalagem de frente, com o rótulo bem legível.", suplementos: "Mostre o pote de frente, com o rótulo bem legível.", eletronicos: "Mostre o aparelho inteiro, de frente, com acabamento brilhante.", casa: "Mostre o produto inteiro, de frente.", outros: "Mostre o produto inteiro, de frente." };
   function promptLimparProduto(it) {
     const nome = limparNome(it.nome || "o produto").slice(0, 90);
-    return `Edite a foto anexada do produto "${nome}" para virar uma foto de catálogo limpa e de alta qualidade.
-- Remova o fundo e deixe fundo branco liso, com uma sombra suave embaixo.
-- Remova textos, preços, selos, logos de loja, marcas d'água, setas, mãos e qualquer objeto que não seja o produto.
+    return `Crie uma foto de catálogo nova deste mesmo produto da imagem anexada ("${nome}").
+- Fundo branco liso, sombra suave embaixo, luz de estúdio.
 - ${LIMPAR_CAT[it.categoria] || LIMPAR_CAT.outros}
-- Produto inteiro, centralizado, sem cortar nenhuma parte.
-- NÃO altere o produto: mesma cor, formato, tamanho, rótulo, letras e logotipo da marca.
-- Melhore a nitidez e a luz, alta resolução, aparência de foto profissional real.
-- Formato quadrado 1:1. Não adicione nada novo.`.slice(0, LIMITE_PROMPT);
+- Produto inteiro e centralizado, sem cortar nenhuma parte.
+- Mantenha o produto igual ao da foto: mesma cor, formato, tamanho e rótulo.
+- Só o produto na cena, sem preço, sem selos e sem textos extras.
+- Alta resolução, foco nítido, aparência de foto profissional real.
+- Formato quadrado 1:1.`.slice(0, LIMITE_PROMPT);
   }
   const lsPers = { ler: (k, d) => { try { const v = localStorage.getItem("miga_pers_" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, gravar: (k, v) => { try { localStorage.setItem("miga_pers_" + k, JSON.stringify(v)); return true; } catch (e) { return false; } } };
   const POS_PADRAO = { logo: "br", selo: "tr", arroba: "base", preco: "base", nome: "preco", chamada: "topo", cupom: "preco" };
@@ -6349,7 +6349,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <b class="ch-rot">Produto</b>
         <div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>Categoria: ${esc(NOME_CAT[it.categoria] || "Outros")} · cena: ${esc(CENA_PT[it.categoria] || CENA_PT.outros)} · roupa nova</small></span></div>
         <details class="pe-limpar"${it.fotoLimpa ? "" : " open"}><summary>${it.fotoLimpa ? "✓ Foto do produto limpa" : "Antes: deixe a foto do produto limpa"}</summary>
-          <p class="nota">Use no ChatGPT com a foto do produto: tira fundo, textos, selos e marcas d'água e melhora a qualidade, sem mudar o produto.</p>
+          <p class="nota">Use no ChatGPT ou no Gemini com a foto do produto: ele refaz a foto com fundo branco e mais qualidade, sem mudar o produto.</p>
           <div class="duas"><button type="button" class="btn btn--branco" id="peLimparCopiar">Copiar prompt da foto</button><button type="button" class="btn btn--branco" id="peLimparBaixar">Baixar foto do produto</button></div>
           <label class="btn btn--rosa pe-escolher"><input type="file" accept="image/*" id="peLimparFoto" hidden>Já limpei: usar a foto nova</label>
         </details>
