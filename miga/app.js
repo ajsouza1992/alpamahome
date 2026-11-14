@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=228"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=229"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=228"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=229"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6378,7 +6378,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const roupa = C.roupa ? `Roupa: ${C.roupa}.` : "Ela veste a roupa da imagem 3.";
     const monta = (ficha, nomeMax) => tipo === "video"
       ? `Vídeo hiper-realista vertical 9:16, 8 segundos, tomada única, câmera parada. Mesma mulher das imagens 1 e 2 (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Produto: imagem 3, idêntico (formato, cor, rótulo, tamanho). Ação: ela ${C.acao}. Fala em português do Brasil, voz feminina natural e animada: "${falaPersonagem(it, nomeMax)}" No final, posa com o produto bem visível, sorrindo. Sem textos, logos ou legendas adicionados; espaço livre em cima e embaixo; sem cortes ou zoom; mãos naturais; o produto não muda; boca sincronizada com a fala.`
-      : `Foto hiper-realista quadrada 1:1 para post do feed do Instagram, estilo influenciadora. Mesma mulher das imagens 1 e 2 (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Ela está posando, ${C.foto}, olhando para a câmera com um sorriso natural; o produto sempre bem visível e em foco. O produto é idêntico ao da imagem 3 (formato, cor, rótulo e tamanho). Sem textos, logos ou marca d'água adicionados (mantenha o design do produto); deixe um pouco de espaço livre em volta dela para os textos; foco nítido, alta resolução.`;
+      : `Foto quadrada 1:1 (1080 × 1080), para post do feed do Instagram, hiper-realista, estilo influenciadora. Mesma mulher das imagens 1 e 2 (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. Ela está posando, ${C.foto}, olhando para a câmera com um sorriso natural; o produto sempre bem visível e em foco. O produto é idêntico ao da imagem 3 (formato, cor, rótulo e tamanho). Sem textos, logos ou marca d'água adicionados (mantenha o design do produto); deixe um pouco de espaço livre em volta dela para os textos; foco nítido, alta resolução. Formato obrigatório: quadrado 1:1, não vertical.`;
     let ficha = ficha0, nomeMax = 5, p = monta(ficha, nomeMax);
     while (p.length > LIMITE_PROMPT && ficha.length > 40) { const corte = ficha.slice(0, ficha.length - 15); ficha = corte.includes(",") ? corte.replace(/,[^,]*$/, "") : corte.replace(/\s+\S*$/, ""); p = monta(ficha, nomeMax); }
     while (p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(ficha, nomeMax); }
