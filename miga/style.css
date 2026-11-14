@@ -1740,3 +1740,12 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .cor-pontos button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px 7px 8px; border-radius: 999px; border: 1.5px solid #e8dfcc; background: #fff; font: 600 14px Poppins, sans-serif; color: #1d1d1f; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
 .cor-pontos button.on { border-color: var(--rosa); box-shadow: 0 0 0 2px var(--rosa); }
 .cor-pontos .op-cor { width: 18px; height: 18px; margin: 0; border-radius: 50%; }
+/* Achados: ordem e etiquetas da API (comissão, nota, vendidos, frete) */
+.alternar--ordem { margin-top: 8px; }
+.tags-ex { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.tag-ex { font: 700 11.5px Poppins, sans-serif; padding: 3px 8px; border-radius: 999px; background: #fff3c4; color: #1d1d1f; white-space: nowrap; }
+.tag-ex--com { background: var(--rosa); color: #fff; }
+.tag-ex--frete { background: #dff6e6; color: #146c3a; }
+.pp-item .tags-ex { display: flex !important; flex-wrap: wrap; flex-direction: row; }
+.pp-item .tags-ex .tag-ex { display: inline-block !important; width: auto; }
+.meta-ex { display: block; font-size: 12.5px; }

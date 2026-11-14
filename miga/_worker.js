@@ -11,7 +11,8 @@
  *   GET  /api/status                → diz se a IA está configurada
  *   POST /api/entrar   { codigo }   → confere o código de acesso (APP_SENHA)
  *
- *   GET  /api/catalogo?filtro=moda|beleza|casa|fitness&loja=todas|mercadolivre|shopee
+ *   POST /api/afiliado { url }      → troca um link da Shopee pelo seu link de afiliado
+ *   GET  /api/catalogo?filtro=moda|beleza|casa|fitness&loja=todas|mercadolivre|shopee&ordem=vendidos|comissao|preco
  *                                   → mais vendidos (APIs oficiais), lista limpa para o app
  *
  * Variáveis no Cloudflare (Configurações → Variáveis e segredos):
@@ -170,26 +171,45 @@ function idsShopee(texto) {
   const m2 = t.match(/itemid=(\d{3,})[^\d]+shopid=(\d{3,})/i);
   return m2 ? { loja: m2[2], item: m2[1] } : null;
 }
+/** Chamada assinada à API de Afiliados da Shopee (GraphQL) */
+async function shopeeGQL(query, env) {
+  const corpo = JSON.stringify({ query });
+  const ts = Math.floor(Date.now() / 1000);
+  const assinatura = await sha256Hex(env.SHOPEE_APP_ID + ts + corpo + env.SHOPEE_SECRET);
+  const r = await fetch("https://open-api.affiliate.shopee.com.br/graphql", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `SHA256 Credential=${env.SHOPEE_APP_ID}, Timestamp=${ts}, Signature=${assinatura}` },
+    body: corpo
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || (d.errors && d.errors.length)) throw new Error("Shopee: " + ((d.errors && d.errors[0] && d.errors[0].message) || "erro " + r.status));
+  return d.data || {};
+}
+const CAMPOS_SHOPEE = "itemId shopId productName priceMin priceMax imageUrl offerLink productLink priceDiscountRate sales ratingStar commissionRate commission shopName shopType";
+/** Os números da Shopee num formato só (nota, vendidos, comissão, loja oficial) */
+function extrasShopee(n) {
+  const nota = Number(n.ratingStar) || 0, vendidos = Number(n.sales) || 0, com = Number(n.commissionRate) || 0, tipos = Array.isArray(n.shopType) ? n.shopType : [n.shopType];
+  return { nota: nota ? Math.round(nota * 10) / 10 : null, vendidos: vendidos || null, comissao: com ? Math.round(com * 1000) / 10 : null, comissaoValor: Number(n.commission) || null,
+    lojaOficial: tipos.some((t) => Number(t) === 1), lojaNome: n.shopName || "" };
+}
+/** Troca qualquer link da Shopee pelo link de afiliado (s.shopee.com.br/...) */
+async function linkAfiliadoShopee(url, env) {
+  const d = await shopeeGQL(`mutation { generateShortLink(input: { originUrl: ${JSON.stringify(url)}, subIds: ["miga"] }) { shortLink } }`, env);
+  return (d.generateShortLink && d.generateShortLink.shortLink) || "";
+}
 async function completarPelaApiShopee(dados, env, html) {
   if (dados.loja !== "shopee" || !(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) return dados;
   const ids = idsShopee(dados.urlFinal) || idsShopee(html);
+  try { const l = await linkAfiliadoShopee(dados.urlFinal || dados.url || "", env); if (l) dados.linkAfiliado = l; } catch (e) { /* segue sem trocar o link */ }
   if (!ids) return dados;
   try {
-    const consulta = `{ productOfferV2(shopId: ${Number(ids.loja)}, itemId: ${Number(ids.item)}, page: 1, limit: 1) { nodes { itemId productName priceMin priceMax imageUrl offerLink priceDiscountRate } } }`;
-    const corpo = JSON.stringify({ query: consulta });
-    const ts = Math.floor(Date.now() / 1000);
-    const assinatura = await sha256Hex(env.SHOPEE_APP_ID + ts + corpo + env.SHOPEE_SECRET);
-    const r = await fetch("https://open-api.affiliate.shopee.com.br/graphql", {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `SHA256 Credential=${env.SHOPEE_APP_ID}, Timestamp=${ts}, Signature=${assinatura}` },
-      body: corpo
-    });
-    const d = await r.json().catch(() => ({}));
-    const n = d && d.data && d.data.productOfferV2 && d.data.productOfferV2.nodes && d.data.productOfferV2.nodes[0];
+    const d = await shopeeGQL(`{ productOfferV2(shopId: ${Number(ids.loja)}, itemId: ${Number(ids.item)}, page: 1, limit: 1) { nodes { ${CAMPOS_SHOPEE} } } }`, env);
+    const n = d.productOfferV2 && d.productOfferV2.nodes && d.productOfferV2.nodes[0];
     if (!n) return dados;
     const preco = Number(n.priceMin) || null, desc = Number(n.priceDiscountRate) || 0;
-    const novo = { ...dados, nome: dados.nome || limparTitulo(n.productName || ""), preco: dados.preco || preco, imagem: dados.imagem || n.imageUrl || "" };
+    const novo = { ...dados, ...extrasShopee(n), nome: dados.nome || limparTitulo(n.productName || ""), preco: dados.preco || preco, imagem: dados.imagem || n.imageUrl || "" };
     if (!novo.precoAntigo && preco && desc > 0 && desc < 95) novo.precoAntigo = Math.round(preco / (1 - desc / 100) * 100) / 100;
+    if (!novo.linkAfiliado && n.offerLink) novo.linkAfiliado = n.offerLink;
     novo.completo = !!(novo.nome && novo.preco && novo.imagem);
     return novo;
   } catch (e) { return dados; }
@@ -208,10 +228,9 @@ async function completarPelaApiML(dados, env) {
     if (idItem) {
       const v = await precoML(idItem, token);
       if (v) { dados.preco = v.preco; if (v.precoAntigo && v.precoAntigo > v.preco) dados.precoAntigo = v.precoAntigo; }
-      if (!dados.imagem || !dados.nome) {
-        const r = await getML(`/items/${idItem}`, token);
-        if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); }
-      }
+      const r = await getML(`/items/${idItem}`, token);
+      if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); Object.assign(dados, extrasML(r.dados)); }
+      Object.assign(dados, await notaML(idItem, token));
     } else if (idProduto) {
       const r = await getML(`/products/${idProduto}`, token);
       const b = r.dados || {};
@@ -224,6 +243,10 @@ async function completarPelaApiML(dados, env) {
       if (preco) { dados.preco = preco; if (antigo && antigo > preco) dados.precoAntigo = antigo; }
       if (!dados.nome && b.name) dados.nome = b.name;
       if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url);
+      const bw = b.buy_box_winner || {};
+      if (bw.shipping && bw.shipping.free_shipping) dados.freteGratis = true;
+      if (bw.official_store_id) dados.lojaOficial = true;
+      if (bw.item_id) Object.assign(dados, await notaML(bw.item_id, token));
     }
   } catch (e) { /* fica com o que veio da página */ }
   dados.completo = !!(dados.nome && dados.preco && dados.imagem);
@@ -642,8 +665,22 @@ async function destaquesPorBusca(termo, token, diag) {
   }
   return lista;
 }
+/** Frete grátis, loja oficial e vendidos de um anúncio do Mercado Livre */
+function extrasML(b) {
+  const x = {};
+  if (b.shipping && b.shipping.free_shipping) x.freteGratis = true;
+  if (b.official_store_id) x.lojaOficial = true;
+  if (Number(b.sold_quantity) > 5) x.vendidos = Number(b.sold_quantity);
+  return x;
+}
+/** Nota média das avaliações (estrelas) */
+async function notaML(id, token) {
+  const r = await getML(`/reviews/item/${id}`, token);
+  const m = Number(r.dados && r.dados.rating_average) || 0, total = Number(r.dados && r.dados.paging && r.dados.paging.total) || 0;
+  return m && total >= 3 ? { nota: Math.round(m * 10) / 10, avaliacoes: total } : {};
+}
 function itemML(b, filtro) {
-  return { id: b.id, nome: b.title, preco: b.price || null, precoAntigo: b.original_price || null, imagem: mlHttps(b.thumbnail || ((b.pictures || [])[0] || {}).secure_url), link: b.permalink || `https://produto.mercadolivre.com.br/${String(b.id).replace(/^MLB/, "MLB-")}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false };
+  return { id: b.id, nome: b.title, preco: b.price || null, precoAntigo: b.original_price || null, imagem: mlHttps(b.thumbnail || ((b.pictures || [])[0] || {}).secure_url), link: b.permalink || `https://produto.mercadolivre.com.br/${String(b.id).replace(/^MLB/, "MLB-")}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false, ...extrasML(b) };
 }
 /** Preço atual de um anúncio (o Mercado Livre passou a separar o preço do anúncio) */
 async function precoML(id, token) {
@@ -694,7 +731,8 @@ async function catalogoML(filtro, env) {
       const x = ((it.dados && it.dados.results) || [])[0];
       if (x) { preco = x.price || null; antigo = x.original_price || null; }
     }
-    saida.push({ id: b.id, nome: b.name, preco, precoAntigo: antigo, imagem: mlHttps(((b.pictures || [])[0] || {}).url), link: b.permalink || `https://www.mercadolivre.com.br/p/${b.id}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false });
+    const bw = b.buy_box_winner || {};
+    saida.push({ id: b.id, nome: b.name, preco, precoAntigo: antigo, imagem: mlHttps(((b.pictures || [])[0] || {}).url), link: b.permalink || `https://www.mercadolivre.com.br/p/${b.id}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false, ...(bw.shipping && bw.shipping.free_shipping ? { freteGratis: true } : {}), ...(bw.official_store_id ? { lojaOficial: true } : {}) });
   }
 
   // Produtos de vendedor (USER_PRODUCT)
@@ -721,24 +759,16 @@ async function sha256Hex(texto) {
   const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
   return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-async function catalogoShopee(filtro, env) {
-  const consulta = `{ productOfferV2(keyword: ${JSON.stringify(filtro.shopee)}, sortType: 2, page: 1, limit: 20) { nodes { itemId productName priceMin imageUrl offerLink commissionRate } } }`;
-  const corpo = JSON.stringify({ query: consulta });
-  const ts = Math.floor(Date.now() / 1000);
-  const assinatura = await sha256Hex(env.SHOPEE_APP_ID + ts + corpo + env.SHOPEE_SECRET);
-  const r = await fetch("https://open-api.affiliate.shopee.com.br/graphql", {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `SHA256 Credential=${env.SHOPEE_APP_ID}, Timestamp=${ts}, Signature=${assinatura}` },
-    body: corpo
+// Ordem da Shopee: 2 = mais vendidos, 5 = maior comissão, 4 = menor preço, 1 = relevância
+const ORDEM_SHOPEE = { vendidos: 2, comissao: 5, preco: 4, relevancia: 1 };
+async function catalogoShopee(filtro, env, ordem = "vendidos") {
+  const d = await shopeeGQL(`{ productOfferV2(keyword: ${JSON.stringify(filtro.shopee)}, sortType: ${ORDEM_SHOPEE[ordem] || 2}, page: 1, limit: 20) { nodes { ${CAMPOS_SHOPEE} } } }`, env);
+  const nos = (d.productOfferV2 && d.productOfferV2.nodes) || [];
+  return nos.filter((n) => n.productName && n.offerLink).map((n) => {
+    const preco = Number(n.priceMin) || null, desc = Number(n.priceDiscountRate) || 0;
+    return { id: String(n.itemId), nome: n.productName, preco, precoAntigo: preco && desc > 0 && desc < 95 ? Math.round(preco / (1 - desc / 100) * 100) / 100 : null,
+      imagem: n.imageUrl, link: n.offerLink, loja: "shopee", categoria: filtro.categoria, afiliado: true, ...extrasShopee(n) };
   });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || (d.errors && d.errors.length)) throw new Error("Shopee: " + ((d.errors && d.errors[0] && d.errors[0].message) || "erro " + r.status));
-  const nos = (d.data && d.data.productOfferV2 && d.data.productOfferV2.nodes) || [];
-  return nos.filter((n) => n.productName && n.offerLink).map((n) => ({
-    id: String(n.itemId), nome: n.productName, preco: Number(n.priceMin) || null, precoAntigo: null,
-    imagem: n.imageUrl, link: n.offerLink, loja: "shopee", categoria: filtro.categoria, afiliado: true,
-    comissao: n.commissionRate ? Math.round(Number(n.commissionRate) * 1000) / 10 : null
-  }));
 }
 
 async function rotaCatalogo(request, env) {
@@ -746,17 +776,18 @@ async function rotaCatalogo(request, env) {
   const q = new URL(request.url).searchParams;
   const nomeFiltro = FILTROS_CATALOGO[q.get("filtro")] ? q.get("filtro") : "moda";
   const loja = ["mercadolivre", "shopee"].includes(q.get("loja")) ? q.get("loja") : "todas";
+  const ordem = ORDEM_SHOPEE[q.get("ordem")] ? q.get("ordem") : "vendidos";
   const configurado = { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) };
   if (!configurado.mercadolivre && !configurado.shopee) return json({ configurado, produtos: [], avisos: [] });
 
-  const chave = `${nomeFiltro}-${loja}-${configurado.mercadolivre}-${configurado.shopee}`;
+  const chave = `v2-${nomeFiltro}-${loja}-${ordem}-${configurado.mercadolivre}-${configurado.shopee}`;
   const guardado = await lerCache("catalogo", chave);
   if (guardado) return json({ ...guardado, doCache: true });
 
   const filtro = FILTROS_CATALOGO[nomeFiltro];
   const tarefas = [];
   if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env));
-  if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env));
+  if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem));
   const resultados = await Promise.allSettled(tarefas);
   const produtos = [], avisos = [];
   for (const r of resultados) {
@@ -770,6 +801,17 @@ async function rotaCatalogo(request, env) {
   const resposta = { configurado, produtos: mistura.slice(0, 30), avisos };
   if (mistura.length) await gravarCache("catalogo", chave, resposta, 1800); // 30 minutos
   return json(resposta);
+}
+
+/** POST /api/afiliado { url } → o link de afiliado da Shopee para qualquer link da Shopee */
+async function rotaAfiliado(request, env) {
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  if (!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) return json({ erro: "Chaves da Shopee não cadastradas." }, 503);
+  let b; try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
+  const url = String(b.url || "").trim();
+  if (lojaDaUrl(url) !== "shopee") return json({ erro: "Só funciona com links da Shopee." }, 400);
+  try { const link = await linkAfiliadoShopee(url, env); return link ? json({ link }) : json({ erro: "A Shopee não gerou o link." }, 502); }
+  catch (e) { return json({ erro: e.message }, 502); }
 }
 
 /* ======================= Roteador ======================= */
@@ -786,6 +828,7 @@ export default {
       if (m && m[1] === "status" && metodo === "GET") return rotaStatus(request, env);
       if (m && m[1] === "entrar" && metodo === "POST") return await rotaEntrar(request, env);
       if (m && m[1] === "catalogo" && metodo === "GET") return await rotaCatalogo(request, env);
+      if (m && m[1] === "afiliado" && metodo === "POST") return await rotaAfiliado(request, env);
       if (m) return json({ erro: "Rota não encontrada." }, 404);
     } catch (e) {
       return json({ erro: "Erro no servidor: " + (e.message || e) }, 500);

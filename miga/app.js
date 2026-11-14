@@ -24,6 +24,30 @@
   const urlOk = (u) => /^https?:\/\//i.test(String(u || "").trim());
   const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const brl = (v) => "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  /* ---------- Dados extras das APIs (nota, vendidos, frete, loja oficial, comissão) ---------- */
+  const CAMPOS_EXTRAS = ["nota", "avaliacoes", "vendidos", "freteGratis", "lojaOficial", "comissao", "comissaoValor"];
+  const extrasDe = (d) => { const x = {}; CAMPOS_EXTRAS.forEach((k) => { if (d && d[k] != null && d[k] !== false && d[k] !== "") x[k] = d[k]; }); return x; };
+  const fmtVendidos = (n) => n >= 1e6 ? `+${String(Math.floor(n / 1e5) / 10).replace(".", ",")} mi` : n >= 1000 ? `+${Math.floor(n / 1000)} mil` : `+${n}`;
+  const fmtNota = (n) => String(n).replace(".", ",");
+  /** Etiquetas pequenas: comissão, nota, vendidos, frete */
+  const infoExtras = (p, compacto) => { const l = [];
+    if (compacto) { const tx = [p.nota && `★ ${fmtNota(p.nota)}`, p.vendidos && `${fmtVendidos(p.vendidos)} vendidos`, p.freteGratis && "frete grátis"].filter(Boolean).join(" · ");
+      return (p.comissao ? `<span class="tags-ex"><b class="tag-ex tag-ex--com">ganhe ${String(p.comissao).replace(".", ",")}%${p.comissaoValor ? ` · ${brl(p.comissaoValor)}` : ""}</b></span>` : "") + (tx ? `<span class="meta meta-ex">${tx}</span>` : ""); }
+    if (p.comissao) l.push(`<b class="tag-ex tag-ex--com">ganhe ${String(p.comissao).replace(".", ",")}%${p.comissaoValor && p.preco ? ` · ${brl(p.comissaoValor)}` : ""}</b>`);
+    if (p.nota) l.push(`<b class="tag-ex">★ ${fmtNota(p.nota)}</b>`); if (p.vendidos) l.push(`<b class="tag-ex">${fmtVendidos(p.vendidos)} vendidos</b>`);
+    if (p.freteGratis) l.push('<b class="tag-ex tag-ex--frete">Frete grátis</b>'); if (p.lojaOficial) l.push('<b class="tag-ex">Loja oficial</b>');
+    return l.length ? `<span class="tags-ex">${l.join("")}</span>` : ""; };
+  let selosAuto = true; try { selosAuto = localStorage.getItem("miga_selos") !== "0"; } catch (e) { /* segue */ }
+  /** Selos das artes: ★ nota, vendidos, frete grátis, loja oficial (no máximo 3) */
+  function selosDoItem(it) {
+    if (!selosAuto || !it) return [];
+    const l = [];
+    if (it.nota >= 4) l.push(["estrela", fmtNota(it.nota)]);
+    if (it.vendidos >= 50) l.push(["", `${fmtVendidos(it.vendidos)} vendidos`]);
+    if (it.freteGratis) l.push(["", "Frete grátis"]);
+    if (it.lojaOficial) l.push(["", "Loja oficial"]);
+    return l.slice(0, 3);
+  }
   const paraCampo = (n) => (n ? n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
   const novoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const dataCurta = (t) => new Date(t).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -659,6 +683,7 @@
       if (d.preco) c.precoNovo.value = paraCampo(d.preco);
       if (d.precoAntigo) c.precoAntigo.value = paraCampo(d.precoAntigo);
       if (d.imagem) { c.imagemUrl.value = d.imagem; definirFoto(d.imagem); }
+      if (d.linkAfiliado && d.linkAfiliado !== link) { c.link.value = d.linkAfiliado; toast("Link trocado pelo seu link de afiliado da Shopee ✓"); }
       atualizarSelo();
       const falta = [!d.imagem && "foto", !d.nome && "nome", !d.preco && "preço"].filter(Boolean);
       if (d.loja === "shopee" && falta.length) {
@@ -854,7 +879,7 @@
 
   /* =========================== Catálogo (mais vendidos) =========================== */
   const catFiltro = grupoBotoes("#catFiltro", "v");
-  const catLoja = grupoBotoes("#catLoja", "v");
+  const catLoja = grupoBotoes("#catLoja", "v"), catOrdem = grupoBotoes("#catOrdem", "v");
   let catalogoAtual = [], catalogoCarregado = false;
 
   function esqueletoCatalogo() {
@@ -869,7 +894,7 @@
     try {
       // Sem categorias: junta os mais vendidos de todas, só filtrando pela loja
       const FILTROS = ["moda", "beleza", "perfumes", "acessorios", "fitness", "saude", "casa"];
-      const rs = await Promise.allSettled(FILTROS.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}`)));
+      const rs = await Promise.allSettled(FILTROS.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`)));
       const ok = rs.filter((r) => r.status === "fulfilled").map((r) => r.value);
       if (!ok.length) throw (rs[0] && rs[0].reason) || new Error("catálogo");
       const vistos = new Set(), listas = ok.map((x) => x.produtos || []), todos = [];
@@ -890,6 +915,9 @@
     }
     if (d.avisos && d.avisos.length) console.info("Catálogo:", d.avisos.join(" | "));
     catalogoAtual = d.produtos || [];
+    const ord = catOrdem.valor();
+    if (ord === "comissao") catalogoAtual.sort((a, b) => (b.comissao || 0) - (a.comissao || 0));
+    if (ord === "preco") catalogoAtual.sort((a, b) => (a.preco || 1e9) - (b.preco || 1e9));
     if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Sem achados nessa loja agora. Escolha outra loja.</p>'; return; }
     pintarAchados();
   }
@@ -899,11 +927,11 @@
     $("#acTotal").textContent = `${l.length} ${l.length === 1 ? "achado" : "achados"}`;
     $("#catalogo").innerHTML = l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
       return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
-        <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}${p.comissao ? ` · comissão ${String(p.comissao).replace(".", ",")}%` : ""}</span></span>
+        <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
       </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>` : '<p class="vazio-lista">Nada encontrado nos achados.</p>';
   }
   $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(pintarAchados, 150); });
-  [$("#catFiltro"), $("#catLoja")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
+  [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(carregarCatalogo, 0); }));
   // Aba de categoria escolhida sempre visível (desliza até ela)
   $("#catFiltro").addEventListener("click", (e) => {
     const b = e.target.closest("button");
@@ -946,7 +974,7 @@
       let link = p.link; if (!p.afiliado) { link = await pedirLinkAfiliado(p); if (!link) return; }
       const ja = fila().find((i) => mesmoProduto(i, link)); if (ja) { toast("Esse produto já está na sua lista"); return; }
       const sug = adivinharCategoria(p.nome), c = await escolherCategoria({ sugestao: sug, nome: p.nome }); if (!c) return;
-      const it = { id: novoId(), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "", categoria: c, catV2: true, texto: "", feito: {}, criadoEm: Date.now() };
+      const it = { ...extrasDe(p), id: novoId(), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "", categoria: c, catV2: true, texto: "", feito: {}, criadoEm: Date.now() };
       fila().unshift(it); salvarFila(true); contarFila();
       toastAcao(`Adicionado em ${NOME_CAT[c]}`, "Ver na lista", () => { filtroLista = c; irPara("postar"); });
       return;
@@ -1203,7 +1231,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=197"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=198"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1605,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=197"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=198"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1819,6 +1847,7 @@
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value); config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos ✓"); });
+  $("#ajSelos").addEventListener("change", (e) => { selosAuto = e.target.checked; try { localStorage.setItem("miga_selos", selosAuto ? "1" : "0"); } catch (er) { /* segue */ } toast(selosAuto ? "Selos ligados nas artes" : "Selos desligados nas artes"); });
   $("#ajOcultarPostados").addEventListener("change", (e) => { config.ocultarPostados = e.target.checked; gravarConfig(); renderFila(); toast(e.target.checked ? "Postados ocultos da Lista" : "Postados de volta na Lista"); });
   function renderFila() {
     migrarCategorias(); renderCatsLista(); pintarMarcados();
@@ -1840,7 +1869,7 @@
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           ${i.precoNovo ? `<span class="pp-preco">${brl(i.precoNovo)}${i.precoAntigo && i.precoAntigo > i.precoNovo ? `<s>${brl(i.precoAntigo)}</s>` : ""}</span>` : ""}
-          <span class="meta">${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>
+          <span class="meta">${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
           ${post ? `<span class="pp-onde">${onde.length ? esc(onde.join(", ")) + " · " : ""}${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
         <span class="seta">›</span>
@@ -1911,6 +1940,8 @@
       if (d.precoAntigo) item.precoAntigo = d.precoAntigo;
       if (d.imagem) item.imagem = d.imagem;
       if (d.urlFinal) item.urlFinal = d.urlFinal;
+      Object.assign(item, extrasDe(d));
+      if (d.linkAfiliado && d.linkAfiliado !== item.link) { item.linkOriginal = item.link; item.link = d.linkAfiliado; toast("Link trocado pelo seu link de afiliado da Shopee ✓"); }
       // O link encurtado levou a um produto que já está na lista
       const repetido = fila().find((i) => i !== item && mesmoProduto(i, item.urlFinal || item.link));
       if (repetido) {
@@ -5833,6 +5864,16 @@
     });
     ctx.textAlign = "center"; return linhas.length;
   }
+  /** Pílulas brancas com contorno, na borda de baixo da foto */
+  function selosArte(ctx, sl) {
+    ctx.save(); ctx.font = "800 38px Poppins"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    const h = 70, gap = 14, ws = sl.map(([ic, tx]) => ctx.measureText(tx).width + 44 + (ic ? 40 : 0)); let x = -(ws.reduce((a, b) => a + b, 0) + gap * (sl.length - 1)) / 2;
+    sl.forEach(([ic, tx], i) => { const w = ws[i]; ctx.save(); ctx.shadowColor = "rgba(0,0,0,.18)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 5; retArredondado(ctx, x, -h / 2, w, h, h / 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
+      ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; retArredondado(ctx, x, -h / 2, w, h, h / 2); ctx.stroke();
+      let tx0 = x + 22; if (ic === "estrela") { ctx.save(); ctx.translate(x + 40, 0); ctx.beginPath(); for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5 - Math.PI / 2, r = k % 2 ? 7.5 : 17; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r + 1); } ctx.closePath(); ctx.fillStyle = "#ffc31f"; ctx.fill(); ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); tx0 += 40; }
+      ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, tx0, 2); x += w + gap; });
+    ctx.restore();
+  }
   function produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 760, cima = MODELOS_CIMA.has(D.chave), OY = cima ? 92 : 0, FY = 820 + OY;
@@ -5850,6 +5891,7 @@
       else iconeReels(ctx, "bolsa", 300);
     });
     if (it.loja) comPulo(ctx, t, A(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
+    const sl = selosDoItem(it); if (sl.length) comPulo(ctx, t, A(2.5), 540, FY + L / 2, () => selosArte(ctx, sl));
     // Selo de desconto liso no canto da foto
     if (off >= 5) comPulo(ctx, t, A(2), 540 + L / 2 - 30, FY - L / 2 + 62, () => {
       ctx.rotate(0.08 + (flutua != null ? 0.06 * Math.sin(flutua * 1.4) : 0)); { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? ((C.fundo === "#e8336d") ? "#ffd23f" : "#e8336d") : C.pill; ctx.fill(); ctx.restore();
@@ -7078,7 +7120,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function abrirConfig() {
     mostrarConta();
-    $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados;
+    $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados; $("#ajSelos").checked = selosAuto;
     pintarAjustes();
     if (!dialogo.open) dialogo.showModal();
   }
