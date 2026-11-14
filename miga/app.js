@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=213"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=214"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=213"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=214"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6290,6 +6290,19 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   };
   const CENA_PT = { perfumes: "borrifa no pulso e sorri", looks: "vestindo a peça no espelho", fitness: "vestindo e alongando", calcados: "calçando e dando dois passos", acessorios: "usando e ajeitando", maquiagem: "passando no espelho", skincare: "aplicando no rosto", cabelo: "passando no cabelo", suplementos: "mostrando e preparando", eletronicos: "usando e reagindo", casa: "usando em casa", outros: "mostrando para a câmera" };
   const LIMITE_PROMPT = 900;
+  // Detalhe de cada categoria para a foto limpa do produto
+  const LIMPAR_CAT = { perfumes: "Mostre o frasco sem a tampa, com o borrifador à mostra.", looks: "Mostre só a peça, sem modelo e sem manequim, de frente, bem esticada e sem amassados.", fitness: "Mostre só as peças, sem modelo, de frente, bem esticadas.", calcados: "Mostre o par, de lado, com o solado aparecendo.", acessorios: "Mostre o acessório inteiro, de frente, com as alças ou correntes à mostra.", maquiagem: "Mostre a embalagem aberta ao lado da tampa, com o produto aparecendo.", skincare: "Mostre a embalagem de frente, com o rótulo bem legível.", cabelo: "Mostre a embalagem de frente, com o rótulo bem legível.", suplementos: "Mostre o pote de frente, com o rótulo bem legível.", eletronicos: "Mostre o aparelho inteiro, de frente, com acabamento brilhante.", casa: "Mostre o produto inteiro, de frente.", outros: "Mostre o produto inteiro, de frente." };
+  function promptLimparProduto(it) {
+    const nome = limparNome(it.nome || "o produto").slice(0, 90);
+    return `Edite a foto anexada do produto "${nome}" para virar uma foto de catálogo limpa e de alta qualidade.
+- Remova o fundo e deixe fundo branco liso, com uma sombra suave embaixo.
+- Remova textos, preços, selos, logos de loja, marcas d'água, setas, mãos e qualquer objeto que não seja o produto.
+- ${LIMPAR_CAT[it.categoria] || LIMPAR_CAT.outros}
+- Produto inteiro, centralizado, sem cortar nenhuma parte.
+- NÃO altere o produto: mesma cor, formato, tamanho, rótulo, letras e logotipo da marca.
+- Melhore a nitidez e a luz, alta resolução, aparência de foto profissional real.
+- Formato quadrado 1:1. Não adicione nada novo.`.slice(0, LIMITE_PROMPT);
+  }
   const lsPers = { ler: (k, d) => { try { const v = localStorage.getItem("miga_pers_" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, gravar: (k, v) => { try { localStorage.setItem("miga_pers_" + k, JSON.stringify(v)); return true; } catch (e) { return false; } } };
   const POS_PADRAO = { logo: "br", selo: "tr", arroba: "base", preco: "base", nome: "preco", chamada: "topo", cupom: "preco" };
   const pe = () => wz.pe;
@@ -6335,6 +6348,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="pe-fotos">${[0, 1].map((i) => `<label class="pe-foto${f[i] ? " on" : ""}"${f[i] ? ` style="background-image:url(${f[i]})"` : ""}><input type="file" accept="image/*" data-pe-foto="${i}" hidden><span>${f[i] ? `Foto ${i + 1} · trocar` : `+ Foto ${i + 1}`}</span></label>`).join("")}</div>
         <b class="ch-rot">Produto</b>
         <div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>Categoria: ${esc(NOME_CAT[it.categoria] || "Outros")} · cena: ${esc(CENA_PT[it.categoria] || CENA_PT.outros)} · roupa nova</small></span></div>
+        <details class="pe-limpar"${it.fotoLimpa ? "" : " open"}><summary>${it.fotoLimpa ? "✓ Foto do produto limpa" : "Antes: deixe a foto do produto limpa"}</summary>
+          <p class="nota">Use no ChatGPT com a foto do produto: tira fundo, textos, selos e marcas d'água e melhora a qualidade, sem mudar o produto.</p>
+          <div class="duas"><button type="button" class="btn btn--branco" id="peLimparCopiar">Copiar prompt da foto</button><button type="button" class="btn btn--branco" id="peLimparBaixar">Baixar foto do produto</button></div>
+          <label class="btn btn--rosa pe-escolher"><input type="file" accept="image/*" id="peLimparFoto" hidden>Já limpei: usar a foto nova</label>
+        </details>
         <div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-tipo="imagem" aria-checked="${P.tipo === "imagem"}">📸 Imagem</button><button type="button" role="radio" data-pe-tipo="video" aria-checked="${P.tipo === "video"}">🎬 Vídeo</button></div>
         <div class="campo"><span>Como ela é (vai no prompt, opcional)</span><textarea id="peFicha" rows="2" maxlength="220" placeholder="Ex.: 27 anos, cabelo castanho ondulado no ombro, sardas leves, argolas douradas">${esc(lsPers.ler("ficha", ""))}</textarea></div>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
@@ -6472,6 +6490,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.canal !== "personagem") return; const P = pe();
     const fo = e.target.dataset && e.target.dataset.peFoto; if (fo != null && e.target.files[0]) {
       try { const f = fotosPers(); f[+fo] = await compactarArquivo(e.target.files[0]); if (!lsPers.gravar("fotos", f)) toast("Foto grande demais para guardar: ela vale só agora"); P.fotosAgora = f; mostrarPasso(); } catch (err) { toast("Não consegui abrir a foto"); } return; }
+    if (e.target.id === "peLimparFoto" && e.target.files[0]) {
+      const it = wzItem(), f = e.target.files[0];
+      try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); it.fotoLimpa = true; salvarFila(true); toast("Foto do produto trocada pela limpa ✓"); mostrarPasso(); } catch (err) { toast("Não consegui abrir a foto"); }
+      return;
+    }
     if (e.target.id === "peMidia" && e.target.files[0]) {
       const arq = e.target.files[0]; if (P.midia && P.midia.url) URL.revokeObjectURL(P.midia.url); P.resultado = null;
       if (arq.type.startsWith("video/")) { const url = URL.createObjectURL(arq), v = document.createElement("video"); v.src = url; v.muted = true; v.playsInline = true; v.loop = true; await new Promise((ok) => { v.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 5000); }); P.midia = { tipo: "video", url, video: v }; }
@@ -6488,6 +6511,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.canal !== "personagem") return; const t = e.target, P = pe(), it = wzItem();
     const tp = t.closest("[data-pe-tipo]"); if (tp) { P.tipo = tp.dataset.peTipo; mostrarPasso(); return; }
     const ps = t.closest("[data-pe-pos]"); if (ps) { const [k, v] = ps.dataset.pePos.split(":"); P.pos[k] = v; lsPers.gravar("pos", P.pos); ps.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ps)); P.resultado = null; return; }
+    if (t.closest("#peLimparCopiar")) { if (await copiarTexto(promptLimparProduto(it))) toast("Prompt copiado: cole no ChatGPT com a foto do produto"); return; }
+    if (t.closest("#peLimparBaixar")) { const a = await arquivoDaImagem(it.imagem); if (a) { baixarBlob(a, nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + "-produto." + (a.type.split("/")[1] || "jpg").replace("jpeg", "jpg")); toast("Foto do produto salva"); } else toast("Não consegui baixar a foto"); return; }
     if (t.closest("#peAbrirGPT")) { window.open("https://chatgpt.com/", "_blank", "noopener"); return; }
     if (t.closest("#peAbrirGemini")) { window.open("https://gemini.google.com/app", "_blank", "noopener"); return; }
     if (t.closest("#peJaCriei")) { wz.passo = "peMontar"; mostrarPasso(); scrollTo(0, 0); return; }

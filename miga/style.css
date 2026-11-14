@@ -1798,3 +1798,6 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pe-linha { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; align-items: center; margin: 6px 0; }
 .pe-linha > b { font-size: 13px; }
 .pe-linha .ed-chips { margin: 0; }
+.pe-limpar { margin: 12px 0 4px; padding: 10px 12px; border-radius: 16px; background: #fff3c4; }
+.pe-limpar summary { font-weight: 700; cursor: pointer; }
+.pe-limpar .duas .btn { font-size: 13px; }
