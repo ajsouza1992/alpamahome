@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=231"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=232"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=231"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=232"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6410,7 +6410,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
   function abrirPersonagem(it) {
     calcFundoAuto(it);
-    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
+    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { cantoLogo: (lsPers.ler("cantos", {}) || {}).logo || "br", cantoArroba: (lsPers.ler("cantos", {}) || {}).arroba || "bl", roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
     sortearRoupa(wz.pe); marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const fotosPers = () => lsPers.ler("fotos", [null, null]);
@@ -6489,24 +6489,47 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       const pos = P.pos, ch = (k, lista) => `<div class="pe-linha"><b>${{ logo: "Logo Miga", selo: "Selo %", arroba: "@ da Miga", preco: "Preço", nome: "Nome", chamada: "Chamada", cupom: "Cupom" }[k]}</b><div class="ed-chips">${lista.map(([v, n]) => `<button type="button" data-pe-pos="${k}:${v}" class="${pos[k] === v ? "on" : ""}">${n}</button>`).join("")}</div></div>`;
       const cantos = [["tl", "↖"], ["tr", "↗"], ["bl", "↙"], ["br", "↘"]];
       const r = P.resultado;
-      c.innerHTML = `<h2 class="wz-titulo">Edição: textos, logo e @</h2>
-        ${P.midia ? "" : '<p class="nota">Escolha a foto ou o vídeo que a IA criou. A imagem fica inteira, sem moldura: a Miga só coloca os textos por cima.</p>'}
+      const cc = (k, atual) => `<div class="ed-chips pe-cantos">${cantos.map(([v, n]) => `<button type="button" data-pe-canto="${k}:${v}" class="${atual === v ? "on" : ""}">${n}</button>`).join("")}</div>`;
+      if (P.legenda == null) P.legenda = legendaCriacao(P, it);
+      c.innerHTML = `<h2 class="wz-titulo">Logo, @ e legenda</h2>
+        ${P.midia ? "" : '<p class="nota">Escolha a foto ou o vídeo que a IA criou. Ela fica inteira; a Miga só coloca o logo e o @ num canto.</p>'}
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="image/*,video/*" id="peMidia" hidden>${P.midia ? "Trocar a foto/vídeo da IA" : "Escolher a foto ou o vídeo da IA"}</label>
         <div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${r ? `<figure class="rp-video"><video src="${r.url}" controls playsinline></video></figure>` : ""}
-        <p class="nota pe-dica">${P.midia ? "Arraste os textos, o logo e o selo para onde quiser. Toque em um item para aumentar, diminuir ou tirar." : ""}</p>
-        <div class="pe-barra" id="peBarra">${barraLivre(P)}</div>
-        <b class="ch-rot">Textos</b>
-        <div class="campo"><span>Chamada</span><input data-pe-tx="chamada" value="${esc(P.tx.chamada)}" maxlength="40"></div>
-        <div class="campo"><span>Nome</span><input data-pe-tx="nome" value="${esc(P.tx.nome)}" maxlength="80"></div>
-        <div class="duas"><div class="campo"><span>De</span><input data-pe-tx="de" value="${esc(P.tx.de)}" maxlength="20"></div><div class="campo"><span>Por</span><input data-pe-tx="por" value="${esc(P.tx.por)}" maxlength="20"></div></div>
-        <div class="duas"><div class="campo"><span>Cupom</span><input data-pe-tx="cupom" value="${esc(P.tx.cupom)}" maxlength="20"></div><div class="campo"><span>Selo</span><input data-pe-tx="selo" value="${esc(P.tx.selo)}" maxlength="10" placeholder="-40%"></div></div>
+        <div class="pe-cantos-l"><div><b class="ch-rot">Logo Miga</b>${cc("logo", P.cantoLogo || "br")}</div><div><b class="ch-rot">@ da Miga</b>${cc("arroba", P.cantoArroba || "bl")}</div></div>
+        <div class="campo"><span>Legenda pronta (pode editar)</span><textarea id="peLegenda" rows="9">${esc(P.legenda)}</textarea></div>
+        <button type="button" class="btn btn--branco" id="peCopiarLeg">Copiar legenda</button>
         ${!P.midia ? "" : P.midia.tipo === "video"
           ? `<div class="vd-progresso" id="peProgresso" hidden><i></i></div><button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`
           : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}
+        <p class="nota">Ao postar, a legenda já vai copiada: é só colar no Instagram.</p>
         <button type="button" class="btn btn--branco pe-nav" id="peVoltar">Voltar ao prompt</button>`;
       carregarMarca().then(() => loopPersonagem());
     }
+  }
+  /** Legenda pronta do post: produto (nome, preço, cupom) ou o assunto do vídeo sem produto, com 5 hashtags */
+  function legendaCriacao(P, it) {
+    const at = arroba(config.instagram) || "@migapromo.oficial";
+    const TAGS = { perfumes: "#perfume #perfumes #perfumefeminino", looks: "#moda #lookdodia #modafeminina", fitness: "#modafitness #treino #legging", calcados: "#calcados #tenis #sandalias", acessorios: "#acessorios #bolsas #bijuterias", maquiagem: "#maquiagem #make #makebarata", skincare: "#skincare #pele #autocuidado", cabelo: "#cabelo #cabelos #cuidadoscomocabelo", suplementos: "#suplementos #whey #creatina", eletronicos: "#tecnologia #eletronicos #fone", casa: "#casa #decoracao #organizacao", outros: "#achadinhos #utilidades #dicas" };
+    if (P.tipo === "chamada" || !it) { const a = assuntoDe(P); return `${String(P.falaMeio != null ? P.falaMeio : a[2]).trim()} 💖\n\nSegue a ${at} pra não perder nenhuma promoção! 🛍️\n\n#achadinhos #promocao #cupomdedesconto #ofertas #migapromo`; }
+    const nome = limparNome(it.nome || ""), preco = it.precoNovo ? (it.precoAntigo && it.precoAntigo > it.precoNovo ? `💸 De ${brl(it.precoAntigo)} por ${brl(it.precoNovo)}` : `💸 por apenas ${brl(it.precoNovo)}`) : "";
+    const tags = (TAGS[it.categoria] || TAGS.outros).split(" ").slice(0, 3).join(" ") + " #achadinhos #promocao";
+    return [`✨ ${nome}`, "", preco, it.cupom ? `🎟️ Cupom: ${String(it.cupom).toUpperCase()}` : "", "", FRASES[it.categoria] || "Achadinho com preço de amiga 💖", "", `🔗 Link na bio (${at})`, "Corre que esse preço não costuma durar ⏳", "", tags].filter((l, i, a) => l !== "" || (a[i - 1] !== "" && i > 0)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+  /** A foto/vídeo da IA inteira + o logo e o @ nos cantos escolhidos */
+  function quadroLogoArroba(ctx, W, fonte, P) {
+    const x = ctx, k = W / 1080, H = altPers(P); x.save(); x.scale(k, k);
+    x.fillStyle = "#1d1d1f"; x.fillRect(0, 0, 1080, H);
+    const fw = fonte ? (fonte.videoWidth || fonte.width) : 0, fh = fonte ? (fonte.videoHeight || fonte.height) : 0;
+    if (fw) { const s = Math.max(1080 / fw, H / fh); x.imageSmoothingQuality = "high"; x.drawImage(fonte, (1080 - fw * s) / 2, (H - fh * s) / 2, fw * s, fh * s); }
+    else { x.fillStyle = "#cfc6b4"; x.fillRect(0, 0, 1080, H); x.font = "700 46px Poppins"; x.fillStyle = "rgba(255,255,255,.9)"; x.textAlign = "center"; x.fillText("Foto ou vídeo da IA aqui", 540, H / 2); }
+    const M = 48, tl = 170, cl = P.cantoLogo || "br", ca = P.cantoArroba || "bl", at = arroba(config.instagram) || "@migapromo.oficial";
+    const lx = cl[1] === "l" ? M : 1080 - M - tl, ly = cl[0] === "t" ? M : H - M - tl;
+    if (edMarca) x.drawImage(edMarca, lx, ly, tl, tl);
+    x.font = "800 40px Poppins"; const tw = x.measureText(at).width; let ax = ca[1] === "l" ? M + tw / 2 : 1080 - M - tw / 2, ay = ca[0] === "t" ? M + 48 : H - M - 12;
+    if (ca === cl) { ax = ca[1] === "l" ? lx + tl + 18 + tw / 2 : lx - 18 - tw / 2; ay = ly + tl / 2 + 14; }
+    textoContorno(x, at, ax, ay, 40, "#ffffff", 800, "center");
+    x.restore();
   }
   /** Texto sem fundo: letra com contorno escuro (lê em qualquer foto) */
   function textoContorno(x, txt, px, py, tam, cor, peso = 800, alinhar = "center", riscado = false) {
@@ -6569,7 +6592,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function loopPersonagem() {
     const cv = $("#peQuadro"); if (!cv) return; const cx = cv.getContext("2d"), P = pe();
     const passo = () => { if ($("#peQuadro") !== cv || wz.canal !== "personagem" || wz.passo !== "peMontar") { if (P.midia && P.midia.video) P.midia.video.pause(); return; }
-      if (!P.gravando) quadroPersonagem(cx, 540, P.midia ? (P.midia.video || P.midia.bmp) : null, P, true); requestAnimationFrame(passo); };
+      if (!P.gravando) quadroLogoArroba(cx, 540, P.midia ? (P.midia.video || P.midia.bmp) : null, P); requestAnimationFrame(passo); };
     if (P.midia && P.midia.video) { P.midia.video.muted = true; P.midia.video.loop = true; P.midia.video.play().catch(() => {}); }
     passo();
   }
@@ -6586,18 +6609,18 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (M0.video) M0.video.pause(); P.gravando = true;
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 }), partes = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
     const fim = new Promise((ok) => { rec.onstop = ok; });
-    quadroPersonagem(ctx, 1080, v, P); rec.start(); manterTelaAcesa(true);
+    quadroLogoArroba(ctx, 1080, v, P); rec.start(); manterTelaAcesa(true);
     try { await v.play(); } catch (e) { v.muted = true; await v.play().catch(() => {}); }
-    await new Promise((ok) => { const passo = () => { if (v.ended || v.currentTime >= total - 0.03) { ok(); return; } quadroPersonagem(ctx, 1080, v, P); if (previa) previa.drawImage(tela, 0, 0, 540, 960);
+    await new Promise((ok) => { const passo = () => { if (v.ended || v.currentTime >= total - 0.03) { ok(); return; } quadroLogoArroba(ctx, 1080, v, P); if (previa) previa.drawImage(tela, 0, 0, 540, 960);
       const pc = Math.min(100, Math.round((v.currentTime / total) * 100)); if (btn) btn.textContent = "Gravando… " + pc + "%"; if (barra) barra.querySelector("i").style.width = pc + "%"; requestAnimationFrame(passo); }; passo(); });
-    quadroPersonagem(ctx, 1080, v, P); await new Promise((ok) => setTimeout(ok, 300));
+    quadroLogoArroba(ctx, 1080, v, P); await new Promise((ok) => setTimeout(ok, 300));
     rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); P.gravando = false; if (ac) ac.close().catch(() => {});
     const mp4 = tipo.startsWith("video/mp4"); let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
     blob = await somCompativel(blob, tipo, (m) => { if (btn) btn.textContent = m; });
     const nome = nomeArquivo(wzItem() ? wzItem().nome : "criacao-ia").replace(/\.jpe?g$/i, "") + "-personagem." + (mp4 ? "mp4" : "webm");
     P.resultado = { blob, url: URL.createObjectURL(blob), nome, mp4 }; mostrarPasso(); toast("Vídeo pronto");
   }
-  async function imagemPersonagem() { const tela = document.createElement("canvas"); tela.width = 1080; tela.height = altPers(pe()); await carregarMarca(); quadroPersonagem(tela.getContext("2d"), 1080, pe().midia && pe().midia.bmp, pe()); return telaParaJpeg(tela, nomeArquivo(wzItem() ? wzItem().nome : "criacao-ia").replace(/\.jpe?g$/i, "") + "-personagem.jpg"); }
+  async function imagemPersonagem() { const tela = document.createElement("canvas"); tela.width = 1080; tela.height = altPers(pe()); await carregarMarca(); quadroLogoArroba(tela.getContext("2d"), 1080, pe().midia && pe().midia.bmp, pe()); return telaParaJpeg(tela, nomeArquivo(wzItem() ? wzItem().nome : "criacao-ia").replace(/\.jpe?g$/i, "") + "-personagem.jpg"); }
   async function compartilharArquivo(arq) {
     if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
     baixarBlob(arq, arq.name); toast("Salvo: abra o Instagram e escolha da galeria");
@@ -6605,7 +6628,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   let arrastoPe = null;
   const pontoPe = (e, cv, P) => { const r = cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * 1080, ((e.clientY - r.top) / r.height) * altPers(P)]; };
   $("#wzCorpo").addEventListener("pointerdown", (e) => {
-    const cv = e.target.closest && e.target.closest("#peQuadro"); if (!cv || wz.canal !== "personagem") return; const P = pe(); if (!P.midia) return;
+    const cv = e.target.closest && e.target.closest("#peQuadro"); if (!cv || wz.canal !== "personagem" || !$("#peBarra")) return; const P = pe(); if (!P.midia) return;
     const [px, py] = pontoPe(e, cv, P), cx = P._caixas || {}, ordem = ["arroba", "logo", "selo", "cupom", "preco", "nome", "chamada"];
     const k = ordem.find((n) => cx[n] && px >= cx[n][0] && px <= cx[n][0] + cx[n][2] && py >= cx[n][1] && py <= cx[n][1] + cx[n][3]);
     if (P.selLivre !== (k || null)) { P.selLivre = k || null; $("#peBarra").innerHTML = barraLivre(P); }
@@ -6641,6 +6664,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   });
   $("#wzCorpo").addEventListener("input", (e) => {
     if (wz.canal !== "personagem") return; const P = pe();
+    if (e.target.id === "peLegenda") { P.legenda = e.target.value; return; }
     if (e.target.id === "pePrompt") { P.promptEd = e.target.value; const sp = e.target.previousElementSibling; if (sp) sp.textContent = `Prompt (pode editar · ${e.target.value.length}/900)`; return; }
     if (e.target.id === "peLimparTxt") { P.limparTxt = e.target.value; return; }
     if (e.target.id === "peFalaMeio") { P.falaMeio = e.target.value; P.promptEd = null; const pr = promptChamadaPers(P), tt = $("#pePrompt"); if (tt) { tt.value = pr; tt.previousElementSibling.textContent = `Prompt (pode editar · ${pr.length}/900)`; } return; }
@@ -6687,11 +6711,13 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       if (arq) baixarBlob(arq, arq.name); toast(arq ? "Prompt copiado e foto do produto salva: anexe as fotos dela na IA" : "Prompt copiado: cole na IA e anexe as fotos dela"); return;
     }
 
+    const cn = t.closest("[data-pe-canto]"); if (cn) { const [k, v] = cn.dataset.peCanto.split(":"); if (k === "logo") P.cantoLogo = v; else P.cantoArroba = v; lsPers.gravar("cantos", { logo: P.cantoLogo, arroba: P.cantoArroba }); P.resultado = null; cn.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === cn)); return; }
+    if (t.closest("#peCopiarLeg")) { if (await copiarTexto($("#peLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
     if (t.closest("#peBaixarV")) { baixarBlob(P.resultado.blob, P.resultado.nome); toast("Vídeo salvo"); return; }
-    if (t.closest("#pePostarV")) { compartilharArquivo(new File([P.resultado.blob], P.resultado.nome, { type: P.resultado.blob.type })); return; }
+    if (t.closest("#pePostarV")) { await copiarTexto($("#peLegenda").value); toast("Legenda copiada: cole no Instagram"); compartilharArquivo(new File([P.resultado.blob], P.resultado.nome, { type: P.resultado.blob.type })); return; }
     if (t.closest("#peBaixarI")) { const a = await imagemPersonagem(); if (a) { baixarBlob(a, a.name); toast("Imagem salva"); } return; }
-    if (t.closest("#pePostarI")) { const a = await imagemPersonagem(); if (a) compartilharArquivo(a); return; }
+    if (t.closest("#pePostarI")) { await copiarTexto($("#peLegenda").value); toast("Legenda copiada: cole no Instagram"); const a = await imagemPersonagem(); if (a) compartilharArquivo(a); return; }
   });
   /* ===================== Tema pronto: "Corre pros Stories" (Reels chamando pros stories) ===================== */
   const NICHOS_CHAMADA = {
@@ -6981,7 +7007,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (e.target.dataset.i != null) { const D = dadosChamada(CH); CH.tx[k] = D[k].slice(); CH.tx[k][+e.target.dataset.i] = e.target.value; } else CH.tx[k] = e.target.value;
   });
   $("#folhaEst").addEventListener("click", (e) => {
-    if (wz.canal === "personagem") { const b = e.target.closest("[data-pe-prod]"); if (b) { wz.itemId = b.dataset.peProd; wz.pe.tx = null; wz.pe.promptEd = null; wz.pe.limparTxt = null; wz.pe.fundoAuto = null; calcFundoAuto(wzItem()); $("#folhaEst").close(); mostrarPasso(); } return; }
+    if (wz.canal === "personagem") { const b = e.target.closest("[data-pe-prod]"); if (b) { wz.itemId = b.dataset.peProd; wz.pe.tx = null; wz.pe.promptEd = null; wz.pe.limparTxt = null; wz.pe.legenda = null; wz.pe.fundoAuto = null; calcFundoAuto(wzItem()); $("#folhaEst").close(); mostrarPasso(); } return; }
     if (wz.canal !== "chamada") return; const CH = ch();
     if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast(CH.tipo === "seg" ? "Textos padrão de volta" : "Textos do nicho de volta"); return; }
     if (e.target.closest("#chPrompt")) { const as = ($("#chAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#chAssunto").focus(); return; } CH.assunto = as; copiarTexto(promptChamada(as)).then((ok) => ok && toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie")); return; }

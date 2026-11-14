@@ -1847,3 +1847,10 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pe-sel-it, .pe-fora { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
 .pe-sel-it b { font-size: 14px; margin-right: 4px; }
 .pe-fora span { font-size: 12.5px; color: var(--cinza); }
+.pe-cantos-l { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0 12px; }
+.pe-cantos { flex-wrap: nowrap !important; }
+.pe-cantos button { min-width: 44px; justify-content: center; font-size: 18px; }
+.pe-cantos-l { grid-template-columns: 1fr !important; gap: 6px !important; }
+.pe-cantos-l > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pe-cantos-l .ch-rot { margin: 0; }
+.pe-cantos { margin: 0 !important; gap: 6px; }
