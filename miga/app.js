@@ -1243,7 +1243,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=201"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=202"; });
     }
     edFoto = null;
     try {
@@ -1617,7 +1617,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=201"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=202"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2024,7 +2024,6 @@
     document.body.classList.toggle("modo-selecao", !b.hidden);
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     { const nomes = { roteiro: "Postar", reels: "Criar Reels", carrossel: "Criar carrossel", livre: "Criar colagem", ia: "Abrir kit da IA" }; $("#oQueCriar").textContent = acaoPendente && nomes[acaoPendente] ? `${nomes[acaoPendente]}${n ? ` (${n})` : ""}` : "Continuar"; }
-    $("#ppExcluirSel").hidden = !(modoVarios && n); $("#ppExcluirSel").lastChild.textContent = `Excluir (${n})`;
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
     const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
@@ -2037,7 +2036,6 @@
     document.querySelectorAll("#bsAcoes [data-criar]").forEach((x) => { const o = OPCOES_CRIAR.find((q) => q[0] === x.dataset.criar); x.classList.toggle("off", !(o && o[3](n))); });
   }
   $("#desmarcarTodos").addEventListener("click", () => sairModoVarios());
-  $("#ppExcluirSel").addEventListener("click", () => $("#excluirMarcados").click());
   $("#ppCupons").addEventListener("click", () => abrirPostarCupons());
   $("#ppVideoLivre").addEventListener("click", () => abrirVideoLivre());
   const SELECOES = {
