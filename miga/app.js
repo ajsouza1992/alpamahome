@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=221"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=222"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=221"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=222"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6308,13 +6308,18 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const ROUPA_PROD = /vestido|blusa|cal[çc]a|saia|short|conjunto|cropped|camis|body|macac|jaqueta|casaco|biqu|mai[ôo]|suti[ãa]|lingerie|pijama|legging|(^|[^a-z])top([^a-z]|$)|moletom|regata|blazer|kimono/i;
   const ROUPAS_PERS = ["a pastel pink blazer over a white fitted top", "a black satin camisole top", "a beige ribbed knit sweater", "a light denim jacket over a white tee", "a lilac ribbed crop top with high-waisted jeans", "an olive green linen button-up shirt", "a red fitted square-neck top", "a baby blue cropped cardigan", "a cream oversized blazer over a black top", "a chocolate brown turtleneck", "a white off-shoulder blouse", "a mint green satin blouse", "a navy and white striped shirt", "a yellow fitted ribbed top", "a black leather jacket over a white top", "a pink oversized hoodie", "a beige trench coat over a white top", "a coral wrap blouse"];
   const ROUPA_PT = ["blazer rosa claro com blusa branca", "blusa de cetim preta", "suéter de tricô bege", "jaqueta jeans com camiseta branca", "cropped lilás com calça jeans", "camisa de linho verde-oliva", "blusa vermelha decote quadrado", "cardigã azul-bebê", "blazer creme com blusa preta", "gola alta marrom", "blusa ombro a ombro branca", "blusa de cetim verde-menta", "camisa listrada azul e branca", "blusa canelada amarela", "jaqueta de couro preta com blusa branca", "moletom rosa", "trench coat bege com blusa branca", "blusa transpassada coral"];
+  // Roupa da personagem: estilo + cor (você escolhe ou sorteia)
+  const ESTILOS_ROUPA = [["jaqueta", "Jaqueta", "{c} jacket over a white top"], ["jeans", "Jaqueta jeans", "{c} denim jacket over a white tee"], ["couro", "Jaqueta de couro", "{c} leather jacket over a white top"], ["blazer", "Blazer", "{c} tailored blazer over a white top"], ["camisa", "Camisa", "{c} button-up shirt"], ["cetim", "Blusa de cetim", "{c} satin blouse"], ["cropped", "Cropped", "{c} ribbed crop top with high-waisted jeans"], ["camiseta", "Camiseta", "{c} fitted t-shirt"], ["regata", "Regata", "{c} fitted tank top"], ["ombro", "Ombro a ombro", "{c} off-shoulder blouse"], ["golaalta", "Gola alta", "{c} turtleneck top"], ["trico", "Tricô", "{c} knit sweater"], ["cardiga", "Cardigã", "{c} cropped cardigan"], ["moletom", "Moletom", "{c} oversized hoodie"], ["vestido", "Vestido", "{c} midi dress"], ["alfaiataria", "Conjunto alfaiataria", "{c} matching blazer and trousers set"], ["esportivo", "Conjunto esportivo", "{c} two-piece activewear set"], ["kimono", "Kimono", "{c} light kimono over a white top"], ["trench", "Trench coat", "{c} trench coat over a white top"]];
+  const CORES_ROUPA = [["preto", "Preto", "black", "#1d1d1f"], ["branco", "Branco", "white", "#ffffff"], ["bege", "Bege", "beige", "#e3d3b8"], ["marrom", "Marrom", "chocolate brown", "#6b4428"], ["cinza", "Cinza", "light grey", "#b9b9bd"], ["rosa", "Rosa", "hot pink", "#e8336d"], ["rosaclaro", "Rosa claro", "pastel pink", "#f6b7c9"], ["vermelho", "Vermelho", "red", "#d62839"], ["vinho", "Vinho", "burgundy", "#7a1832"], ["coral", "Coral", "coral", "#ff7f66"], ["laranja", "Laranja", "orange", "#ff8a1f"], ["amarelo", "Amarelo", "mustard yellow", "#e8b923"], ["verde", "Verde", "emerald green", "#138a4b"], ["oliva", "Verde-oliva", "olive green", "#6b7a3a"], ["menta", "Verde-menta", "mint green", "#a8e6c9"], ["azul", "Azul", "royal blue", "#1f4fd1"], ["marinho", "Azul-marinho", "navy blue", "#1c2a52"], ["bebe", "Azul-bebê", "baby blue", "#a9d3f5"], ["lilas", "Lilás", "lilac", "#c7a6e8"], ["roxo", "Roxo", "purple", "#6a2fb0"]];
+  const roupaDe = (P) => { const e = ESTILOS_ROUPA.find((x) => x[0] === P.estilo) || ESTILOS_ROUPA[0], c = CORES_ROUPA.find((x) => x[0] === P.corRoupa) || CORES_ROUPA[0]; return { en: e[2].replace("{c}", c[2]), pt: `${e[1]} ${c[1].toLowerCase()}` }; };
+  function sortearRoupa(P) { P.estilo = ESTILOS_ROUPA[Math.floor(Math.random() * ESTILOS_ROUPA.length)][0]; P.corRoupa = CORES_ROUPA[Math.floor(Math.random() * CORES_ROUPA.length)][0]; }
   function cenaDoItem(it, fundo) {
     const C = { ...(CENAS_PERS[it.categoria] || CENAS_PERS.outros) }, n = String(it.nome || "");
     const uso = USOS_PERS.find(([re]) => re.test(n)); if (uso) { C.acao = uso[1]; C.foto = uso[2]; }
     const veste = it.categoria === "looks" || it.categoria === "fitness" || ROUPA_PROD.test(n) && !uso;
     const F = FUNDOS_PERS[fundo];
     if (veste) { C.roupa = null; C.acao = C.acao.replace("the outfit", "the clothes"); }
-    else C.roupa = ROUPAS_PERS[((wz.pe && wz.pe.roupa) || 0) % ROUPAS_PERS.length];
+    else C.roupa = wz.pe && wz.pe.estilo ? roupaDe(wz.pe).en : ROUPAS_PERS[0];
     if (F) C.lugar = `a professional photo studio with a seamless ${F[2]} backdrop, soft even studio lighting`;
     return C;
   }
@@ -6368,8 +6373,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
   function abrirPersonagem(it) {
     calcFundoAuto(it);
-    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { roupa: Math.floor(Math.random() * ROUPAS_PERS.length), fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
-    marcados.clear(); irPara("criar"); mostrarPasso();
+    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
+    sortearRoupa(wz.pe); marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const fotosPers = () => lsPers.ler("fotos", [null, null]);
   function txPersonagem(it) {
@@ -6414,7 +6419,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${prodHtml}
         <b class="ch-rot">Fundo do estúdio</b>
         <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, x]) => [k, x[0], x[1]])].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
-        ${cenaDoItem(it, "").roupa ? `<div class="pe-roupa"><span><b>Roupa:</b> ${esc(ROUPA_PT[P.roupa % ROUPAS_PERS.length])}</span><button type="button" class="btn btn--branco" id="peRoupa">Outra roupa</button></div>` : '<p class="nota">Roupa: ela veste o próprio produto.</p>'}
+        ${cenaDoItem(it, "").roupa ? `<div class="pe-roupa"><span><b>Roupa:</b> ${esc(roupaDe(P).pt)}</span><button type="button" class="btn btn--branco" id="peRoupa">Sortear</button></div>
+        <details class="pe-roupas"${P.roupasAbertas ? " open" : ""}><summary>Escolher estilo e cor da roupa</summary>
+          <b class="ch-rot">Estilo</b><div class="ed-chips pe-estilos">${ESTILOS_ROUPA.map(([k, n]) => `<button type="button" data-pe-estilo="${k}" class="${P.estilo === k ? "on" : ""}">${n}</button>`).join("")}</div>
+          <b class="ch-rot">Cor</b><div class="ed-chips pe-fundos">${CORES_ROUPA.map(([k, n, , hex]) => `<button type="button" data-pe-cor="${k}" class="${P.corRoupa === k ? "on" : ""}"><i style="background:${hex}"></i>${n}</button>`).join("")}</div>
+        </details>` : '<p class="nota">Roupa: ela veste o próprio produto.</p>'}
         <div class="campo"><span>Como ela é (vai no prompt, opcional)</span><textarea id="peFicha" rows="2" maxlength="220" placeholder="Ex.: 27 anos, cabelo castanho ondulado no ombro, sardas leves, argolas douradas">${esc(lsPers.ler("ficha", ""))}</textarea></div>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
         <div class="campo"><span>Prompt pronto (${pr.length}/900 caracteres)</span><textarea id="pePrompt" rows="8" readonly>${esc(pr)}</textarea></div>
@@ -6578,8 +6587,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#peIr3")) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peEscolherProd")) { const l = fila().filter((x) => !x.carregando && x.nome); if (!l.length) { toast("Adicione um produto na Lista primeiro"); return; }
       folhaEst("Escolha o produto", `<div class="lista-prod">${l.map((x) => `<button type="button" class="lp-item pe-esc" data-pe-prod="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span>${esc(limparNome(x.nome))}</span></button>`).join("")}</div>`); return; }
-    if (t.closest("#peRoupa")) { P.roupa = (P.roupa + 1 + Math.floor(Math.random() * (ROUPAS_PERS.length - 1))) % ROUPAS_PERS.length; mostrarPasso(); return; }
-    const fd = t.closest("[data-pe-fundo]"); if (fd) { P.fundo = fd.dataset.peFundo; lsPers.gravar("fundo", P.fundo); mostrarPasso(); return; }
+    if (t.closest("#peRoupa")) { sortearRoupa(P); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const es = t.closest("[data-pe-estilo]"); if (es) { P.estilo = es.dataset.peEstilo; P.roupasAbertas = true; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const cr = t.closest("[data-pe-cor]"); if (cr) { P.corRoupa = cr.dataset.peCor; P.roupasAbertas = true; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const fd = t.closest("[data-pe-fundo]"); if (fd) { P.fundo = fd.dataset.peFundo; lsPers.gravar("fundo", P.fundo); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const ps = t.closest("[data-pe-pos]"); if (ps) { const [k, v] = ps.dataset.pePos.split(":"); P.pos[k] = v; lsPers.gravar("pos", P.pos); ps.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ps)); P.resultado = null; return; }
     if (t.closest("#peLimparCopiar")) {
       const txt = promptLimparProduto(it); await copiarTexto(txt);
