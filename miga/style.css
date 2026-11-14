@@ -1778,3 +1778,4 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
   }
 }
 #catOrdem .ord-todos { grid-column: 1 / -1; }
+.copiado { opacity: .55 !important; pointer-events: none; transition: opacity .2s; }

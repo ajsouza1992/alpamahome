@@ -167,7 +167,21 @@
     if (!r.ok) throw Object.assign(new Error(d.erro || "Erro " + r.status), { codigo: d.codigo || (r.status === 404 ? "offline" : "erro") });
     return d;
   }
+  /* Botão de copiar: depois de copiar mostra "✓ Copiado" (ou "✓ Link copiado") e fica opaco por um instante */
+  let ultimoBotao = null, ultimoToque = 0;
+  document.addEventListener("click", (e) => { const b = e.target.closest("button, .btn, [role=button]"); if (b) { ultimoBotao = b; ultimoToque = Date.now(); } }, true);
+  function marcarCopiado() {
+    const b = ultimoBotao; if (!b || Date.now() - ultimoToque > 4000 || !document.body.contains(b) || b.classList.contains("copiado")) return;
+    const alvo = [...b.childNodes].reverse().find((n) => n.nodeType === 3 && n.textContent.trim()) || (b.children.length ? null : b);
+    const antes = alvo ? alvo.textContent : null, link = /link/i.test(b.textContent);
+    if (alvo) alvo.textContent = link ? "✓ Link copiado" : "✓ Copiado";
+    b.classList.add("copiado");
+    setTimeout(() => { if (alvo && antes != null) alvo.textContent = antes; b.classList.remove("copiado"); }, 1800);
+  }
   async function copiarTexto(texto) {
+    const ok = await copiarTexto0(texto); if (ok) marcarCopiado(); return ok;
+  }
+  async function copiarTexto0(texto) {
     try { await navigator.clipboard.writeText(texto); return true; }
     catch (e) {
       const t = document.createElement("textarea");
@@ -1267,7 +1281,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=209"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=210"; });
     }
     edFoto = null;
     try {
@@ -1641,7 +1655,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=209"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=210"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
