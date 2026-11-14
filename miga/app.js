@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=217"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=218"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=217"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=218"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6306,13 +6306,15 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     [/fone|headphone|earbud|airpods/i, "is wearing the headphones from image 3, enjoys the music and smiles", "wearing the headphones from image 3"]
   ];
   const ROUPA_PROD = /vestido|blusa|cal[çc]a|saia|short|conjunto|cropped|camis|body|macac|jaqueta|casaco|biqu|mai[ôo]|suti[ãa]|lingerie|pijama|legging|(^|[^a-z])top([^a-z]|$)|moletom|regata|blazer|kimono/i;
+  const ROUPAS_PERS = ["a pastel pink blazer over a white fitted top", "a black satin camisole top", "a beige ribbed knit sweater", "a light denim jacket over a white tee", "a lilac ribbed crop top with high-waisted jeans", "an olive green linen button-up shirt", "a red fitted square-neck top", "a baby blue cropped cardigan", "a cream oversized blazer over a black top", "a chocolate brown turtleneck", "a white off-shoulder blouse", "a mint green satin blouse", "a navy and white striped shirt", "a yellow fitted ribbed top", "a black leather jacket over a white top", "a pink oversized hoodie", "a beige trench coat over a white top", "a coral wrap blouse"];
+  const ROUPA_PT = ["blazer rosa claro com blusa branca", "blusa de cetim preta", "suéter de tricô bege", "jaqueta jeans com camiseta branca", "cropped lilás com calça jeans", "camisa de linho verde-oliva", "blusa vermelha decote quadrado", "cardigã azul-bebê", "blazer creme com blusa preta", "gola alta marrom", "blusa ombro a ombro branca", "blusa de cetim verde-menta", "camisa listrada azul e branca", "blusa canelada amarela", "jaqueta de couro preta com blusa branca", "moletom rosa", "trench coat bege com blusa branca", "blusa transpassada coral"];
   function cenaDoItem(it, fundo) {
     const C = { ...(CENAS_PERS[it.categoria] || CENAS_PERS.outros) }, n = String(it.nome || "");
     const uso = USOS_PERS.find(([re]) => re.test(n)); if (uso) { C.acao = uso[1]; C.foto = uso[2]; }
     const veste = it.categoria === "looks" || it.categoria === "fitness" || ROUPA_PROD.test(n) && !uso;
     const F = FUNDOS_PERS[fundo];
     if (veste) { C.roupa = null; C.acao = C.acao.replace("the outfit", "the clothes"); }
-    else if (F) C.roupa = `a simple fitted plain ${F[3]} top, no prints or logos`;
+    else C.roupa = ROUPAS_PERS[((wz.pe && wz.pe.roupa) || 0) % ROUPAS_PERS.length];
     if (F) C.lugar = `a professional photo studio with a seamless ${F[2]} backdrop, soft even studio lighting`;
     return C;
   }
@@ -6356,7 +6358,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const roupa = C.roupa ? `New outfit: ${C.roupa}.` : "She wears the product from image 3.";
     const monta = (ficha, nomeMax) => tipo === "video"
       ? `Hyper-realistic vertical 9:16 video, 8 seconds, one continuous shot, still camera. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. Product: image 3, identical (shape, color, label, size). Action: she ${C.acao}. She says in Brazilian Portuguese, warm natural voice: "${falaPersonagem(it, nomeMax)}" Then she stays still, smiling. No added text, logos or subtitles (keep the product's own design); empty space at top and bottom; no cuts or zoom; natural hands; the product never changes; perfect lip sync.`
-      : `Hyper-realistic vertical 9:16 photo, influencer style. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. She is ${C.foto}, looking at the camera with a natural smile. The product is identical to image 3 (shape, color, label, size). No added text, logos or watermark (keep the product's own design); empty space at the top and bottom; sharp focus, high resolution.`;
+      : `Hyper-realistic square 1:1 photo for an Instagram feed post, influencer style. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. She is ${C.foto}, looking at the camera with a natural smile. The product is identical to image 3 (shape, color, label, size). No added text, logos or watermark (keep the product's own design); leave a little empty space around her for text; sharp focus, high resolution.`;
     let ficha = ficha0, nomeMax = 5, p = monta(ficha, nomeMax);
     while (p.length > LIMITE_PROMPT && ficha.length > 40) { ficha = ficha.slice(0, ficha.length - 20).replace(/\s+\S*$/, ""); p = monta(ficha, nomeMax); }
     while (p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(ficha, nomeMax); }
@@ -6366,7 +6368,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
   function abrirPersonagem(it) {
     calcFundoAuto(it);
-    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
+    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { roupa: Math.floor(Math.random() * ROUPAS_PERS.length), fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const fotosPers = () => lsPers.ler("fotos", [null, null]);
@@ -6409,6 +6411,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${prodHtml}
         <b class="ch-rot">Fundo do estúdio</b>
         <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, x]) => [k, x[0], x[1]])].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
+        ${cenaDoItem(it, "").roupa ? `<div class="pe-roupa"><span><b>Roupa:</b> ${esc(ROUPA_PT[P.roupa % ROUPAS_PERS.length])}</span><button type="button" class="btn btn--branco" id="peRoupa">Outra roupa</button></div>` : '<p class="nota">Roupa: ela veste o próprio produto.</p>'}
         <div class="campo"><span>Como ela é (vai no prompt, opcional)</span><textarea id="peFicha" rows="2" maxlength="220" placeholder="Ex.: 27 anos, cabelo castanho ondulado no ombro, sardas leves, argolas douradas">${esc(lsPers.ler("ficha", ""))}</textarea></div>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
         <div class="campo"><span>Prompt pronto (${pr.length}/900 caracteres)</span><textarea id="pePrompt" rows="8" readonly>${esc(pr)}</textarea></div>
@@ -6425,7 +6428,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `<h2 class="wz-titulo">Textos, logo e @</h2>
         ${P.midia ? "" : '<p class="nota">Escolha a foto ou o vídeo que a IA criou. A imagem fica inteira, sem moldura: a Miga só coloca os textos por cima.</p>'}
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="image/*,video/*" id="peMidia" hidden>${P.midia ? "Trocar a foto/vídeo da IA" : "Escolher a foto ou o vídeo da IA"}</label>
-        <div class="wz-previa"><canvas id="peQuadro" width="540" height="960"></canvas></div>
+        <div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${r ? `<figure class="rp-video"><video src="${r.url}" controls playsinline></video></figure>` : ""}
         <b class="ch-rot">Onde fica cada coisa</b>
         ${ch("logo", cantos)}${ch("selo", [...cantos, ["nao", "Sem selo"]])}${ch("arroba", [["topo", "Em cima"], ["base", "Embaixo"], ["logo", "Junto do logo"]])}
@@ -6453,15 +6456,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function quebraLinhas(x, txt, larg, max) { const out = []; let l = ""; String(txt || "").split(/\s+/).filter(Boolean).forEach((p) => { const t = l ? l + " " + p : p; if (x.measureText(t).width > larg && l) { out.push(l); l = p; } else l = t; }); if (l) out.push(l); if (out.length > max) { out.length = max; out[max - 1] = out[max - 1].replace(/\s*\S*$/, "") + "…"; } return out; }
   /** Um quadro 1080 × 1920: a foto/vídeo da IA inteira + textos, selos, logo e @ nas posições fixas */
+  /** Imagem = post quadrado 1:1 (1080 × 1080); vídeo = 9:16 (1080 × 1920) */
+  const altPers = (P) => (P && P.tipo === "imagem" ? 1080 : 1920);
   function quadroPersonagem(ctx, W, fonte, P) {
-    const x = ctx, k = W / 1080; x.save(); x.scale(k, k);
-    x.fillStyle = "#1d1d1f"; x.fillRect(0, 0, 1080, 1920);
+    const x = ctx, k = W / 1080, H = altPers(P); x.save(); x.scale(k, k);
+    x.fillStyle = "#1d1d1f"; x.fillRect(0, 0, 1080, H);
     const fw = fonte ? (fonte.videoWidth || fonte.width) : 0, fh = fonte ? (fonte.videoHeight || fonte.height) : 0;
-    if (fw) { const s = Math.max(1080 / fw, 1920 / fh); x.imageSmoothingQuality = "high"; x.drawImage(fonte, (1080 - fw * s) / 2, (1920 - fh * s) / 2, fw * s, fh * s); }
-    else { const g = x.createLinearGradient(0, 0, 0, 1920); g.addColorStop(0, "#cfc6b4"); g.addColorStop(1, "#a99f8c"); x.fillStyle = g; x.fillRect(0, 0, 1080, 1920); x.font = "700 46px Poppins"; x.fillStyle = "rgba(255,255,255,.85)"; x.textAlign = "center"; x.fillText("Foto ou vídeo da IA aqui", 540, 960); }
+    if (fw) { const s = Math.max(1080 / fw, H / fh); x.imageSmoothingQuality = "high"; x.drawImage(fonte, (1080 - fw * s) / 2, (H - fh * s) / 2, fw * s, fh * s); }
+    else { const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#cfc6b4"); g.addColorStop(1, "#a99f8c"); x.fillStyle = g; x.fillRect(0, 0, 1080, H); x.font = "700 46px Poppins"; x.fillStyle = "rgba(255,255,255,.85)"; x.textAlign = "center"; x.fillText("Foto ou vídeo da IA aqui", 540, H / 2); }
     const pos = P.pos, T = P.tx, M = 56, at = arroba(config.instagram) || "@migapromo.oficial";
     const AM = "#ffd23f", RS = "#ff5c93", BR = "#ffffff";
-    const canto = (c, w, h, dy = 0) => ({ x: c[1] === "l" ? M : 1080 - M - w, y: c[0] === "t" ? M + 30 + dy : 1920 - M - h - dy });
+    const canto = (c, w, h, dy = 0) => ({ x: c[1] === "l" ? M : 1080 - M - w, y: c[0] === "t" ? M + 30 + dy : H - M - h - dy });
     // pilhas de cima e de baixo (centralizadas)
     const topo = [], base = [];
     if (T.chamada && pos.chamada === "topo") topo.push(["chamada", T.chamada]);
@@ -6480,15 +6485,15 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const cantoCima = pos.logo[0] === "t" || (pos.selo[0] === "t" && pos.selo !== "nao" && P.mostrar.selo !== false && T.selo);
     let yT = M + 40; topo.forEach((i) => { yT += desenhaItem(i, 540, yT, "center", cantoCima ? 500 : 900); });
     const cantoBaixo = pos.logo[0] === "b" || (pos.selo[0] === "b" && pos.selo !== "nao" && P.mostrar.selo !== false && T.selo), lb = cantoBaixo ? 500 : 900;
-    let hB = base.reduce((s, i) => s + alturaItem(i, lb), 0), yB = 1920 - M - 20 - hB;
+    let hB = base.reduce((s, i) => s + alturaItem(i, lb), 0), yB = H - M - 20 - hB;
     const yBaseLivre = yB; base.forEach((i) => { yB += desenhaItem(i, 540, yB, "center", lb); });
     // bloco do preço
     const bloco = []; if (T.chamada && pos.chamada === "preco") bloco.push(["chamada", T.chamada]); if (T.nome && pos.nome === "preco") bloco.push(["nome", T.nome]);
     const lado = { base: "center", topo: "center", dc: "right", db: "right", ec: "left", eb: "left" }[pos.preco] || "center", larg = lado === "center" ? 900 : 600;
     const px = lado === "center" ? 540 : lado === "right" ? 1080 - M : M;
-    let tamPor = 104; x.font = `900 ${tamPor}px Poppins`; const tPor = T.por ? (T.de ? "por " : "") + T.por : ""; while (tPor && x.measureText(tPor).width > larg && tamPor > 60) { tamPor -= 4; x.font = `900 ${tamPor}px Poppins`; }
+    let tamPor = H < 1500 ? 92 : 104; x.font = `900 ${tamPor}px Poppins`; const tPor = T.por ? (T.de ? "por " : "") + T.por : ""; while (tPor && x.measureText(tPor).width > larg && tamPor > 60) { tamPor -= 4; x.font = `900 ${tamPor}px Poppins`; }
     const hBloco = bloco.reduce((s, i) => s + alturaItem(i, larg), 0) + (T.de ? 56 : 0) + (tPor ? tamPor * 1.12 : 0) + (T.cupom && P.mostrar.cupom !== false && pos.cupom === "preco" ? 90 : 0);
-    let yP = { base: yBaseLivre - 24 - hBloco, topo: yT + 10, dc: 600, db: 1060, ec: 600, eb: 1060 }[pos.preco] || 600;
+    let yP = { base: yBaseLivre - 24 - hBloco, topo: yT + 10, dc: H * 0.31, db: H * 0.55, ec: H * 0.31, eb: H * 0.55 }[pos.preco] || H * 0.31;
     bloco.forEach((i) => { yP += desenhaItem(i, px, yP, lado, larg); });
     if (T.de) { textoContorno(x, "de " + T.de, px, yP + 44, 42, BR, 700, lado, true); yP += 56; }
     if (tPor) { textoContorno(x, tPor, px, yP + tamPor * 0.92, tamPor, AM, 900, lado); yP += tamPor * 1.12; }
@@ -6536,7 +6541,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const nome = nomeArquivo(wzItem().nome).replace(/\.jpe?g$/i, "") + "-personagem." + (mp4 ? "mp4" : "webm");
     P.resultado = { blob, url: URL.createObjectURL(blob), nome, mp4 }; mostrarPasso(); toast("Vídeo pronto ✓");
   }
-  async function imagemPersonagem() { const tela = document.createElement("canvas"); tela.width = 1080; tela.height = 1920; await carregarMarca(); quadroPersonagem(tela.getContext("2d"), 1080, pe().midia && pe().midia.bmp, pe()); return telaParaJpeg(tela, nomeArquivo(wzItem().nome).replace(/\.jpe?g$/i, "") + "-personagem.jpg"); }
+  async function imagemPersonagem() { const tela = document.createElement("canvas"); tela.width = 1080; tela.height = altPers(pe()); await carregarMarca(); quadroPersonagem(tela.getContext("2d"), 1080, pe().midia && pe().midia.bmp, pe()); return telaParaJpeg(tela, nomeArquivo(wzItem().nome).replace(/\.jpe?g$/i, "") + "-personagem.jpg"); }
   async function compartilharArquivo(arq) {
     if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
     baixarBlob(arq, arq.name); toast("Salvo: abra o Instagram e escolha da galeria");
@@ -6569,6 +6574,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#peIr3")) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peEscolherProd")) { const l = fila().filter((x) => !x.carregando && x.nome); if (!l.length) { toast("Adicione um produto na Lista primeiro"); return; }
       folhaEst("Escolha o produto", `<div class="lista-prod">${l.map((x) => `<button type="button" class="lp-item pe-esc" data-pe-prod="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span>${esc(limparNome(x.nome))}</span></button>`).join("")}</div>`); return; }
+    if (t.closest("#peRoupa")) { P.roupa = (P.roupa + 1 + Math.floor(Math.random() * (ROUPAS_PERS.length - 1))) % ROUPAS_PERS.length; mostrarPasso(); return; }
     const fd = t.closest("[data-pe-fundo]"); if (fd) { P.fundo = fd.dataset.peFundo; lsPers.gravar("fundo", P.fundo); mostrarPasso(); return; }
     const ps = t.closest("[data-pe-pos]"); if (ps) { const [k, v] = ps.dataset.pePos.split(":"); P.pos[k] = v; lsPers.gravar("pos", P.pos); ps.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ps)); P.resultado = null; return; }
     if (t.closest("#peLimparCopiar")) { if (await copiarTexto(promptLimparProduto(it))) toast("Prompt copiado: cole no ChatGPT com a foto do produto"); return; }
