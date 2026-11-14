@@ -1808,3 +1808,4 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pe-esc { width: 100%; text-align: left; border: 0; background: var(--campo); border-radius: 14px; padding: 6px 10px; margin-bottom: 6px; cursor: pointer; font: inherit; }
 .pe-fundos { flex-wrap: wrap !important; overflow: visible !important; }
 .pe-roupa { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--campo); border-radius: 14px; padding: 8px 10px; margin: 10px 0; font-size: 14px; } .pe-roupa .btn { width: auto; margin: 0; padding: 8px 14px; font-size: 13px; flex: none; }
+.pe-nav { margin-top: 14px; }

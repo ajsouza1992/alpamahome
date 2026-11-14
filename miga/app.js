@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=218"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=219"; });
     }
     edFoto = null;
     try {
@@ -1664,7 +1664,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=218"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=219"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6276,34 +6276,34 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /* ===================== Personagem: a mesma moça mostrando os produtos (foto ou vídeo da IA) + textos, logo e @ da Miga ===================== */
   // Cena padrão de cada categoria (sempre a mesma, para o perfil ficar com padrão). roupa: null = ela veste o próprio produto
   const CENAS_PERS = {
-    perfumes: { acao: "presses the nozzle once and sprays a light mist on her inner left wrist, smells it and smiles", foto: "holding the perfume bottle from image 3 near her neck", roupa: "an elegant light pink satin blouse", lugar: "a bright bedroom vanity with soft lights", frase: "cheiroso e marcante o dia todo" },
-    looks: { acao: "is wearing the outfit from image 3 and turns slowly in front of a mirror", foto: "wearing the outfit from image 3, full body, posing", roupa: null, lugar: "a bright bedroom with a full-length mirror", frase: "lindo, confortável e fácil de combinar" },
-    fitness: { acao: "is wearing the activewear from image 3 and does a light stretch", foto: "wearing the activewear from image 3, full body, confident pose", roupa: null, lugar: "a bright modern gym", frase: "confortável e lindo pra treinar" },
-    calcados: { acao: "is wearing the shoes from image 3 and takes two steps; the camera shows the shoes and her face", foto: "wearing the shoes from image 3, full body, shoes clearly visible", roupa: "a casual light outfit with jeans", lugar: "a bright living room", frase: "confortável e combina com tudo" },
-    acessorios: { acao: "carries the item from image 3, adjusts it and smiles", foto: "carrying the item from image 3, clearly visible", roupa: "a chic casual outfit", lugar: "a sunny street café", frase: "o detalhe que deixa o look perfeito" },
+    perfumes: { acao: "presses the nozzle once and sprays a light mist on her inner left wrist, smells it and smiles", foto: "holding the perfume bottle from image 3 near her neck, touching it", roupa: "an elegant light pink satin blouse", lugar: "a bright bedroom vanity with soft lights", frase: "cheiroso e marcante o dia todo" },
+    looks: { acao: "is wearing the outfit from image 3 and turns slowly in front of a mirror", foto: "wearing the outfit from image 3, full body, posing like a fashion model to show the clothes", roupa: null, lugar: "a bright bedroom with a full-length mirror", frase: "lindo, confortável e fácil de combinar" },
+    fitness: { acao: "is wearing the activewear from image 3 and does a light stretch", foto: "wearing the activewear from image 3, full body, confident pose to show it", roupa: null, lugar: "a bright modern gym", frase: "confortável e lindo pra treinar" },
+    calcados: { acao: "is wearing the shoes from image 3 and takes two steps; the camera shows the shoes and her face", foto: "wearing the shoes from image 3, full body, one foot forward to show the shoe", roupa: "a casual light outfit with jeans", lugar: "a bright living room", frase: "confortável e combina com tudo" },
+    acessorios: { acao: "carries the item from image 3, adjusts it and smiles", foto: "holding the item from image 3, touching it", roupa: "a chic casual outfit", lugar: "a sunny street café", frase: "o detalhe que deixa o look perfeito" },
     maquiagem: { acao: "applies the makeup product from image 3 in front of a mirror", foto: "applying the makeup product from image 3", roupa: "a simple white top", lugar: "a bright vanity table with lights", frase: "bonito, pigmentado e dura o dia todo" },
-    skincare: { acao: "applies a little of the product from image 3 on her face with her fingertips", foto: "holding the skincare product from image 3 next to her glowing face", roupa: "a soft white bathrobe", lugar: "a bright clean bathroom", frase: "deixa a pele macia e com glow" },
-    cabelo: { acao: "applies the hair product from image 3 and runs her fingers through her hair", foto: "holding the hair product from image 3, shiny hair", roupa: "a simple light tank top", lugar: "a bright clean bathroom", frase: "deixa o cabelo macio e brilhando" },
-    suplementos: { acao: "shows the container from image 3 and mixes a scoop into a shaker", foto: "holding the container from image 3 with a shaker", roupa: "a pink activewear set", lugar: "a bright modern kitchen", frase: "perfeito pra manter o foco no treino" },
+    skincare: { acao: "applies a little of the product from image 3 on her face with her fingertips", foto: "holding the skincare product from image 3, touching her glowing cheek", roupa: "a soft white bathrobe", lugar: "a bright clean bathroom", frase: "deixa a pele macia e com glow" },
+    cabelo: { acao: "applies the hair product from image 3 and runs her fingers through her hair", foto: "holding the hair product from image 3, touching her shiny hair", roupa: "a simple light tank top", lugar: "a bright clean bathroom", frase: "deixa o cabelo macio e brilhando" },
+    suplementos: { acao: "shows the container from image 3 and mixes a scoop into a shaker", foto: "holding the container from image 3 with both hands, label visible", roupa: "a pink activewear set", lugar: "a bright modern kitchen", frase: "perfeito pra manter o foco no treino" },
     eletronicos: { acao: "uses the device from image 3 and reacts happily", foto: "using the device from image 3", roupa: "a cozy oversized sweater", lugar: "a cozy living room", frase: "prático e muito útil no dia a dia" },
-    casa: { acao: "uses the product from image 3 at home, showing how practical it is", foto: "using the product from image 3 at home", roupa: "a comfortable casual outfit", lugar: "a bright modern kitchen", frase: "deixa a casa mais linda e prática" },
-    outros: { acao: "shows the product from image 3 to the camera", foto: "holding the product from image 3 toward the camera", roupa: "a casual light pink outfit", lugar: "a bright cozy bedroom", frase: "útil demais no dia a dia" }
+    casa: { acao: "uses the product from image 3 at home, showing how practical it is", foto: "holding the product from image 3 with both hands", roupa: "a comfortable casual outfit", lugar: "a bright modern kitchen", frase: "deixa a casa mais linda e prática" },
+    outros: { acao: "shows the product from image 3 to the camera", foto: "holding the product from image 3 with both hands", roupa: "a casual light pink outfit", lugar: "a bright cozy bedroom", frase: "útil demais no dia a dia" }
   };
   const CENA_PT = { perfumes: "borrifa no pulso e sorri", looks: "vestindo a peça no espelho", fitness: "vestindo e alongando", calcados: "calçando e dando dois passos", acessorios: "usando e ajeitando", maquiagem: "passando no espelho", skincare: "aplicando no rosto", cabelo: "passando no cabelo", suplementos: "mostrando e preparando", eletronicos: "usando e reagindo", casa: "usando em casa", outros: "mostrando para a câmera" };
   const LIMITE_PROMPT = 900;
   /* Estúdio com o fundo nas cores da Miga + o jeito certo de USAR cada tipo de produto (boné na cabeça, óculos no rosto...) */
   const FUNDOS_PERS = { creme: ["Creme", "#fff3c4", "soft cream (#fff3c4)", "white"], branco: ["Branco", "#ffffff", "pure white", "black"], preto: ["Preto", "#1d1d1f", "matte black (#1d1d1f)", "white"], rosa: ["Rosa", "#e8336d", "hot pink (#e8336d)", "white"] };
   const USOS_PERS = [
-    [/(^|[^a-zà-ú])bon[eé]s?([^a-zà-ú]|$)|chap[eé]u|viseira|touca|gorro|boina|bucket/i, "is wearing the hat from image 3 on her head, adjusts the brim with one hand and smiles", "wearing the hat from image 3 on her head"],
-    [/[óo]culos/i, "puts on the sunglasses from image 3 and smiles", "wearing the sunglasses from image 3"],
-    [/rel[óo]gio|smartwatch|smartband/i, "is wearing the watch from image 3 and shows her wrist near her face", "wearing the watch from image 3, wrist raised near her face"],
-    [/colar|corrente|gargantilha|choker|brinco|argola|anel|pulseira|bracelete|tornozeleira|piercing|bijuteria|joia/i, "is wearing the jewelry from image 3 and touches it gently", "wearing the jewelry from image 3, clearly visible"],
-    [/bolsa|mochila|necessaire|carteira|clutch|pochete/i, "carries the bag from image 3 on her shoulder, adjusts the strap and smiles", "with the bag from image 3 on her shoulder"],
-    [/cinto|len[çc]o|cachecol|echarpe|tiara|presilha|piranha|scrunchie/i, "is wearing the accessory from image 3 and shows it", "wearing the accessory from image 3, clearly visible"],
-    [/t[êe]nis|sand[áa]lia|sapat|bota|chinelo|rasteir|salto|scarpin|mule|papete/i, "is wearing the shoes from image 3 and takes two steps; the camera shows the shoes and her face", "wearing the shoes from image 3, full body, shoes clearly visible"],
+    [/(^|[^a-zà-ú])bon[eé]s?([^a-zà-ú]|$)|chap[eé]u|viseira|touca|gorro|boina|bucket/i, "is wearing the hat from image 3 on her head, adjusts the brim with one hand and smiles", "wearing the hat from image 3 on her head, touching the brim with one hand"],
+    [/[óo]culos/i, "puts on the sunglasses from image 3 and smiles", "wearing the sunglasses from image 3, touching the frame with one hand"],
+    [/rel[óo]gio|smartwatch|smartband/i, "is wearing the watch from image 3 and shows her wrist near her face", "wearing the watch from image 3, wrist raised near her face to show it"],
+    [/colar|corrente|gargantilha|choker|brinco|argola|anel|pulseira|bracelete|tornozeleira|piercing|bijuteria|joia/i, "is wearing the jewelry from image 3 and touches it gently", "wearing the jewelry from image 3, touching it gently with her fingers"],
+    [/bolsa|mochila|necessaire|carteira|clutch|pochete/i, "carries the bag from image 3 on her shoulder, adjusts the strap and smiles", "with the bag from image 3 on her shoulder, holding the strap"],
+    [/cinto|len[çc]o|cachecol|echarpe|tiara|presilha|piranha|scrunchie/i, "is wearing the accessory from image 3 and shows it", "wearing the accessory from image 3, touching it with one hand"],
+    [/t[êe]nis|sand[áa]lia|sapat|bota|chinelo|rasteir|salto|scarpin|mule|papete/i, "is wearing the shoes from image 3 and takes two steps; the camera shows the shoes and her face", "wearing the shoes from image 3, full body, one foot forward to show the shoe"],
     [/batom|gloss|lip|lábios|labial/i, "applies the lipstick from image 3 on her lips and smiles", "applying the lipstick from image 3 on her lips"],
     [/secador|chapinha|prancha|babyliss|modelador|escova (secadora|alisadora|rotativa)/i, "uses the hair tool from image 3 on her hair", "using the hair tool from image 3 on her hair"],
-    [/fone|headphone|earbud|airpods/i, "is wearing the headphones from image 3, enjoys the music and smiles", "wearing the headphones from image 3"]
+    [/fone|headphone|earbud|airpods/i, "is wearing the headphones from image 3, enjoys the music and smiles", "wearing the headphones from image 3, touching them with one hand"]
   ];
   const ROUPA_PROD = /vestido|blusa|cal[çc]a|saia|short|conjunto|cropped|camis|body|macac|jaqueta|casaco|biqu|mai[ôo]|suti[ãa]|lingerie|pijama|legging|(^|[^a-z])top([^a-z]|$)|moletom|regata|blazer|kimono/i;
   const ROUPAS_PERS = ["a pastel pink blazer over a white fitted top", "a black satin camisole top", "a beige ribbed knit sweater", "a light denim jacket over a white tee", "a lilac ribbed crop top with high-waisted jeans", "an olive green linen button-up shirt", "a red fitted square-neck top", "a baby blue cropped cardigan", "a cream oversized blazer over a black top", "a chocolate brown turtleneck", "a white off-shoulder blouse", "a mint green satin blouse", "a navy and white striped shirt", "a yellow fitted ribbed top", "a black leather jacket over a white top", "a pink oversized hoodie", "a beige trench coat over a white top", "a coral wrap blouse"];
@@ -6357,10 +6357,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const C = cenaDoItem(it, fundo === "cenario" ? "" : fundo), ficha0 = String(lsPers.ler("ficha", "") || "").replace(/\s+/g, " ").trim();
     const roupa = C.roupa ? `New outfit: ${C.roupa}.` : "She wears the product from image 3.";
     const monta = (ficha, nomeMax) => tipo === "video"
-      ? `Hyper-realistic vertical 9:16 video, 8 seconds, one continuous shot, still camera. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. Product: image 3, identical (shape, color, label, size). Action: she ${C.acao}. She says in Brazilian Portuguese, warm natural voice: "${falaPersonagem(it, nomeMax)}" Then she stays still, smiling. No added text, logos or subtitles (keep the product's own design); empty space at top and bottom; no cuts or zoom; natural hands; the product never changes; perfect lip sync.`
-      : `Hyper-realistic square 1:1 photo for an Instagram feed post, influencer style. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. She is ${C.foto}, looking at the camera with a natural smile. The product is identical to image 3 (shape, color, label, size). No added text, logos or watermark (keep the product's own design); leave a little empty space around her for text; sharp focus, high resolution.`;
+      ? `Hyper-realistic vertical 9:16 video, 8 seconds, one continuous shot, still camera. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. Product: image 3, identical (shape, color, label, size). Action: she ${C.acao}. She says in Brazilian Portuguese, warm natural voice: "${falaPersonagem(it, nomeMax)}" Then she poses with the product clearly visible, smiling. No added text, logos or subtitles (keep the product's own design); empty space at top and bottom; no cuts or zoom; natural hands; the product never changes; perfect lip sync.`
+      : `Hyper-realistic square 1:1 photo for an Instagram feed post, influencer style. Same woman as in images 1 and 2 (same face and hair)${ficha ? ": " + ficha : ""}. ${roupa} Setting: ${C.lugar}. She is posing, ${C.foto}, looking at the camera with a natural smile; the product is always clearly visible and in focus. The product is identical to image 3 (shape, color, label, size). No added text, logos or watermark (keep the product's own design); leave a little empty space around her for text; sharp focus, high resolution.`;
     let ficha = ficha0, nomeMax = 5, p = monta(ficha, nomeMax);
-    while (p.length > LIMITE_PROMPT && ficha.length > 40) { ficha = ficha.slice(0, ficha.length - 20).replace(/\s+\S*$/, ""); p = monta(ficha, nomeMax); }
+    while (p.length > LIMITE_PROMPT && ficha.length > 40) { const corte = ficha.slice(0, ficha.length - 15); ficha = corte.includes(",") ? corte.replace(/,[^,]*$/, "") : corte.replace(/\s+\S*$/, ""); p = monta(ficha, nomeMax); }
     while (p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(ficha, nomeMax); }
     if (p.length > LIMITE_PROMPT) p = monta("", 2);
     return p.slice(0, LIMITE_PROMPT);
@@ -6380,6 +6380,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const it = wzItem(), P = pe();
     const f = P.fotosAgora || fotosPers(), tipoTxt = P.tipo === "video" ? "vídeo" : "imagem";
     const prodHtml = it ? `<div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.fotoLimpa ? " · foto refeita ✓" : ""}</small></span></div>` : "";
+    const nav = (cont, txt = "Continuar →", rosa = true) => `<div class="duas pe-nav"><button type="button" class="btn btn--branco" id="peVoltar">← Voltar</button><button type="button" class="btn ${rosa ? "btn--rosa" : "btn--branco"}" id="${cont}">${txt}</button></div>`;
     if (wz.passo === "peEscolher") {
       c.innerHTML = `<h2 class="wz-titulo">Criação IA</h2>
         <p class="nota">Escolha o que vai criar, as 2 fotos dela e o produto.</p>
@@ -6388,7 +6389,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="pe-fotos">${[0, 1].map((i) => `<label class="pe-foto${f[i] ? " on" : ""}"${f[i] ? ` style="background-image:url(${f[i]})"` : ""}><input type="file" accept="image/*" data-pe-foto="${i}" hidden><span>${f[i] ? `Foto ${i + 1} · trocar` : `+ Foto ${i + 1}`}</span></label>`).join("")}</div>
         <b class="ch-rot">Produto</b>
         ${it ? prodHtml : ""}<button type="button" class="btn btn--branco" id="peEscolherProd">${it ? "Trocar produto" : "Escolher produto da Lista"}</button>
-        <button type="button" class="btn btn--rosa" id="peIr2">Continuar →</button>`;
+        ${nav("peIr2")}`;
       return;
     }
     if (!it) { wz.passo = "peEscolher"; telaPersonagem(c); return; }
@@ -6401,7 +6402,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="duas"><button type="button" class="btn btn--branco" id="peLimparBaixar">Baixar foto do produto</button><button type="button" class="btn btn--branco" id="peLimparCopiar">Copiar prompt da foto</button></div>
         <div class="duas"><button type="button" class="btn btn--branco" id="peAbrirGPT">Abrir o ChatGPT</button><button type="button" class="btn btn--branco" id="peAbrirGemini">Abrir o Gemini</button></div>
         <label class="btn btn--rosa pe-escolher"><input type="file" accept="image/*" id="peLimparFoto" hidden>${it.fotoLimpa ? "Trocar a foto refeita" : "Usar a foto refeita"}</label>
-        <button type="button" class="btn ${it.fotoLimpa ? "btn--rosa" : "btn--branco"}" id="peIr3">${it.fotoLimpa ? "Continuar →" : "Pular: usar a foto atual →"}</button>`;
+        ${nav("peIr3", it.fotoLimpa ? "Continuar →" : "Pular →", !!it.fotoLimpa)}`;
       return;
     }
     if (wz.passo === "pePrompt") {
@@ -6418,14 +6419,14 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt e baixar as 3 fotos</button>
         <div class="duas"><button type="button" class="btn btn--branco" id="peAbrirGPT">Abrir o ChatGPT</button><button type="button" class="btn btn--branco" id="peAbrirGemini">Abrir o Gemini</button></div>
         <p class="nota">Anexe na ordem: <b>foto 1, foto 2 e a foto do produto</b>.</p>
-        <button type="button" class="btn btn--rosa" id="peJaCriei">Já criei: colocar textos, logo e @ →</button>`;
+        ${nav("peJaCriei", "Já criei: editar →")}`;
       return;
     }
     if (wz.passo === "peMontar") {
       const pos = P.pos, ch = (k, lista) => `<div class="pe-linha"><b>${{ logo: "Logo Miga", selo: "Selo %", arroba: "@ da Miga", preco: "Preço", nome: "Nome", chamada: "Chamada", cupom: "Cupom" }[k]}</b><div class="ed-chips">${lista.map(([v, n]) => `<button type="button" data-pe-pos="${k}:${v}" class="${pos[k] === v ? "on" : ""}">${n}</button>`).join("")}</div></div>`;
       const cantos = [["tl", "↖"], ["tr", "↗"], ["bl", "↙"], ["br", "↘"]];
       const r = P.resultado;
-      c.innerHTML = `<h2 class="wz-titulo">Textos, logo e @</h2>
+      c.innerHTML = `<h2 class="wz-titulo">Edição: textos, logo e @</h2>
         ${P.midia ? "" : '<p class="nota">Escolha a foto ou o vídeo que a IA criou. A imagem fica inteira, sem moldura: a Miga só coloca os textos por cima.</p>'}
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="image/*,video/*" id="peMidia" hidden>${P.midia ? "Trocar a foto/vídeo da IA" : "Escolher a foto ou o vídeo da IA"}</label>
         <div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
@@ -6441,7 +6442,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="duas"><div class="campo"><span>Cupom</span><input data-pe-tx="cupom" value="${esc(P.tx.cupom)}" maxlength="20"></div><div class="campo"><span>Selo</span><input data-pe-tx="selo" value="${esc(P.tx.selo)}" maxlength="10" placeholder="-40%"></div></div>
         ${!P.midia ? "" : P.midia.tipo === "video"
           ? `<div class="vd-progresso" id="peProgresso" hidden><i></i></div><button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`
-          : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}`;
+          : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}
+        <button type="button" class="btn btn--branco pe-nav" id="peVoltar">← Voltar ao prompt</button>`;
       carregarMarca().then(() => loopPersonagem());
     }
   }
@@ -6552,7 +6554,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       try { const f = fotosPers(); f[+fo] = await compactarArquivo(e.target.files[0]); if (!lsPers.gravar("fotos", f)) toast("Foto grande demais para guardar: ela vale só agora"); P.fotosAgora = f; mostrarPasso(); } catch (err) { toast("Não consegui abrir a foto"); } return; }
     if (e.target.id === "peLimparFoto" && e.target.files[0]) {
       const it = wzItem(), f = e.target.files[0];
-      try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); it.fotoLimpa = true; salvarFila(true); toast("Foto do produto trocada pela limpa ✓"); mostrarPasso(); } catch (err) { toast("Não consegui abrir a foto"); }
+      try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); it.fotoLimpa = true; salvarFila(true); toast("Foto refeita ✓ · agora o prompt dela com o produto"); wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); } catch (err) { toast("Não consegui abrir a foto"); }
       return;
     }
     if (e.target.id === "peMidia" && e.target.files[0]) {
@@ -6571,6 +6573,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.canal !== "personagem") return; const t = e.target, P = pe(), it = wzItem();
     const tp = t.closest("[data-pe-tipo]"); if (tp) { P.tipo = tp.dataset.peTipo; mostrarPasso(); return; }
     if (t.closest("#peIr2")) { const f = P.fotosAgora || fotosPers(); if (!f[0] || !f[1]) { toast("Escolha as 2 fotos dela"); return; } if (!it) { toast("Escolha o produto"); return; } wz.passo = "peProduto"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#peVoltar")) { const l = passosDe("personagem"), i = l.indexOf(wz.passo); if (i > 0) { wz.passo = l[i - 1]; mostrarPasso(); scrollTo(0, 0); } else irPara("inicio"); return; }
     if (t.closest("#peIr3")) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peEscolherProd")) { const l = fila().filter((x) => !x.carregando && x.nome); if (!l.length) { toast("Adicione um produto na Lista primeiro"); return; }
       folhaEst("Escolha o produto", `<div class="lista-prod">${l.map((x) => `<button type="button" class="lp-item pe-esc" data-pe-prod="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span>${esc(limparNome(x.nome))}</span></button>`).join("")}</div>`); return; }
