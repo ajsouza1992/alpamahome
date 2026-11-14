@@ -1203,7 +1203,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=194"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=195"; });
     }
     edFoto = null;
     try {
@@ -1577,7 +1577,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=194"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=195"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2195,7 +2195,7 @@
   function pintarCatPp(c) { c = NOME_CAT[c] ? c : "outros"; $("#ppCatNome").textContent = NOME_CAT[c]; $("#ppCatIc").innerHTML = `<svg viewBox="0 0 24 24">${ICONE_CAT[c]}</svg>`; }
   /* ---------- Início ---------- */
   let acaoPendente = null;
-  const ACOES_INICIO = [["roteiro", "Postar", "i-enviar"], ["reels", "Reels", "i-reels"], ["carrossel", "Carrossel", "i-carrossel"], ["video", "Vídeo", "i-rede-video"], ["cupons", "Cupons", "i-etiqueta"], ["chamada", "Corre pros Stories", "i-rede-insta"], ["livre", "Colagem", "i-rede-grade"], ["ia", "Vídeo IA", "i-brilho"], ["continuar", "Continuar", "i-continuar"]];
+  const ACOES_INICIO = [["roteiro", "Postar", "i-enviar"], ["reels", "Reels", "i-reels"], ["carrossel", "Carrossel", "i-carrossel"], ["video", "Vídeo", "i-rede-video"], ["cupons", "Cupons", "i-etiqueta"], ["chamada", "Corre pros Stories", "i-rede-insta"], ["seguidores", "Seguidores", "i-festa"], ["livre", "Colagem", "i-rede-grade"], ["ia", "Vídeo IA", "i-brilho"], ["continuar", "Continuar", "i-continuar"]];
   function renderInicio() {
     const h = new Date().getHours(); $("#inOla").textContent = `${h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"}, miga! 💖`;
     const p = fila().filter((i) => !i.carregando && !foiCompartilhado(i)).length, f = incompletos().length, s = parados().length;
@@ -2217,6 +2217,7 @@
     if (k === "video") { abrirVideoLivre(); return; }
     if (k === "cupons") { abrirPostarCupons(); return; }
     if (k === "chamada") { abrirChamada(); return; }
+    if (k === "seguidores") { abrirChamada("seg"); return; }
     if (k === "carrossel") { abrirCartas(); return; }
     if (k === "continuar") { continuarProgresso(); return; }
     // precisa escolher os produtos: vai para a Lista já selecionando
@@ -2448,7 +2449,7 @@
     setTimeout(guardarProgresso, 0);
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
     $("#wzBarra").style.width = Math.round(((i + 1) / l.length) * 100) + "%";
-    $("#wzPasso").textContent = (wz.canal ? (wz.reels && wz.reels.carrossel && wz.canal === "reels" ? "Carrossel" : CANAIS[wz.canal].nome) + " · " : "") + `Passo ${i + 1} de ${l.length}`;
+    $("#wzPasso").textContent = (wz.canal ? (wz.reels && wz.reels.carrossel && wz.canal === "reels" ? "Carrossel" : wz.canal === "chamada" && wz.ch && wz.ch.tipo === "seg" ? "Seguidores" : CANAIS[wz.canal].nome) + " · " : "") + `Passo ${i + 1} de ${l.length}`;
     $("#wzVoltar").hidden = false; $("#wzVoltar").lastChild.textContent = i <= 0 ? "Lista" : "Voltar";
     const c = $("#wzCorpo"), item = wzItem();
     window.scrollTo({ top: 0 });
@@ -3560,7 +3561,7 @@
   /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
   const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
   const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
-  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "noel", "champanhe", "fogueira", "setabaixo", "cifrao", "saco", "termometro", "alfinete", "lua", "boca", "frio", "estrelada", "apaixonada", "descolada", "biquini", "brasil", "laco", "oculos", "espelho", "sol", "pincel", "foguete", "bomba", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao"];
+  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "noel", "champanhe", "fogueira", "setabaixo", "cifrao", "saco", "termometro", "alfinete", "lua", "boca", "frio", "estrelada", "apaixonada", "descolada", "biquini", "brasil", "laco", "oculos", "espelho", "sol", "pincel", "foguete", "bomba", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao", "seguidor", "notificacao", "medalha", "confete", "grafico", "bolo", "curtida", "baloes"];
   const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
   let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
@@ -5694,6 +5695,55 @@
       retArredondado(ctx, -94, -74, 188, 124, 44); contorno(BRANCO);
       [-40, 0, 40].forEach((x) => bola(x, -12, 12, ROSA));
     }
+    else if (nome === "seguidor") { // pessoa + "seguir"
+      ctx.beginPath(); ctx.moveTo(-86, 86); ctx.bezierCurveTo(-86, 10, -48, -6, -22, -6); ctx.bezierCurveTo(4, -6, 42, 10, 42, 86); ctx.closePath(); contorno(ROSA);
+      bola(-22, -50, 38, "#f9cfae"); brilhoBranco(-36, -64, 6, 11, -0.5);
+      bola(58, -40, 40, AMAR); ctx.save(); ctx.lineWidth = 13; ctx.beginPath(); ctx.moveTo(58, -60); ctx.lineTo(58, -20); ctx.moveTo(38, -40); ctx.lineTo(78, -40); ctx.stroke(); ctx.restore();
+    }
+    else if (nome === "notificacao") { // balão de notificação do Instagram
+      poli([[-14, 44], [0, 74], [14, 44]], ROSA);
+      retArredondado(ctx, -94, -72, 188, 118, 40); contorno(ROSA);
+      ctx.fillStyle = BRANCO; ctx.beginPath(); ctx.arc(-46, -30, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-74, 22); ctx.bezierCurveTo(-74, -6, -18, -6, -18, 22); ctx.closePath(); ctx.fill();
+      ctx.font = "900 62px Poppins"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("+1", 34, -10);
+      estrela(84, -78, 22, AMAR);
+    }
+    else if (nome === "medalha") {
+      poli([[-46, -100], [-12, -100], [18, -22], [-14, -14]], ROSA); poli([[46, -100], [12, -100], [-18, -22], [14, -14]], "#4f7cff");
+      bola(0, 30, 62, AMAR); bola(0, 30, 40, "#ffe58a");
+      ctx.beginPath(); for (let i = 0; i < 10; i++) { const g = i * Math.PI / 5 - Math.PI / 2, r = i % 2 ? 9 : 22; ctx.lineTo(Math.cos(g) * r, 32 + Math.sin(g) * r); } ctx.closePath(); ctx.save(); ctx.lineWidth = 6; contorno(AMAR); ctx.restore();
+      brilhoBranco(-30, 6, 7, 14, 0.5);
+    }
+    else if (nome === "confete") { // 🎉
+      ctx.beginPath(); ctx.moveTo(-92, 92); ctx.lineTo(-48, -22); ctx.lineTo(22, 48); ctx.closePath(); contorno(AMAR);
+      ctx.save(); ctx.beginPath(); ctx.moveTo(-92, 92); ctx.lineTo(-48, -22); ctx.lineTo(22, 48); ctx.closePath(); ctx.clip(); ctx.fillStyle = ROSA; [[-70, 20], [-52, 52], [-30, 10]].forEach(([x, y]) => { ctx.save(); ctx.translate(x, y); ctx.rotate(0.8); ctx.fillRect(-40, -7, 80, 14); ctx.restore(); }); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(-92, 92); ctx.lineTo(-48, -22); ctx.lineTo(22, 48); ctx.closePath(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-13, 13, 50, 18, Math.PI / 4, 0, Math.PI * 2); contorno("#ffe9a8");
+      [[30, -60, 12, ROSA], [70, -20, 10, "#4f7cff"], [8, -96, 9, "#2fa35a"], [84, -78, 11, AMAR]].forEach(([x, y, r, c]) => bola(x, y, r, c));
+      [[50, -90, 0.5, "#2fa35a"], [88, 20, -0.4, ROSA], [-10, -60, 0.9, AMAR]].forEach(([x, y, g, c]) => { ctx.save(); ctx.translate(x, y); ctx.rotate(g); retArredondado(ctx, -16, -7, 32, 14, 4); contorno(c); ctx.restore(); });
+    }
+    else if (nome === "grafico") { // barras subindo
+      [[-84, 30, 46, ROSA], [-30, -10, 46, AMAR], [24, -50, 46, "#2fa35a"]].forEach(([x, y, w, c]) => { retArredondado(ctx, x, y, w, 88 - y, 10); contorno(c); });
+      ctx.save(); ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(-96, 92); ctx.lineTo(96, 92); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.translate(40, -78); ctx.rotate(-0.6); poli([[-60, -10], [10, -10], [10, -32], [56, 0], [10, 32], [10, 10], [-60, 10]], ROSA); ctx.restore();
+    }
+    else if (nome === "bolo") {
+      retArredondado(ctx, -84, 0, 168, 88, 16); contorno(ROSA);
+      ctx.beginPath(); ctx.moveTo(-84, 12); [-56, -28, 0, 28, 56, 84].forEach((x, i) => { ctx.quadraticCurveTo(x - 14, 46, x, 14); }); ctx.lineTo(84, 0); ctx.quadraticCurveTo(84, -10, 70, -10); ctx.lineTo(-70, -10); ctx.quadraticCurveTo(-84, -10, -84, 12); ctx.closePath(); contorno(BRANCO);
+      [[-50, 60], [0, 66], [50, 60]].forEach(([x, y]) => bola(x, y, 8, AMAR));
+      retArredondado(ctx, -9, -68, 18, 56, 6); contorno("#9fd8ff");
+      ctx.beginPath(); ctx.moveTo(0, -112); ctx.quadraticCurveTo(20, -88, 0, -76); ctx.quadraticCurveTo(-20, -88, 0, -112); ctx.closePath(); contorno(AMAR);
+    }
+    else if (nome === "curtida") { // coração com +
+      ctx.beginPath(); ctx.moveTo(-10, 86); ctx.bezierCurveTo(-120, 16, -105, -80, -55, -80); ctx.bezierCurveTo(-25, -80, -10, -56, -10, -38); ctx.bezierCurveTo(-10, -56, 5, -80, 35, -80); ctx.bezierCurveTo(85, -80, 100, 16, -10, 86); ctx.closePath(); contorno(ROSA);
+      brilhoBranco(-58, -40, 15, 9);
+      bola(64, 48, 34, BRANCO); ctx.save(); ctx.lineWidth = 12; ctx.strokeStyle = ROSA; ctx.beginPath(); ctx.moveTo(64, 30); ctx.lineTo(64, 66); ctx.moveTo(46, 48); ctx.lineTo(82, 48); ctx.stroke(); ctx.restore();
+    }
+    else if (nome === "baloes") {
+      ctx.save(); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-34, 30); ctx.quadraticCurveTo(-20, 70, 0, 100); ctx.moveTo(38, 14); ctx.quadraticCurveTo(20, 60, 0, 100); ctx.stroke(); ctx.restore();
+      ctx.beginPath(); ctx.ellipse(38, -36, 46, 54, 0.15, 0, Math.PI * 2); contorno(AMAR); poli([[30, 16], [44, 16], [38, 6]], AMAR); brilhoBranco(20, -58, 8, 15, 0.3);
+      ctx.beginPath(); ctx.ellipse(-34, -20, 48, 56, -0.15, 0, Math.PI * 2); contorno(ROSA); poli([[-42, 34], [-28, 34], [-34, 24]], ROSA); brilhoBranco(-52, -44, 8, 15, 0.3);
+    }
   }
   function tituloReels(ctx, texto, y, C, tam) {
     const linhas = linhasTitulo(texto); ctx.font = `800 ${tam}px Poppins`;
@@ -5978,7 +6028,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →"},
   {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": ""}
  ]}`;
-  const NOME_FIG = { brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", setabaixo: "seta para baixo", noel: "Papai Noel", champanhe: "taça de champanhe", fogueira: "fogueira", cifrao: "cifrão", esmalte: "mão passando esmalte", saco: "saco de dinheiro", termometro: "termômetro", alfinete: "alfinete", abobora: "abóbora", lua: "lua", musculo: "braço forte", boca: "boca", frio: "carinha com frio", estrelada: "carinha com olhos de estrela", apaixonada: "carinha apaixonada", descolada: "carinha de óculos escuros", biquini: "biquíni", brasil: "bandeira do Brasil", laco: "laço", oculos: "óculos de sol", espelho: "espelho de mão", sol: "sol", pincel: "pincel de maquiagem", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa" };
+  const NOME_FIG = { brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", setabaixo: "seta para baixo", noel: "Papai Noel", champanhe: "taça de champanhe", fogueira: "fogueira", cifrao: "cifrão", esmalte: "mão passando esmalte", saco: "saco de dinheiro", termometro: "termômetro", alfinete: "alfinete", abobora: "abóbora", lua: "lua", musculo: "braço forte", boca: "boca", frio: "carinha com frio", estrelada: "carinha com olhos de estrela", apaixonada: "carinha apaixonada", descolada: "carinha de óculos escuros", biquini: "biquíni", brasil: "bandeira do Brasil", laco: "laço", oculos: "óculos de sol", espelho: "espelho de mão", sol: "sol", pincel: "pincel de maquiagem", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa", seguidor: "novo seguidor", notificacao: "notificação de seguidores", medalha: "medalha", confete: "confete de festa", grafico: "gráfico subindo", bolo: "bolo de comemoração", curtida: "coração de curtida", baloes: "balões de festa" };
   const semDestaque = (s) => String(s || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " ").trim();
   /** Texto alternativo feito pelo app: diz o que aparece e copia exatamente o que está escrito na imagem */
   function altCarta(tela, i, n) {
@@ -5989,6 +6039,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function altChamada(CH) {
     const D = dadosChamada(CH), cor = (CORES_CHAMADA[CH.cor] || CORES_CHAMADA.preto).nome.toLowerCase();
+    if (CH.tipo === "seg") return `Vídeo de comemoração com fundo ${cor} e confetes. Tela 1: etiqueta "${D.etiqueta}", o texto "${semDestaque(D.t1)}", o número ${D.numero} em dourado e a palavra ${D.palavra}, com figurinhas de ${NOME_FIG[D.ic[0]] || ""} e ${NOME_FIG[D.ic[1]] || ""}, e "${semDestaque(D.sub)}". Tela 2: "${D.frase.map(semDestaque).join(" ")}". Tela 3: "${semDestaque(D.lista)}" ${D.itens.filter(Boolean).join(", ")}. Tela 4: "${semDestaque(D.cta1)} ${D.cta2}", o logo da Miga${D.arroba ? `, ${D.arroba}` : ""} e "${semDestaque(D.toque)}".`.replace(/ ,/g, ",");
     return `Vídeo de fundo ${cor}. Tela 1: etiqueta "${D.etiqueta}" e o texto "${semDestaque(D.t1)} ${semDestaque(D.t2)} ${D.palavra}", com figurinhas de ${NOME_FIG[D.ic[0]] || ""} e ${NOME_FIG[D.ic[1]] || ""}, e "${D.sub}". Tela 2: "${D.frase.map(semDestaque).join(" ")}". Tela 3: "${semDestaque(D.lista)}" ${D.itens.filter(Boolean).join(", ")}. Tela 4: "${semDestaque(D.cta1)} ${D.cta2}"${D.arroba ? `, ${D.arroba}` : ""} e "${D.toque}".`.replace(/ ,/g, ",");
   }
   /** Aceita a resposta da IA mesmo com quebras de linha dentro dos textos */
@@ -6103,13 +6154,19 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     preto: { nome: "Preto", fundo: "#1d1d1f", texto: "#ffffff", d1: "#ffd23f", d2: "#e8336d", bola1: "#e8336d", bola2: "#e9e4d8", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "rgba(255,255,255,.8)" },
     rosa: { nome: "Rosa", fundo: "#e8336d", texto: "#ffffff", d1: "#ffd23f", d2: "#1d1d1f", bola1: "rgba(255,255,255,.22)", bola2: "rgba(255,255,255,.22)", pontoA: "#ffd23f", pontoB: "#ffffff", suave: "rgba(255,255,255,.88)" },
     creme: { nome: "Creme", fundo: "#fff3c4", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.6)", bola2: "#ffffff", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" },
-    branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.45)", bola2: "#efeae0", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" }
+    branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.45)", bola2: "#efeae0", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" },
+    // cores extras: só nos temas de campanha (Corre pros Stories e Seguidores), as artes dos produtos seguem com as 4 cores
+    rose: { nome: "Rosê", fundo: "#f6c9d3", texto: "#1d1d1f", d1: "#b0124a", d2: "#b0124a", bolaC: "rgba(255,255,255,.7)", bolaC2: "#ffffff", suave: "#6b3a48", extra: true },
+    vermelho: { nome: "Vermelho", fundo: "#d62839", texto: "#ffffff", d1: "#ffd23f", d2: "#1d1d1f", bolaC: "rgba(255,255,255,.22)", bolaC2: "rgba(255,255,255,.22)", suave: "rgba(255,255,255,.88)", extra: true, pilEscura: true },
+    dourado: { nome: "Dourado", fundo: "#e3b23c", fundo2: "#f7da7a", texto: "#1d1d1f", d1: "#8a1538", d2: "#8a1538", bolaC: "rgba(255,255,255,.45)", bolaC2: "#fff3c4", suave: "#4a3510", extra: true },
+    azul: { nome: "Azul", fundo: "#1f4fd1", texto: "#ffffff", d1: "#ffd23f", d2: "#9fd8ff", bolaC: "rgba(255,255,255,.2)", bolaC2: "rgba(159,216,255,.45)", suave: "rgba(255,255,255,.88)", extra: true },
+    verde: { nome: "Verde", fundo: "#138a4b", texto: "#ffffff", d1: "#ffd23f", d2: "#ffd23f", bolaC: "rgba(255,255,255,.2)", bolaC2: "rgba(255,210,63,.5)", suave: "rgba(255,255,255,.88)", extra: true }
   };
   const T_CHAMADA = 12.4, T_PLIM_CHAMADA = 10.0;
   /** Textos do tema: o padrão do nicho + o que você editou (use *palavra* para destacar) */
   function dadosChamada(CH) {
     const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, at = arroba(config.instagram);
-    const base = { etiqueta: "ATUALIZEI OS STORIES", t1: "Enchi meus", t2: "stories de", palavra: N.palavra, sub: "com preço de amiga",
+    const base = CH.tipo === "seg" ? baseSeguidores(CH, at) : { etiqueta: "ATUALIZEI OS STORIES", t1: "Enchi meus", t2: "stories de", palavra: N.palavra, sub: "com preço de amiga",
       frase: N.frase.map(([p, d]) => p + (d ? `*${d}*` : "")), lista: "Tem de tudo:", itens: N.itens.slice(), cta1: "Corre nos meus", cta2: "STORIES", toque: "toca na minha foto", arroba: at,
       ic: N.ic.slice(), icFrase: N.icFrase, ic2: N.ic2.slice() };
     const tx = CH.tx || {}; const d = { ...base, ...tx };
@@ -6119,8 +6176,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /** "de *rica*" → partes com a cor normal e a cor de destaque */
   const partesDestaque = (s, cor, corD) => String(s || "").split("*").map((p, i) => [p, i % 2 ? corD : cor]).filter(([p]) => p);
   const ch = () => wz.ch;
-  function abrirChamada() {
-    wz = { canal: "chamada", passo: "chEditar", veioDaLista: true, ch: { nicho: "perfumes", cor: "preto", musica: "traparabe", resultado: null, legenda: null } };
+  function abrirChamada(tipo) {
+    wz = { canal: "chamada", passo: "chEditar", veioDaLista: true, ch: tipo === "seg" ? { tipo: "seg", numero: "500", nicho: "geral", cor: "rose", musica: "dancepop", resultado: null, legenda: null } : { nicho: "perfumes", cor: "preto", musica: "traparabe", resultado: null, legenda: null } };
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const easeC = (t) => t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);
@@ -6128,15 +6185,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function quadroChamada(ctx, W, t, CH) {
     const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, C = CORES_CHAMADA[CH.cor] || CORES_CHAMADA.preto, x = ctx;
     x.save(); x.scale(W / 1080, W / 1080);
-    x.fillStyle = C.fundo; x.fillRect(0, 0, 1080, 1920);
+    if (C.fundo2) { const g = x.createLinearGradient(0, 0, 1080, 1920); g.addColorStop(0, C.fundo2); g.addColorStop(0.55, C.fundo); g.addColorStop(1, C.fundo2); x.fillStyle = g; } else x.fillStyle = C.fundo;
+    x.fillRect(0, 0, 1080, 1920);
     // bolinhas dos cantos (iguais às artes da Miga)
-    { const pu = pulsoTela; pulsoTela = 0; bolinhas(x, (CORES_VIDEO[CH.cor] || CORES_VIDEO.preto).bola, CH.cor === "preto" ? "#e9e4d8" : "#ffffff", t); pulsoTela = pu; } // mesmos cantos dos outros modelos
+    { const pu = pulsoTela; pulsoTela = 0; bolinhas(x, C.bolaC || (CORES_VIDEO[CH.cor] || CORES_VIDEO.preto).bola, C.bolaC2 || (CH.cor === "preto" ? "#e9e4d8" : "#ffffff"), t); pulsoTela = pu; } // mesmos cantos dos outros modelos
     const linha = (partes, y, tam, t0, u) => { const k = easeC((u - t0) / 0.45); if (k <= 0) return; x.save(); x.globalAlpha = k; x.translate(540, y + (1 - k) * 60); let f = tam; x.font = `900 ${f}px Poppins`;
       let w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); if (w > 960) { f = Math.floor(f * 960 / w); x.font = `900 ${f}px Poppins`; w = partes.reduce((s, [p]) => s + x.measureText(p).width, 0); }
       let xx = -w / 2; x.textAlign = "left"; x.textBaseline = "middle"; partes.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, 0); xx += x.measureText(p).width; }); x.restore(); };
     const adesivo = (nome, cx, cy, tam, t0, u, giro = 0) => { const k = (u - t0) / 0.5; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy + Math.sin(u * 2.2) * 8); x.rotate(giro + Math.sin(u * 1.7) * 0.05); x.scale(s, s); if (C.texto === "#ffffff") iconeAdesivo(x, nome, tam); else iconeReels(x, nome, tam); x.restore(); };
     const pilula = (txt, cx, cy, bg, fg, tam, t0, u, giro = -0.03, borda = true) => { const k = (u - t0) / 0.45; if (k <= 0) return; const s = puloC(k); x.save(); x.translate(cx, cy); x.rotate(giro); x.scale(s, s); x.font = `800 ${tam}px Poppins`; const w = x.measureText(txt).width + tam * 1.4, h = tam * 1.9; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = bg; x.fill(); if (borda) { x.lineWidth = 7; x.strokeStyle = "#1d1d1f"; x.stroke(); } x.fillStyle = fg; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(txt, 0, 3); x.restore(); };
     const T = C.texto, A = C.d1, D = dadosChamada(CH);
+    if (CH.tipo === "seg") { quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula); if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160); x.restore(); return; }
     if (t < 3.2) {
       if (D.etiqueta) pilula(D.etiqueta, 540, 520, "#ffd23f", "#1d1d1f", 44, 0.05, t, -0.04);
       linha(partesDestaque(D.t1, T, A), 760, 118, 0.2, t); linha(partesDestaque(D.t2, T, A), 900, 118, 0.35, t);
@@ -6149,7 +6208,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     } else if (t < 9.6) { const u = t - 6.4;
       linha(partesDestaque(D.lista, T, A), 560, 100, 0.05, u);
       const est = [["#e8336d", "#fff", false], ["#ffd23f", "#1d1d1f", true], ["#ffffff", "#1d1d1f", CH.cor === "branco" || CH.cor === "creme"], ["#e8336d", "#fff", false]];
-      D.itens.forEach((it, i) => { if (!it) return; const [bg, fg, bd] = CH.cor === "rosa" && bg0(i) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
+      D.itens.forEach((it, i) => { if (!it) return; const [bg, fg, bd] = (CH.cor === "rosa" || C.pilEscura) && bg0(i) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
       if (D.ic2[0]) adesivo(D.ic2[0], 220, 1500, 200, 1.3, u, -0.15); if (D.ic2[1]) adesivo(D.ic2[1], 860, 1500, 180, 1.45, u, 0.12);
     } else { const u = t - 9.6;
       linha(partesDestaque(D.cta1, T, A), 600, 104, 0.05, u); linha([[D.cta2, A]], 760, 170, 0.2, u);
@@ -6163,7 +6222,100 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     x.restore();
     function bg0(i) { return i === 0 || i === 3; } // no fundo rosa, as pílulas rosa viram pretas
   }
+  /* ===================== Tema pronto: "Seguidores" (comemorar uma marca de seguidores) ===================== */
+  const numSeg = (v) => { const n = parseInt(String(v || "").replace(/\D/g, ""), 10); return isFinite(n) ? n : 0; };
+  const fmtSeg = (n) => n.toLocaleString("pt-BR");
+  function metaSeguinte(v) { const n = numSeg(v); const m = [100, 250, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 250000, 500000, 1000000].find((k) => k > n); return m ? fmtSeg(m) : fmtSeg(n * 2); }
+  function baseSeguidores(CH, at) {
+    const numero = /^\d[\d.\s]*$/.test(String(CH.numero || "").trim()) ? fmtSeg(numSeg(CH.numero)) : String(CH.numero || "500").trim();
+    return { etiqueta: "UHUUL, MIGAS!", t1: "Chegamos a", t2: "", numero, palavra: "SEGUIDORES", sub: "obrigada de *coração*",
+      frase: ["Obrigada por", "cada *curtida*", "e cada", "*comentário*"], lista: "Vem muito mais:", itens: ["Achadinhos", "Cupons", "Promoções", "Novidades"],
+      cta1: "Rumo aos", cta2: metaSeguinte(CH.numero), toque: "compartilha com uma miga", arroba: at,
+      ic: ["trofeu", "confete"], icFrase: "curtida", ic2: ["notificacao", "baloes"] };
+  }
+  /** Confetes caindo (sempre iguais em cada quadro, para a prévia e o vídeo baterem) */
+  function confetes(x, u, qtd, ini = 0) {
+    const cores = ["#e8336d", "#ffd23f", "#ffffff", "#4f7cff", "#2fa35a", "#f59ab8"];
+    for (let i = 0; i < qtd; i++) {
+      const v = 260 + (i * 97) % 300, t0 = ini + (i % 9) * 0.07, k = u - t0; if (k <= 0) continue;
+      const y = -60 + k * v - (i % 5) * 90, xx = (i * 211) % 1080 + Math.sin(k * 2.4 + i) * 40; if (y > 1990) continue;
+      x.save(); x.translate(xx, y); x.rotate(k * (2 + (i % 4)) + i); x.scale(1, Math.cos(k * 5 + i)); x.fillStyle = cores[i % cores.length];
+      if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 11, 0, 7); x.fill(); } else x.fillRect(-16, -7, 32, 14); x.restore();
+    }
+  }
+  /** O número grande em dourado, com contorno e sombra (sobe contando até a marca) */
+  function numeroDourado(x, txt, cx, cy, tam, giro = 0) {
+    x.save(); x.translate(cx, cy); x.rotate(giro); x.font = `900 ${tam}px Poppins`; let w = x.measureText(txt).width;
+    if (w > 940) { tam = Math.floor(tam * 940 / w); x.font = `900 ${tam}px Poppins`; w = x.measureText(txt).width; }
+    x.textAlign = "center"; x.textBaseline = "middle"; x.lineJoin = "round";
+    x.lineWidth = tam * 0.09; x.strokeStyle = "#1d1d1f"; x.fillStyle = "#1d1d1f"; x.fillText(txt, 0, tam * 0.06); x.strokeText(txt, 0, tam * 0.06);
+    const g = x.createLinearGradient(0, -tam * 0.42, 0, tam * 0.4); g.addColorStop(0, "#fff4b8"); g.addColorStop(0.35, "#ffd23f"); g.addColorStop(0.7, "#e0a21b"); g.addColorStop(1, "#b97a0e");
+    x.strokeText(txt, 0, 0); x.fillStyle = g; x.fillText(txt, 0, 0);
+    x.save(); x.beginPath(); x.rect(-w, -tam, w * 2, tam * 0.62); x.clip(); x.fillStyle = "rgba(255,255,255,.28)"; x.fillText(txt, 0, 0); x.restore();
+    x.restore(); return tam;
+  }
+  function quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula) {
+    const T = C.texto, A = C.d1, brilha = (bx, by, r, t0, u) => { const k = (u - t0) % 1.4; if (u < t0 || k > 0.7) return; const s = Math.sin(k / 0.7 * Math.PI); x.save(); x.translate(bx, by); x.scale(s, s); x.beginPath(); for (let i = 0; i < 8; i++) { const g = i * Math.PI / 4 - Math.PI / 2, q = i % 2 ? r * 0.28 : r; x.lineTo(Math.cos(g) * q, Math.sin(g) * q); } x.closePath(); x.fillStyle = "#ffffff"; x.shadowColor = "rgba(255,210,63,.9)"; x.shadowBlur = 18; x.fill(); x.restore(); };
+    if (t < 3.2) {
+      confetes(x, t, 46, 0.5);
+      if (D.etiqueta) pilula(D.etiqueta, 540, 430, "#ffd23f", "#1d1d1f", 46, 0.05, t, -0.04);
+      linha(partesDestaque(D.t1, T, A), 640, 104, 0.2, t);
+      const k = easeC((t - 0.35) / 0.4); if (k > 0) {
+        const alvo = numSeg(D.numero), conta = alvo && /^[\d.]+$/.test(D.numero) ? fmtSeg(Math.round(alvo * easeC((t - 0.35) / 1.3))) : D.numero, pul = t > 1.65 ? 1 + 0.12 * Math.max(0, 1 - (t - 1.65) / 0.35) : 1;
+        x.save(); x.globalAlpha = k; x.translate(540, 905); x.scale(pul * (0.6 + 0.4 * k), pul * (0.6 + 0.4 * k)); numeroDourado(x, conta, 0, 0, 380, -0.03); x.restore();
+        brilha(190, 740, 44, 1.7, t); brilha(905, 1020, 38, 1.95, t); brilha(880, 730, 30, 2.2, t);
+      }
+      linha([[D.palavra, A]], 1150, 124, 1.0, t);
+      if (D.ic[0]) adesivo(D.ic[0], 270, 1420, 250, 1.3, t, -0.12); if (D.ic[1]) adesivo(D.ic[1], 810, 1410, 230, 1.45, t, 0.12);
+      linha(partesDestaque(D.sub, C.suave, A), 1650, 62, 1.6, t);
+    } else if (t < 6.4) { const u = t - 3.2;
+      D.frase.forEach((s, i) => linha(partesDestaque(s, T, A), 620 + i * 140, 112, 0.05 + i * 0.15, u));
+      if (D.icFrase) adesivo(D.icFrase, 540, 1350, 290, 0.7, u, -0.08);
+    } else if (t < 9.6) { const u = t - 6.4;
+      linha(partesDestaque(D.lista, T, A), 560, 100, 0.05, u);
+      const est = [["#e8336d", "#fff", false], ["#ffd23f", "#1d1d1f", true], ["#ffffff", "#1d1d1f", T !== "#ffffff"], ["#e8336d", "#fff", false]];
+      D.itens.forEach((it, i) => { if (!it) return; const [bg, fg, bd] = (CH.cor === "rosa" || C.pilEscura) && (i === 0 || i === 3) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
+      if (D.ic2[0]) adesivo(D.ic2[0], 220, 1500, 210, 1.3, u, -0.15); if (D.ic2[1]) adesivo(D.ic2[1], 860, 1500, 190, 1.45, u, 0.12);
+    } else { const u = t - 9.6;
+      confetes(x, u, 34, 0.2);
+      linha(partesDestaque(D.cta1, T, A), 470, 100, 0.05, u);
+      const k0 = easeC((u - 0.2) / 0.4); if (k0 > 0) { x.save(); x.globalAlpha = k0; x.translate(540, 640); const s = puloC((u - 0.2) / 0.5); x.scale(s, s); numeroDourado(x, D.cta2, 0, 0, 190, -0.03); x.restore(); }
+      const k = easeC((u - 0.4) / 0.5);
+      if (k > 0) { const pr = 1 + 0.05 * Math.sin(u * 6); x.save(); x.translate(540, 1030); x.scale(k * pr, k * pr); const g = x.createLinearGradient(-170, -170, 170, 170); g.addColorStop(0, "#ffd23f"); g.addColorStop(0.5, "#e8336d"); g.addColorStop(1, "#7b3fe4"); x.lineWidth = 22; x.strokeStyle = g; x.beginPath(); x.arc(0, 0, 170, 0, 7); x.stroke(); x.fillStyle = "#fff"; x.beginPath(); x.arc(0, 0, 145, 0, 7); x.fill(); if (edMarca) x.drawImage(edMarca, -115, -115, 230, 230); x.restore(); }
+      const at = D.arroba; if (at) pilula(at, 540, 1340, "#ffd23f", "#1d1d1f", 56, 0.8, u, -0.03);
+      linha(partesDestaque(D.toque, C.suave, A), at ? 1490 : 1350, 54, 1.1, u);
+    }
+  }
+  function legendaSeguidores(CH) {
+    const D = dadosChamada(CH), at = arroba(config.instagram) || "@migapromo.oficial";
+    return `🎉 ${D.numero} SEGUIDORES! 🎉\n\nMigas, chegamos a ${D.numero} e eu tô muito feliz! Obrigada por cada curtida, comentário e compartilhamento 💖\n\nAqui vai continuar tendo achadinhos, cupons e promoções com preço de amiga todo dia. Bora juntas rumo aos ${D.cta2}! 🚀\n\nMarca aquela miga que ama uma promoção e chama ela pra seguir ${at} 👇\n\n#seguidores #obrigada #achadinhos #promoção #cupomdedesconto`;
+  }
+  const promptSeguidores = (assunto) => `Você vai escrever os textos de um Reels da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}; perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels comemora uma marca de seguidores e agradece as seguidoras.
+
+ASSUNTO: ${assunto}
+
+O @ do perfil é ${arroba(config.instagram) || "@migapromo.oficial"}: se citar o perfil, escreva sempre exatamente assim, completo.
+
+O vídeo tem 4 telas. Preencha os campos (frases curtas; sem emojis nos textos das telas; use *asteriscos* em volta de 1 palavra para destacar):
+Tela 1 (capa): numero (o número de seguidores, ex.: "500"), etiqueta (até 22 letras), linha1 (até 14 letras, vem antes do número), palavra (1 palavra em maiúsculas embaixo do número), frase_baixo (até 24 letras)
+Tela 2 (agradecimento): frase = 4 linhas curtas (até 14 letras cada)
+Tela 3 (o que vem por aí): lista_titulo (até 16 letras), itens = 4 itens (até 18 letras cada)
+Tela 4 (final): cta1 (até 16 letras), cta2 (a próxima meta, curta, ex.: "1.000"), toque (até 26 letras)
+Figurinhas (escolha desta lista): ${FIGURAS.join(", ")}
+- capa_esquerda, capa_direita, frase_figurinha, lista_esquerda, lista_direita
+
+Crie também:
+- legenda: a legenda do Reels (comemoração + agradecimento + o que vem por aí + chamada para marcar uma amiga e seguir o perfil) e no final exatamente 5 hashtags relacionadas.
+
+Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
+{"legenda": "Texto da legenda...\\n\\n#tag1 #tag2 #tag3 #tag4 #tag5",
+ "numero": "500", "etiqueta": "UHUUL, MIGAS!", "linha1": "Chegamos a", "palavra": "SEGUIDORES", "frase_baixo": "obrigada de *coração*",
+ "frase": ["Obrigada por", "cada *curtida*", "e cada", "*comentário*"],
+ "lista_titulo": "Vem muito mais:", "itens": ["Achadinhos", "Cupons", "Promoções", "Novidades"],
+ "cta1": "Rumo aos", "cta2": "1.000", "toque": "compartilha com uma miga",
+ "capa_esquerda": "trofeu", "capa_direita": "confete", "frase_figurinha": "curtida", "lista_esquerda": "notificacao", "lista_direita": "baloes"}`;
   function legendaChamada(CH) {
+    if (CH.tipo === "seg") return legendaSeguidores(CH);
     const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, nome = CH.nicho === "geral" ? "promoção" : (NOME_CAT[CH.nicho] || N.palavra).toLowerCase(), at = arroba(config.instagram);
     const tags = { perfumes: "#perfume #perfumes #perfumefeminino #bodysplash #perfumearabe", looks: "#moda #lookdodia #modafeminina #looks", fitness: "#modafitness #fitness #treino #legging", calcados: "#calcados #tenis #sandalias #sapatos", acessorios: "#bolsas #acessorios #bijuterias", maquiagem: "#maquiagem #make #makebarata", skincare: "#skincare #cuidadoscomapele #pele", cabelo: "#cabelo #cabelos #cuidadoscomocabelo", suplementos: "#suplementos #whey #creatina", eletronicos: "#tecnologia #fone #eletronicos", casa: "#casa #decoracao #organizacao #cozinha", geral: "#promocao #ofertas" }[CH.nicho] || "";
     return `Enchi meus stories de ${N.palavra.toLowerCase()} ✨\n\nTem ${N.itens.slice(0, -1).join(", ").toLowerCase()} e ${N.itens[N.itens.length - 1].toLowerCase()}, tudo com preço de amiga 💸\n\n👉 Corre nos meus stories antes que acabe! É só tocar na minha foto${at ? ` (${at})` : ""}.\n\nQual você quer primeiro? Me conta aqui 👇\n\n${tags} #achadinhos #achadinhosmercadolivre #achadinhosshopee #promoção #cupomdedesconto`.replace(" de promoção ✨", " de promoção ✨").replace(nome + nome, nome);
@@ -6173,12 +6325,13 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.passo === "chEditar") {
       const chips = (attr, lista, atual) => `<div class="ed-chips ch-chips">${lista.map(([k, n]) => `<button type="button" ${attr}="${k}" class="${k === atual ? "on" : ""}">${esc(n)}</button>`).join("")}</div>`;
       const nichos = Object.keys(NICHOS_CHAMADA).map((k) => [k, k === "geral" ? "Promoções gerais" : NOME_CAT[k] || k]);
-      c.innerHTML = `<h2 class="wz-titulo">Corre pros Stories</h2>
-        <p class="nota">Um Reels pronto chamando a galera pros seus stories. Escolha o nicho, a cor e a música.</p>
+      const seg = CH.tipo === "seg", nums = ["100", "500", "1.000", "5.000", "10.000"];
+      c.innerHTML = `<h2 class="wz-titulo">${seg ? "Comemorar seguidores" : "Corre pros Stories"}</h2>
+        <p class="nota">${seg ? "Um Reels pronto agradecendo as migas pela marca de seguidores. Escolha o número, a cor e a música." : "Um Reels pronto chamando a galera pros seus stories. Escolha o nicho, a cor e a música."}</p>
         <div class="wz-previa"><canvas id="chQuadro" width="540" height="960"></canvas></div>
-        <b class="ch-rot">Nicho</b>${chips("data-ch-nicho", nichos, CH.nicho)}
+        ${seg ? `<b class="ch-rot">Seguidores</b>${chips("data-ch-num", nums.map((n) => [n, n]), nums.includes(CH.numero) ? CH.numero : "")}<label class="ch-campo"><span>Outro número</span><input id="chNumero" inputmode="numeric" maxlength="12" value="${nums.includes(CH.numero) ? "" : esc(CH.numero)}" placeholder="Ex.: 2.500"></label>` : `<b class="ch-rot">Nicho</b>${chips("data-ch-nicho", nichos, CH.nicho)}`}
         <b class="ch-rot">Cor</b>${chips("data-ch-cor", Object.entries(CORES_CHAMADA).map(([k, v]) => [k, v.nome]), CH.cor)}
-        <b class="ch-rot">Música</b>${chips("data-ch-mus", [["traparabe", "Trap árabe"], ["trap", "Trap"], ["funkphonk", "Funk phonk"], ["dancepop", "Dance pop"], ["mais", "Mais músicas…"]], ["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? CH.musica : "mais")}
+        <b class="ch-rot">Música</b>${chips("data-ch-mus", [["dancepop", "Dance pop"], ["traparabe", "Trap árabe"], ["trap", "Trap"], ["funkphonk", "Funk phonk"], ["mais", "Mais músicas…"]], ["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? CH.musica : "mais")}
         ${["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? "" : `<p class="nota">Música: <b>${esc((NOMES_MUSICA[CH.musica] || [CH.musica])[0])}</b></p>`}
         <button type="button" class="btn btn--branco btn-ic" id="chEditarTx"><svg class="ic-mono"><use href="#i-lapis"/></svg>Editar textos e figurinhas</button>
         ${arroba(config.instagram) ? "" : '<p class="nota">Dica: coloque o seu @ do Instagram em ⚙️ Ajustes para ele aparecer no final.</p>'}
@@ -6213,7 +6366,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         </div></div>`;
     }
   }
-  const promptChamada = (assunto) => `Você vai escrever os textos de um Reels da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}; perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels chama as seguidoras para ver as promoções que acabei de postar nos stories.
+  const promptChamada = (assunto) => ch() && ch().tipo === "seg" ? promptSeguidores(assunto) : `Você vai escrever os textos de um Reels da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}; perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels chama as seguidoras para ver as promoções que acabei de postar nos stories.
 
 ASSUNTO: ${assunto}
 
@@ -6241,7 +6394,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const i = txt.indexOf("{"), j = txt.lastIndexOf("}"); if (i < 0 || j < i) return null;
     let o; try { o = jsonTolerante(txt.slice(i, j + 1)); } catch (e) { return null; }
     const s = (v, n) => String(v == null ? "" : v).slice(0, n), f = (v) => (FIGURAS.includes(v) ? v : ""), arr = (v, n) => (Array.isArray(v) ? v : []).slice(0, 4).map((x) => s(x, n));
-    const tx = { etiqueta: s(o.etiqueta, 30), t1: s(o.linha1, 30), t2: s(o.linha2, 30), palavra: s(o.palavra, 20), sub: s(o.frase_baixo, 34), lista: s(o.lista_titulo, 24), cta1: s(o.cta1, 24), cta2: s(o.cta2, 16), toque: s(o.toque, 30),
+    const tx = { numero: s(o.numero, 12), etiqueta: s(o.etiqueta, 30), t1: s(o.linha1, 30), t2: s(o.linha2, 30), palavra: s(o.palavra, 20), sub: s(o.frase_baixo, 34), lista: s(o.lista_titulo, 24), cta1: s(o.cta1, 24), cta2: s(o.cta2, 16), toque: s(o.toque, 30),
       ic: [f(o.capa_esquerda), f(o.capa_direita)], icFrase: f(o.frase_figurinha), ic2: [f(o.lista_esquerda), f(o.lista_direita)] };
     const fr = arr(o.frase, 30), it = arr(o.itens, 26); if (fr.length) tx.frase = fr; if (it.length) tx.itens = it;
     Object.keys(tx).forEach((k) => { if (tx[k] === "") delete tx[k]; });
@@ -6250,18 +6403,18 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function folhaTextosChamada() {
     const D = dadosChamada(ch()), campo = (k, rot, v, i) => `<label class="ch-campo"><span>${rot}</span><input data-ch-tx="${k}"${i != null ? ` data-i="${i}"` : ""} maxlength="40" value="${esc(v || "")}"></label>`;
     const figs = (k, atual, i) => `<div class="ch-figs">${["", ...FIGURAS].map((f) => `<button type="button" data-ch-ic="${k}"${i != null ? ` data-i="${i}"` : ""} data-v="${f}" class="${f === atual ? "on" : ""}" aria-label="${f || "sem figurinha"}">${f ? `<canvas width="60" height="60" data-fig-ch="${f}"></canvas>` : "✕"}</button>`).join("")}</div>`;
-    folhaEst("Textos e figurinhas", `<label class="ch-campo"><span>Do que vai falar? (vai junto no prompt)</span><input id="chAssunto" maxlength="120" value="${esc(ch().assunto || (ch().nicho === "geral" ? "promoções variadas" : (NOME_CAT[ch().nicho] || "")))}"></label>
+    folhaEst("Textos e figurinhas", `<label class="ch-campo"><span>Do que vai falar? (vai junto no prompt)</span><input id="chAssunto" maxlength="120" value="${esc(ch().assunto || (ch().tipo === "seg" ? `comemorar ${dadosChamada(ch()).numero} seguidores` : ch().nicho === "geral" ? "promoções variadas" : (NOME_CAT[ch().nicho] || "")))}"></label>
       <div class="duas"><button type="button" class="btn btn--branco" id="chPrompt">Copiar prompt para IA</button><button type="button" class="btn btn--branco" id="chColar">Colar resposta da IA</button></div>
       <div id="chColarBox" hidden><label class="ch-campo"><span>Cole aqui a resposta inteira da IA (o bloco que começa com { )</span><textarea id="chResp" rows="7"></textarea></label><button type="button" class="btn btn--rosa" id="chAplicar">Usar estes textos</button></div>
       <p class="nota">Mude o que quiser. Use *asteriscos* para destacar uma palavra na cor de destaque. Dá para colocar emojis.</p>
-      <h3 class="ch-tela">Tela 1 · Capa</h3>${campo("etiqueta", "Etiqueta", D.etiqueta)}${campo("t1", "Linha 1", D.t1)}${campo("t2", "Linha 2", D.t2)}${campo("palavra", "Palavra grande", D.palavra)}${campo("sub", "Frase de baixo", D.sub)}
+      <h3 class="ch-tela">Tela 1 · Capa</h3>${campo("etiqueta", "Etiqueta", D.etiqueta)}${campo("t1", "Linha 1", D.t1)}${ch().tipo === "seg" ? "" : campo("t2", "Linha 2", D.t2)}${campo("palavra", ch().tipo === "seg" ? "Palavra embaixo do número" : "Palavra grande", D.palavra)}${campo("sub", "Frase de baixo", D.sub)}
       <b class="ch-rot">Figurinha da esquerda</b>${figs("ic", D.ic[0], 0)}<b class="ch-rot">Figurinha da direita</b>${figs("ic", D.ic[1], 1)}
       <h3 class="ch-tela">Tela 2 · Frase</h3>${D.frase.map((s, i) => campo("frase", "Linha " + (i + 1), s, i)).join("")}<b class="ch-rot">Figurinha</b>${figs("icFrase", D.icFrase)}
       <h3 class="ch-tela">Tela 3 · Lista</h3>${campo("lista", "Título", D.lista)}${D.itens.map((s, i) => campo("itens", "Item " + (i + 1), s, i)).join("")}
       <b class="ch-rot">Figurinha da esquerda</b>${figs("ic2", D.ic2[0], 0)}<b class="ch-rot">Figurinha da direita</b>${figs("ic2", D.ic2[1], 1)}
       <h3 class="ch-tela">Tela 4 · Final</h3>${campo("cta1", "Linha 1", D.cta1)}${campo("cta2", "Palavra grande", D.cta2)}${campo("arroba", "Seu @ (ou deixe vazio)", D.arroba)}${campo("toque", "Frase de baixo", D.toque)}
       <button type="button" class="btn btn--rosa" id="chSalvarTx">Salvar alterações</button>
-      <button type="button" class="btn btn--branco" id="chPadrao">Voltar aos textos do nicho</button>`);
+      <button type="button" class="btn btn--branco" id="chPadrao">${ch().tipo === "seg" ? "Voltar aos textos padrão" : "Voltar aos textos do nicho"}</button>`);
     document.querySelectorAll("[data-fig-ch]").forEach((c) => { const x = c.getContext("2d"); x.translate(30, 30); iconeReels(x, c.dataset.figCh, 46); });
   }
   $("#folhaEst").addEventListener("input", (e) => {
@@ -6270,11 +6423,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   });
   $("#folhaEst").addEventListener("click", (e) => {
     if (wz.canal !== "chamada") return; const CH = ch();
-    if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast("Textos do nicho de volta"); return; }
+    if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast(CH.tipo === "seg" ? "Textos padrão de volta" : "Textos do nicho de volta"); return; }
     if (e.target.closest("#chPrompt")) { const as = ($("#chAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#chAssunto").focus(); return; } CH.assunto = as; copiarTexto(promptChamada(as)).then((ok) => ok && toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie")); return; }
     if (e.target.closest("#chSalvarTx")) { $("#folhaEst").close(); toast("Textos salvos ✓"); return; }
     if (e.target.closest("#chColar")) { $("#chColarBox").hidden = false; $("#chResp").focus(); return; }
-    if (e.target.closest("#chAplicar")) { const r = lerRespostaChamada($("#chResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } CH.tx = r.tx; if (r.legenda) CH.legendaIA = r.legenda; CH.legenda = null; folhaTextosChamada(); toast("Textos da IA aplicados" + (r.legenda ? " (com legenda)" : "")); return; }
+    if (e.target.closest("#chAplicar")) { const r = lerRespostaChamada($("#chResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } if (r.tx.numero) { CH.numero = r.tx.numero; } delete r.tx.numero; CH.tx = r.tx; if (r.legenda) CH.legendaIA = r.legenda; CH.legenda = null; folhaTextosChamada(); toast("Textos da IA aplicados" + (r.legenda ? " (com legenda)" : "")); return; }
     const b = e.target.closest("[data-ch-ic]"); if (!b) return; const k = b.dataset.chIc; CH.tx = CH.tx || {};
     if (b.dataset.i != null) { const D = dadosChamada(CH); CH.tx[k] = D[k].slice(); CH.tx[k][+b.dataset.i] = b.dataset.v; } else CH.tx[k] = b.dataset.v;
     b.parentElement.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
@@ -6317,14 +6470,16 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (!gravar) { if (btn) { btn.disabled = false; btn.textContent = "▶ Ver prévia com música"; } return; }
     const mp4 = tipo.startsWith("video/mp4"); let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
     blob = await somCompativel(blob, tipo, (m) => { if (btn) btn.textContent = m; });
-    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; quadroChamada(tc.getContext("2d"), 1080, 2.6, CH);
-    const capa = await telaParaJpeg(tc, "miga-corre-pros-stories-capa.jpg");
-    CH.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-corre-pros-stories.${mp4 ? "mp4" : "webm"}`, capa };
+    const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; quadroChamada(tc.getContext("2d"), 1080, CH.tipo === "seg" ? 2.4 : 2.6, CH);
+    const base = CH.tipo === "seg" ? `miga-${String(dadosChamada(CH).numero).replace(/\W+/g, "")}-seguidores` : "miga-corre-pros-stories";
+    const capa = await telaParaJpeg(tc, `${base}-capa.jpg`);
+    CH.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `${base}.${mp4 ? "mp4" : "webm"}`, capa };
     wz.passo = "chPronto"; mostrarPasso();
   }
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "chamada") return;
     const t = e.target, CH = ch();
+    const nu = t.closest("[data-ch-num]"); if (nu) { CH.numero = nu.dataset.chNum; CH.legenda = null; CH.legendaIA = null; if (CH.tx) { delete CH.tx.cta2; } mostrarPasso(); return; }
     const n = t.closest("[data-ch-nicho]"); if (n) { CH.nicho = n.dataset.chNicho; CH.tx = null; CH.legenda = null; CH.legendaIA = null; mostrarPasso(); return; }
     if (t.closest("#chEditarTx")) { folhaTextosChamada(); return; }
     const co = t.closest("[data-ch-cor]"); if (co) { CH.cor = co.dataset.chCor; mostrarPasso(); return; }
@@ -6345,7 +6500,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
       baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram e escolha da galeria"); }
   });
-  $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal === "chamada" && e.target.id === "chLegenda") ch().legenda = e.target.value; });
+  $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal === "chamada" && e.target.id === "chLegenda") ch().legenda = e.target.value;
+    if (wz.canal === "chamada" && e.target.id === "chNumero") { const v = e.target.value.trim(); ch().numero = v || "500"; ch().legenda = null; ch().legendaIA = null; if (ch().tx) delete ch().tx.cta2; document.querySelectorAll("[data-ch-num]").forEach((b) => b.classList.toggle("on", b.dataset.chNum === v)); const le = $("#chLegendaEd"); if (le) le.value = legendaChamada(ch()); } });
   /** Barra de "criando o vídeo": rosa, com o texto branco e o percentual (o botão some enquanto grava) */
   function ligarBarra(btn, barra) {
     if (!barra) return; barra.hidden = false; barra.dataset.txt = "Criando o vídeo… 0%";
