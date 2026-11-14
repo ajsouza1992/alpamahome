@@ -37,6 +37,7 @@
     if (p.nota) l.push(`<b class="tag-ex">★ ${fmtNota(p.nota)}</b>`); if (p.vendidos) l.push(`<b class="tag-ex">${fmtVendidos(p.vendidos)} vendidos</b>`);
     if (p.freteGratis) l.push('<b class="tag-ex tag-ex--frete">Frete grátis</b>'); if (p.lojaOficial) l.push('<b class="tag-ex">Loja oficial</b>');
     return l.length ? `<span class="tags-ex">${l.join("")}</span>` : ""; };
+  const descontoAchado = (p) => (p.precoAntigo && p.preco && p.precoAntigo > p.preco ? 1 - p.preco / p.precoAntigo : 0);
   let selosAuto = true; try { selosAuto = localStorage.getItem("miga_selos") !== "0"; } catch (e) { /* segue */ }
   /** Selos das artes: ★ nota, vendidos, frete grátis, loja oficial (no máximo 3) */
   function selosDoItem(it) {
@@ -919,7 +920,7 @@
     catalogoAtual = d.produtos || [];
     const ord = catOrdem.valor();
     if (ord === "comissao") catalogoAtual.sort((a, b) => (b.comissao || 0) - (a.comissao || 0));
-    if (ord === "preco") catalogoAtual.sort((a, b) => (a.preco || 1e9) - (b.preco || 1e9));
+    if (ord === "preco") catalogoAtual.sort((a, b) => (a.preco || 1e9) - (b.preco || 1e9)); if (ord === "desconto") catalogoAtual.sort((a, b) => descontoAchado(b) - descontoAchado(a));
     if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Sem achados nessa loja agora. Escolha outra loja.</p>'; return; }
     pintarAchados();
   }
@@ -941,7 +942,7 @@
     try {
       const d = await api(`catalogo?busca=${encodeURIComponent(termo)}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`);
       catalogoAtual = d.produtos || []; catTemMais = !!d.temMais;
-      const ord = catOrdem.valor(); if (ord === "comissao") catalogoAtual.sort((a, b) => (b.comissao || 0) - (a.comissao || 0)); if (ord === "preco") catalogoAtual.sort((a, b) => (a.preco || 1e9) - (b.preco || 1e9));
+      const ord = catOrdem.valor(); if (ord === "comissao") catalogoAtual.sort((a, b) => (b.comissao || 0) - (a.comissao || 0)); if (ord === "preco") catalogoAtual.sort((a, b) => (a.preco || 1e9) - (b.preco || 1e9)); if (ord === "desconto") catalogoAtual.sort((a, b) => descontoAchado(b) - descontoAchado(a));
       pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
     } catch (e) { if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; } toast("Não consegui buscar nas lojas agora"); catBusca = ""; carregarCatalogo(); }
   }
@@ -984,6 +985,7 @@
     const pg = catPagina + 1, rs = await Promise.allSettled((catBusca ? [`busca=${encodeURIComponent(catBusca)}`] : FILTROS_CAT.map((f) => `filtro=${f}`)).map((f) => api(`catalogo?${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}&pagina=${pg}`)));
     const vistos = new Set(catalogoAtual.map((p) => p.id || p.link)), listas = rs.filter((r) => r.status === "fulfilled").map((r) => r.value.produtos || []); let novos = 0;
     for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); catalogoAtual.push(p); novos++; });
+    { const ord = catOrdem.valor(); if (ord === "comissao") catalogoAtual.sort((a, b) => (b.comissao || 0) - (a.comissao || 0)); if (ord === "preco") catalogoAtual.sort((a, b) => (a.preco || 1e9) - (b.preco || 1e9)); if (ord === "desconto") catalogoAtual.sort((a, b) => descontoAchado(b) - descontoAchado(a)); }
     catPagina = pg; catTemMais = novos > 0 && rs.some((r) => r.status === "fulfilled" && r.value.temMais);
     const y = scrollY; pintarAchados(); scrollTo(0, y); toast(novos ? `+${novos} achados` : "Não tem mais achados novos agora");
   }
@@ -1256,7 +1258,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=204"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=205"; });
     }
     edFoto = null;
     try {
@@ -1630,7 +1632,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=204"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=205"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {

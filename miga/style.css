@@ -1704,7 +1704,8 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 /* Item "Editar" na lista de modelos */
 .mod-editar__ic { flex: none; display: grid; place-items: center; width: 54px; height: 96px; border-radius: 8px; background: var(--campo); color: var(--preto); }
-.folha-est .mod-editar__ic { width: 78px; height: 139px; }
+@media (min-width: 960px) { .folha-est .mod-editar__ic { width: 78px; height: 139px; } }
+.lista-mod--mini > button.mod-editar { grid-template-columns: 54px 1fr; }
 .mod-editar__ic svg.ic-mono { width: 28px; height: 28px; }
 /* Quando o nome quebra em 2 linhas, só o texto desce: o ícone fica sempre no mesmo lugar */
 .in-acao, .fi-acao, #folhaItemOps .fi-op, #inCats .pp-cat, .folha-cat .pp-cat, .pp-cat { align-content: start !important; }
@@ -1753,3 +1754,7 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .ac-buscar { width: 100%; margin: 4px 0 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .ac-buscar svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; }
 .ac-busca-info { margin: 0 0 10px; }
+
+/* Achados: botão escolhido em rosa; ordem em 2 x 2 */
+#catLoja button[aria-checked="true"], #catOrdem button[aria-checked="true"] { background: var(--rosa); color: #fff; }
+.alternar--ordem { display: grid !important; grid-template-columns: 1fr 1fr; gap: 4px; }

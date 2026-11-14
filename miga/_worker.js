@@ -809,7 +809,7 @@ async function sha256Hex(texto) {
   return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 // Ordem da Shopee: 2 = mais vendidos, 5 = maior comissão, 4 = menor preço, 1 = relevância
-const ORDEM_SHOPEE = { vendidos: 2, comissao: 5, preco: 4, relevancia: 1 };
+const ORDEM_SHOPEE = { vendidos: 2, comissao: 5, preco: 4, relevancia: 1, desconto: 2 }; // desconto: o app ordena pela % (a Shopee não ordena por desconto)
 async function catalogoShopee(filtro, env, ordem = "vendidos", pagina = 1) {
   const d = await shopeeGQL(`{ productOfferV2(keyword: ${JSON.stringify(filtro.shopee)}, sortType: ${ORDEM_SHOPEE[ordem] || 2}, page: ${pagina}, limit: 50) { nodes { ${CAMPOS_SHOPEE} } } }`, env);
   const nos = (d.productOfferV2 && d.productOfferV2.nodes) || [];
