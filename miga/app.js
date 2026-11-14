@@ -106,7 +106,7 @@
   /** Ícone pequeno no estilo Selo suave (círculo rosa-claro) para botões e listas */
   const icSelo = (k, extra = "") => ICONES_MIGA[k] ? `<svg class="ic-selo${extra}" viewBox="0 0 24 24" aria-hidden="true">${icPath(k)}</svg>` : "";
   const ICONE_CAT = Object.fromEntries(["looks", "fitness", "calcados", "acessorios", "perfumes", "maquiagem", "skincare", "suplementos", "eletronicos", "casa", "outros"].map((k) => [k, icPath(k)]));
-  ICONE_CAT.cabelo = '<circle cx="9" cy="10" r="6"/><circle cx="9" cy="10" r="2"/><path d="M15 8h5.5v4H15"/><path d="M7 16l-1 5h3.5l1-5.2"/>';
+  ICONE_CAT.cabelo = '<path d="M6.05 5.46L6.25 5.27A2.20 2.20 0 0 1 9.35 5.27L22.01 17.93A1.11 1.11 0 0 1 20.44 19.50L15.50 14.56Q14.92 13.98 14.60 14.00L6.05 5.46ZM14.28 13.69L9.72 18.25M12.34 11.75L7.78 16.31M10.40 9.81L5.84 14.37M8.46 7.86L3.89 12.43M6.52 5.92L1.95 10.49"/>'; // pente com cabo (o mesmo da capa de destaque)
   /** Tira o preço que às vezes vem grudado no nome (ex.: "Creatina 350g - R$ 49,90") */
   const limparNome = (t) => String(t || "").replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "").replace(/\s{2,}/g, " ").trim();
   const viaServidor = (u) => "api/imagem?url=" + encodeURIComponent(u);
@@ -1258,7 +1258,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=205"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=206"; });
     }
     edFoto = null;
     try {
@@ -1632,7 +1632,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=205"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=206"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
