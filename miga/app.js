@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=253"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=254"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=253"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=254"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6524,13 +6524,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `<h2 class="wz-titulo">Logo, @ e legenda</h2>
         ${P.midia ? "" : `<p class="nota">Anexe ${P.tipo === "imagem" ? "a foto" : "o vídeo"} que a IA criou para começar a edição.</p>`}
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>
-        ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto. Mudou algo embaixo? Toque em Criar o vídeo de novo.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
+        ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}`}
-        <div class="pe-cantos-l"><div><b class="ch-rot">Logo Miga</b>${cc("logo", P.cantoLogo || "br")}</div><div><b class="ch-rot">@ da Miga</b>${cc("arroba", P.cantoArroba || "bl")}</div>
-          <div><b class="ch-rot">Selo %</b><div class="ed-chips pe-cantos">${[["nao", "✕"], ...cantos].map(([v, n]) => `<button type="button" data-pe-canto="selo:${v}" class="${(P.cantoSelo || "nao") === v ? "on" : ""}">${n}</button>`).join("")}</div></div>
-          ${(P.cantoSelo || "nao") !== "nao" ? `<div><b class="ch-rot">Desconto</b><input id="peSeloTxt" class="pe-selo-txt" maxlength="6" value="${esc(P.seloTxt || "")}" placeholder="-40%"></div>` : ""}
-          <div><b class="ch-rot">Tampar a marca d'água</b><div class="ed-chips pe-cantos"><button type="button" data-pe-circ="logo" class="${P.circulo === "logo" ? "on" : ""}">Logo em cima</button><button type="button" data-pe-circ="1" class="${P.circulo === true ? "on" : ""}">Círculo</button><button type="button" data-pe-circ="0" class="${P.circulo === false ? "on" : ""}">Nada</button></div></div>
-          <div class="pe-mold-l"><b class="ch-rot">Moldura</b><div class="ed-chips pe-fundos pe-molduras">${Object.entries(MOLDURAS_PERS).map(([k, [n, cor]]) => `<button type="button" data-pe-moldura="${k}" class="${(P.moldura || "nao") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div></div></div>
         <div class="campo"><span>Legenda pronta (pode editar)</span><textarea id="peLegenda" rows="9">${esc(P.legenda)}</textarea></div>
         <button type="button" class="btn btn--branco" id="peCopiarLeg">Copiar legenda</button>
         ${!P.midia ? "" : P.midia.tipo === "video"
@@ -6554,7 +6549,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /** A foto/vídeo da IA + moldura (opcional) + logo, @ e selo de desconto nos cantos escolhidos */
   function quadroLogoArroba(ctx, W, fonte, P, soCamada = false) {
     const x = ctx, k = W / 1080, H = altPers(P); x.save(); x.scale(k, k);
-    const mol = MOLDURAS_PERS[P.moldura] && MOLDURAS_PERS[P.moldura][1], b = mol ? 34 : 0;
+    const mol = null, b = 0; // sem moldura: tudo fixo
     if (soCamada) { // só a moldura, o logo, o @ e o selo, com o meio transparente (para pôr por cima do vídeo original)
       x.clearRect(0, 0, 1080, H); if (b) { x.fillStyle = mol; x.fillRect(0, 0, 1080, H); x.save(); x.globalCompositeOperation = "destination-out"; retArredondado(x, b, b, 1080 - 2 * b, H - 2 * b, 30); x.fill(); x.restore(); }
       fonte = null; }
@@ -6564,17 +6559,18 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (fw) { const s = Math.max(iw / fw, ih / fh); x.imageSmoothingQuality = "high"; x.drawImage(fonte, b + (iw - fw * s) / 2, b + (ih - fh * s) / 2, fw * s, fh * s); }
     else if (!soCamada) { x.fillStyle = "#cfc6b4"; x.fillRect(b, b, iw, ih); x.font = "700 46px Poppins"; x.fillStyle = "rgba(255,255,255,.9)"; x.textAlign = "center"; x.fillText("Foto ou vídeo da IA aqui", 540, H / 2); }
     x.restore();
-    const M = 48 + b, tl = 170, cl = P.cantoLogo || "br", ca = P.cantoArroba || "bl", cs = P.cantoSelo || "nao", at = arroba(config.instagram) || "@migapromo.oficial";
+    // fixo: logo no canto inferior direito (com círculo atrás), @ no inferior esquerdo, selo % no superior direito só quando tem produto com desconto
+    const M = 48 + b, tl = 170, cl = "br", ca = "bl", cs = P.seloTxt ? "tr" : "nao", at = arroba(config.instagram) || "@migapromo.oficial";
     // "Logo em cima": o logo desce até o cantinho e o quadrado rosa cobre a marca d'água da IA (estrelinha ~75 px da borda)
-    const enc = P.circulo === "logo", lx = cl[1] === "l" ? (enc ? 10 : M) : (enc ? 1080 - 180 : 1080 - M - tl), ly = cl[0] === "t" ? (enc ? -10 : M) : (enc ? H - 160 : H - M - tl);
+    const enc = false, lx = cl[1] === "l" ? (enc ? 10 : M) : (enc ? 1080 - 180 : 1080 - M - tl), ly = cl[0] === "t" ? (enc ? -10 : M) : (enc ? H - 160 : H - M - tl);
     // selo de desconto
     if (cs !== "nao" && P.seloTxt) { const r = 92, mesmo = cs === cl, sx = cs[1] === "l" ? M + r : 1080 - M - r; let sy = cs[0] === "t" ? M + r : H - M - r; if (mesmo) sy += cs[0] === "t" ? tl + 24 : -(tl + 24);
       x.save(); x.translate(sx, sy); x.rotate(0.08); x.shadowColor = "rgba(0,0,0,.25)"; x.shadowBlur = 20; x.shadowOffsetY = 6; x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.fillStyle = "#ffd23f"; x.fill(); x.shadowColor = "transparent"; x.lineWidth = 8; x.strokeStyle = "#1d1d1f"; x.stroke();
       x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.textBaseline = "middle"; let f = 56; x.font = `900 ${f}px Poppins`; while (x.measureText(P.seloTxt).width > r * 1.6 && f > 26) { f -= 4; x.font = `900 ${f}px Poppins`; } x.fillText(P.seloTxt, 0, -8); x.font = "800 24px Poppins"; x.fillText("OFF", 0, 40); x.restore(); }
-    if (P.circulo === true) { const cx = cl[1] === "l" ? 0 : 1080, cy = cl[0] === "t" ? 0 : H, r = M + tl + 70; x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fillStyle = mol && mol !== "#ffffff" ? mol : "#ffffff"; x.shadowColor = "rgba(0,0,0,.12)"; x.shadowBlur = 18; x.fill(); x.restore(); } // círculo no canto do logo: tampa a marca d'água da IA
+    if (true) { const cx = cl[1] === "l" ? 0 : 1080, cy = cl[0] === "t" ? 0 : H, r = M + tl + 70; x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fillStyle = mol && mol !== "#ffffff" ? mol : "#ffffff"; x.shadowColor = "rgba(0,0,0,.12)"; x.shadowBlur = 18; x.fill(); x.restore(); } // círculo no canto do logo: tampa a marca d'água da IA
     if (edMarca) x.drawImage(edMarca, lx, ly, tl, tl);
     // o @ fica na mesma linha (mesma altura) do logo: centralizado na faixa do tamanho do logo
-    x.font = "800 40px Poppins"; const tw = x.measureText(at).width, faixa = ca[0] === cl[0] ? ly + tl / 2 : ca[0] === "t" ? M + tl / 2 : H - M - tl / 2;
+    x.font = "800 40px Poppins"; const tw = x.measureText(at).width, faixa = ca[0] === "t" ? M + tl / 2 : H - M - tl / 2;
     let ax = ca[1] === "l" ? M + tw / 2 : 1080 - M - tw / 2, ay = faixa + 14;
     if (ca === cl) ax = ca[1] === "l" ? lx + tl + 18 + tw / 2 : lx - 18 - tw / 2;
     textoContorno(x, at, ax, ay, 40, "#ffffff", 800, "center");
