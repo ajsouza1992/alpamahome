@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=255"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=256"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=255"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=256"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6647,7 +6647,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   let ffCarregado = null;
   function ffPronto() {
     if (!ffCarregado) ffCarregado = (async () => { const { FFmpeg } = await import(FF_CDN + "@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"); const ff = new FFmpeg();
-      ff.on("progress", ({ progress }) => { if (ff._aviso && progress >= 0 && progress <= 1) ff._aviso(Math.round(progress * 100)); });
+      ff.on("log", ({ message }) => { if (ff._log) ff._log(message); }); ff.on("progress", ({ progress }) => { if (ff._aviso && progress >= 0 && progress <= 1) ff._aviso(Math.round(progress * 100)); });
       await ff.load({ classWorkerURL: new URL("ffmpeg-worker.js", location.href).href, coreURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js", wasmURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" }); return ff; })().catch((e) => { ffCarregado = null; throw e; });
     return ffCarregado;
   }
@@ -6696,15 +6696,20 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (!dur) dur = await new Promise((ok) => { const v = document.createElement("video"); v.preload = "metadata"; v.onloadedmetadata = () => ok(isFinite(v.duration) ? v.duration : 8); v.onerror = () => ok(8); v.src = M0.url; });
     const ff = await ffPronto(); ff._aviso = null;
     await ff.writeFile("v.mp4", new Uint8Array(await vid.arrayBuffer())); await ff.writeFile("m.png", new Uint8Array(await png.arrayBuffer()));
+    // o fechamento entra logo que o vídeo acaba: se a IA deixou tela preta no fim, cortamos ela
+    try { const ini = Math.max(0, dur - 4); let ult = null; ff._log = (m) => { const r = /black_start:([\d.]+)\s+black_end:([\d.]+)/.exec(m); if (r) ult = [parseFloat(r[1]), parseFloat(r[2])]; };
+      await ff.exec(["-ss", ini.toFixed(3), "-i", "v.mp4", "-an", "-vf", "blackdetect=d=0.05:pix_th=0.12:pic_th=0.95", "-f", "null", "-"]);
+      if (ult && ini + ult[1] >= dur - 0.25 && ini + ult[0] > 0.5) dur = ini + ult[0];
+    } catch (e) { /* segue com a duração inteira */ } finally { ff._log = null; }
     // quadros do fechamento (transparentes) e o áudio extra
     const fc = document.createElement("canvas"); fc.width = 1080; fc.height = H; const fx = fc.getContext("2d");
     for (let i = 0; i < FECHO.quadros; i++) { quadroFechamento(fx, H, i / 30, cam); const b = await new Promise((ok) => fc.toBlob(ok, "image/png")); await ff.writeFile("f" + String(i).padStart(3, "0") + ".png", new Uint8Array(await b.arrayBuffer())); if (aviso) aviso(Math.round((i / FECHO.quadros) * 8)); }
     await ff.writeFile("a.wav", await audioFechamento(P, dur));
     ff._aviso = (pc) => aviso && aviso(8 + Math.round(pc * 0.92));
     const tot = (dur + FECHO.total).toFixed(3), D = dur.toFixed(3);
-    const vf = `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${FECHO.total}[b];[b][1:v]overlay=0:0:enable='lt(t,${D})'[c];[2:v]setpts=PTS-STARTPTS+${D}/TB[f];[c][f]overlay=0:0:eof_action=repeat,format=yuv420p[o]`;
+    const vf = `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1,fps=30,trim=end=${D},setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=${FECHO.total}[b];[b][1:v]overlay=0:0:enable='lt(t,${D})'[c];[2:v]setpts=PTS-STARTPTS+${D}/TB[f];[c][f]overlay=0:0:eof_action=repeat,format=yuv420p[o]`;
     const ent = ["-i", "v.mp4", "-i", "m.png", "-framerate", "30", "-i", "f%03d.png", "-i", "a.wav"], saida = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "21", "-r", "30", "-c:a", "aac", "-b:a", "160k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
-    await ff.exec([...ent, "-filter_complex", vf + `;[0:a]apad[v0];[v0][3:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "[o]", "-map", "[a]", ...saida]);
+    await ff.exec([...ent, "-filter_complex", vf + `;[0:a]atrim=end=${D},apad[v0];[v0][3:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "[o]", "-map", "[a]", ...saida]);
     let d = await ff.readFile("s.mp4").catch(() => null);
     if (!d || d.length < 2000) { await ff.exec([...ent, "-filter_complex", vf, "-map", "[o]", "-map", "3:a", ...saida]); d = await ff.readFile("s.mp4").catch(() => null); } // vídeo sem som
     ffCarregado = null; ff.terminate();
