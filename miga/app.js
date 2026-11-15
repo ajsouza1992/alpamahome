@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=281"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=282"; });
     }
     edFoto = null;
     try {
@@ -1663,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=281"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=282"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6629,7 +6629,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     ctx.save(); ctx.font = `500 66px ${FONTE_LINK}`;
     let estreita = false; try { estreita = document.fonts && document.fonts.check(`500 66px "Roboto Condensed"`); } catch (e) { /* segue */ }
     // largura do adesivo de link (ícone + texto, letra do tamanho do Instagram) com folga; vai até 1000 (o campo fica acima do círculo do logo)
-    const larg = Math.min(980, 30 + 66 + 16 + ctx.measureText(tx).width * (estreita ? 1 : 0.82) + 34 + 50), h = 122, r = 26, x = (1080 - larg) / 2;
+    const larg = Math.min(980, 30 + 66 + 16 + ctx.measureText(tx).width * (estreita ? 1 : 0.82) + 34 + 50), h = 140, r = 28, x = (1080 - larg) / 2;
     const corpo = () => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + larg, y, x + larg, y + h, r); ctx.arcTo(x + larg, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + larg, y, r); ctx.closePath(); };
     ctx.shadowColor = "rgba(0,0,0,.12)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4; corpo(); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
     ctx.setLineDash([18, 12]); ctx.lineWidth = 6; ctx.strokeStyle = cor || "#e8336d"; corpo(); ctx.stroke(); ctx.setLineDash([]); // borda tracejada na cor do tema
