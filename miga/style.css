@@ -1909,3 +1909,7 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 #ppUsarCupom [aria-checked="true"] { background: #e8336d; color: #fff; }
 .tag-ex--top { background: #1d1d1f; color: #ffd23f; }
 .tag-ex--oferta { background: #3483fa; color: #fff; }
+/* Lista filtrada pelos números do resumo */
+.pp-filtro-res { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0 10px; padding: 10px 12px; border-radius: 14px; background: #ffe3ec; color: #1d1d1f; font-size: 14px; }
+.pp-filtro-res b { color: #e8336d; }
+.pp-filtro-res .btn--mini { flex: none; }

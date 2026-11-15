@@ -614,7 +614,8 @@
     pintarMarcados();
     window.scrollTo({ top: 0 });
   }
-  document.querySelectorAll(".abas button").forEach((b) => b.addEventListener("click", () => irPara(b.dataset.aba)));
+  document.querySelectorAll(".abas button").forEach((b) => b.addEventListener("click", () => { if (b.dataset.aba === "postar" && filtroResumo) { filtroResumo = ""; renderFila(); } irPara(b.dataset.aba); }));
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-limpar-resumo]")) { filtroResumo = ""; renderFila(); } });
 
   /* =========================== Seletores =========================== */
   function grupoBotoes(sel, attr) {
@@ -1289,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=268"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=269"; });
     }
     edFoto = null;
     try {
@@ -1660,7 +1661,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=268"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=269"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1877,7 +1878,7 @@
     const p = paraPostar().length, f = incompletos().length, s = parados().length, prog = lerProgresso();
     const chip = (n, txt, attr, alerta) => `<button type="button" class="ph-chip${alerta && n ? " alerta" : ""}" ${attr}><b>${n}</b><span>${txt}</span></button>`;
     return `<div class="painel-hoje">
-      <div class="ph-chips">${chip(p, "para postar", "data-ph=postar")}${chip(f, f === 1 ? "incompleto" : "incompletos", "data-completar", true)}${chip(s, "parados há 7+ dias", "data-ph=parados", true)}</div>
+      <div class="ph-chips">${chip(p, "para postar", "data-ph=postar")}${chip(f, f === 1 ? "incompleto" : "incompletos", "data-ph=incompletos", true)}${chip(s, "parados há 7+ dias", "data-ph=parados", true)}</div>
       ${prog ? `<button type="button" class="btn btn--rosa ph-continuar" data-continuar><span>Continuar de onde parei</span><small>${esc(prog.rotulo)}</small></button>` : ""}
     </div>`;
   }
@@ -1921,15 +1922,25 @@
     toast(sv ? "Prompt salvo" : "Prompt restaurado");
   });
   $("#ajOcultarPostados").addEventListener("change", (e) => { config.ocultarPostados = e.target.checked; gravarConfig(); renderFila(); toast(e.target.checked ? "Postados ocultos da Lista" : "Postados de volta na Lista"); });
+  /* Filtro dos números do resumo (Início e topo da Lista): para postar, incompletos, parados 7+ dias, postados hoje */
+  let filtroResumo = "";
+  const NOMES_RESUMO = { postar: "Para postar", incompletos: "Incompletos", parados: "Parados há 7+ dias", hoje: "Postados hoje" };
+  const passaResumo = (i) => !filtroResumo || (filtroResumo === "postar" ? !i.carregando && !foiCompartilhado(i)
+    : filtroResumo === "incompletos" ? !i.carregando && (!i.imagem || !i.precoNovo || !i.nome)
+    : filtroResumo === "parados" ? !i.carregando && !foiCompartilhado(i) && diasDesde(i.criadoEm) >= 7
+    : filtroResumo === "hoje" ? !!i.postadoEm && new Date(i.postadoEm).toDateString() === new Date().toDateString() : true);
+  function filtrarResumo(k) { filtroResumo = k || ""; filtroLista = "todas"; limparBusca(); if (modoVarios) sairModoVarios(); irPara("postar"); renderFila(); window.scrollTo({ top: 0 }); }
   function renderFila() {
     migrarCategorias(); renderCatsLista(); pintarMarcados();
-    const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && bateBusca(i));
+    const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && bateBusca(i) && passaResumo(i));
+    { let fb = $("#ppFiltroRes"); if (!fb) { fb = document.createElement("div"); fb.id = "ppFiltroRes"; fb.className = "pp-filtro-res"; $("#ppLista").before(fb); }
+      fb.hidden = !filtroResumo; fb.innerHTML = filtroResumo ? `<span>Mostrando: <b>${NOMES_RESUMO[filtroResumo]}</b> (${base.length})</span><button type="button" class="btn btn--branco btn--mini" data-limpar-resumo>Ver todos</button>` : ""; }
     const qt = { postar: base.filter((i) => naVisao(i, "postar")).length, postados: base.filter((i) => naVisao(i, "postados")).length, todos: base.length };
     const v = "todos"; // tudo numa lista só: os já postados vão para o fim, com o selo de postado
     document.querySelectorAll("#ppVisao [data-visao]").forEach((b) => { b.classList.toggle("on", b.dataset.visao === v); b.setAttribute("aria-selected", String(b.dataset.visao === v)); });
     [["#vqPostar", qt.postar], ["#vqPostados", qt.postados], ["#vqTodos", qt.todos]].forEach(([s, n]) => { $(s).textContent = n; $(s).hidden = !n; });
     pintarNovoLink();
-    const ocultos = config.ocultarPostados && !termoBusca.trim() ? base.filter(foiCompartilhado).length : 0;
+    const ocultos = config.ocultarPostados && !termoBusca.trim() && filtroResumo !== "hoje" ? base.filter(foiCompartilhado).length : 0;
     const l0 = ordenar(base), l = [...l0.filter((i) => !foiCompartilhado(i)), ...(ocultos ? [] : l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0)))];
     pintarCats();
     const np = l.filter((i) => !foiCompartilhado(i)).length, nd = l.length - np;
@@ -2226,9 +2237,7 @@
     if (e.target.closest("[data-ir-inicio]")) { irPara("inicio"); setTimeout(() => $("#inLink").focus(), 150); return; }
     const ph = e.target.closest("[data-ph]");
     if (ph) {
-      if (ph.dataset.ph === "postar") { toast("A Lista mostra só o que falta postar. O que já foi postado fica no Histórico"); }
-      if (ph.dataset.ph === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); modoVarios = true; renderFila(); toast(`${l.length} parados selecionados`); }
-      return;
+      filtrarResumo(filtroResumo === ph.dataset.ph ? "" : ph.dataset.ph); return;
     }
     if (e.target.closest("[data-abrir-link]")) { e.stopPropagation(); return; } // o link abre sozinho
     const ed = e.target.closest("[data-editar]");
@@ -2316,9 +2325,7 @@
   $("#inCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; limparBusca(); irPara("postar"); });
   $("#inResumo").addEventListener("click", (e) => {
     const b = e.target.closest("[data-in-num]"); if (!b) return; const k = b.dataset.inNum;
-    if (k === "incompletos") { const p = incompletos()[0]; if (!p) { toast("Todos os produtos estão completos"); return; } modoCompletar = true; irPara("postar"); abrirItemFila(p, true); return; }
-    filtroLista = "todas"; limparBusca(); irPara("postar");
-    if (k === "parados") { const l = parados(); if (!l.length) { toast("Nenhum produto parado"); return; } marcados.clear(); l.forEach((i) => marcados.add(i.id)); modoVarios = true; renderFila(); toast(`${l.length} parados selecionados: toque em Continuar`); }
+    filtrarResumo(k);
   });
   $("#inAcoes").addEventListener("click", (e) => {
     const b = e.target.closest("[data-in]"); if (!b) return; const k = b.dataset.in;
