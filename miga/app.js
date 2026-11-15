@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=240"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=241"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=240"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=241"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1912,11 +1912,12 @@
   /* Prompts editáveis (Ajustes) */
   function pintarAjPrompts() {
     $("#ajPrompts").innerHTML = Object.entries(PROMPTS_PADRAO).map(([k, d]) => { const v = modeloPrompt(k), mudou = (config.prompts || {})[k] != null;
-      return `<details class="aj-prompt"><summary><b>${esc(d.nome)}</b>${mudou ? '<small>editado</small>' : ""}</summary>
+      return `<details class="aj-prompt"><summary><b>${esc(d.nome)}</b>${mudou ? '<small>editado</small>' : ""}<span class="aj-prompt__ver">Mostrar</span></summary>
         <p class="nota">Chaves: ${esc(d.chaves)}</p>
         <textarea data-aj-prompt="${k}" rows="8" maxlength="800">${esc(v)}</textarea>
         <div class="aj-prompt__rod"><span data-aj-cont="${k}">${v.length}/800</span><button type="button" class="btn btn--branco" data-aj-restaurar="${k}">Restaurar</button><button type="button" class="btn btn--rosa" data-aj-salvar-prompt="${k}">Salvar</button></div></details>`; }).join("");
   }
+  $("#ajPrompts").addEventListener("toggle", (e) => { const d = e.target; if (d.matches && d.matches(".aj-prompt")) d.querySelector(".aj-prompt__ver").textContent = d.open ? "Ocultar" : "Mostrar"; }, true);
   $("#ajPrompts").addEventListener("input", (e) => { const k = e.target.dataset && e.target.dataset.ajPrompt; if (k) $(`[data-aj-cont="${k}"]`).textContent = `${e.target.value.length}/800`; });
   $("#ajPrompts").addEventListener("click", async (e) => {
     const sv = e.target.closest("[data-aj-salvar-prompt]"), rs = e.target.closest("[data-aj-restaurar]"); if (!sv && !rs) return;
