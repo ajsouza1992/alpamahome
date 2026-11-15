@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=257"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=258"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=257"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=258"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6445,7 +6445,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
   function abrirPersonagem(it) {
     calcFundoAuto(it);
-    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { cantoLogo: (lsPers.ler("cantos", {}) || {}).logo || "br", cantoArroba: (lsPers.ler("cantos", {}) || {}).arroba || "bl", cantoSelo: (lsPers.ler("cantos", {}) || {}).selo || "nao", moldura: lsPers.ler("moldura", "nao"), circulo: true, musica: lsPers.ler("musica", ""), roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
+    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { cantoLogo: (lsPers.ler("cantos", {}) || {}).logo || "br", cantoArroba: (lsPers.ler("cantos", {}) || {}).arroba || "bl", cantoSelo: (lsPers.ler("cantos", {}) || {}).selo || "nao", moldura: lsPers.ler("moldura", "nao"), circulo: true, musica: lsPers.ler("musica", ""), qualidade: lsPers.ler("qualidade", "alta"), roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
     sortearRoupa(wz.pe); marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const fotosPers = () => lsPers.ler("fotos", [null, null]);
@@ -6527,6 +6527,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}`}
         ${P.midia && P.midia.tipo === "video" ? `<div class="pe-roupa ch-musica"><span><b>Música baixinha ao fundo:</b> ${P.musica && NOMES_MUSICA[P.musica] ? esc(NOMES_MUSICA[P.musica][0]) : "sem música"}</span>${P.musica ? `<button type="button" class="mus-play" data-ouvir="${P.musica}" aria-label="Ouvir">${ICO_PLAY}</button>` : ""}<button type="button" class="btn btn--branco" id="peTrocarMus">${P.musica ? "Trocar" : "Escolher"}</button></div>
+        <div><b class="ch-rot">Qualidade do vídeo</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-qual="alta" aria-checked="${P.qualidade !== "rapido"}">Alta qualidade</button><button type="button" role="radio" data-pe-qual="rapido" aria-checked="${P.qualidade === "rapido"}">Rápido</button></div></div>
         <p class="nota">No fim do vídeo entra o fechamento da Miga: o círculo cresce, o logo vai pro meio e aparece o @ com plim.</p>` : ""}
         <div class="campo"><span>Legenda pronta (pode editar)</span><textarea id="peLegenda" rows="9">${esc(P.legenda)}</textarea></div>
         <button type="button" class="btn btn--branco" id="peCopiarLeg">Copiar legenda</button>
@@ -6689,6 +6690,78 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 1.2); }); });
     return wavDe(await ac.startRendering());
   }
+  /* Montagem rápida com o codificador de vídeo do próprio aparelho (WebCodecs): toca o vídeo uma vez, desenha logo/@/selo em cada quadro,
+     corta a tela preta do fim, emenda o fechamento e o ffmpeg só junta o som (sem recodificar a imagem). */
+  async function videoComMarcaWC(P, M0, aviso) {
+    if (!window.VideoEncoder || !window.VideoFrame || !HTMLVideoElement.prototype.requestVideoFrameCallback) throw new Error("sem WebCodecs");
+    const alta = P.qualidade !== "rapido", W = alta ? 1080 : 720, H0 = altPers(P), H = Math.round((H0 * W) / 1080 / 2) * 2;
+    const ff = await ffPronto(); ff._aviso = null; const apaga = (...n) => n.forEach((x) => ff.deleteFile(x).catch(() => {}));
+    await ff.writeFile("v.mp4", new Uint8Array(await (await fetch(M0.url)).arrayBuffer()));
+    let fps = 0; ff._log = (m) => { const r = /Video:.*?([\d.]+) fps/.exec(m); if (r && !fps) fps = parseFloat(r[1]); };
+    try { await ff.exec(["-hide_banner", "-i", "v.mp4"]); } catch (e) { /* só leitura */ } finally { ff._log = null; }
+    fps = Math.round(fps); if (!(fps >= 15 && fps <= 60)) fps = 30;
+    let cfg = null;
+    for (const codec of ["avc1.640028", "avc1.4d0028", "avc1.42e028"]) { for (const hw of ["prefer-hardware", "no-preference"]) {
+      const c = { codec, width: W, height: H, bitrate: alta ? 12e6 : 5e6, framerate: fps, avc: { format: "annexb" }, latencyMode: "realtime", hardwareAcceleration: hw };
+      try { if ((await VideoEncoder.isConfigSupported(c)).supported) { cfg = c; break; } } catch (e) { /* tenta outro */ } } if (cfg) break; }
+    if (!cfg) throw new Error("sem H.264");
+    const pedacos = []; let erro = null;
+    const enc = new VideoEncoder({ output: (ch) => { const b = new Uint8Array(ch.byteLength); ch.copyTo(b); pedacos.push({ t: ch.timestamp, b }); }, error: (e) => { erro = e; } });
+    enc.configure(cfg);
+    await carregarMarca(); const cam = document.createElement("canvas"); cam.width = 1080; cam.height = H0; quadroLogoArroba(cam.getContext("2d"), 1080, null, P, true);
+    const tela = document.createElement("canvas"); tela.width = W; tela.height = H; const ctx = tela.getContext("2d"); ctx.imageSmoothingQuality = "high";
+    const mini = document.createElement("canvas"); mini.width = 18; mini.height = 32; const mx = mini.getContext("2d", { willReadFrequently: true });
+    const v = document.createElement("video"); v.src = M0.url; v.muted = true; v.playsInline = true; v.preload = "auto";
+    v.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none"; document.body.appendChild(v);
+    try {
+      await new Promise((ok, no) => { if (v.readyState >= 2) ok(); else { v.addEventListener("loadeddata", ok, { once: true }); v.addEventListener("error", () => no(new Error("vídeo não abriu")), { once: true }); } });
+      const total = isFinite(v.duration) && v.duration > 0 ? v.duration : 8, dt = 1e6 / fps, luz = []; let ult = -1;
+      const desenha = () => { const fw = v.videoWidth, fh = v.videoHeight, k = Math.max(W / fw, H / fh); ctx.drawImage(v, (W - fw * k) / 2, (H - fh * k) / 2, fw * k, fh * k); };
+      await new Promise((ok, no) => {
+        let fim = false; const acabar = () => { if (!fim) { fim = true; ok(); } };
+        const cb = (agora, md) => {
+          if (fim) return; const i = Math.round(md.mediaTime * fps);
+          if (i > ult) {
+            desenha(); mx.drawImage(v, 0, 0, 18, 32); const d = mx.getImageData(0, 0, 18, 32).data; let y = 0; for (let q = 0; q < d.length; q += 4) y += 0.299 * d[q] + 0.587 * d[q + 1] + 0.114 * d[q + 2]; y /= d.length / 4;
+            ctx.drawImage(cam, 0, 0, W, H);
+            for (let j = ult + 1; j <= i; j++) { const f = new VideoFrame(tela, { timestamp: Math.round(j * dt), duration: Math.round(dt) }); enc.encode(f, { keyFrame: j % (fps * 2) === 0 }); f.close(); luz[j] = y; }
+            ult = i; if (aviso) aviso(Math.min(85, Math.round((md.mediaTime / total) * 85)));
+          }
+          v.requestVideoFrameCallback(cb);
+        };
+        v.requestVideoFrameCallback(cb); v.addEventListener("ended", () => setTimeout(acabar, 120), { once: true });
+        v.play().catch(no);
+        setTimeout(acabar, (total + 20) * 1000);
+      });
+      if (erro) throw erro; if (ult < fps) throw new Error("poucos quadros");
+      // fim de verdade: corta a tela preta / o escurecer do final
+      let c = ult + 1; { const ini = Math.max(0, c - 5 * fps), vs = luz.slice(ini, c).filter((x) => x != null), cl = vs.slice().sort((a, b) => b - a), ref = cl[Math.floor(cl.length * 0.3)] || 0;
+        const escuro = Math.max(8, ref * 0.3), limite = Math.max(12, ref * 0.8);
+        if (luz[c - 1] < escuro) { while (c > ini + 1 && luz[c - 1] < limite) c--; } }
+      if (c < fps * 0.8) c = ult + 1;
+      await enc.flush(); const nMeio = pedacos.length;
+      // último quadro claro, para o fundo do fechamento
+      v.pause(); await new Promise((ok) => { v.addEventListener("seeked", ok, { once: true }); v.currentTime = Math.max(0, (c - 1) / fps + 0.01); setTimeout(ok, 2500); });
+      desenha(); const base = document.createElement("canvas"); base.width = W; base.height = H; base.getContext("2d").drawImage(tela, 0, 0);
+      const cam2 = document.createElement("canvas"); cam2.width = 1080; cam2.height = H0; const cx2 = cam2.getContext("2d"), nF = Math.round(FECHO.total * fps);
+      for (let m = 0; m < nF; m++) { quadroFechamento(cx2, H0, m / fps, cam); ctx.drawImage(base, 0, 0); ctx.drawImage(cam2, 0, 0, W, H);
+        const f = new VideoFrame(tela, { timestamp: Math.round((c + m) * dt), duration: Math.round(dt) }); enc.encode(f, { keyFrame: m === 0 }); f.close();
+        if (enc.encodeQueueSize > 8) await new Promise((ok) => setTimeout(ok, 5)); if (aviso && m % 6 === 0) aviso(85 + Math.round((m / nF) * 10)); }
+      await enc.flush(); enc.close(); if (erro) throw erro;
+      const fica = pedacos.filter((p, i) => i >= nMeio || p.t < c * dt - 1); let n = 0; fica.forEach((p) => { n += p.b.length; });
+      const h264 = new Uint8Array(n); n = 0; fica.forEach((p) => { h264.set(p.b, n); n += p.b.length; });
+      const D = (c / fps).toFixed(3), tot = ((c + nF) / fps).toFixed(3);
+      await ff.writeFile("v.h264", h264); await ff.writeFile("a.wav", await audioFechamento(P, c / fps));
+      const ent = ["-framerate", String(fps), "-i", "v.h264", "-i", "v.mp4", "-i", "a.wav"], saida = ["-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
+      await ff.exec([...ent, "-filter_complex", `[1:a]atrim=end=${D},apad[v0];[v0][2:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "0:v", "-map", "[a]", ...saida]);
+      let d = await ff.readFile("s.mp4").catch(() => null);
+      if (!d || d.length < 2000) { await ff.exec([...ent, "-map", "0:v", "-map", "2:a", ...saida]); d = await ff.readFile("s.mp4").catch(() => null); } // vídeo sem som
+      apaga("v.mp4", "v.h264", "a.wav", "s.mp4");
+      if (!d || d.length < 2000) throw new Error("junção vazia");
+      if (aviso) aviso(100);
+      return new Blob([d.buffer], { type: "video/mp4" });
+    } finally { v.pause(); v.remove(); try { if (enc.state !== "closed") enc.close(); } catch (e) { /* já fechado */ } }
+  }
   async function videoComMarcaFF(P, M0, aviso) {
     const H = altPers(P), cam = document.createElement("canvas"); cam.width = 1080; cam.height = H; await carregarMarca(); quadroLogoArroba(cam.getContext("2d"), 1080, null, P, true);
     const png = await new Promise((ok) => cam.toBlob(ok, "image/png")), vid = await (await fetch(M0.url)).blob();
@@ -6716,7 +6789,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     ff._aviso = (pc) => aviso && aviso(8 + Math.round(pc * 0.92));
     const tot = (dur + FECHO.total).toFixed(3), D = dur.toFixed(3);
     const vf = `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1,fps=30,trim=end=${D},setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=${FECHO.total}[b];[b][1:v]overlay=0:0:enable='lt(t,${D})'[c];[2:v]setpts=PTS-STARTPTS+${D}/TB[f];[c][f]overlay=0:0:eof_action=repeat,format=yuv420p[o]`;
-    const ent = ["-i", "v.mp4", "-i", "m.png", "-framerate", "30", "-i", "f%03d.png", "-i", "a.wav"], saida = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "21", "-r", "30", "-c:a", "aac", "-b:a", "160k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
+    const ent = ["-i", "v.mp4", "-i", "m.png", "-framerate", "30", "-i", "f%03d.png", "-i", "a.wav"], saida = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", P.qualidade === "rapido" ? "24" : "19", "-r", "30", "-c:a", "aac", "-b:a", "160k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
     await ff.exec([...ent, "-filter_complex", vf + `;[0:a]atrim=end=${D},apad[v0];[v0][3:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "[o]", "-map", "[a]", ...saida]);
     let d = await ff.readFile("s.mp4").catch(() => null);
     if (!d || d.length < 2000) { await ff.exec([...ent, "-filter_complex", vf, "-map", "[o]", "-map", "3:a", ...saida]); d = await ff.readFile("s.mp4").catch(() => null); } // vídeo sem som
@@ -6729,7 +6802,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     { const btn = $("#peGravar"); const pinta = (pc) => { if (!btn) return; btn.textContent = `Criando o vídeo… ${pc}%`; btn.style.background = `linear-gradient(90deg, #e8336d ${pc}%, #f39bb9 ${pc}%)`; btn.style.color = "#fff"; btn.style.opacity = "1"; };
       if (btn) { btn.disabled = true; pinta(0); }
       try {
-        const blob = await videoComMarcaFF(P, M0, pinta);
+        let blob = null; try { blob = await videoComMarcaWC(P, M0, pinta); } catch (e1) { console.warn("montagem rápida indisponível, usando ffmpeg", e1); pinta(0); blob = await videoComMarcaFF(P, M0, pinta); }
         const nome = nomeArquivo(wzItem() ? wzItem().nome : "criacao-ia").replace(/\.jpe?g$/i, "") + "-personagem.mp4";
         P.resultado = { blob, url: URL.createObjectURL(blob), nome, mp4: true }; mostrarPasso(); toast("Vídeo pronto"); return;
       } catch (e) { console.warn("ffmpeg falhou, gravando em tempo real", e); if (btn) { btn.disabled = false; btn.style.background = ""; } } }
@@ -6852,6 +6925,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       try { v.currentTime = 0; v.muted = false; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; } catch (er) { v.muted = true; toast("Não consegui tocar o som"); } return; }
     if (t.closest("#peCopiarLeg")) { if (await copiarTexto($("#peLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
+    { const q = t.closest("[data-pe-qual]"); if (q) { P.qualidade = q.dataset.peQual; lsPers.gravar("qualidade", P.qualidade); P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; } }
     { const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; } }
     if (t.closest("#peTrocarMus")) { tocarAmostra(""); folhaEst("Música baixinha ao fundo", `<p class="nota">Toque no ▶ para ouvir antes de escolher. Ela entra bem baixinha, sem atrapalhar a fala.</p><div class="lista-mod"><div class="mus-linha${!P.musica ? " on" : ""}"><button type="button" data-pe-escolhe-mus=""><b>Sem música</b><small>só a voz do vídeo</small></button></div>${LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${P.musica === k ? " on" : ""}"><button type="button" data-pe-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`); return; }
     if (t.closest("#peBaixarV")) { baixarBlob(P.resultado.blob, P.resultado.nome); toast("Vídeo salvo"); return; }
