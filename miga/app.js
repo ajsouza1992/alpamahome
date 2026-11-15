@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=275"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=276"; });
     }
     edFoto = null;
     try {
@@ -1663,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=275"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=276"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -5368,7 +5368,7 @@
     relogioReels = 0; decorAtual = decorDe(R); pulsoTela = 0;
     if (tAnim != null) { // arte em movimento: entra no ritmo, depois "respira" com a batida e vai chegando perto devagar
       relogioReels = tAnim; pulsoTela = 0; acentoCena = null; flutua = tAnim;
-      const z = 1 + 0.05 * Math.min(1, tAnim / 20);
+      const z = storyComLink ? 1 : 1 + 0.05 * Math.min(1, tAnim / 20); // Story: sem aproximar, o campo do cupom fica parado no lugar do link
       ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
       semEntrada = storyComLink;
       try { if (H === 1920) produtoReels(ctx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor); else comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor)); }
@@ -6014,7 +6014,8 @@
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 - SB + OY); ctx.fillRect(540 - w / 2 + ld, 1252 - SB + OY, w - ld, 5); });
       if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) - SB + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, A(5), () => { if (storyComLink) { campoCupomLink(ctx, 96, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom); return; } const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
+      if (it.cupom && storyComLink) campoCupomLink(ctx, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom); // fixo, sem animação
+      else if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
@@ -6034,7 +6035,8 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom) comSubida(ctx, t, A(5), () => { if (storyComLink) { campoCupomLink(ctx, 96, y + 84, it.cupom); return; } const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
+    if (it.cupom && storyComLink) campoCupomLink(ctx, y + 84, it.cupom); // fixo, sem animação
+    else if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; acentoCena = null; } }
@@ -6610,21 +6612,21 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     x.restore();
   }
   /** Texto sem fundo: letra com contorno escuro (lê em qualquer foto) */
-  /* Story do Instagram: campo branco no estilo do adesivo de link — "CUPOM: CÓDIGO" em azul, letra estreita e maiúscula,
-     e um espaço em branco no fim para colar o adesivo de link por cima (vira um adesivo só) */
-  let fonteLinkOk = null;
-  const FONTE_LINK = '"Roboto Condensed", "sans-serif-condensed", "Arial Narrow", "Helvetica Neue", Roboto, Arial, sans-serif';
-  function campoCupomLink(ctx, x, y, codigo) {
-    const h = 118, r = 18, az = "#3897f0", espacoLink = 250, t = ("CUPOM: " + String(codigo)).toUpperCase();
+  /* Story do Instagram: campo branco no estilo do adesivo de link, indo até o fim da tela.
+     Esquerda: "CUPOM: CÓDIGO" (azul, maiúsculas, letra estreita como a do adesivo). No meio: entalhe e tracejado.
+     Direita: branco livre para colar o adesivo de link do Instagram por cima. */
+  const FONTE_LINK = '"Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif';
+  try { document.fonts && document.fonts.load('500 60px "Roboto Condensed"'); } catch (e) { /* segue */ }
+  function campoCupomLink(ctx, y, codigo) {
+    const x0 = 64, h = 118, r = 18, n = 15, xd = 560, fim = 1100, az = "#3897f0", t = ("CUPOM: " + String(codigo)).toUpperCase();
     ctx.save(); ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    if (fonteLinkOk == null) { ctx.font = `500 60px ${FONTE_LINK}`; const a = ctx.measureText("CUPOM: MIGA").width; ctx.font = "500 60px Arial, sans-serif"; fonteLinkOk = a < ctx.measureText("CUPOM: MIGA").width * 0.9; }
-    const esc = fonteLinkOk ? 1 : 0.8; let f = 60; ctx.font = `500 ${f}px ${FONTE_LINK}`;
-    while (ctx.measureText(t).width * esc > 1080 - x - 40 - espacoLink - 54 && f > 34) { f -= 2; ctx.font = `500 ${f}px ${FONTE_LINK}`; }
-    const wt = ctx.measureText(t).width * esc, w = 30 + wt + 24 + espacoLink;
-    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
-    ctx.shadowColor = "rgba(0,0,0,.12)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
-    ctx.translate(x + 30, y + h / 2 + 2); ctx.scale(esc, 1); ctx.fillStyle = az; ctx.fillText(t, 0, 0);
-    ctx.restore(); return w;
+    const corpo = () => { ctx.beginPath(); ctx.moveTo(x0 + r, y); ctx.lineTo(xd - n, y); ctx.arc(xd, y, n, Math.PI, 0, true); ctx.lineTo(fim, y); ctx.lineTo(fim, y + h); ctx.lineTo(xd + n, y + h); ctx.arc(xd, y + h, n, 0, Math.PI, true);
+      ctx.lineTo(x0 + r, y + h); ctx.arcTo(x0, y + h, x0, y + h - r, r); ctx.lineTo(x0, y + r); ctx.arcTo(x0, y, x0 + r, y, r); ctx.closePath(); };
+    ctx.shadowColor = "rgba(0,0,0,.12)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; corpo(); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
+    ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = "#cfcfcf"; ctx.beginPath(); ctx.moveTo(xd, y + n + 8); ctx.lineTo(xd, y + h - n - 8); ctx.stroke(); ctx.setLineDash([]);
+    let f = 70; ctx.font = `500 ${f}px ${FONTE_LINK}`; while (ctx.measureText(t).width > xd - x0 - 64 && f > 30) { f -= 2; ctx.font = `500 ${f}px ${FONTE_LINK}`; }
+    ctx.fillStyle = az; ctx.fillText(t, x0 + 32, y + h / 2 + 3);
+    ctx.restore();
   }
   /* Selo de cupom (ticket): faixa com "CUPOM" de lado e o código grande, bem centralizado, na parte maior.
      As cores acompanham o modelo: a faixa usa a cor de destaque e o corpo uma cor que combina com ela. */
