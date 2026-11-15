@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=246"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=247"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=246"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=247"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6899,7 +6899,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       const alvoX = esq ? 380 + 680 * r3 : 700 - 680 * r3, vx = (alvoX - ox) / ta; // cruza para o outro lado
       let px, py;
       if (u <= ta) { px = ox + vx * u; py = oy - vy * u + 0.5 * g * u * u; }
-      else { const d = u - ta, vt = 230 + 260 * r1; px = alvoX + (esq ? 1 : -1) * 60 * d + Math.sin(d * (1.6 + r2 * 2.5) + i) * (50 + 40 * r3); py = apexY + vt * d; } // caindo leve, balançando
+      else { const d = u - ta, vt = 120 + 140 * r1; px = alvoX + (esq ? 1 : -1) * 60 * d + Math.sin(d * (1.6 + r2 * 2.5) + i) * (50 + 40 * r3); py = apexY + vt * d; } // caindo leve, balançando
       if (py > 1990 || px < -40 || px > 1120) continue;
       x.save(); x.translate(px, py); x.rotate(u * (3 + r3 * 5) + i); x.scale(1, Math.cos(u * 5 + i)); x.fillStyle = cores[i % cores.length];
       if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 10, 0, 7); x.fill(); } else x.fillRect(-15, -6, 30, 12); x.restore();
@@ -6928,7 +6928,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula, pm = 0) {
     const T = C.texto, A = C.d1, brilha = (bx, by, r, t0, u) => { const k = (u - t0) % 1.4; if (u < t0 || k > 0.7) return; const s = Math.sin(k / 0.7 * Math.PI); x.save(); x.translate(bx, by); x.scale(s, s); x.beginPath(); for (let i = 0; i < 8; i++) { const g = i * Math.PI / 4 - Math.PI / 2, q = i % 2 ? r * 0.28 : r; x.lineTo(Math.cos(g) * q, Math.sin(g) * q); } x.closePath(); x.fillStyle = "#ffffff"; x.shadowColor = "rgba(255,210,63,.9)"; x.shadowBlur = 18; x.fill(); x.restore(); };
     if (t < 3.2) {
-      canhaoConfete(x, t - 1.65, 150); // estouro de confete só quando bate o número
+ // estouro de confete só quando bate o número
       if (D.etiqueta) pilula(D.etiqueta, 540, 430, "#ffd23f", "#1d1d1f", 46, 0.05, t, -0.04);
       linha(partesDestaque(D.t1, T, A), 640, 104, 0.2, t);
       const k = easeC((t - 0.35) / 0.4); if (k > 0) {
@@ -6956,6 +6956,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       const at = D.arroba; if (at) pilula(at, 540, 1340, "#ffd23f", "#1d1d1f", 56, 0.8, u, -0.03);
       linha(partesDestaque(D.toque, C.suave, A), at ? 1490 : 1350, 54, 1.1, u);
     }
+    canhaoConfete(x, t - 1.65, 150); // o confete continua caindo até o fim do vídeo, por cima de todas as telas
   }
   function legendaSeguidores(CH) {
     const D = dadosChamada(CH), at = arroba(config.instagram) || "@migapromo.oficial";
