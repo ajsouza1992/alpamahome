@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=274"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=275"; });
     }
     edFoto = null;
     try {
@@ -1663,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=274"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=275"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -4212,7 +4212,8 @@
   let flutua = null; // tempo da arte em movimento (suave, sem seguir a batida)
   let pulsoTela = 0; // 1 no tempo da batida (só nos vídeos; na imagem parada fica 0)
   const emTempos = (seg, batida) => Math.max(2, Math.round(seg / batida / 2) * 2) * batida; // duração com número par de tempos
-  const entrada = (t, ini, dur = 0.5) => Math.max(0, Math.min(1, (t - noTempo(ini)) / dur));
+  let semEntrada = false; // Story em movimento: tudo já aparece no primeiro instante (o adesivo de link não fica sozinho)
+  const entrada = (t, ini, dur = 0.5) => (semEntrada ? 1 : Math.max(0, Math.min(1, (t - noTempo(ini)) / dur)));
   const pulo = (p) => p <= 0 ? 0 : p < 0.6 ? 0.6 + (1.08 - 0.6) * (p / 0.6) : 1.08 - 0.08 * ((p - 0.6) / 0.4);
   const suave = (p) => 1 - Math.pow(1 - p, 3);
   function comPulo(ctx, t, ini, cx, cy, desenho, dur = 0.34) {
@@ -4228,7 +4229,7 @@
     ctx.fillStyle = cor1; ctx.beginPath(); ctx.arc(-10, -10, r1, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = cor2; ctx.beginPath(); ctx.arc(1020, 1860, r2, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(1035, 1240, 30 * (1 + 0.35 * Math.sin(T * 3 + 0.8)), 0, Math.PI * 2); ctx.fillStyle = cor1; ctx.globalAlpha *= 0.7; ctx.fill(); ctx.globalAlpha /= 0.7;
-    ctx.beginPath(); ctx.arc(70, 1560, 26 * (1 + 0.35 * Math.sin(T * 3 + 2.4)), 0, Math.PI * 2); ctx.fillStyle = cor2; ctx.fill();
+    if (!storyComLink) { ctx.beginPath(); ctx.arc(70, 1560, 26 * (1 + 0.35 * Math.sin(T * 3 + 2.4)), 0, Math.PI * 2); ctx.fillStyle = cor2; ctx.fill(); } // no Story fica livre para o campo do cupom
   }
   function pilulaReels(ctx, texto, cx, cy, fundo, cor, tam, borda) {
     ctx.font = `800 ${tam}px Poppins`; const pw = Math.min(1000, ctx.measureText(texto).width + tam * 2), ph = tam * 2.1;
@@ -5369,8 +5370,9 @@
       relogioReels = tAnim; pulsoTela = 0; acentoCena = null; flutua = tAnim;
       const z = 1 + 0.05 * Math.min(1, tAnim / 20);
       ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
+      semEntrada = storyComLink;
       try { if (H === 1920) produtoReels(ctx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor); else comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor)); }
-      finally { ctx.restore(); pulsoTela = 0; acentoCena = null; flutua = null; }
+      finally { ctx.restore(); pulsoTela = 0; acentoCena = null; flutua = null; semEntrada = false; }
       return;
     }
     if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); return; }
@@ -6012,7 +6014,7 @@
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 - SB + OY); ctx.fillRect(540 - w / 2 + ld, 1252 - SB + OY, w - ld, 5); });
       if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) - SB + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, storyComLink ? 96 : 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
+      if (it.cupom) comSubida(ctx, t, A(5), () => { if (storyComLink) { campoCupomLink(ctx, 96, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom); return; } const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
@@ -6032,7 +6034,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, storyComLink ? 96 : 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
+    if (it.cupom) comSubida(ctx, t, A(5), () => { if (storyComLink) { campoCupomLink(ctx, 96, y + 84, it.cupom); return; } const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; acentoCena = null; } }
@@ -6608,6 +6610,22 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     x.restore();
   }
   /** Texto sem fundo: letra com contorno escuro (lê em qualquer foto) */
+  /* Story do Instagram: campo branco no estilo do adesivo de link — "CUPOM: CÓDIGO" em azul, letra estreita e maiúscula,
+     e um espaço em branco no fim para colar o adesivo de link por cima (vira um adesivo só) */
+  let fonteLinkOk = null;
+  const FONTE_LINK = '"Roboto Condensed", "sans-serif-condensed", "Arial Narrow", "Helvetica Neue", Roboto, Arial, sans-serif';
+  function campoCupomLink(ctx, x, y, codigo) {
+    const h = 118, r = 18, az = "#3897f0", espacoLink = 250, t = ("CUPOM: " + String(codigo)).toUpperCase();
+    ctx.save(); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    if (fonteLinkOk == null) { ctx.font = `500 60px ${FONTE_LINK}`; const a = ctx.measureText("CUPOM: MIGA").width; ctx.font = "500 60px Arial, sans-serif"; fonteLinkOk = a < ctx.measureText("CUPOM: MIGA").width * 0.9; }
+    const esc = fonteLinkOk ? 1 : 0.8; let f = 60; ctx.font = `500 ${f}px ${FONTE_LINK}`;
+    while (ctx.measureText(t).width * esc > 1080 - x - 40 - espacoLink - 54 && f > 34) { f -= 2; ctx.font = `500 ${f}px ${FONTE_LINK}`; }
+    const wt = ctx.measureText(t).width * esc, w = 30 + wt + 24 + espacoLink;
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    ctx.shadowColor = "rgba(0,0,0,.12)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
+    ctx.translate(x + 30, y + h / 2 + 2); ctx.scale(esc, 1); ctx.fillStyle = az; ctx.fillText(t, 0, 0);
+    ctx.restore(); return w;
+  }
   /* Selo de cupom (ticket): faixa com "CUPOM" de lado e o código grande, bem centralizado, na parte maior.
      As cores acompanham o modelo: a faixa usa a cor de destaque e o corpo uma cor que combina com ela. */
   const hexOk = (c) => /^#[0-9a-f]{6}$/i.test(String(c || ""));
