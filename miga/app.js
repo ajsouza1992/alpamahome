@@ -1252,12 +1252,7 @@
     const cupom = $("#edCupom").value.trim().toUpperCase();
     ctx.textBaseline = "middle";
     if (cupom) {
-      ctx.font = `800 ${L.rodapeFonte}px Poppins`;
-      const t = "CUPOM " + cupom, w = ctx.measureText(t).width + 48, h = L.rodapeFonte * 1.9;
-      retArredondado(ctx, x, ry - h / 2, w, h, h / 2);
-      ctx.fillStyle = "#ffd23f"; ctx.fill();
-      ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, x + 24, ry + 2);
+      const h = L.rodapeFonte * 2.1, w = desenharCupom(ctx, x, ry - h / 2, cupom, h); ctx.textAlign = "left"; ctx.textBaseline = "middle";
       x += w + 22;
     }
     const rodape = $("#edRodape").value.trim();
@@ -1292,7 +1287,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=262"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=263"; });
     }
     edFoto = null;
     try {
@@ -1381,7 +1376,7 @@
   const linhasTitulo = (t) => String(t || "").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 4)
     .map((l) => l.split(/(\*[^*]+\*)/).filter(Boolean).map((p) => /^\*.+\*$/.test(p) ? [p.slice(1, -1), 1] : [p, 0]));
   const comBotao = (d) => d.botao ? [["gap", 44], ["pill", d.botao]] : [];
-  const comCupom = (d) => d.cupom ? [["gap", 22], ["cupomP", d.cupom]] : [];
+  const comCupom = (d) => d.cupom ? [["gap", 40], ["cupomP", d.cupom]] : [];
   const comTexto = (d, gap = 26) => d.texto ? [["gap", gap], ["sub", d.texto]] : [];
   const comLink = (d) => d.espaco ? [["gap", 30], ["link", 0]] : [];
   /* Cada modelo: valores iniciais dos campos (todos editáveis) + blocos de cima para baixo.
@@ -1613,11 +1608,7 @@
         ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore();
       }
       if (tipo === "cupomP") {
-        ctx.font = `800 ${Math.round(44 * escala)}px Poppins`;
-        const t = "CUPOM " + String(v).toUpperCase(), cw = ctx.measureText(t).width + 90 * escala;
-        retArredondado(ctx, (W - cw) / 2, y + 4 * escala, cw, h - 8 * escala, (h - 8 * escala) / 2); ctx.fillStyle = "#ffffff"; ctx.fill();
-        ctx.setLineDash([16, 10]); ctx.lineWidth = 5; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, W / 2, y + h / 2 + 2);
+        const hc = 86 * escala, cw = medidaCupom(ctx, v, hc).w; desenharCupom(ctx, (W - cw) / 2, y + (h - hc) / 2, v, hc);
       }
       if (tipo === "link" && d.previa && false) {
         // Só na prévia: onde colocar o adesivo de link (ou de enquete) do Instagram
@@ -1667,7 +1658,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=262"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=263"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1896,7 +1887,7 @@
   const ehLink = (t) => /https?:\/\//.test(String(t || ""));
   const semAcento = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   function textoBusca(i) {
-    return semAcento([i.nome, i.link, i.urlFinal, NOME_LOJA[i.loja], i.loja, i.precoNovo && brl(i.precoNovo), i.precoAntigo && brl(i.precoAntigo), i.cupom, NOME_CAT[i.categoria] || i.categoria,
+    return semAcento([i.nome, i.link, i.urlFinal, NOME_LOJA[i.loja], i.loja, i.precoNovo && brl(i.precoNovo), i.precoAntigo && brl(i.precoAntigo), i.cupom, i.obs, NOME_CAT[i.categoria] || i.categoria,
       ...(i.ondePostou || []), i.postadoEm && dataCurta(i.postadoEm), foiCompartilhado(i) ? "postado" : "para postar"].filter(Boolean).join(" "));
   }
   function bateBusca(i) {
@@ -1948,7 +1939,8 @@
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           ${i.precoNovo ? `<span class="pp-preco">${brl(i.precoNovo)}${i.precoAntigo && i.precoAntigo > i.precoNovo ? `<s>${brl(i.precoAntigo)}</s>` : ""}</span>` : ""}
-          <span class="meta">${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
+          <span class="meta">${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
+          ${i.obs ? `<span class="pp-obs">${marcaBusca(i.obs)}</span>` : ""}
           ${post ? `<span class="pp-onde">${onde.length ? esc(onde.join(", ")) + " · " : ""}${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
         <span class="seta">›</span>
@@ -2366,6 +2358,9 @@
     $("#ppAntigo").value = item.precoAntigo ? paraCampo(item.precoAntigo) : "";
     $("#ppNovo").value = item.precoNovo ? paraCampo(item.precoNovo) : "";
     $("#ppCupom").value = item.cupom || "";
+    $("#ppPrecoCupom").value = item.precoCupom ? paraCampo(item.precoCupom) : "";
+    if (item.usarCupom && item.precoCupom && item.precoSemCupom) $("#ppNovo").value = paraCampo(item.precoSemCupom); // o campo "Preço novo" mostra o preço sem cupom
+    $("#ppObs").value = item.obs || ""; pintarUsarCupom(item);
     $("#ppLinkItem").value = item.link || "";
     ppCategoria.marcar(item.categoria || "outros"); pintarCatPp(item.categoria || "outros");
     mostrarFalta(pedirFalta);
@@ -2413,13 +2408,18 @@
     it.precoNovo = lerPreco($("#ppNovo").value);
     it.precoAntigo = lerPreco($("#ppAntigo").value) || null;
     it.cupom = $("#ppCupom").value.trim();
+    it.precoCupom = lerPreco($("#ppPrecoCupom").value) || null; it.obs = $("#ppObs").value.trim();
+    it.precoSemCupom = it.precoNovo; if (it.usarCupom && it.precoCupom) it.precoNovo = it.precoCupom; // as postagens usam o preço escolhido
+    pintarUsarCupom(it);
     if (urlOk($("#ppLinkItem").value)) it.link = $("#ppLinkItem").value.trim();
     it.categoria = ppCategoria.valor();
     if (!it.textoEditado) it.texto = ""; // a mensagem é refeita com os dados novos
     salvarFila(logo); mostrarFalta(false);
     $("#ppSalvo").textContent = "Salvo"; clearTimeout(aplicarCamposPp.t); aplicarCamposPp.t = setTimeout(() => { $("#ppSalvo").textContent = "As mudanças são salvas sozinhas."; }, 1500);
   }
-  ["#ppNome", "#ppNovo", "#ppAntigo", "#ppCupom", "#ppLinkItem"].forEach((s) => $(s).addEventListener("input", () => { clearTimeout(aplicarCamposPp.d); aplicarCamposPp.d = setTimeout(() => aplicarCamposPp(), 500); }));
+  function pintarUsarCupom(it) { const box = $("#ppUsarCupomBox"); if (!box) return; box.hidden = !(it && it.precoCupom); box.querySelectorAll("[data-v]").forEach((b) => b.setAttribute("aria-checked", String((b.dataset.v === "1") === !!(it && it.usarCupom)))); }
+  $("#ppUsarCupom").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (!b || !ppAtual) return; ppAtual.usarCupom = b.dataset.v === "1"; ppAtual.texto = ""; aplicarCamposPp(true); toast(ppAtual.usarCupom ? "As postagens vão usar o preço com cupom" : "As postagens vão usar o preço sem cupom"); });
+  ["#ppNome", "#ppNovo", "#ppAntigo", "#ppCupom", "#ppLinkItem", "#ppPrecoCupom", "#ppObs"].forEach((s) => $(s).addEventListener("input", () => { clearTimeout(aplicarCamposPp.d); aplicarCamposPp.d = setTimeout(() => aplicarCamposPp(), 500); }));
   $("#ppCategoria").addEventListener("click", () => setTimeout(() => aplicarCamposPp(), 0));
   // Completando vários: vai para o próximo que falta
   /** Produto novo: abre a mesma tela de editar para conferir foto, preços, cupom e categoria antes de salvar */
@@ -3509,10 +3509,7 @@
       }
       sombraTexto(false);
       if (V.cupom) {
-        ctx.font = "800 40px Poppins"; const t = "CUPOM " + V.cupom.toUpperCase(), cw = ctx.measureText(t).width + 70;
-        retArredondado(ctx, (w - cw) / 2, yy + 6, cw, 80, 40); ctx.fillStyle = "#ffffff"; ctx.fill();
-        ctx.setLineDash([14, 9]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, w / 2, yy + 48); yy += 104;
+        const cw = medidaCupom(ctx, V.cupom, 92).w; desenharCupom(ctx, (w - cw) / 2, yy + 6, V.cupom, 92); yy += 116;
       }
       return yy - y;
     };
@@ -5986,7 +5983,7 @@
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 + OY); ctx.fillRect(540 - w / 2 + ld, 1252 + OY, w - ld, 5); });
       if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, A(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1418 + OY, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1458 + OY); });
+      if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 88).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) + OY + 84, it.cupom, 88); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
@@ -6006,7 +6003,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom) comSubida(ctx, t, A(5), () => { ctx.font = "800 40px Poppins"; const tx = "CUPOM " + String(it.cupom).toUpperCase(), cw = ctx.measureText(tx).width + 70; retArredondado(ctx, 540 - cw / 2, 1555, cw, 76, 38); ctx.fillStyle = "#fff"; ctx.fill(); ctx.setLineDash([12, 8]); ctx.lineWidth = 4; ctx.strokeStyle = "#1d1d1f"; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "#1d1d1f"; ctx.fillText(tx, 540, 1595); });
+    if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 88).w; desenharCupom(ctx, 540 - cw / 2, Math.min(y + 84, 1700), it.cupom, 88); });
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; acentoCena = null; } }
@@ -6582,6 +6579,21 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     x.restore();
   }
   /** Texto sem fundo: letra com contorno escuro (lê em qualquer foto) */
+  /* Selo de cupom em forma de ticket: "CUPOM" pequeno na parte escura e o código grande na parte amarela */
+  function medidaCupom(ctx, codigo, h) { ctx.save(); ctx.font = `800 ${Math.round(h * 0.27)}px Poppins`; const a = ctx.measureText("CUPOM").width + h * 0.5; ctx.font = `900 ${Math.round(h * 0.5)}px Poppins`; const b = ctx.measureText(String(codigo).toUpperCase()).width + h * 0.7; ctx.restore(); return { a, b, w: a + b }; }
+  function desenharCupom(ctx, x, y, codigo, h) {
+    const cod = String(codigo).toUpperCase(), m = medidaCupom(ctx, cod, h), r = h * 0.2, furo = h * 0.15, lw = Math.max(3, h * 0.055);
+    ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const corpo = () => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + m.a - furo, y); ctx.arc(x + m.a, y, furo, Math.PI, 0, true); ctx.lineTo(x + m.w - r, y); ctx.arcTo(x + m.w, y, x + m.w, y + r, r); ctx.lineTo(x + m.w, y + h - r); ctx.arcTo(x + m.w, y + h, x + m.w - r, y + h, r);
+      ctx.lineTo(x + m.a + furo, y + h); ctx.arc(x + m.a, y + h, furo, 0, Math.PI, true); ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath(); };
+    ctx.shadowColor = "rgba(0,0,0,.18)"; ctx.shadowBlur = h * 0.18; ctx.shadowOffsetY = h * 0.06; corpo(); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.shadowColor = "transparent";
+    ctx.save(); corpo(); ctx.clip(); ctx.fillStyle = "#1d1d1f"; ctx.fillRect(x, y, m.a, h); ctx.restore();
+    ctx.setLineDash([h * 0.08, h * 0.07]); ctx.lineWidth = Math.max(2, h * 0.035); ctx.strokeStyle = "#ffd23f"; ctx.beginPath(); ctx.moveTo(x + m.a, y + furo + h * 0.06); ctx.lineTo(x + m.a, y + h - furo - h * 0.06); ctx.stroke(); ctx.setLineDash([]);
+    corpo(); ctx.lineWidth = lw; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
+    ctx.fillStyle = "#ffffff"; ctx.font = `800 ${Math.round(h * 0.27)}px Poppins`; ctx.fillText("CUPOM", x + m.a / 2, y + h / 2 + h * 0.02);
+    ctx.fillStyle = "#1d1d1f"; ctx.font = `900 ${Math.round(h * 0.5)}px Poppins`; ctx.fillText(cod, x + m.a + m.b / 2, y + h / 2 + h * 0.03);
+    ctx.restore(); return m.w;
+  }
   function textoContorno(x, txt, px, py, tam, cor, peso = 800, alinhar = "center", riscado = false) {
     x.save(); x.font = `${peso} ${tam}px Poppins`; x.textAlign = alinhar; x.textBaseline = "alphabetic"; x.lineJoin = "round";
     x.shadowColor = "rgba(0,0,0,.35)"; x.shadowBlur = tam * 0.25; x.shadowOffsetY = tam * 0.06;
