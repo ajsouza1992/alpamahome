@@ -25,14 +25,16 @@
   const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const brl = (v) => "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   /* ---------- Dados extras das APIs (nota, vendidos, frete, loja oficial, comissão) ---------- */
-  const CAMPOS_EXTRAS = ["nota", "avaliacoes", "vendidos", "freteGratis", "lojaOficial", "comissao", "comissaoValor"];
+  const CAMPOS_EXTRAS = ["nota", "avaliacoes", "vendidos", "freteGratis", "lojaOficial", "comissao", "comissaoValor", "maisVendido", "oferta"];
   const extrasDe = (d) => { const x = {}; CAMPOS_EXTRAS.forEach((k) => { if (d && d[k] != null && d[k] !== false && d[k] !== "") x[k] = d[k]; }); return x; };
   const fmtVendidos = (n) => n >= 1e6 ? `+${String(Math.floor(n / 1e5) / 10).replace(".", ",")} mi` : n >= 1000 ? `+${Math.floor(n / 1000)} mil` : `+${n}`;
   const fmtNota = (n) => String(n).replace(".", ",");
   /** Etiquetas pequenas: comissão, nota, vendidos, frete */
   const infoExtras = (p, compacto) => { const l = [];
     if (compacto) { const tx = [p.nota && `★ ${fmtNota(p.nota)}`, p.vendidos && `${fmtVendidos(p.vendidos)} vendidos`, p.freteGratis && "frete grátis"].filter(Boolean).join(" · ");
-      return (p.comissao ? `<span class="tags-ex"><b class="tag-ex tag-ex--com">ganhe ${String(p.comissao).replace(".", ",")}%${p.comissaoValor ? ` · ${brl(p.comissaoValor)}` : ""}</b></span>` : "") + (tx ? `<span class="meta meta-ex">${tx}</span>` : ""); }
+      const top = [p.maisVendido && `<b class="tag-ex tag-ex--top">${p.maisVendido}º mais vendido</b>`, p.oferta && `<b class="tag-ex tag-ex--oferta">${esc(p.oferta)}</b>`].filter(Boolean).join("");
+      return (top ? `<span class="tags-ex">${top}</span>` : "") + (p.comissao ? `<span class="tags-ex"><b class="tag-ex tag-ex--com">ganhe ${String(p.comissao).replace(".", ",")}%${p.comissaoValor ? ` · ${brl(p.comissaoValor)}` : ""}</b></span>` : "") + (tx ? `<span class="meta meta-ex">${tx}</span>` : ""); }
+    if (p.maisVendido) l.push(`<b class="tag-ex tag-ex--top">${p.maisVendido}º mais vendido</b>`); if (p.oferta) l.push(`<b class="tag-ex tag-ex--oferta">${esc(p.oferta)}</b>`);
     if (p.comissao) l.push(`<b class="tag-ex tag-ex--com">ganhe ${String(p.comissao).replace(".", ",")}%${p.comissaoValor && p.preco ? ` · ${brl(p.comissaoValor)}` : ""}</b>`);
     if (p.nota) l.push(`<b class="tag-ex">★ ${fmtNota(p.nota)}</b>`); if (p.vendidos) l.push(`<b class="tag-ex">${fmtVendidos(p.vendidos)} vendidos</b>`);
     if (p.freteGratis) l.push('<b class="tag-ex tag-ex--frete">Frete grátis</b>'); if (p.lojaOficial) l.push('<b class="tag-ex">Loja oficial</b>');
@@ -1252,7 +1254,7 @@
     const cupom = $("#edCupom").value.trim().toUpperCase();
     ctx.textBaseline = "middle";
     if (cupom) {
-      const h = L.rodapeFonte * 2.1, w = desenharCupom(ctx, x, ry - h / 2, cupom, h); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      const h = L.rodapeFonte * 2.1, w = desenharCupom(ctx, x, ry - h / 2, cupom, h, P.preco, P.fundo); ctx.textAlign = "left"; ctx.textBaseline = "middle";
       x += w + 22;
     }
     const rodape = $("#edRodape").value.trim();
@@ -1287,7 +1289,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=263"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=264"; });
     }
     edFoto = null;
     try {
@@ -1608,7 +1610,7 @@
         ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore();
       }
       if (tipo === "cupomP") {
-        const hc = 86 * escala, cw = medidaCupom(ctx, v, hc).w; desenharCupom(ctx, (W - cw) / 2, y + (h - hc) / 2, v, hc);
+        const hc = 86 * escala, cw = medidaCupom(ctx, v, hc).w; desenharCupom(ctx, (W - cw) / 2, y + (h - hc) / 2, v, hc, C.preco || C.destaque, C.fundoCor || (C.tipo === "rosa" ? "#e8336d" : C.tipo === "branco" ? "#ffffff" : "#fff3c4"));
       }
       if (tipo === "link" && d.previa && false) {
         // Só na prévia: onde colocar o adesivo de link (ou de enquete) do Instagram
@@ -1658,7 +1660,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=263"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=264"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2179,7 +2181,7 @@
   $("#bsCampanha").addEventListener("click", async () => {
     let v = await escolherOpcao("Campanha", [["nenhuma", "Nenhuma"], ...Object.entries(CAMPANHAS).map(([k, c]) => [k, c.nome])], campanhaEscolhida || "nenhuma");
     if (v === null) return; if (v === "nenhuma") v = "";
-    campanhaEscolhida = v; try { localStorage.setItem("miga_campanha", v); } catch (err) { /* segue */ }
+    campanhaEscolhida = v; try { localStorage.setItem("miga_campanha", v); } catch (err) { /* segue */ } if (ppAtual) aplicarCamposPp(true);
     pintarCampanhaBotoes(); if (v) toast(`Campanha ${CAMPANHAS[v].nome}: título, cor e chamada vão combinar`);
   });
   $("#oQueCriar").addEventListener("click", () => {
@@ -2360,7 +2362,7 @@
     $("#ppCupom").value = item.cupom || "";
     $("#ppPrecoCupom").value = item.precoCupom ? paraCampo(item.precoCupom) : "";
     if (item.usarCupom && item.precoCupom && item.precoSemCupom) $("#ppNovo").value = paraCampo(item.precoSemCupom); // o campo "Preço novo" mostra o preço sem cupom
-    $("#ppObs").value = item.obs || ""; pintarUsarCupom(item);
+    if (!item.obsManual) item.obs = obsAutomatica(item); $("#ppObs").value = item.obs || ""; pintarUsarCupom(item);
     $("#ppLinkItem").value = item.link || "";
     ppCategoria.marcar(item.categoria || "outros"); pintarCatPp(item.categoria || "outros");
     mostrarFalta(pedirFalta);
@@ -2409,14 +2411,29 @@
     it.precoAntigo = lerPreco($("#ppAntigo").value) || null;
     it.cupom = $("#ppCupom").value.trim();
     it.precoCupom = lerPreco($("#ppPrecoCupom").value) || null; it.obs = $("#ppObs").value.trim();
+    if (!it.obs) it.obsManual = false;
     it.precoSemCupom = it.precoNovo; if (it.usarCupom && it.precoCupom) it.precoNovo = it.precoCupom; // as postagens usam o preço escolhido
     pintarUsarCupom(it);
+    if (!it.obsManual) { it.obs = obsAutomatica(it); if (document.activeElement !== $("#ppObs")) $("#ppObs").value = it.obs; }
     if (urlOk($("#ppLinkItem").value)) it.link = $("#ppLinkItem").value.trim();
     it.categoria = ppCategoria.valor();
     if (!it.textoEditado) it.texto = ""; // a mensagem é refeita com os dados novos
     salvarFila(logo); mostrarFalta(false);
     $("#ppSalvo").textContent = "Salvo"; clearTimeout(aplicarCamposPp.t); aplicarCamposPp.t = setTimeout(() => { $("#ppSalvo").textContent = "As mudanças são salvas sozinhas."; }, 1500);
   }
+  /** Observação automática (só pra você): campanha, preço com e sem cupom, loja, etiquetas e o dia em que entrou na lista */
+  function obsAutomatica(it) {
+    const cp = campanhaEscolhida && CAMPANHAS[campanhaEscolhida] ? CAMPANHAS[campanhaEscolhida].nome : "", sem = it.precoSemCupom || it.precoNovo, l = [];
+    if (cp) l.push(cp);
+    if (it.cupom && it.precoCupom) l.push(`${brl(it.precoCupom)} com o cupom ${String(it.cupom).toUpperCase()}${sem ? ` (sem cupom ${brl(sem)})` : ""}`);
+    else if (it.cupom) l.push(`cupom ${String(it.cupom).toUpperCase()}`);
+    else if (sem) l.push(brl(sem));
+    if (it.oferta) l.push(it.oferta); if (it.maisVendido) l.push(`${it.maisVendido}º mais vendido`);
+    if (NOME_LOJA[it.loja]) l.push(NOME_LOJA[it.loja]);
+    if (it.criadoEm) l.push("entrou em " + new Date(it.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }));
+    return l.join(" · ");
+  }
+  $("#ppObs").addEventListener("input", () => { if (ppAtual) ppAtual.obsManual = !!$("#ppObs").value.trim(); });
   function pintarUsarCupom(it) { const box = $("#ppUsarCupomBox"); if (!box) return; box.hidden = !(it && it.precoCupom); box.querySelectorAll("[data-v]").forEach((b) => b.setAttribute("aria-checked", String((b.dataset.v === "1") === !!(it && it.usarCupom)))); }
   $("#ppUsarCupom").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (!b || !ppAtual) return; ppAtual.usarCupom = b.dataset.v === "1"; ppAtual.texto = ""; aplicarCamposPp(true); toast(ppAtual.usarCupom ? "As postagens vão usar o preço com cupom" : "As postagens vão usar o preço sem cupom"); });
   ["#ppNome", "#ppNovo", "#ppAntigo", "#ppCupom", "#ppLinkItem", "#ppPrecoCupom", "#ppObs"].forEach((s) => $(s).addEventListener("input", () => { clearTimeout(aplicarCamposPp.d); aplicarCamposPp.d = setTimeout(() => aplicarCamposPp(), 500); }));
@@ -3509,7 +3526,7 @@
       }
       sombraTexto(false);
       if (V.cupom) {
-        const cw = medidaCupom(ctx, V.cupom, 92).w; desenharCupom(ctx, (w - cw) / 2, yy + 6, V.cupom, 92); yy += 116;
+        const cw = medidaCupom(ctx, V.cupom, 92).w; desenharCupom(ctx, (w - cw) / 2, yy + 6, V.cupom, 92, corPreco); yy += 116;
       }
       return yy - y;
     };
@@ -5983,7 +6000,7 @@
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 + OY); ctx.fillRect(540 - w / 2 + ld, 1252 + OY, w - ld, 5); });
       if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 88).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) + OY + 84, it.cupom, 88); });
+      if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 88).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) + OY + 84, it.cupom, 88, C.destaque, C.fundo); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
@@ -6003,7 +6020,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 88).w; desenharCupom(ctx, 540 - cw / 2, Math.min(y + 84, 1700), it.cupom, 88); });
+    if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 88).w; desenharCupom(ctx, 540 - cw / 2, Math.min(y + 84, 1700), it.cupom, 88, C.destaque, C.fundo); });
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; acentoCena = null; } }
@@ -6579,20 +6596,26 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     x.restore();
   }
   /** Texto sem fundo: letra com contorno escuro (lê em qualquer foto) */
-  /* Selo de cupom em forma de ticket: "CUPOM" pequeno na parte escura e o código grande na parte amarela */
-  function medidaCupom(ctx, codigo, h) { ctx.save(); ctx.font = `800 ${Math.round(h * 0.27)}px Poppins`; const a = ctx.measureText("CUPOM").width + h * 0.5; ctx.font = `900 ${Math.round(h * 0.5)}px Poppins`; const b = ctx.measureText(String(codigo).toUpperCase()).width + h * 0.7; ctx.restore(); return { a, b, w: a + b }; }
-  function desenharCupom(ctx, x, y, codigo, h) {
-    const cod = String(codigo).toUpperCase(), m = medidaCupom(ctx, cod, h), r = h * 0.2, furo = h * 0.15, lw = Math.max(3, h * 0.055);
+  /* Selo de cupom (ticket): faixa com "CUPOM" de lado e o código grande, bem centralizado, na parte maior.
+     As cores acompanham o modelo: a faixa usa a cor de destaque e o corpo uma cor que combina com ela. */
+  const hexOk = (c) => /^#[0-9a-f]{6}$/i.test(String(c || ""));
+  function coresCupom(destaque, fundo) {
+    const faixa = hexOk(destaque) ? destaque : "#e8336d", clara = luzDe(faixa) > 0.45;
+    let corpo = clara ? "#ffffff" : "#ffd23f"; if (hexOk(fundo) && Math.abs(luzDe(corpo) - luzDe(fundo)) < 0.08) corpo = clara ? "#1d1d1f" : "#ffffff";
+    return { faixa, corpo, txFaixa: clara ? "#1d1d1f" : "#ffffff", txCorpo: luzDe(corpo) > 0.45 ? "#1d1d1f" : "#ffffff" };
+  }
+  function medidaCupom(ctx, codigo, h) { ctx.save(); ctx.font = `900 ${Math.round(h * 0.42)}px Poppins`; const b = ctx.measureText(String(codigo).toUpperCase()).width + h * 1.1, a = h * 0.5; ctx.restore(); return { a, b, w: a + b }; }
+  function desenharCupom(ctx, x, y, codigo, h, destaque, fundo) {
+    const cod = String(codigo).toUpperCase(), m = medidaCupom(ctx, cod, h), K = coresCupom(destaque, fundo), r = h * 0.12, n = h * 0.15, W = m.w;
+    const corpo = () => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + W - r, y); ctx.arcTo(x + W, y, x + W, y + r, r); ctx.lineTo(x + W, y + h / 2 - n); ctx.arc(x + W, y + h / 2, n, -Math.PI / 2, Math.PI / 2, true);
+      ctx.lineTo(x + W, y + h - r); ctx.arcTo(x + W, y + h, x + W - r, y + h, r); ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + h / 2 + n); ctx.arc(x, y + h / 2, n, Math.PI / 2, -Math.PI / 2, true); ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath(); };
     ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const corpo = () => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + m.a - furo, y); ctx.arc(x + m.a, y, furo, Math.PI, 0, true); ctx.lineTo(x + m.w - r, y); ctx.arcTo(x + m.w, y, x + m.w, y + r, r); ctx.lineTo(x + m.w, y + h - r); ctx.arcTo(x + m.w, y + h, x + m.w - r, y + h, r);
-      ctx.lineTo(x + m.a + furo, y + h); ctx.arc(x + m.a, y + h, furo, 0, Math.PI, true); ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath(); };
-    ctx.shadowColor = "rgba(0,0,0,.18)"; ctx.shadowBlur = h * 0.18; ctx.shadowOffsetY = h * 0.06; corpo(); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.shadowColor = "transparent";
-    ctx.save(); corpo(); ctx.clip(); ctx.fillStyle = "#1d1d1f"; ctx.fillRect(x, y, m.a, h); ctx.restore();
-    ctx.setLineDash([h * 0.08, h * 0.07]); ctx.lineWidth = Math.max(2, h * 0.035); ctx.strokeStyle = "#ffd23f"; ctx.beginPath(); ctx.moveTo(x + m.a, y + furo + h * 0.06); ctx.lineTo(x + m.a, y + h - furo - h * 0.06); ctx.stroke(); ctx.setLineDash([]);
-    corpo(); ctx.lineWidth = lw; ctx.strokeStyle = "#1d1d1f"; ctx.stroke();
-    ctx.fillStyle = "#ffffff"; ctx.font = `800 ${Math.round(h * 0.27)}px Poppins`; ctx.fillText("CUPOM", x + m.a / 2, y + h / 2 + h * 0.02);
-    ctx.fillStyle = "#1d1d1f"; ctx.font = `900 ${Math.round(h * 0.5)}px Poppins`; ctx.fillText(cod, x + m.a + m.b / 2, y + h / 2 + h * 0.03);
-    ctx.restore(); return m.w;
+    ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = h * 0.16; ctx.shadowOffsetY = h * 0.05; corpo(); ctx.fillStyle = K.corpo; ctx.fill(); ctx.shadowColor = "transparent";
+    ctx.save(); corpo(); ctx.clip(); ctx.fillStyle = K.faixa; ctx.fillRect(x, y, m.a, h); ctx.restore();
+    ctx.setLineDash([h * 0.08, h * 0.065]); ctx.lineWidth = Math.max(2, h * 0.03); ctx.strokeStyle = K.corpo; ctx.beginPath(); ctx.moveTo(x + m.a, y + h * 0.08); ctx.lineTo(x + m.a, y + h * 0.92); ctx.stroke(); ctx.setLineDash([]);
+    ctx.save(); ctx.translate(x + m.a / 2, y + h / 2); ctx.rotate(-Math.PI / 2); ctx.fillStyle = K.txFaixa; let f = Math.round(h * 0.2); ctx.font = `800 ${f}px Poppins`; while (f > 8 && ctx.measureText("CUPOM").width > h * 0.78) { f--; ctx.font = `800 ${f}px Poppins`; } ctx.fillText("CUPOM", 0, h * 0.01); ctx.restore();
+    ctx.fillStyle = K.txCorpo; ctx.font = `900 ${Math.round(h * 0.42)}px Poppins`; ctx.fillText(cod, x + m.a + m.b / 2, y + h / 2 + h * 0.03);
+    ctx.restore(); return W;
   }
   function textoContorno(x, txt, px, py, tam, cor, peso = 800, alinhar = "center", riscado = false) {
     x.save(); x.font = `${peso} ${tam}px Poppins`; x.textAlign = alinhar; x.textBaseline = "alphabetic"; x.lineJoin = "round";

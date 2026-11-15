@@ -717,15 +717,17 @@ function itemML(b, filtro) {
 /** Preço atual de um anúncio (o Mercado Livre passou a separar o preço do anúncio) */
 async function precoML(id, token) {
   const r = await getML(`/items/${id}/sale_price?context=channel_marketplace`, token);
-  if (r.status === 200 && r.dados.amount) return { preco: r.dados.amount, precoAntigo: r.dados.regular_amount || null };
+  if (r.status === 200 && r.dados.amount) { const t = String((r.dados.metadata && (r.dados.metadata.promotion_type || r.dados.metadata.campaign_type)) || "").toLowerCase();
+    const oferta = /dod|deal_of_the_day/.test(t) ? "Oferta do dia" : /lightning/.test(t) ? "Oferta relâmpago" : /deal|marketplace_campaign|campaign/.test(t) ? "Oferta especial ML" : "";
+    return { preco: r.dados.amount, precoAntigo: r.dados.regular_amount || null, ...(oferta ? { oferta } : {}) }; }
   return null;
 }
 /** Lista grande de mais vendidos: a categoria + as subcategorias (guardada 30 min para as próximas páginas) */
 async function listaDestaquesML(filtro, token, diag) {
-  const chave = filtro.ml || filtro.busca, guardada = await lerCache("ml-destaques", chave);
+  const chave = "v2-" + (filtro.ml || filtro.busca), guardada = await lerCache("ml-destaques", chave);
   if (guardada && guardada.l && guardada.l.length) return guardada.l;
   let l = [];
-  const junta = (c) => { for (const x of c || []) if (x && x.id && !l.some((y) => y.id === x.id)) l.push({ id: x.id, type: x.type }); };
+  const junta = (c) => { for (const x of c || []) if (x && x.id && !l.some((y) => y.id === x.id)) l.push({ id: x.id, type: x.type, pos: Number(x.position) || null }); };
   if (filtro.ml) {
     const r = await getML(`/highlights/MLB/category/${filtro.ml}`, token); diag.push("destaques " + r.status); if (r.status === 200) junta(r.dados.content);
     const cat = await getML(`/categories/${filtro.ml}`, token);
@@ -759,9 +761,10 @@ async function catalogoML(filtro, env, pagina = 1) {
       const b = x.body || {};
       if (x.code === 200 && b.title) lista.push(itemML(b, filtro));
     }
-    await Promise.all(lista.filter((p) => !p.preco).map(async (p) => {
+    // preço atual + tipo de oferta (oferta do dia, relâmpago, campanha do ML)
+    await Promise.all(lista.map(async (p) => {
       const v = await precoML(p.id, token).catch(() => null);
-      if (v) Object.assign(p, v);
+      if (v) { const { oferta, ...pr } = v; if (!p.preco || pr.preco) Object.assign(p, pr); if (oferta) p.oferta = oferta; }
     }));
     saida.push(...lista);
     diag.push("itens " + r.status + " " + Object.entries(codigos).map(([c, n]) => c + ":" + n).join(","));
@@ -797,6 +800,8 @@ async function catalogoML(filtro, env, pagina = 1) {
     for (const b of (r.dados && r.dados.results) || []) if (b.title) saida.push(itemML(b, filtro));
   }
   if (!saida.length && pagina === 1) throw new Error("Mercado Livre não trouxe produtos (" + diag.join(" · ") + ")");
+  // posição na lista de mais vendidos da categoria
+  for (const p of saida) { const d = destaques.find((x) => x.id === p.id); if (d && d.pos && d.pos <= 20) p.maisVendido = d.pos; }
   // Os com preço primeiro
   // Sem preço não serve para postar: só entram os que vieram com preço
   const lista = saida.filter((p) => p.preco);
