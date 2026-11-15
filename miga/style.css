@@ -1872,3 +1872,9 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .aj-prompt summary::-webkit-details-marker { display: none; }
 .aj-prompt summary b { flex: 1; }
 .aj-prompt__ver { flex: none; border-radius: 99px; background: #fff; padding: 6px 14px; font: 700 13px Poppins, sans-serif; color: var(--rosa); box-shadow: 0 0 0 1.5px var(--linha), 0 6px 14px -8px rgba(0,0,0,.25); }
+/* Botão de prévia sempre logo abaixo do vídeo */
+.btn-previa { display: flex; width: 100%; justify-content: center; margin: 8px 0 12px; }
+.est-previa + .btn-previa { margin-top: 8px; }
+.ch-musica { align-items: center; }
+.ch-musica .mus-play { flex: none; }
+.ch-musica > span { flex: 1; }

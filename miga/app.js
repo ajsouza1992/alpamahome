@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=248"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=249"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=248"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=249"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -4109,7 +4109,7 @@
       // Prévia com o som do vídeo (se o celular bloquear o som automático, fica um botão para ligar)
       el = document.createElement("video"); el.src = V.url; el.muted = !!V.semSomPrevia; el.loop = true; el.playsInline = true;
       el.play().catch(() => { el.muted = true; el.play().catch(() => {}); pintarSom(); });
-      let bt = $("#vdSom"); if (!bt && cv.parentElement) { bt = document.createElement("button"); bt.type = "button"; bt.id = "vdSom"; bt.className = "vd-som"; cv.parentElement.style.position = "relative"; cv.parentElement.appendChild(bt); }
+      let bt = $("#vdSom"); if (!bt && cv.parentElement) { bt = document.createElement("button"); bt.type = "button"; bt.id = "vdSom"; bt.className = "btn btn--branco btn-previa vd-som-b"; cv.parentElement.insertAdjacentElement("afterend", bt); }
       const pintarSom = () => { const b = $("#vdSom"); if (b) { b.innerHTML = el.muted ? "🔇 Ligar o som" : "🔊 Som ligado"; b.classList.toggle("off", el.muted); } };
       if (bt) bt.onclick = () => { el.muted = !el.muted; V.semSomPrevia = el.muted; if (!el.muted) el.play().catch(() => {}); pintarSom(); };
       pintarSom(); el.addEventListener("volumechange", pintarSom);
@@ -6525,7 +6525,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${P.midia ? "" : `<p class="nota">Anexe ${P.tipo === "imagem" ? "a foto" : "o vídeo"} que a IA criou para começar a edição.</p>`}
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>
         <div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
-        ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco" id="peSom">▶ Ouvir prévia com som</button>' : ""}
+        ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}
         ${r ? `<figure class="rp-video"><video src="${r.url}" controls playsinline></video></figure>` : ""}
         <div class="pe-cantos-l"><div><b class="ch-rot">Logo Miga</b>${cc("logo", P.cantoLogo || "br")}</div><div><b class="ch-rot">@ da Miga</b>${cc("arroba", P.cantoArroba || "bl")}</div>
           <div><b class="ch-rot">Selo %</b><div class="ed-chips pe-cantos">${[["nao", "✕"], ...cantos].map(([v, n]) => `<button type="button" data-pe-canto="selo:${v}" class="${(P.cantoSelo || "nao") === v ? "on" : ""}">${n}</button>`).join("")}</div></div>
@@ -7004,16 +7004,15 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `<h2 class="wz-titulo">${seg ? "Comemorar seguidores" : "Corre pros Stories"}</h2>
         <p class="nota">${seg ? "Um Reels pronto agradecendo as migas pela marca de seguidores. Escolha o número, a cor e a música." : "Um Reels pronto chamando a galera pros seus stories. Escolha o nicho, a cor e a música."}</p>
         <div class="wz-previa"><canvas id="chQuadro" width="540" height="960"></canvas></div>
+        <button type="button" class="btn btn--branco btn-previa" id="chPrevia">▶ Ver prévia com música</button>
         ${seg ? `<b class="ch-rot">Seguidores</b>${chips("data-ch-num", nums.map((n) => [n, n]), nums.includes(CH.numero) ? CH.numero : "")}<label class="ch-campo"><span>Outro número</span><input id="chNumero" inputmode="numeric" maxlength="12" value="${nums.includes(CH.numero) ? "" : esc(CH.numero)}" placeholder="Ex.: 2.500"></label>` : `<b class="ch-rot">Nicho</b>${chips("data-ch-nicho", nichos, CH.nicho)}`}
         <b class="ch-rot">Cor</b>${chips("data-ch-cor", Object.entries(CORES_CHAMADA).map(([k, v]) => [k, v.nome]), CH.cor)}
         <div class="cor-propria cor-propria--ch${corPropria(CH.cor) ? " on" : ""}"><span>Ou deslize a barrinha e faça na cor que quiser:</span>${barraCor("chBarra", CH.cor)}</div>
-        <b class="ch-rot">Música</b>${chips("data-ch-mus", [["dancepop", "Dance pop"], ["traparabe", "Trap árabe"], ["trap", "Trap"], ["funkphonk", "Funk phonk"], ["mais", "Mais músicas…"]], ["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? CH.musica : "mais")}
-        ${["traparabe", "trap", "funkphonk", "dancepop"].includes(CH.musica) ? "" : `<p class="nota">Música: <b>${esc((NOMES_MUSICA[CH.musica] || [CH.musica])[0])}</b></p>`}
+        <div class="pe-roupa ch-musica"><span><b>Música:</b> ${esc((NOMES_MUSICA[CH.musica] || [CH.musica])[0])}</span><button type="button" class="mus-play" data-ouvir="${CH.musica}" aria-label="Ouvir">${ICO_PLAY}</button><button type="button" class="btn btn--branco" id="chTrocarMus">Trocar</button></div>
         <button type="button" class="btn btn--branco btn-ic" id="chEditarTx"><svg class="ic-mono"><use href="#i-lapis"/></svg>Editar textos e figurinhas</button>
         ${arroba(config.instagram) ? "" : '<p class="nota">Dica: coloque o seu @ do Instagram em ⚙️ Ajustes para ele aparecer no final.</p>'}
         <div class="campo"><span>Legenda do Reels</span><textarea id="chLegendaEd" rows="7">${esc(CH.legenda || CH.legendaIA || legendaChamada(CH))}</textarea></div>
         <div class="duas"><button type="button" class="btn btn--branco" id="chCopiarEd">Copiar legenda</button><button type="button" class="btn btn--rosa" id="chSalvarLeg">Salvar legenda</button></div>
-        <button type="button" class="btn btn--branco" id="chPrevia">▶ Ver prévia com música</button>
         <div class="vd-progresso" id="chProgresso" hidden><i></i></div>
         <button type="button" class="btn btn--rosa" id="chGerar">Criar o vídeo</button>
         <p class="nota">O vídeo tem ${Math.round(T_CHAMADA)} segundos e é gravado em tempo real: deixe o app aberto até terminar.</p>`;
@@ -7099,6 +7098,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   });
   $("#folhaEst").addEventListener("click", (e) => {
     if (wz.canal === "personagem") { const b = e.target.closest("[data-pe-prod]"); if (b) { wz.itemId = b.dataset.peProd; wz.pe.tx = null; wz.pe.promptEd = null; wz.pe.limparTxt = null; wz.pe.legenda = null; wz.pe.fundoAuto = null; calcFundoAuto(wzItem()); $("#folhaEst").close(); mostrarPasso(); } return; }
+    if (wz.canal === "chamada") { const em = e.target.closest("[data-ch-escolhe-mus]"); if (em) { tocarAmostra(""); ch().musica = em.dataset.chEscolheMus; ch().resultado = null; $("#folhaEst").close(); mostrarPasso(); return; } }
     if (wz.canal !== "chamada") return; const CH = ch();
     if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast(CH.tipo === "seg" ? "Textos padrão de volta" : "Textos do nicho de volta"); return; }
     if (e.target.closest("#chPrompt")) { const as = ($("#chAssunto").value || "").trim(); if (!as) { toast("Escreva do que vai falar"); $("#chAssunto").focus(); return; } CH.assunto = as; copiarTexto(promptChamada(as)).then((ok) => ok && toast("Prompt copiado: cole no Gemini ou no ChatGPT e envie")); return; }
@@ -7160,6 +7160,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const n = t.closest("[data-ch-nicho]"); if (n) { CH.nicho = n.dataset.chNicho; CH.tx = null; CH.legenda = null; CH.legendaIA = null; mostrarPasso(); return; }
     if (t.closest("#chEditarTx")) { folhaTextosChamada(); return; }
     const co = t.closest("[data-ch-cor]"); if (co) { CH.cor = co.dataset.chCor; mostrarPasso(); return; }
+    const ouv = t.closest("[data-ouvir]"); if (ouv) { tocarAmostra(ouv.dataset.ouvir); return; }
+    if (t.closest("#chTrocarMus")) { tocarAmostra(""); folhaEst("Música", `<p class="nota">Toque no ▶ para ouvir antes de escolher.</p><div class="lista-mod">${LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${(ALIAS_MUS[CH.musica] || CH.musica) === k ? " on" : ""}"><button type="button" data-ch-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`); return; }
     const mu = t.closest("[data-ch-mus]"); if (mu) {
       let v = mu.dataset.chMus; if (v === "mais") { v = await escolherOpcao("Música", LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k][0]]), CH.musica); if (v === null) return; }
       CH.musica = v; mostrarPasso(); return; }
@@ -7490,7 +7492,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       const n = itensReels().length, Mx = MODELOS_REELS[R.modelo], mu = NOMES_MUSICA[musicaDe(R)];
       const nomeModelo = R.titulo || (CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].nome : Mx.nome);
       c.innerHTML = `<div class="estudio">
-        <button type="button" class="est-previa" id="rTocar" aria-label="Ver a prévia com música"><canvas id="rQuadro" width="540" height="960"></canvas><span id="rPrevia">▶ Ver com música</span></button>
+        <button type="button" class="est-previa" id="rTocar" aria-label="Ver a prévia com música"><canvas id="rQuadro" width="540" height="960"></canvas></button>
+        <button type="button" class="btn btn--branco btn-previa" id="rPrevia">▶ Ver prévia com música</button>
         <div class="est-ctrl">
           ${botaoEst("modelo", "Modelo", nomeModelo)}${botaoEst("cor", "Cor", CORES_VIDEO[R.cor].nome)}${botaoEst("musica", "Música", mu[0])}${botaoEst("produtos", "Produtos", String(n))}
         </div>
@@ -7536,7 +7539,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `<h2 class="wz-titulo">Seu Reels</h2>
         ${`<p class="nota"><b>${esc(M.nome)}</b> · ${esc(CORES_VIDEO[R.cor].nome)} · ${itensReels().length} produto(s) · ${Math.round(duracaoReelsProdutos())} segundos</p>
           <div class="wz-previa"><canvas id="rQuadro" width="540" height="960"></canvas></div>
-          <button type="button" class="btn btn--branco" id="rPrevia">▶ Ver prévia com música</button>
+          <button type="button" class="btn btn--branco btn-previa" id="rPrevia">▶ Ver prévia com música</button>
           <div class="vd-progresso" id="rProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="rGerar">Criar o vídeo</button>
           <p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>
