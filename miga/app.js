@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=250"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=251"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=250"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=251"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6552,14 +6552,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   const MOLDURAS_PERS = { nao: ["Sem", ""], rosa: ["Rosa", "#e8336d"], preto: ["Preto", "#1d1d1f"], creme: ["Creme", "#fff3c4"], branco: ["Branco", "#ffffff"] };
   /** A foto/vídeo da IA + moldura (opcional) + logo, @ e selo de desconto nos cantos escolhidos */
-  function quadroLogoArroba(ctx, W, fonte, P) {
+  function quadroLogoArroba(ctx, W, fonte, P, soCamada = false) {
     const x = ctx, k = W / 1080, H = altPers(P); x.save(); x.scale(k, k);
     const mol = MOLDURAS_PERS[P.moldura] && MOLDURAS_PERS[P.moldura][1], b = mol ? 34 : 0;
-    x.fillStyle = mol || "#1d1d1f"; x.fillRect(0, 0, 1080, H);
+    if (soCamada) { // só a moldura, o logo, o @ e o selo, com o meio transparente (para pôr por cima do vídeo original)
+      x.clearRect(0, 0, 1080, H); if (b) { x.fillStyle = mol; x.fillRect(0, 0, 1080, H); x.save(); x.globalCompositeOperation = "destination-out"; retArredondado(x, b, b, 1080 - 2 * b, H - 2 * b, 30); x.fill(); x.restore(); }
+      fonte = null; }
+    else { x.fillStyle = mol || "#1d1d1f"; x.fillRect(0, 0, 1080, H); }
     x.save(); if (b) { retArredondado(x, b, b, 1080 - 2 * b, H - 2 * b, 30); x.clip(); }
     const fw = fonte ? (fonte.videoWidth || fonte.width) : 0, fh = fonte ? (fonte.videoHeight || fonte.height) : 0, iw = 1080 - 2 * b, ih = H - 2 * b;
     if (fw) { const s = Math.max(iw / fw, ih / fh); x.imageSmoothingQuality = "high"; x.drawImage(fonte, b + (iw - fw * s) / 2, b + (ih - fh * s) / 2, fw * s, fh * s); }
-    else { x.fillStyle = "#cfc6b4"; x.fillRect(b, b, iw, ih); x.font = "700 46px Poppins"; x.fillStyle = "rgba(255,255,255,.9)"; x.textAlign = "center"; x.fillText("Foto ou vídeo da IA aqui", 540, H / 2); }
+    else if (!soCamada) { x.fillStyle = "#cfc6b4"; x.fillRect(b, b, iw, ih); x.font = "700 46px Poppins"; x.fillStyle = "rgba(255,255,255,.9)"; x.textAlign = "center"; x.fillText("Foto ou vídeo da IA aqui", 540, H / 2); }
     x.restore();
     const M = 48 + b, tl = 170, cl = P.cantoLogo || "br", ca = P.cantoArroba || "bl", cs = P.cantoSelo || "nao", at = arroba(config.instagram) || "@migapromo.oficial";
     const lx = cl[1] === "l" ? M : 1080 - M - tl, ly = cl[0] === "t" ? M : H - M - tl;
@@ -6640,11 +6643,30 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (P.midia && P.midia.video) { P.midia.video.muted = true; P.midia.video.loop = true; P.midia.video.play().catch(() => {}); }
     passo();
   }
+  /** Põe o logo, o @, o selo e a moldura no vídeo da IA sem regravar a tela: o som fica idêntico e sincronizado */
+  async function videoComMarcaFF(P, M0, aviso) {
+    const H = altPers(P), cam = document.createElement("canvas"); cam.width = 1080; cam.height = H; await carregarMarca(); quadroLogoArroba(cam.getContext("2d"), 1080, null, P, true);
+    const png = await new Promise((ok) => cam.toBlob(ok, "image/png")), vid = await (await fetch(M0.url)).blob();
+    const { FFmpeg } = await import(FF_CDN + "@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js");
+    const ff = new FFmpeg(); ff.on("progress", ({ progress }) => { if (aviso && progress >= 0 && progress <= 1) aviso(Math.round(progress * 100)); });
+    await ff.load({ classWorkerURL: new URL("ffmpeg-worker.js", location.href).href, coreURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js", wasmURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" });
+    await ff.writeFile("v.mp4", new Uint8Array(await vid.arrayBuffer())); await ff.writeFile("m.png", new Uint8Array(await png.arrayBuffer()));
+    await ff.exec(["-i", "v.mp4", "-i", "m.png", "-filter_complex", `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1[b];[b][1:v]overlay=0:0,format=yuv420p[o]`, "-map", "[o]", "-map", "0:a?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "s.mp4"]);
+    const d = await ff.readFile("s.mp4"); ff.terminate();
+    if (!d || d.length < 2000) throw new Error("ffmpeg vazio");
+    return new Blob([d.buffer], { type: "video/mp4" });
+  }
   async function gravarPersonagem() {
     const P = pe(), tipo = formatoGravacao(), M0 = P.midia; if (!M0 || !M0.video) return;
+    { const btn = $("#peGravar"), barra = $("#peProgresso"); if (btn) { btn.disabled = true; btn.textContent = "Preparando…"; } if (barra) { barra.hidden = false; barra.querySelector("i").style.width = "0%"; }
+      try {
+        const blob = await videoComMarcaFF(P, M0, (pc) => { if (btn) btn.textContent = "Criando o vídeo… " + pc + "%"; if (barra) barra.querySelector("i").style.width = pc + "%"; });
+        const nome = nomeArquivo(wzItem() ? wzItem().nome : "criacao-ia").replace(/\.jpe?g$/i, "") + "-personagem.mp4";
+        P.resultado = { blob, url: URL.createObjectURL(blob), nome, mp4: true }; mostrarPasso(); toast("Vídeo pronto"); return;
+      } catch (e) { console.warn("ffmpeg falhou, gravando em tempo real", e); if (btn) btn.disabled = false; if (barra) barra.hidden = true; } }
     if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return; }
     const btn = $("#peGravar"), barra = $("#peProgresso"); if (btn) btn.disabled = true; if (btn && barra) ligarBarra(btn, barra);
-    const tela = document.createElement("canvas"); tela.width = 1080; tela.height = 1920; const ctx = tela.getContext("2d"), previa = $("#peQuadro") && $("#peQuadro").getContext("2d");
+    const tela = document.createElement("canvas"); tela.width = 1080; tela.height = altPers(P); const ctx = tela.getContext("2d"), previa = $("#peQuadro") && $("#peQuadro").getContext("2d");
     const v = document.createElement("video"); v.src = M0.url; v.playsInline = true; v.preload = "auto"; v.crossOrigin = "anonymous";
     await new Promise((ok) => { v.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 5000); });
     const total = v.duration && isFinite(v.duration) ? v.duration : 8;
@@ -6655,7 +6677,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const fim = new Promise((ok) => { rec.onstop = ok; });
     quadroLogoArroba(ctx, 1080, v, P); rec.start(); manterTelaAcesa(true);
     try { await v.play(); } catch (e) { v.muted = true; await v.play().catch(() => {}); }
-    await new Promise((ok) => { const passo = () => { if (v.ended || v.currentTime >= total - 0.03) { ok(); return; } quadroLogoArroba(ctx, 1080, v, P); if (previa) previa.drawImage(tela, 0, 0, 540, 960);
+    await new Promise((ok) => { const passo = () => { if (v.ended || v.currentTime >= total - 0.03) { ok(); return; } quadroLogoArroba(ctx, 1080, v, P); if (previa) previa.drawImage(tela, 0, 0, 540, altPers(P) / 2);
       const pc = Math.min(100, Math.round((v.currentTime / total) * 100)); if (btn) btn.textContent = "Gravando… " + pc + "%"; if (barra) barra.querySelector("i").style.width = pc + "%"; requestAnimationFrame(passo); }; passo(); });
     quadroLogoArroba(ctx, 1080, v, P); await new Promise((ok) => setTimeout(ok, 300));
     rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); P.gravando = false; if (ac) ac.close().catch(() => {});
