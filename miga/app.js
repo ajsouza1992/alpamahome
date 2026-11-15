@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=243"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=245"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=243"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=245"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6889,11 +6889,26 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     for (let i = 0; i < qtd; i++) { const ang = (i / qtd) * Math.PI * 2 + i * 0.37, v = 700 + (i * 53) % 600, px = cx + Math.cos(ang) * v * u, py = cy + Math.sin(ang) * v * u + 900 * u * u;
       x.save(); x.globalAlpha = Math.max(0, 1 - u / 2.2); x.translate(px, py); x.rotate(u * 9 + i); x.fillStyle = cores[i % cores.length]; if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 12, 0, 7); x.fill(); } else x.fillRect(-18, -8, 36, 16); x.restore(); }
   }
+  /** Canhão de confete: sai de baixo (perto do logo da Miga, canto direito), sobe até o topo e cai de novo */
+  function canhaoConfete(x, u, ox, oy, qtd = 120) {
+    if (u < 0) return; const cores = ["#e8336d", "#ffd23f", "#ffffff", "#4f7cff", "#2fa35a", "#f59ab8"];
+    for (let i = 0; i < qtd; i++) {
+      const r1 = ((i * 97) % 101) / 101, r2 = ((i * 53) % 89) / 89, r3 = ((i * 31) % 47) / 47;
+      const ta = 0.6 + 0.3 * r1, apexY = 30 + 520 * r2, h = oy - apexY, g = 2 * h / (ta * ta), vy = g * ta;
+      const xa = ox - (150 + 1000 * r3), vx = (xa - ox) / ta;
+      let px, py;
+      if (u <= ta) { px = ox + vx * u * (1 - 0.35 * u / ta); py = oy - vy * u + 0.5 * g * u * u; }
+      else { const d = u - ta, vt = 520 + 520 * r1; px = ox + vx * ta * 0.65 + Math.sin(d * (2 + r2 * 3) + i) * 40; py = apexY + vt * d; }
+      if (py > 1990) continue;
+      x.save(); x.translate(px, py); x.rotate(u * (4 + r3 * 6) + i); x.scale(1, Math.cos(u * 6 + i)); x.fillStyle = cores[i % cores.length];
+      if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 11, 0, 7); x.fill(); } else x.fillRect(-16, -7, 32, 14); x.restore();
+    }
+  }
   function confetes(x, u, qtd, ini = 0) {
     const cores = ["#e8336d", "#ffd23f", "#ffffff", "#4f7cff", "#2fa35a", "#f59ab8"];
     for (let i = 0; i < qtd; i++) {
       const v = 260 + (i * 97) % 300, t0 = ini + (i % 9) * 0.07, k = u - t0; if (k <= 0) continue;
-      const y = -60 + k * v - (i % 5) * 90, xx = (i * 211) % 1080 + Math.sin(k * 2.4 + i) * 40; if (y > 1990) continue;
+      const y = -60 + k * v - (i % 7) * 70, xx = (i * 211) % 1080 + Math.sin(k * 2.4 + i) * 40; if (y > 1990) continue;
       x.save(); x.translate(xx, y); x.rotate(k * (2 + (i % 4)) + i); x.scale(1, Math.cos(k * 5 + i)); x.fillStyle = cores[i % cores.length];
       if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 11, 0, 7); x.fill(); } else x.fillRect(-16, -7, 32, 14); x.restore();
     }
@@ -6912,7 +6927,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula, pm = 0) {
     const T = C.texto, A = C.d1, brilha = (bx, by, r, t0, u) => { const k = (u - t0) % 1.4; if (u < t0 || k > 0.7) return; const s = Math.sin(k / 0.7 * Math.PI); x.save(); x.translate(bx, by); x.scale(s, s); x.beginPath(); for (let i = 0; i < 8; i++) { const g = i * Math.PI / 4 - Math.PI / 2, q = i % 2 ? r * 0.28 : r; x.lineTo(Math.cos(g) * q, Math.sin(g) * q); } x.closePath(); x.fillStyle = "#ffffff"; x.shadowColor = "rgba(255,210,63,.9)"; x.shadowBlur = 18; x.fill(); x.restore(); };
     if (t < 3.2) {
-      confetes(x, t, 46, 0.5);
+      canhaoConfete(x, t - 1.65, 890, 1780, 130); // estouro de confete só quando bate o número
       if (D.etiqueta) pilula(D.etiqueta, 540, 430, "#ffd23f", "#1d1d1f", 46, 0.05, t, -0.04);
       linha(partesDestaque(D.t1, T, A), 640, 104, 0.2, t);
       const k = easeC((t - 0.35) / 0.4); if (k > 0) {
@@ -6932,7 +6947,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       D.itens.forEach((it, i) => { if (!it) return; const [bg, fg, bd] = (CH.cor === "rosa" || C.pilEscura) && (i === 0 || i === 3) ? ["#1d1d1f", "#fff", false] : est[i]; pilula(it, 540, 760 + i * 160, bg, fg, 62, 0.3 + i * 0.25, u, i % 2 ? 0.03 : -0.04, bd); });
       if (D.ic2[0]) adesivo(D.ic2[0], 220, 1500, 210, 1.3, u, -0.15); if (D.ic2[1]) adesivo(D.ic2[1], 860, 1500, 190, 1.45, u, 0.12);
     } else { const u = t - 9.6;
-      confetes(x, u, 34, 0.2);
+
       linha(partesDestaque(D.cta1, T, A), 470, 100, 0.05, u);
       const k0 = easeC((u - 0.2) / 0.4); if (k0 > 0) { x.save(); x.globalAlpha = k0; x.translate(540, 640); const s = puloC((u - 0.2) / 0.5); x.scale(s, s); const meta = numSeg(D.cta2), de = numSeg(D.numero), cnt = meta && /^[\d.]+$/.test(D.cta2) ? fmtSeg(Math.round(de + (meta - de) * easeC((u - 0.2) / 1.1))) : D.cta2; numeroDourado(x, cnt, 0, 0, 190, -0.03); x.restore(); }
       const k = easeC((u - 0.4) / 0.5);
