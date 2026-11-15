@@ -1289,7 +1289,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=265"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=266"; });
     }
     edFoto = null;
     try {
@@ -1660,7 +1660,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=265"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=266"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2362,7 +2362,7 @@
     $("#ppCupom").value = item.cupom || "";
     $("#ppPrecoCupom").value = item.precoCupom ? paraCampo(item.precoCupom) : "";
     if (item.usarCupom && item.precoCupom && item.precoSemCupom) $("#ppNovo").value = paraCampo(item.precoSemCupom); // o campo "Preço novo" mostra o preço sem cupom
-    if (!item.obsManual) item.obs = obsAutomatica(item); $("#ppObs").value = item.obs || ""; pintarUsarCupom(item);
+    if (!item.obsManual) item.obs = ""; $("#ppObs").value = item.obs || ""; pintarUsarCupom(item); // vem limpa: só o que você digitar
     $("#ppLinkItem").value = item.link || "";
     ppCategoria.marcar(item.categoria || "outros"); pintarCatPp(item.categoria || "outros");
     mostrarFalta(pedirFalta);
@@ -2414,7 +2414,6 @@
     if (!it.obs) it.obsManual = false;
     it.precoSemCupom = it.precoNovo; if (it.usarCupom && it.precoCupom) it.precoNovo = it.precoCupom; // as postagens usam o preço escolhido
     pintarUsarCupom(it);
-    if (!it.obsManual) { it.obs = obsAutomatica(it); if (document.activeElement !== $("#ppObs")) $("#ppObs").value = it.obs; }
     if (urlOk($("#ppLinkItem").value)) it.link = $("#ppLinkItem").value.trim();
     it.categoria = ppCategoria.valor();
     if (!it.textoEditado) it.texto = ""; // a mensagem é refeita com os dados novos
@@ -2422,12 +2421,6 @@
     $("#ppSalvo").textContent = "Salvo"; clearTimeout(aplicarCamposPp.t); aplicarCamposPp.t = setTimeout(() => { $("#ppSalvo").textContent = "As mudanças são salvas sozinhas."; }, 1500);
   }
   /** Observação automática (só pra você): campanha, preço com e sem cupom, loja, etiquetas e o dia em que entrou na lista */
-  function obsAutomatica(it) { // curta e limpa: campanha e o preço com cupom
-    const cp = campanhaEscolhida && CAMPANHAS[campanhaEscolhida] ? CAMPANHAS[campanhaEscolhida].nome : "", l = [];
-    if (cp) l.push(cp);
-    if (it.cupom && it.precoCupom) l.push(`${brl(it.precoCupom)} com o cupom ${String(it.cupom).toUpperCase()}`);
-    return l.join(" · ");
-  }
   $("#ppObs").addEventListener("input", () => { if (ppAtual) ppAtual.obsManual = !!$("#ppObs").value.trim(); });
   function pintarUsarCupom(it) { const box = $("#ppUsarCupomBox"); if (!box) return; box.hidden = !(it && it.precoCupom); box.querySelectorAll("[data-v]").forEach((b) => b.setAttribute("aria-checked", String((b.dataset.v === "1") === !!(it && it.usarCupom)))); }
   $("#ppUsarCupom").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (!b || !ppAtual) return; ppAtual.usarCupom = b.dataset.v === "1"; ppAtual.texto = ""; aplicarCamposPp(true); toast(ppAtual.usarCupom ? "As postagens vão usar o preço com cupom" : "As postagens vão usar o preço sem cupom"); });
