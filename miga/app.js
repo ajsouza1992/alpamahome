@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=238"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=239"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=238"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=239"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6279,7 +6279,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /* ===================== Personagem: a mesma moça mostrando os produtos (foto ou vídeo da IA) + textos, logo e @ da Miga ===================== */
   // Cena padrão de cada categoria (sempre a mesma, para o perfil ficar com padrão). roupa: null = ela veste o próprio produto
   const CENAS_PERS = {
-    perfumes: { acao: "aperta o borrifador uma vez e borrifa uma névoa leve na parte de dentro do pulso esquerdo, cheira e sorri", foto: "segurando o frasco de perfume da foto do produto perto do pescoço, tocando nele", lugar: "uma penteadeira clara com luzes suaves", frase: "cheiroso e marcante o dia todo" },
+    perfumes: { acao: "borrifa uma vez para o alto, à frente do corpo, fecha os olhos, aspira o perfume no ar e sorri", foto: "segurando o frasco de perfume da foto do produto perto do pescoço, tocando nele", lugar: "uma penteadeira clara com luzes suaves", frase: "cheiroso e marcante o dia todo" },
     looks: { acao: "está vestindo a roupa da foto do produto e gira devagar em frente a um espelho", foto: "vestindo a roupa da foto do produto, posando como modelo para mostrar a roupa", lugar: "um quarto claro com espelho de corpo inteiro", frase: "lindo, confortável e fácil de combinar" },
     fitness: { acao: "está vestindo a roupa fitness da foto do produto e faz um alongamento leve", foto: "vestindo a roupa fitness da foto do produto, pose confiante para mostrar a roupa", lugar: "uma academia moderna e clara", frase: "confortável e lindo pra treinar" },
     calcados: { acao: "está calçando o calçado da foto do produto e dá dois passos; a câmera mostra os pés e o rosto dela", foto: "calçando o calçado da foto do produto, um pé à frente para mostrar o calçado", lugar: "uma sala clara", frase: "confortável e combina com tudo" },
@@ -6385,7 +6385,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const roupa = C.roupa ? `Roupa: ${C.roupa}.` : "Ela veste a roupa da foto do produto anexada.";
     if (tipo === "video" && it.categoria === "perfumes" && !USOS_PERS.some(([re]) => re.test(it.nome || ""))) {
       const formato = quadradoPers(P0) ? "quadrado 1:1 para post do feed" : "vertical 9:16";
-      const monta2 = (nm) => `Vídeo hiper-realista ${formato}, 8 s, tomada única, sem cortes. Modelo fictícia (IA), a mesma das fotos anexadas, roupa nova combinando com o fundo. Cenário: ${C.lugar.replace(" e luz suave de estúdio", "").replace(/ \(#\w+\)/, "")}. ${ENQUAD_PERS[enquadDe(P0, it)][1]} Segura o perfume da foto na mão direita o vídeo todo. Fala em português: "Oi, miga! Hoje vim mostrar esse perfume maravilhoso, o ${nm}!" Borrifa uma única vez na parte interna do pulso esquerdo, aproxima exatamente esse local do nariz, cheira e sorri: "Nossa, miga! Que perfume delicioso!" Finaliza: "Segue a Miga Promo pra encontrar produtos incríveis no melhor precinho!" Sem legendas, textos ou perguntas. Não borrifar no rosto, não cheirar o outro pulso, não trocar o frasco de mão, não duplicar o produto, não adicionar tampa. Manter o rosto, o frasco original e a continuidade. Voz feminina natural, sincronia labial perfeita.`;
+      const monta2 = (nm) => `Vídeo hiper-realista ${formato}, 8 s, tomada única, sem cortes. Modelo fictícia (IA), a mesma das fotos anexadas, roupa nova combinando com o fundo. Cenário: ${C.lugar.replace(" e luz suave de estúdio", "").replace(/ \(#\w+\)/, "")}. ${ENQUAD_PERS[enquadDe(P0, it)][1]} Segura o perfume da foto na mão direita o vídeo todo. Fala em português: "Oi, miga! Hoje vim mostrar esse perfume maravilhoso, o ${nm}!" Borrifa uma única vez para o alto, à frente do corpo (névoa só do bico), fecha os olhos, aspira o perfume no ar e sorri: "Nossa, miga! Que perfume delicioso!" Finaliza: "Segue a Miga Promo pra encontrar produtos incríveis no melhor precinho!" Sem legendas, textos ou perguntas. Não borrifar no rosto nem no corpo, não trocar o frasco de mão, não duplicar o produto, não adicionar tampa. Manter o rosto, o frasco e a continuidade. Voz feminina natural, sincronia labial perfeita.`;
       const nomeP = (n) => nomeFala(String(it.nome || "").replace(/\s*\d+\s*(ml|g|oz)\b.*$/i, "").replace(/^\s*(perfume|body splash|col[oô]nia|deo col[oô]nia)\s+(feminino|masculino|unissex)?\s*/i, ""), n);
       let nm = 6, p2 = monta2(nomeP(nm)); while (p2.length > LIMITE_PROMPT && nm > 2) { nm--; p2 = monta2(nomeP(nm)); }
       return p2.slice(0, LIMITE_PROMPT);
