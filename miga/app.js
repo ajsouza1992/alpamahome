@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=256"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=257"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=256"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=257"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6696,10 +6696,18 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (!dur) dur = await new Promise((ok) => { const v = document.createElement("video"); v.preload = "metadata"; v.onloadedmetadata = () => ok(isFinite(v.duration) ? v.duration : 8); v.onerror = () => ok(8); v.src = M0.url; });
     const ff = await ffPronto(); ff._aviso = null;
     await ff.writeFile("v.mp4", new Uint8Array(await vid.arrayBuffer())); await ff.writeFile("m.png", new Uint8Array(await png.arrayBuffer()));
-    // o fechamento entra logo que o vídeo acaba: se a IA deixou tela preta no fim, cortamos ela
-    try { const ini = Math.max(0, dur - 4); let ult = null; ff._log = (m) => { const r = /black_start:([\d.]+)\s+black_end:([\d.]+)/.exec(m); if (r) ult = [parseFloat(r[1]), parseFloat(r[2])]; };
-      await ff.exec(["-ss", ini.toFixed(3), "-i", "v.mp4", "-an", "-vf", "blackdetect=d=0.05:pix_th=0.12:pic_th=0.95", "-f", "null", "-"]);
-      if (ult && ini + ult[1] >= dur - 0.25 && ini + ult[0] > 0.5) dur = ini + ult[0];
+    // o fechamento entra no último quadro de verdade do vídeo: mede o brilho de cada quadro do final e corta a tela preta (ou o escurecer) do fim
+    try { const ini = Math.max(0, dur - 5), qs = []; let tq = null;
+      ff._log = (m) => { let r = /pts_time:([\d.]+)/.exec(m); if (r) tq = parseFloat(r[1]); r = /YAVG=([\d.]+)/.exec(m); if (r && tq != null) qs.push([tq, parseFloat(r[1])]); };
+      await ff.exec(["-ss", ini.toFixed(3), "-i", "v.mp4", "-an", "-vf", "scale=64:-2,signalstats,metadata=print:key=lavfi.signalstats.YAVG", "-f", "null", "-"]);
+      if (qs.length > 3) {
+        const passo = (qs[qs.length - 1][0] - qs[0][0]) / (qs.length - 1) || 1 / 30, claros = qs.map((q) => q[1]).sort((x, y) => y - x), ref = claros[Math.floor(claros.length * 0.3)];
+        // só corta se o vídeo termina escuro; aí volta até onde começou a escurecer
+        const escuro = Math.max(24, 16 + (ref - 16) * 0.35), limite = Math.max(28, 16 + (ref - 16) * 0.8); let i = qs.length;
+        if (qs[qs.length - 1][1] < escuro) while (i > 0 && qs[i - 1][1] < limite) i--;
+        const fim = i > 0 ? ini + qs[i - 1][0] + passo : ini; // logo depois do último quadro claro
+        if (fim > 0.8 && fim < dur + 0.5) dur = Math.min(dur, fim);
+      }
     } catch (e) { /* segue com a duração inteira */ } finally { ff._log = null; }
     // quadros do fechamento (transparentes) e o áudio extra
     const fc = document.createElement("canvas"); fc.width = 1080; fc.height = H; const fx = fc.getContext("2d");
