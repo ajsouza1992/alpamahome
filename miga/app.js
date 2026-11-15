@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=258"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=260"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=258"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=260"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6690,18 +6690,39 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 1.2); }); });
     return wavDe(await ac.startRendering());
   }
-  /* Montagem rápida com o codificador de vídeo do próprio aparelho (WebCodecs): toca o vídeo uma vez, desenha logo/@/selo em cada quadro,
-     corta a tela preta do fim, emenda o fechamento e o ffmpeg só junta o som (sem recodificar a imagem). */
+  /* Montagem rápida com o decodificador e o codificador de vídeo do próprio aparelho (WebCodecs): lê TODOS os quadros do arquivo,
+     um por um (nenhum quadro pulado, fica tão fluido quanto o original), desenha logo/@/selo, corta a tela preta do fim,
+     emenda o fechamento e o ffmpeg só junta o som (sem recodificar a imagem). */
+  let mp4boxPronto = null;
+  const carregarMp4box = () => mp4boxPronto || (mp4boxPronto = new Promise((ok, no) => { if (window.MP4Box) { ok(window.MP4Box); return; } const sc = document.createElement("script"); sc.src = FF_CDN + "mp4box@0.5.2/dist/mp4box.all.min.js"; sc.onload = () => (window.MP4Box ? ok(window.MP4Box) : no(new Error("mp4box"))); sc.onerror = () => { mp4boxPronto = null; no(new Error("mp4box")); }; document.head.appendChild(sc); }));
+  async function lerAmostras(buf) {
+    const MP4Box = await carregarMp4box();
+    return new Promise((ok, no) => {
+      const f = MP4Box.createFile(); let trilha = null; const amostras = [];
+      f.onError = (e) => no(new Error("mp4: " + e));
+      f.onReady = (info) => { trilha = info.videoTracks[0]; if (!trilha) { no(new Error("sem trilha de vídeo")); return; } f.setExtractionOptions(trilha.id, null, { nbSamples: Infinity }); f.start(); };
+      f.onSamples = (id, u, ss) => { ss.forEach((x) => amostras.push(x)); };
+      const ab = buf.slice(0); ab.fileStart = 0; f.appendBuffer(ab); f.flush();
+      setTimeout(() => { try {
+        if (!trilha) { no(new Error("mp4 não abriu")); return; }
+        const ent = f.getTrackById(trilha.id).mdia.minf.stbl.stsd.entries[0], cx = ent.avcC || ent.hvcC || ent.vpcC || ent.av1C; let description;
+        const DS = MP4Box.DataStream || window.DataStream;
+        if (cx) { const st = new DS(undefined, 0, DS.BIG_ENDIAN); cx.write(st); description = new Uint8Array(st.buffer, 8); }
+        ok({ trilha, amostras, description });
+      } catch (e) { no(e); } }, 0);
+    });
+  }
   async function videoComMarcaWC(P, M0, aviso) {
-    if (!window.VideoEncoder || !window.VideoFrame || !HTMLVideoElement.prototype.requestVideoFrameCallback) throw new Error("sem WebCodecs");
+    if (!window.VideoEncoder || !window.VideoDecoder || !window.VideoFrame) throw new Error("sem WebCodecs");
     const alta = P.qualidade !== "rapido", W = alta ? 1080 : 720, H0 = altPers(P), H = Math.round((H0 * W) / 1080 / 2) * 2;
-    const ff = await ffPronto(); ff._aviso = null; const apaga = (...n) => n.forEach((x) => ff.deleteFile(x).catch(() => {}));
-    await ff.writeFile("v.mp4", new Uint8Array(await (await fetch(M0.url)).arrayBuffer()));
-    let fps = 0; ff._log = (m) => { const r = /Video:.*?([\d.]+) fps/.exec(m); if (r && !fps) fps = parseFloat(r[1]); };
-    try { await ff.exec(["-hide_banner", "-i", "v.mp4"]); } catch (e) { /* só leitura */ } finally { ff._log = null; }
-    fps = Math.round(fps); if (!(fps >= 15 && fps <= 60)) fps = 30;
+    const bruto = await (await fetch(M0.url)).arrayBuffer();
+    const [{ trilha, amostras, description }, ff] = await Promise.all([lerAmostras(bruto), ffPronto()]); ff._aviso = null;
+    const n = amostras.length; if (n < 10) throw new Error("poucos quadros");
+    const durSeg = amostras.reduce((t, x) => t + x.duration, 0) / amostras[0].timescale, fps = Math.min(60, Math.max(15, Math.round(n / durSeg))), dt = 1e6 / fps;
+    const dcfg = { codec: trilha.codec, codedWidth: trilha.video.width, codedHeight: trilha.video.height, description };
+    if (!(await VideoDecoder.isConfigSupported(dcfg)).supported) throw new Error("decodificador não suporta " + trilha.codec);
     let cfg = null;
-    for (const codec of ["avc1.640028", "avc1.4d0028", "avc1.42e028"]) { for (const hw of ["prefer-hardware", "no-preference"]) {
+    for (const codec of ["avc1.640033", "avc1.640028", "avc1.4d0028", "avc1.42e028"]) { for (const hw of ["prefer-hardware", "no-preference"]) {
       const c = { codec, width: W, height: H, bitrate: alta ? 12e6 : 5e6, framerate: fps, avc: { format: "annexb" }, latencyMode: "realtime", hardwareAcceleration: hw };
       try { if ((await VideoEncoder.isConfigSupported(c)).supported) { cfg = c; break; } } catch (e) { /* tenta outro */ } } if (cfg) break; }
     if (!cfg) throw new Error("sem H.264");
@@ -6709,58 +6730,52 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const enc = new VideoEncoder({ output: (ch) => { const b = new Uint8Array(ch.byteLength); ch.copyTo(b); pedacos.push({ t: ch.timestamp, b }); }, error: (e) => { erro = e; } });
     enc.configure(cfg);
     await carregarMarca(); const cam = document.createElement("canvas"); cam.width = 1080; cam.height = H0; quadroLogoArroba(cam.getContext("2d"), 1080, null, P, true);
-    const tela = document.createElement("canvas"); tela.width = W; tela.height = H; const ctx = tela.getContext("2d"); ctx.imageSmoothingQuality = "high";
-    const mini = document.createElement("canvas"); mini.width = 18; mini.height = 32; const mx = mini.getContext("2d", { willReadFrequently: true });
-    const v = document.createElement("video"); v.src = M0.url; v.muted = true; v.playsInline = true; v.preload = "auto";
-    v.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none"; document.body.appendChild(v);
+    const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+    const tela = mk(W, H), ctx = tela.getContext("2d"), cru = mk(W, H), cr = cru.getContext("2d"), base = mk(W, H), bx = base.getContext("2d"), mini = mk(18, 32), mx = mini.getContext("2d", { willReadFrequently: true });
+    ctx.imageSmoothingQuality = cr.imageSmoothingQuality = "high";
+    const luz = [], iniLuz = Math.max(0, n - 5 * fps); let j = 0, claro = -1, ref = 0;
+    const dec = new VideoDecoder({
+      output: (fr) => {
+        try {
+          const fw = fr.displayWidth, fh = fr.displayHeight, k = Math.max(W / fw, H / fh); cr.drawImage(fr, (W - fw * k) / 2, (H - fh * k) / 2, fw * k, fh * k);
+          if (j >= iniLuz) { // brilho só no final, para achar a tela preta
+            mx.drawImage(fr, 0, 0, 18, 32); const d = mx.getImageData(0, 0, 18, 32).data; let y = 0; for (let q = 0; q < d.length; q += 4) y += 0.299 * d[q] + 0.587 * d[q + 1] + 0.114 * d[q + 2]; y /= d.length / 4; luz[j] = y;
+            ref = Math.max(ref, y); if (y >= Math.max(12, ref * 0.88)) { claro = j; bx.drawImage(cru, 0, 0); } }
+          ctx.drawImage(cru, 0, 0); ctx.drawImage(cam, 0, 0, W, H);
+          const vf = new VideoFrame(tela, { timestamp: Math.round(j * dt), duration: Math.round(dt) }); enc.encode(vf, { keyFrame: j % (fps * 2) === 0 }); vf.close(); j++;
+        } finally { fr.close(); }
+      }, error: (e) => { erro = e; } });
+    dec.configure(dcfg);
+    const espera = async () => { while ((dec.decodeQueueSize > 6 || enc.encodeQueueSize > 6) && !erro) await new Promise((ok) => setTimeout(ok, 4)); };
     try {
-      await new Promise((ok, no) => { if (v.readyState >= 2) ok(); else { v.addEventListener("loadeddata", ok, { once: true }); v.addEventListener("error", () => no(new Error("vídeo não abriu")), { once: true }); } });
-      const total = isFinite(v.duration) && v.duration > 0 ? v.duration : 8, dt = 1e6 / fps, luz = []; let ult = -1;
-      const desenha = () => { const fw = v.videoWidth, fh = v.videoHeight, k = Math.max(W / fw, H / fh); ctx.drawImage(v, (W - fw * k) / 2, (H - fh * k) / 2, fw * k, fh * k); };
-      await new Promise((ok, no) => {
-        let fim = false; const acabar = () => { if (!fim) { fim = true; ok(); } };
-        const cb = (agora, md) => {
-          if (fim) return; const i = Math.round(md.mediaTime * fps);
-          if (i > ult) {
-            desenha(); mx.drawImage(v, 0, 0, 18, 32); const d = mx.getImageData(0, 0, 18, 32).data; let y = 0; for (let q = 0; q < d.length; q += 4) y += 0.299 * d[q] + 0.587 * d[q + 1] + 0.114 * d[q + 2]; y /= d.length / 4;
-            ctx.drawImage(cam, 0, 0, W, H);
-            for (let j = ult + 1; j <= i; j++) { const f = new VideoFrame(tela, { timestamp: Math.round(j * dt), duration: Math.round(dt) }); enc.encode(f, { keyFrame: j % (fps * 2) === 0 }); f.close(); luz[j] = y; }
-            ult = i; if (aviso) aviso(Math.min(85, Math.round((md.mediaTime / total) * 85)));
-          }
-          v.requestVideoFrameCallback(cb);
-        };
-        v.requestVideoFrameCallback(cb); v.addEventListener("ended", () => setTimeout(acabar, 120), { once: true });
-        v.play().catch(no);
-        setTimeout(acabar, (total + 20) * 1000);
-      });
-      if (erro) throw erro; if (ult < fps) throw new Error("poucos quadros");
-      // fim de verdade: corta a tela preta / o escurecer do final
-      let c = ult + 1; { const ini = Math.max(0, c - 5 * fps), vs = luz.slice(ini, c).filter((x) => x != null), cl = vs.slice().sort((a, b) => b - a), ref = cl[Math.floor(cl.length * 0.3)] || 0;
-        const escuro = Math.max(8, ref * 0.3), limite = Math.max(12, ref * 0.8);
-        if (luz[c - 1] < escuro) { while (c > ini + 1 && luz[c - 1] < limite) c--; } }
-      if (c < fps * 0.8) c = ult + 1;
-      await enc.flush(); const nMeio = pedacos.length;
-      // último quadro claro, para o fundo do fechamento
-      v.pause(); await new Promise((ok) => { v.addEventListener("seeked", ok, { once: true }); v.currentTime = Math.max(0, (c - 1) / fps + 0.01); setTimeout(ok, 2500); });
-      desenha(); const base = document.createElement("canvas"); base.width = W; base.height = H; base.getContext("2d").drawImage(tela, 0, 0);
-      const cam2 = document.createElement("canvas"); cam2.width = 1080; cam2.height = H0; const cx2 = cam2.getContext("2d"), nF = Math.round(FECHO.total * fps);
+      for (let i = 0; i < n && !erro; i++) { const a = amostras[i];
+        dec.decode(new EncodedVideoChunk({ type: a.is_sync ? "key" : "delta", timestamp: Math.round((a.cts * 1e6) / a.timescale), duration: Math.round((a.duration * 1e6) / a.timescale), data: a.data }));
+        await espera(); if (aviso && i % 10 === 0) aviso(Math.round((i / n) * 85)); }
+      await dec.flush(); dec.close(); await enc.flush(); if (erro) throw erro;
+      const total = j; if (total < fps) throw new Error("poucos quadros decodificados");
+      // fim de verdade: se termina escuro, volta até o último quadro claro
+      let c = total; { const vs = luz.slice(iniLuz, total).filter((x) => x != null), cl = vs.slice().sort((x, y) => y - x), rf = cl[Math.floor(cl.length * 0.3)] || 0;
+        if (luz[total - 1] != null && luz[total - 1] < Math.max(8, rf * 0.3) && claro >= 0) c = claro + 1; }
+      if (c < fps * 0.8) c = total;
+      if (c === total) bx.drawImage(cru, 0, 0); // sem preto no fim: o fundo do fechamento é o último quadro
+      const nMeio = pedacos.length, cam2 = mk(1080, H0), cx2 = cam2.getContext("2d"), nF = Math.round(FECHO.total * fps);
       for (let m = 0; m < nF; m++) { quadroFechamento(cx2, H0, m / fps, cam); ctx.drawImage(base, 0, 0); ctx.drawImage(cam2, 0, 0, W, H);
-        const f = new VideoFrame(tela, { timestamp: Math.round((c + m) * dt), duration: Math.round(dt) }); enc.encode(f, { keyFrame: m === 0 }); f.close();
-        if (enc.encodeQueueSize > 8) await new Promise((ok) => setTimeout(ok, 5)); if (aviso && m % 6 === 0) aviso(85 + Math.round((m / nF) * 10)); }
+        const vf = new VideoFrame(tela, { timestamp: Math.round((c + m) * dt), duration: Math.round(dt) }); enc.encode(vf, { keyFrame: m === 0 }); vf.close();
+        await espera(); if (aviso && m % 6 === 0) aviso(85 + Math.round((m / nF) * 10)); }
       await enc.flush(); enc.close(); if (erro) throw erro;
-      const fica = pedacos.filter((p, i) => i >= nMeio || p.t < c * dt - 1); let n = 0; fica.forEach((p) => { n += p.b.length; });
-      const h264 = new Uint8Array(n); n = 0; fica.forEach((p) => { h264.set(p.b, n); n += p.b.length; });
+      const fica = pedacos.filter((p, i) => i >= nMeio || p.t < c * dt - 1); let tam = 0; fica.forEach((p) => { tam += p.b.length; });
+      const h264 = new Uint8Array(tam); tam = 0; fica.forEach((p) => { h264.set(p.b, tam); tam += p.b.length; });
       const D = (c / fps).toFixed(3), tot = ((c + nF) / fps).toFixed(3);
-      await ff.writeFile("v.h264", h264); await ff.writeFile("a.wav", await audioFechamento(P, c / fps));
+      await ff.writeFile("v.mp4", new Uint8Array(bruto)); await ff.writeFile("v.h264", h264); await ff.writeFile("a.wav", await audioFechamento(P, c / fps));
       const ent = ["-framerate", String(fps), "-i", "v.h264", "-i", "v.mp4", "-i", "a.wav"], saida = ["-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
       await ff.exec([...ent, "-filter_complex", `[1:a]atrim=end=${D},apad[v0];[v0][2:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "0:v", "-map", "[a]", ...saida]);
       let d = await ff.readFile("s.mp4").catch(() => null);
       if (!d || d.length < 2000) { await ff.exec([...ent, "-map", "0:v", "-map", "2:a", ...saida]); d = await ff.readFile("s.mp4").catch(() => null); } // vídeo sem som
-      apaga("v.mp4", "v.h264", "a.wav", "s.mp4");
+      ["v.mp4", "v.h264", "a.wav", "s.mp4"].forEach((x) => ff.deleteFile(x).catch(() => {}));
       if (!d || d.length < 2000) throw new Error("junção vazia");
       if (aviso) aviso(100);
       return new Blob([d.buffer], { type: "video/mp4" });
-    } finally { v.pause(); v.remove(); try { if (enc.state !== "closed") enc.close(); } catch (e) { /* já fechado */ } }
+    } finally { try { if (dec.state !== "closed") dec.close(); } catch (e) { /* ok */ } try { if (enc.state !== "closed") enc.close(); } catch (e) { /* ok */ } }
   }
   async function videoComMarcaFF(P, M0, aviso) {
     const H = altPers(P), cam = document.createElement("canvas"); cam.width = 1080; cam.height = H; await carregarMarca(); quadroLogoArroba(cam.getContext("2d"), 1080, null, P, true);
