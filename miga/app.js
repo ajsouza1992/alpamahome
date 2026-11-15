@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=279"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=280"; });
     }
     edFoto = null;
     try {
@@ -1663,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=279"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=280"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6016,7 +6016,7 @@
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 - SB + OY); ctx.fillRect(540 - w / 2 + ld, 1252 - SB + OY, w - ld, 5); });
       if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) - SB + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom && storyComLink) campoCupomLink(ctx, (antigo ? 1345 : 1290) - SB + OY + 66, it, C.destaque); // fixo, sem animação
+      if (it.cupom && storyComLink) campoCupomLink(ctx, Math.min((antigo ? 1345 : 1290) - SB + OY + 82, 1512), it, C.destaque); // fixo, sem animação
       else if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
       return;
     }
@@ -6037,7 +6037,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom && storyComLink) campoCupomLink(ctx, Math.min(y + 66, 1520), it, C.destaque); // fixo, sem animação
+    if (it.cupom && storyComLink) campoCupomLink(ctx, Math.min(y + 82, 1512), it, C.destaque); // fixo, sem animação
     else if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
   }
   /** Quadro do Reels no tempo t */
@@ -6626,10 +6626,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       com esse texto. Sem texto: o adesivo do Instagram vai por cima. */
   function campoCupomLink(ctx, y, it, cor) {
     const tx = textoAdesivo(it); if (!tx) return;
-    ctx.save(); ctx.font = `500 56px ${FONTE_LINK}`;
-    let estreita = false; try { estreita = document.fonts && document.fonts.check(`500 56px "Roboto Condensed"`); } catch (e) { /* segue */ }
-    // largura do adesivo (ícone + texto) com folga; no máximo 820 para não encostar no círculo do logo da Miga
-    const larg = Math.min(820, 24 + 56 + 12 + ctx.measureText(tx).width * (estreita ? 1 : 0.82) + 28 + 40), h = 132, r = 26, x = (1080 - larg) / 2;
+    ctx.save(); ctx.font = `500 66px ${FONTE_LINK}`;
+    let estreita = false; try { estreita = document.fonts && document.fonts.check(`500 66px "Roboto Condensed"`); } catch (e) { /* segue */ }
+    // largura do adesivo de link (ícone + texto, letra do tamanho do Instagram) com folga; vai até 1000 (o campo fica acima do círculo do logo)
+    const larg = Math.min(980, 30 + 66 + 16 + ctx.measureText(tx).width * (estreita ? 1 : 0.82) + 34 + 50), h = 122, r = 26, x = (1080 - larg) / 2;
     const corpo = () => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + larg, y, x + larg, y + h, r); ctx.arcTo(x + larg, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + larg, y, r); ctx.closePath(); };
     ctx.shadowColor = "rgba(0,0,0,.12)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4; corpo(); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
     ctx.setLineDash([18, 12]); ctx.lineWidth = 6; ctx.strokeStyle = cor || "#e8336d"; corpo(); ctx.stroke(); ctx.setLineDash([]); // borda tracejada na cor do tema
