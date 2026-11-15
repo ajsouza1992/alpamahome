@@ -341,8 +341,8 @@
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
       limpar: () => tx("readwrite", (s) => s.clear()),
-      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), cupomInfo: ls.lerJson("miga_cupom_info", {}), instagram: ls.ler("miga_instagram") || "" }),
-      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_cupom_info", JSON.stringify(c.cupomInfo || {})); ls.gravar("miga_instagram", c.instagram || ""); },
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), cupomInfo: ls.lerJson("miga_cupom_info", {}), instagram: ls.ler("miga_instagram") || "", prompts: ls.lerJson("miga_prompts", {}) }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_cupom_info", JSON.stringify(c.cupomInfo || {})); ls.gravar("miga_instagram", c.instagram || ""); ls.gravar("miga_prompts", JSON.stringify(c.prompts || {})); },
       lerFila: async () => ls.lerJson("miga_fila", []),
       gravarFila: async (l) => { ls.gravar("miga_fila", JSON.stringify(l)); }
     };
@@ -375,9 +375,9 @@
       lerConfig: async () => {
         const d = await fs.getDoc(docConfig());
         const x = d.exists() ? d.data() : {};
-        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], cupomInfo: x.cupomInfo || {}, instagram: x.instagram || "", filaAntiga: x.fila || [] };
+        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], cupomInfo: x.cupomInfo || {}, instagram: x.instagram || "", prompts: x.prompts || {}, filaAntiga: x.fila || [] };
       },
-      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], cupomInfo: c.cupomInfo || {}, instagram: c.instagram || "", atualizadoEm: Date.now() }, { merge: true }),
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], cupomInfo: c.cupomInfo || {}, instagram: c.instagram || "", prompts: c.prompts || {}, atualizadoEm: Date.now() }, { merge: true }),
       // Lista: um documento por produto em usuarios/{uid}/lista/{id} (as fotos não estouram o limite de 1 MB)
       lerFila: async () => {
         const snap = await fs.getDocs(colLista());
@@ -468,7 +468,7 @@
     for (const h of hist) { try { const ja = await dados.pegar(h.id); if (!ja) await dados.salvar(h); } catch (e) { /* segue */ } }
     const atual = await dados.lerConfig(), uniq = (l) => { const v = new Set(); return l.filter((x) => { const k = JSON.stringify(x); if (v.has(k)) return false; v.add(k); return true; }); };
     const junto = { grupos: uniq([...(atual.grupos || []), ...cfgs.flatMap((c) => c.grupos || [])]), cupons: [...new Set([...(atual.cupons || []), ...cfgs.flatMap((c) => c.cupons || [])])],
-      cupomInfo: Object.assign({}, ...cfgs.map((c) => c.cupomInfo || {}), atual.cupomInfo || {}), convite: atual.convite || (cfgs.find((c) => c.convite) || {}).convite || "", instagram: atual.instagram || (cfgs.find((c) => c.instagram) || {}).instagram || "" };
+      cupomInfo: Object.assign({}, ...cfgs.map((c) => c.cupomInfo || {}), atual.cupomInfo || {}), convite: atual.convite || (cfgs.find((c) => c.convite) || {}).convite || "", instagram: atual.instagram || (cfgs.find((c) => c.instagram) || {}).instagram || "", prompts: Object.assign({}, ...cfgs.map((c) => c.prompts || {}), atual.prompts || {}) };
     await dados.gravarConfig(junto);
     ls.gravar(marca, "1");
     if (novos.length || hist.length) toast(`Pronto: ${novos.length} ${novos.length === 1 ? "produto foi" : "produtos foram"} para a nuvem`);
@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=239"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=240"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=239"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=240"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1909,6 +1909,23 @@
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value); config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
+  /* Prompts editáveis (Ajustes) */
+  function pintarAjPrompts() {
+    $("#ajPrompts").innerHTML = Object.entries(PROMPTS_PADRAO).map(([k, d]) => { const v = modeloPrompt(k), mudou = (config.prompts || {})[k] != null;
+      return `<details class="aj-prompt"><summary><b>${esc(d.nome)}</b>${mudou ? '<small>editado</small>' : ""}</summary>
+        <p class="nota">Chaves: ${esc(d.chaves)}</p>
+        <textarea data-aj-prompt="${k}" rows="8" maxlength="800">${esc(v)}</textarea>
+        <div class="aj-prompt__rod"><span data-aj-cont="${k}">${v.length}/800</span><button type="button" class="btn btn--branco" data-aj-restaurar="${k}">Restaurar</button><button type="button" class="btn btn--rosa" data-aj-salvar-prompt="${k}">Salvar</button></div></details>`; }).join("");
+  }
+  $("#ajPrompts").addEventListener("input", (e) => { const k = e.target.dataset && e.target.dataset.ajPrompt; if (k) $(`[data-aj-cont="${k}"]`).textContent = `${e.target.value.length}/800`; });
+  $("#ajPrompts").addEventListener("click", async (e) => {
+    const sv = e.target.closest("[data-aj-salvar-prompt]"), rs = e.target.closest("[data-aj-restaurar]"); if (!sv && !rs) return;
+    const k = (sv || rs).dataset[sv ? "ajSalvarPrompt" : "ajRestaurar"]; config.prompts = { ...(config.prompts || {}) };
+    if (sv) { const v = $(`[data-aj-prompt="${k}"]`).value.trim().slice(0, 800); if (v && v !== PROMPTS_PADRAO[k].txt) config.prompts[k] = v; else delete config.prompts[k]; }
+    else { if (!(await confirmar({ titulo: "Restaurar o prompt?", texto: "Volta para o texto original do app.", ok: "Restaurar" }))) return; delete config.prompts[k]; }
+    await gravarConfig(); const aberto = k; pintarAjPrompts(); const d = $(`[data-aj-prompt="${aberto}"]`); if (d) d.closest("details").open = true;
+    toast(sv ? "Prompt salvo" : "Prompt restaurado");
+  });
   $("#ajOcultarPostados").addEventListener("change", (e) => { config.ocultarPostados = e.target.checked; gravarConfig(); renderFila(); toast(e.target.checked ? "Postados ocultos da Lista" : "Postados de volta na Lista"); });
   function renderFila() {
     migrarCategorias(); renderCatsLista(); pintarMarcados();
@@ -4002,7 +4019,7 @@
             ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa"><figcaption>Capa</figcaption><div class="rp-capa-op"><button type="button" data-vd-capa="titulo" class="${(V.capaTipo || "titulo") === "titulo" ? "on" : ""}">Título</button><button type="button" data-vd-capa="quadro" class="${V.capaTipo === "quadro" ? "on" : ""}">Quadro</button></div>${V.url && V.duracao ? `<label class="rp-capa-momento"><span>Momento da capa</span><input type="range" id="vdCapaMomento" min="0" max="${Math.max(0.1, V.duracao - 0.1).toFixed(1)}" step="0.1" value="${(V.capaT != null ? V.capaT : V.duracao / 3).toFixed(1)}"></label>` : ""}</figure>` : ""}
           </div>
           <div class="rp-acoes">
-            <button type="button" class="btn btn--rosa" id="vdPostar">Postar / compartilhar</button>
+            <button type="button" class="btn btn--rosa" id="vdPostar">Postar</button>
             <div class="est-ctrl est-ctrl--3 rp-tiles">
               <button type="button" class="est-btn" id="vdBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Baixar vídeo</b></button>
               ${r.capa ? '<button type="button" class="est-btn" id="vdBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
@@ -4013,7 +4030,7 @@
             <div class="leg-bloco">
               <div class="leg-topo"><span>Legenda do Instagram</span><div><button type="button" class="leg-btn" id="vdCopiarLegenda"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button><button type="button" class="leg-btn" id="vdRefazerLegenda"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Refazer</button></div></div>
               <textarea id="vdLegendaInsta" rows="9">${esc(V.legendaInsta || (V.legendaInsta = legendaVideo()))}</textarea></div>
-            <p class="nota">Ao tocar em "Postar / compartilhar" a legenda já vai copiada: no Instagram é só colar.</p>
+            <p class="nota">Ao tocar em "Postar" a legenda já vai copiada: no Instagram é só colar.</p>
             <button type="button" class="link-sel rp-voltar" id="wzNovo">Voltar para a lista</button>
           </div>
         </div>`;
@@ -6293,7 +6310,24 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     outros: { acao: "mostra o produto da foto do produto para a câmera", foto: "segurando o produto da foto do produto com as duas mãos", lugar: "um quarto claro e aconchegante", frase: "útil demais no dia a dia" }
   };
   const CENA_PT = { perfumes: "borrifa no pulso e sorri", looks: "vestindo a peça no espelho", fitness: "vestindo e alongando", calcados: "calçando e dando dois passos", acessorios: "usando e ajeitando", maquiagem: "passando no espelho", skincare: "aplicando no rosto", cabelo: "passando no cabelo", suplementos: "mostrando e preparando", eletronicos: "usando e reagindo", casa: "usando em casa", outros: "mostrando para a câmera" };
-  const LIMITE_PROMPT = 900;
+  const LIMITE_PROMPT = 800;
+  /* Modelos de prompt editáveis em ⚙️ Ajustes (salvos na nuvem). As {chaves} o app preenche sozinho. */
+  const PROMPTS_PADRAO = {
+    limpar: { nome: "Refazer a foto do produto", chaves: "{produto} {detalhe}", txt: `Crie uma foto de catálogo nova deste mesmo produto da imagem anexada ("{produto}").
+- Fundo branco liso, sombra suave embaixo, luz de estúdio.
+- {detalhe}
+- Produto inteiro e centralizado, sem cortar nenhuma parte.
+- Mantenha o produto igual ao da foto: mesma cor, formato, tamanho e rótulo.
+- Só o produto na cena, sem preço, sem selos e sem textos extras.
+- Alta resolução, foco nítido, aparência de foto profissional real.
+- Formato quadrado 1:1.` },
+    imagem: { nome: "Imagem com a modelo (post)", chaves: "{roupa} {cenario} {enquadramento} {pose}", txt: `Foto quadrada 1:1 para post do feed do Instagram, hiper-realista, estilo influenciadora. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). {roupa} Cenário: {cenario}. {enquadramento} Ela posa {pose}, olhando para a câmera com sorriso natural; produto sempre visível e em foco, idêntico ao da foto do produto (formato, cor, rótulo, tamanho). Sem textos, logos ou marca d'água adicionados; foco nítido, alta resolução. Formato obrigatório: quadrado 1:1.` },
+    video: { nome: "Vídeo com a modelo", chaves: "{formato} {roupa} {cenario} {enquadramento} {acao} {fala}", txt: `Vídeo hiper-realista {formato}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). {roupa} Cenário: {cenario}. {enquadramento} Produto: o da foto anexada, idêntico. Ação: ela {acao}. Fala em português do Brasil, voz natural e animada: "{fala}" No final, posa com o produto visível, sorrindo. Sem textos, logos ou legendas; sem cortes ou zoom; mãos naturais; produto não muda; boca sincronizada.` },
+    perfume: { nome: "Vídeo de perfume", chaves: "{formato} {cenario} {enquadramento} {nome}", txt: `Vídeo hiper-realista {formato}, 8 s, tomada única, sem cortes. Modelo fictícia (IA), a mesma das fotos anexadas, roupa nova combinando com o fundo. Cenário: {cenario}. {enquadramento} Segura o perfume da foto na mão direita o vídeo todo. Fala: "Oi, miga! Hoje vim mostrar esse perfume maravilhoso, o {nome}!" Borrifa uma vez para o alto (névoa só do bico), fecha os olhos, aspira no ar e sorri: "Nossa, miga! Que perfume delicioso!" Finaliza: "Segue a Miga Promo pra encontrar produtos incríveis no melhor precinho!" Sem legendas ou textos. Não borrifar no rosto nem no corpo, não trocar de mão, não duplicar o frasco, sem tampa. Voz natural, boca sincronizada.` },
+    semproduto: { nome: "Vídeo sem produto", chaves: "{formato} {cenario} {enquadramento} {fala}", txt: `Vídeo hiper-realista {formato}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). Roupa: look estiloso e atual, combinando com o fundo. Cenário: {cenario}. {enquadramento} Ela olha para a câmera, sorri e fala em português do Brasil, voz feminina natural e animada: "{fala}" Gesticula de forma natural e, no final, acena e fica parada sorrindo. Sem textos, logos ou legendas; sem cortes nem zoom; mãos naturais; boca sincronizada.` }
+  };
+  const modeloPrompt = (k) => ((config.prompts || {})[k] || PROMPTS_PADRAO[k].txt);
+  const preencher = (k, v) => modeloPrompt(k).replace(/\{(\w+)\}/g, (m, c) => (v[c] != null ? v[c] : m)).replace(/ {2,}/g, " ").trim();
   // Espaço para a montagem (textos, logo, @) em todos os prompts
   const ESPACO_PERS = "Deixe espaço livre embaixo, abaixo dos pés, para textos (sem textos na imagem)";
   // Enquadramento escolhido (vai no prompt para a IA não cortar nem inventar o corpo)
@@ -6356,16 +6390,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   // Detalhe de cada categoria para a foto limpa do produto
   const LIMPAR_CAT = { perfumes: "Mostre o frasco sem a tampa, com o borrifador à mostra.", looks: "Mostre só a peça, sem modelo e sem manequim, de frente, bem esticada e sem amassados.", fitness: "Mostre só as peças, sem modelo, de frente, bem esticadas.", calcados: "Mostre o par, de lado, com o solado aparecendo.", acessorios: "Mostre o acessório inteiro, de frente, com as alças ou correntes à mostra.", maquiagem: "Mostre a embalagem aberta ao lado da tampa, com o produto aparecendo.", skincare: "Mostre a embalagem de frente, com o rótulo bem legível.", cabelo: "Mostre a embalagem de frente, com o rótulo bem legível.", suplementos: "Mostre o pote de frente, com o rótulo bem legível.", eletronicos: "Mostre o aparelho inteiro, de frente, com acabamento brilhante.", casa: "Mostre o produto inteiro, de frente.", outros: "Mostre o produto inteiro, de frente." };
   function promptLimparProduto(it) {
-    const nome = limparNome(it.nome || "o produto").slice(0, 90);
-    return `Crie uma foto de catálogo nova deste mesmo produto da imagem anexada ("${nome}").
-- Fundo branco liso, sombra suave embaixo, luz de estúdio.
-- ${LIMPAR_CAT[it.categoria] || LIMPAR_CAT.outros}
-- Produto inteiro e centralizado, sem cortar nenhuma parte.
-- Mantenha o produto igual ao da foto: mesma cor, formato, tamanho e rótulo.
-- Só o produto na cena, sem preço, sem selos e sem textos extras.
-- Alta resolução, foco nítido, aparência de foto profissional real.
-- Formato quadrado 1:1.`.slice(0, LIMITE_PROMPT);
+    return preencher("limpar", { produto: limparNome(it.nome || "o produto").slice(0, 90), detalhe: LIMPAR_CAT[it.categoria] || LIMPAR_CAT.outros }).slice(0, LIMITE_PROMPT);
   }
+
   const lsPers = { ler: (k, d) => { try { const v = localStorage.getItem("miga_pers_" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, gravar: (k, v) => { try { localStorage.setItem("miga_pers_" + k, JSON.stringify(v)); return true; } catch (e) { return false; } } };
   const POS_PADRAO = { logo: "br", selo: "tr", arroba: "base", preco: "base", nome: "preco", chamada: "topo", cupom: "preco" };
   const pe = () => wz.pe;
@@ -6383,20 +6410,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const P0 = wz.pe || {}, fundo = P0.fundo === "auto" || !P0.fundo ? (P0.fundoAuto || "rosa") : P0.fundo;
     const C = cenaDoItem(it, fundo === "cenario" ? "" : fundo), ficha0 = ""; // como ela é: as fotos de referência já mostram
     const roupa = C.roupa ? `Roupa: ${C.roupa}.` : "Ela veste a roupa da foto do produto anexada.";
+    const formato = quadradoPers(P0) ? "quadrado 1:1 para post do feed" : "vertical 9:16", enq = ENQUAD_PERS[enquadDe(P0, it)][1], cen = C.lugar.replace(" e luz suave de estúdio", "").replace(/ \(#\w+\)/, "");
     if (tipo === "video" && it.categoria === "perfumes" && !USOS_PERS.some(([re]) => re.test(it.nome || ""))) {
-      const formato = quadradoPers(P0) ? "quadrado 1:1 para post do feed" : "vertical 9:16";
-      const monta2 = (nm) => `Vídeo hiper-realista ${formato}, 8 s, tomada única, sem cortes. Modelo fictícia (IA), a mesma das fotos anexadas, roupa nova combinando com o fundo. Cenário: ${C.lugar.replace(" e luz suave de estúdio", "").replace(/ \(#\w+\)/, "")}. ${ENQUAD_PERS[enquadDe(P0, it)][1]} Segura o perfume da foto na mão direita o vídeo todo. Fala em português: "Oi, miga! Hoje vim mostrar esse perfume maravilhoso, o ${nm}!" Borrifa uma única vez para o alto, à frente do corpo (névoa só do bico), fecha os olhos, aspira o perfume no ar e sorri: "Nossa, miga! Que perfume delicioso!" Finaliza: "Segue a Miga Promo pra encontrar produtos incríveis no melhor precinho!" Sem legendas, textos ou perguntas. Não borrifar no rosto nem no corpo, não trocar o frasco de mão, não duplicar o produto, não adicionar tampa. Manter o rosto, o frasco e a continuidade. Voz feminina natural, sincronia labial perfeita.`;
       const nomeP = (n) => nomeFala(String(it.nome || "").replace(/\s*\d+\s*(ml|g|oz)\b.*$/i, "").replace(/^\s*(perfume|body splash|col[oô]nia|deo col[oô]nia)\s+(feminino|masculino|unissex)?\s*/i, ""), n);
-      let nm = 6, p2 = monta2(nomeP(nm)); while (p2.length > LIMITE_PROMPT && nm > 2) { nm--; p2 = monta2(nomeP(nm)); }
+      let nm = 6, p2 = preencher("perfume", { formato, cenario: cen, enquadramento: enq, nome: nomeP(nm) }); while (p2.length > LIMITE_PROMPT && nm > 2) { nm--; p2 = preencher("perfume", { formato, cenario: cen, enquadramento: enq, nome: nomeP(nm) }); }
       return p2.slice(0, LIMITE_PROMPT);
     }
-    const monta = (ficha, nomeMax) => tipo === "video"
-      ? `${abreVideo(P0)}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. ${ENQUAD_PERS[enquadDe(P0, it)][1]} Produto: o da foto anexada, idêntico. Ação: ela ${C.acao}. Fala em português do Brasil, voz natural e animada: "${falaPersonagem(it, nomeMax)}" No final, posa com o produto bem visível, sorrindo. Sem textos, logos ou legendas adicionados. Sem cortes ou zoom; mãos naturais; produto não muda; boca sincronizada.`
-      : `Foto quadrada 1:1 (1080 × 1080), para post do feed do Instagram, hiper-realista, estilo influenciadora. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). ${roupa} Cenário: ${C.lugar}. ${ENQUAD_PERS[enquadDe(P0, it)][1]} Ela está posando, ${C.foto}, olhando para a câmera com um sorriso natural; o produto sempre bem visível e em foco. O produto é idêntico ao da foto do produto anexada (formato, cor, rótulo e tamanho). Sem textos, logos ou marca d'água adicionados (mantenha o design do produto); foco nítido, alta resolução. Formato obrigatório: quadrado 1:1, não vertical.`;
-    let ficha = ficha0, nomeMax = 5, p = monta(ficha, nomeMax);
-    while (p.length > LIMITE_PROMPT && ficha.length > 40) { const corte = ficha.slice(0, ficha.length - 15); ficha = corte.includes(",") ? corte.replace(/,[^,]*$/, "") : corte.replace(/\s+\S*$/, ""); p = monta(ficha, nomeMax); }
-    while (p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(ficha, nomeMax); }
-    if (p.length > LIMITE_PROMPT) p = monta("", 2);
+    const monta = (nomeMax) => tipo === "video"
+      ? preencher("video", { formato, roupa, cenario: cen, enquadramento: enq, acao: C.acao, fala: falaPersonagem(it, nomeMax) })
+      : preencher("imagem", { roupa, cenario: cen, enquadramento: enq, pose: C.foto });
+    let nomeMax = 5, p = monta(nomeMax);
+    while (p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(nomeMax); }
     return p.slice(0, LIMITE_PROMPT);
   }
   /* Vídeo sem produto: ela chama a galera (canal, grupo, stories...). Sempre "Oi, miga!" no começo e "Segue a Miga Promo..." no fim */
@@ -6414,7 +6438,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const falaChamadaPers = (P) => `Oi, miga! ${String(P.falaMeio != null ? P.falaMeio : assuntoDe(P)[2]).trim()} Segue a Miga Promo pra mais promoções!`;
   function promptChamadaPers(P) {
     const fundo = P.fundo === "auto" || !P.fundo ? "rosa" : P.fundo, F = FUNDOS_PERS[fundo] || FUNDOS_PERS.rosa;
-    return `${abreVideo(P)}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). Roupa: look estiloso e atual, com cores que combinam com o fundo. Cenário: estúdio com fundo infinito ${F[2]} e luz suave de estúdio. ${ENQUAD_PERS[enquadDe(P, null)][1]} Ela olha para a câmera, sorri e fala em português do Brasil, com voz feminina natural e animada: "${falaChamadaPers(P)}" Ela gesticula de forma natural e, no final, acena e fica parada sorrindo. Sem textos, logos ou legendas adicionados. Sem cortes nem zoom; mãos naturais; sincronia labial perfeita.`.slice(0, LIMITE_PROMPT);
+    return preencher("semproduto", { formato: quadradoPers(P) ? "quadrado 1:1 para post do feed" : "vertical 9:16", cenario: `estúdio com fundo infinito ${F[2].replace(/ \(#\w+\)/, "")}`, enquadramento: ENQUAD_PERS[enquadDe(P, null)][1], fala: falaChamadaPers(P) }).slice(0, LIMITE_PROMPT);
   }
   const semProduto = () => wz.pe && wz.pe.tipo === "chamada";
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
@@ -6458,7 +6482,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
           <b class="ch-rot">Fundo do estúdio</b>
           <div class="ed-chips pe-fundos">${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo === "auto" || !P.fundo ? "rosa" : P.fundo) === k ? "on" : ""}"><i style="background:${x[1]}"></i>${x[0]}</button>`).join("")}</div>
           <p class="nota pe-roupa-nota">Roupa: a IA escolhe um look que combina com o fundo.</p>
-          <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/900)</span><textarea id="pePrompt" rows="9" maxlength="900">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
+          <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/800)</span><textarea id="pePrompt" rows="9" maxlength="800">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
           <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt</button>
           <p class="nota">Envie o prompt para a IA com as fotos da modelo.</p>
           ${nav("peJaCriei", "Continuar")}`;
@@ -6484,7 +6508,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, x]) => [k, x[0], x[1]])].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
         <p class="nota pe-roupa-nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto (a roupa da foto do produto)." : "Roupa: a IA escolhe um look que combina com o fundo e com o produto."}</p>
         ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
-        <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/900)</span><textarea id="pePrompt" rows="9" maxlength="900">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
+        <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/800)</span><textarea id="pePrompt" rows="9" maxlength="800">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
         <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt</button>
         ${nav("peJaCriei", "Continuar")}`;
       return;
@@ -6500,6 +6524,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${P.midia ? "" : `<p class="nota">Anexe ${P.tipo === "imagem" ? "a foto" : "o vídeo"} que a IA criou para começar a edição.</p>`}
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>
         <div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
+        ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco" id="peSom">▶ Ouvir prévia com som</button>' : ""}
         ${r ? `<figure class="rp-video"><video src="${r.url}" controls playsinline></video></figure>` : ""}
         <div class="pe-cantos-l"><div><b class="ch-rot">Logo Miga</b>${cc("logo", P.cantoLogo || "br")}</div><div><b class="ch-rot">@ da Miga</b>${cc("arroba", P.cantoArroba || "bl")}</div>
           <div><b class="ch-rot">Selo %</b><div class="ed-chips pe-cantos">${[["nao", "✕"], ...cantos].map(([v, n]) => `<button type="button" data-pe-canto="selo:${v}" class="${(P.cantoSelo || "nao") === v ? "on" : ""}">${n}</button>`).join("")}</div></div>
@@ -6508,8 +6533,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="campo"><span>Legenda pronta (pode editar)</span><textarea id="peLegenda" rows="9">${esc(P.legenda)}</textarea></div>
         <button type="button" class="btn btn--branco" id="peCopiarLeg">Copiar legenda</button>
         ${!P.midia ? "" : P.midia.tipo === "video"
-          ? `<div class="vd-progresso" id="peProgresso" hidden><i></i></div><button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`
-          : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar / compartilhar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}
+          ? `<div class="vd-progresso" id="peProgresso" hidden><i></i></div><button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`
+          : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}
         <p class="nota">Ao postar, a legenda já vai copiada: é só colar no Instagram.</p>
         <button type="button" class="btn btn--branco pe-nav" id="peVoltar">Voltar ao prompt</button>`;
       carregarMarca().then(() => loopPersonagem());
@@ -6684,9 +6709,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.canal !== "personagem") return; const P = pe();
     if (e.target.id === "peLegenda") { P.legenda = e.target.value; return; }
     if (e.target.id === "peSeloTxt") { P.seloTxt = e.target.value.trim(); P.resultado = null; return; }
-    if (e.target.id === "pePrompt") { P.promptEd = e.target.value; const sp = e.target.previousElementSibling; if (sp) sp.textContent = `Prompt (pode editar · ${e.target.value.length}/900)`; return; }
+    if (e.target.id === "pePrompt") { P.promptEd = e.target.value; const sp = e.target.previousElementSibling; if (sp) sp.textContent = `Prompt (pode editar · ${e.target.value.length}/800)`; return; }
     if (e.target.id === "peLimparTxt") { P.limparTxt = e.target.value; return; }
-    if (e.target.id === "peFalaMeio") { P.falaMeio = e.target.value; P.promptEd = null; const pr = promptChamadaPers(P), tt = $("#pePrompt"); if (tt) { tt.value = pr; tt.previousElementSibling.textContent = `Prompt (pode editar · ${pr.length}/900)`; } return; }
+    if (e.target.id === "peFalaMeio") { P.falaMeio = e.target.value; P.promptEd = null; const pr = promptChamadaPers(P), tt = $("#pePrompt"); if (tt) { tt.value = pr; tt.previousElementSibling.textContent = `Prompt (pode editar · ${pr.length}/800)`; } return; }
     if (e.target.id === "peFicha") { lsPers.gravar("ficha", e.target.value); const it = wzItem(), pr = promptPersonagem(it, P.tipo), t = $("#pePrompt"); if (t) { t.value = pr; t.previousElementSibling.textContent = `Prompt pronto (${pr.length}/900 caracteres)`; } return; }
     const k = e.target.dataset && e.target.dataset.peTx; if (k) P.tx[k] = e.target.value;
   });
@@ -6729,6 +6754,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
 
     const cn = t.closest("[data-pe-canto]"); if (cn) { const [k, v] = cn.dataset.peCanto.split(":"); if (k === "logo") P.cantoLogo = v; else if (k === "selo") P.cantoSelo = v; else P.cantoArroba = v; lsPers.gravar("cantos", { logo: P.cantoLogo, arroba: P.cantoArroba, selo: P.cantoSelo }); P.resultado = null; if (k === "selo") { const y = scrollY; mostrarPasso(); scrollTo(0, y); } else cn.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === cn)); return; }
     const ml = t.closest("[data-pe-moldura]"); if (ml) { P.moldura = ml.dataset.peMoldura; lsPers.gravar("moldura", P.moldura); P.resultado = null; ml.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ml)); return; }
+    if (t.closest("#peSom") && P.midia && P.midia.video) { const v = P.midia.video, b = t.closest("#peSom");
+      if (!v.muted && !v.paused) { v.muted = true; b.textContent = "▶ Ouvir prévia com som"; return; }
+      try { v.currentTime = 0; v.muted = false; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; } catch (er) { v.muted = true; toast("Não consegui tocar o som"); } return; }
     if (t.closest("#peCopiarLeg")) { if (await copiarTexto($("#peLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
     if (t.closest("#peBaixarV")) { baixarBlob(P.resultado.blob, P.resultado.nome); toast("Vídeo salvo"); return; }
@@ -6978,7 +7006,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
           <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
           <figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"><figcaption>Capa</figcaption></figure></div>
         <div class="rp-acoes">
-          <button type="button" class="btn btn--rosa" id="chPostar">Postar / compartilhar</button>
+          <button type="button" class="btn btn--rosa" id="chPostar">Postar</button>
           <div class="est-ctrl est-ctrl--3 rp-tiles">
             <button type="button" class="est-btn" id="chBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Baixar vídeo</b></button>
             <button type="button" class="est-btn" id="chBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>
@@ -7470,7 +7498,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
             ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa do Reels"><figcaption>Capa</figcaption><div class="rp-capa-op"><button type="button" data-r-capa="titulo" class="${(R.capaTipo || "titulo") === "titulo" ? "on" : ""}">Título</button><button type="button" data-r-capa="momento" class="${R.capaTipo === "momento" ? "on" : ""}">Momento</button></div>${R.capaTipo === "momento" ? `<label class="rp-capa-momento"><span>Momento da capa</span><input type="range" id="rCapaMomento" min="0" max="${Math.max(0.1, T_INTRO + T_PROD * itensReels().length + T_FIM - 0.3).toFixed(1)}" step="0.1" value="${(R.capaT != null ? R.capaT : T_INTRO + 0.5 * T_PROD).toFixed(1)}"></label>` : ""}</figure>` : ""}
           </div>
           <div class="rp-acoes">
-            <button type="button" class="btn btn--rosa" id="rPostar">Postar / compartilhar</button>
+            <button type="button" class="btn btn--rosa" id="rPostar">Postar</button>
             <div class="est-ctrl est-ctrl--3 rp-tiles">
               <button type="button" class="est-btn" id="rBaixar"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><b>Baixar vídeo</b></button>
               ${r.capa ? '<button type="button" class="est-btn" id="rBaixarCapa"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg><b>Baixar capa</b></button>' : ""}
@@ -7516,7 +7544,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <p class="nota car-nota">${l.length + 2} imagens: capa, ${l.length} ${l.length > 1 ? "produtos" : "produto"} e o final. Arraste para ver.</p>
         <div class="est-ctrl est-ctrl--3">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[R.cor].nome)}${botaoEst("produtos", "Produtos", String(l.length))}</div>
       </div>
-      <button type="button" class="btn btn--rosa" id="kPostar">Postar / compartilhar</button>
+      <button type="button" class="btn btn--rosa" id="kPostar">Postar</button>
       <button type="button" class="btn btn--branco" id="kBaixar">Baixar as ${l.length + 2} imagens</button>
       <button type="button" class="rp-whats" id="rpWhats"><i><svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1z"/><path d="M9 10c0 3 2 5 5 5l1.2-1.2-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></i><span><b>Postar no WhatsApp</b><small>Foto + mensagem pronta${l.length > 1 ? ` · ${l.length} produtos, um por vez` : ", direto no grupo ou canal"}</small></span></button>
       ${blocoLegenda(R)}
@@ -7672,7 +7700,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function abrirConfig() {
     mostrarConta();
-    $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados;
+    $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados; pintarAjPrompts();
     pintarAjustes();
     if (!dialogo.open) dialogo.showModal();
   }
