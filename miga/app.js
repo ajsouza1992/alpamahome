@@ -1290,7 +1290,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=269"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=270"; });
     }
     edFoto = null;
     try {
@@ -1661,7 +1661,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=269"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=270"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2849,7 +2849,8 @@
     } catch (e) { /* segue */ }
   }
   async function enviarWhats(modo) {
-    const it = wzItem(), texto = it.texto;
+    const it = wzItem(); if (!it.texto) { it.texto = mensagemWhats(it, { modelo: wz.modelo, camp: wz.camp, titulo: wz.tituloArte }); it.textoEditado = false; salvarFila(); } // nunca envia sem texto
+    const texto = it.texto;
     if (modo === "foto" && noComputador()) {
       // Computador: a foto vai para a área de transferência e o WhatsApp abre com o texto pronto
       const png = (async () => converterImagem(await arquivoDaImagem(it.imagem), "image/png"))();
@@ -2863,7 +2864,8 @@
     if (modo === "foto") {
       const arq = it.imagem ? await converterImagem(await arquivoDaImagem(it.imagem)) : null;
       if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
-        try { await navigator.share({ files: [arq], text: texto }); registrarCompartilhado("whatsapp", "WhatsApp (com foto)"); return; }
+        await copiarTexto0(texto); // o WhatsApp às vezes ignora o texto junto com a foto: ele fica copiado para colar
+        try { await navigator.share({ files: [arq], text: texto }); registrarCompartilhado("whatsapp", "WhatsApp (com foto)"); toast("Se o texto não aparecer junto da foto, é só colar: ele já está copiado"); return; }
         catch (e) { if (e.name === "AbortError") return; }
       }
       if (await copiarTexto(texto)) toast("Texto copiado — no WhatsApp, envie a foto e cole o texto");
@@ -2943,7 +2945,8 @@
       tela.toBlob(async (blob) => {
         const arq = blob && new File([blob], nomeArquivo(it.nome), { type: "image/jpeg" });
         if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
-          try { await navigator.share({ files: [arq], text: texto }); registrarCompartilhado("whatsapp", "Status do WhatsApp"); return; } catch (e) { if (e.name === "AbortError") return; }
+          await copiarTexto0(texto);
+          try { await navigator.share({ files: [arq], text: texto }); registrarCompartilhado("whatsapp", "Status do WhatsApp"); toast("Se o texto não aparecer, é só colar: ele já está copiado"); return; } catch (e) { if (e.name === "AbortError") return; }
         }
         if (blob) baixarBlob(blob, nomeArquivo(it.nome));
         if (await copiarTexto(texto)) toast("Imagem salva e texto copiado: no Status, escolha a imagem e cole o texto");
@@ -4749,7 +4752,8 @@
     const texto = atual.texto;
     const arq = await arquivoDaImagem(atual.card || atual.imagem);
     if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
-      try { await navigator.share({ files: [arq], text: texto }); registrarEnvio("WhatsApp (com foto)"); return; }
+      await copiarTexto0(texto);
+      try { await navigator.share({ files: [arq], text: texto }); registrarEnvio("WhatsApp (com foto)"); toast("Se o texto não aparecer junto da foto, é só colar: ele já está copiado"); return; }
       catch (e) { if (e.name === "AbortError") return; }
     }
     if (navigator.share) {
