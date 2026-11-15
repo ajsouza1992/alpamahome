@@ -30,6 +30,8 @@
   const fmtVendidos = (n) => n >= 1e6 ? `+${String(Math.floor(n / 1e5) / 10).replace(".", ",")} mi` : n >= 1000 ? `+${Math.floor(n / 1000)} mil` : `+${n}`;
   const fmtNota = (n) => String(n).replace(".", ",");
   /** Etiquetas pequenas: comissão, nota, vendidos, frete */
+  /** Observação (só pra você) junto do nome do produto nas telas de criar/postar */
+  const obsTag = (x) => (x && x.obsManual && x.obs ? `<em class="wz-obs">${esc(x.obs)}</em>` : "");
   const infoExtras = (p, compacto) => { const l = [];
     if (compacto) { const tx = [p.nota && `★ ${fmtNota(p.nota)}`, p.vendidos && `${fmtVendidos(p.vendidos)} vendidos`, p.freteGratis && "frete grátis"].filter(Boolean).join(" · ");
       const top = [p.maisVendido && `<b class="tag-ex tag-ex--top">${p.maisVendido}º mais vendido</b>`, p.oferta && `<b class="tag-ex tag-ex--oferta">${esc(p.oferta)}</b>`].filter(Boolean).join("");
@@ -1290,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=270"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=272"; });
     }
     edFoto = null;
     try {
@@ -1661,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=270"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=272"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2574,7 +2576,13 @@
     if (passosDe(wz.canal).includes(p.passo) && p.passo !== "rodar") wz.passo = p.passo;
     mostrarPasso();
   }
+  /* Em todas as etapas de criar/postar: a sua observação do produto aparece no topo (ex.: qual modelo usar) */
   function mostrarPasso() {
+    mostrarPasso0();
+    try { const c = $("#wzCorpo"), it = wz && wz.itemId ? wzItem() : null;
+      if (c && it && it.obsManual && it.obs && !c.querySelector(".wz-obs")) c.insertAdjacentHTML("afterbegin", `<div class="wz-obs-topo"><b>Sua observação:</b> ${esc(it.obs)}</div>`); } catch (e) { /* segue */ }
+  }
+  function mostrarPasso0() {
     { const chave = (wz && wz.canal) + ":" + (wz && wz.passo); if (chave !== mostrarPasso.ultima) { mostrarPasso.ultima = chave; pararSons(true); } }
     setTimeout(guardarProgresso, 0);
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
@@ -2605,7 +2613,7 @@
         <div class="colar"><input id="wzLink" type="url" inputmode="url" placeholder="Cole um link novo" autocomplete="off"><button type="button" class="colar__btn" id="wzColar">Colar</button></div>
         <p class="nota">Ou escolha da sua lista:</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${l2.map((x) => `<div class="wz-linha"><button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button><button type="button" class="pp-lixo" data-wz-menu="${esc(x.id)}" aria-label="Opções de ${esc(x.nome || "produto")}">⋯</button></div>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
+        <div class="wz-ops">${l2.map((x) => `<div class="wz-linha"><button type="button" class="wz-prod${wz.itemId === x.id ? " on" : ""}" data-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small>${obsTag(x)}</span></button><button type="button" class="pp-lixo" data-wz-menu="${esc(x.id)}" aria-label="Opções de ${esc(x.nome || "produto")}">⋯</button></div>`).join("") || '<p class="vazio-lista">Sua lista está vazia.</p>'}</div>
         ${botaoContinuar(!!item)}`;
       return;
     }
@@ -2986,7 +2994,7 @@
     if (wz.passo === "lugares") {
       if (!wz.lugares) wz.lugares = lugaresSalvos();
       c.innerHTML = `<h2 class="wz-titulo">Onde vai postar?</h2>
-        ${wz.filaRoteiro && wz.filaRoteiro.length > 1 ? blocoOrdemRoteiro() : `<div class="wz-prod on" style="cursor:default">${miniLoja(item, fotoMini(item))}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small></span></div>`}
+        ${wz.filaRoteiro && wz.filaRoteiro.length > 1 ? blocoOrdemRoteiro() : `<div class="wz-prod on" style="cursor:default">${miniLoja(item, fotoMini(item))}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small>${obsTag(item)}</span></div>`}
         <p class="nota">Marque tudo de uma vez. O app guarda sua escolha para a próxima.</p>
         <div class="wz-ops">${Object.entries(LUGARES).map(([k, v]) => `<button type="button" class="rt-lugar${v.canal === "whatsapp" ? " rt-lugar--zap" : ""}${wz.lugares.includes(k) ? " on" : ""}" data-lugar="${k}"><i></i><span><b>${v.nome}</b><small>${v.desc}</small></span></button>`).join("")}</div>
         ${botaoContinuar(wz.lugares.length > 0, `Começar (${wz.lugares.length} ${wz.lugares.length === 1 ? "lugar" : "lugares"})`)}`;
@@ -3054,7 +3062,7 @@
     return `<div class="rt-ordem"><b class="rt-ordem-tit">Ordem de postagem · ${its.length} produtos</b>
       <div class="ed-chips rt-ordem-chips">${ORDENS_RT.map(([k, n]) => `<button type="button" data-rt-ordem="${k}" class="${wz.ordemRt === k ? "on" : ""}">${n}</button>`).join("")}</div>
       <p class="nota">Ou use as setinhas para mudar a ordem do seu jeito.</p>
-      <ol class="rt-ordem-lista">${its.map((it, i) => `<li><i>${i + 1}</i>${fotoMini(it)}<span><b>${esc(limparNome(it.nome || "Sem nome"))}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small></span><button type="button" data-rt-mover="${i}:-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">↑</button><button type="button" data-rt-mover="${i}:1" ${i === its.length - 1 ? "disabled" : ""} aria-label="Descer">↓</button></li>`).join("")}</ol></div>`;
+      <ol class="rt-ordem-lista">${its.map((it, i) => `<li><i>${i + 1}</i>${fotoMini(it)}<span><b>${esc(limparNome(it.nome || "Sem nome"))}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${obsTag(it)}</span><button type="button" data-rt-mover="${i}:-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">↑</button><button type="button" data-rt-mover="${i}:1" ${i === its.length - 1 ? "disabled" : ""} aria-label="Descer">↓</button></li>`).join("")}</ol></div>`;
   }
   const proximoDaFila = () => { if (!wz.filaRoteiro) return null; const i = wz.filaRoteiro.indexOf(wz.itemId); return fila().find((x) => x.id === wz.filaRoteiro[i + 1]) || null; };
   function avancarRoteiro() {
@@ -3273,7 +3281,7 @@
       const escolhidos = L.itens;
       c.innerHTML = `<h2 class="wz-titulo">Escolha os produtos</h2><p class="nota">${escolhidos.length} de ${L.n}. Toque para marcar da sua lista, ou adicione uma foto da galeria.</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat)).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod wz-flag${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span><i class="flag" aria-hidden="true"></i></button>`; }).join("")}</div>
+        <div class="wz-ops">${fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat)).map((x) => { const on = escolhidos.some((e) => e.itemId === x.id); return `<button type="button" class="wz-prod wz-flag${on ? " on" : ""}" data-lv-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small>${obsTag(x)}</span><i class="flag" aria-hidden="true"></i></button>`; }).join("")}</div>
         ${escolhidos.filter((e) => !e.itemId).map((e) => `<div class="lv-galeria" data-lv-gal="${e.id}"><img src="${e.url}" alt=""><div class="lv-campos"><input data-lv-campo="nome" value="${esc(e.nome)}" placeholder="Nome (opcional)"><input data-lv-campo="preco" value="${e.preco ? paraCampo(e.preco) : ""}" inputmode="decimal" placeholder="Preço (opcional)"><input data-lv-campo="link" value="${esc(e.link)}" inputmode="url" placeholder="Link (vai na legenda)"></div><button type="button" class="icone-btn" data-lv-tirar="${e.id}" aria-label="Tirar"><svg><use href="#i-x"/></svg></button></div>`).join("")}
         <label class="btn btn--branco">Adicionar foto da galeria<input type="file" id="lvArquivo" accept="image/*,.webp,image/webp" multiple hidden></label>
         ${botaoContinuar(escolhidos.length > 0)}`;
@@ -3969,7 +3977,7 @@
       c.innerHTML = `<h2 class="wz-titulo">Qual produto?</h2>
         ${wz.veioDaLista ? `<p class="nota">Confira os textos que vão aparecer no vídeo.</p>` : `<p class="nota">Toque num produto da lista ou cole o link: nome, foto e preço já vêm preenchidos.</p>
         <div class="colar"><input id="vdLink" type="url" inputmode="url" placeholder="Cole o link do produto" autocomplete="off"><button type="button" class="colar__btn" id="vdColar">Colar</button></div>
-        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("")}</div>`}
+        <div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod${V.itemId === x.id ? " on" : ""}" data-vd-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small>${obsTag(x)}</span></button>`).join("")}</div>`}
         <label class="campo"><span>Nome do produto</span><input id="vdNome" value="${esc(V.nome)}" maxlength="80"></label>
         <div class="duas"><label class="campo"><span>Preço antigo</span><input id="vdAntigo" inputmode="decimal" value="${V.antigo ? paraCampo(V.antigo) : ""}" placeholder="opcional"></label><label class="campo"><span>Preço novo</span><input id="vdNovo" inputmode="decimal" value="${V.novo ? paraCampo(V.novo) : ""}"></label></div>
         <label class="campo"><span>Cupom (opcional)</span><input id="vdCupom" value="${esc(V.cupom)}" maxlength="20"></label>
@@ -3987,9 +3995,9 @@
       let corpo = "";
       if (modo === "produto" && !it) {
         const l2 = fila().filter((x) => !x.carregando);
-        corpo = `<p class="nota">Escolha o produto do vídeo:</p><div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod" data-vd-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span></button>`).join("") || '<p class="nota">Sua lista está vazia.</p>'}</div>`;
+        corpo = `<p class="nota">Escolha o produto do vídeo:</p><div class="wz-ops">${l2.map((x) => `<button type="button" class="wz-prod" data-vd-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small>${obsTag(x)}</span></button>`).join("") || '<p class="nota">Sua lista está vazia.</p>'}</div>`;
       } else if (modo) {
-        const prod = modo === "produto" ? `<div class="vd-prod"><span class="pp-mini">${fotoMini(it)}</span><span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${it.imagem ? `<button type="button" class="vd-baixar-foto" id="vdBaixarFoto"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar foto</button>` : ""}</span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
+        const prod = modo === "produto" ? `<div class="vd-prod"><span class="pp-mini">${fotoMini(it)}</span><span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${obsTag(it)}${it.imagem ? `<button type="button" class="vd-baixar-foto" id="vdBaixarFoto"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar foto</button>` : ""}</span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
         const video = `<div class="vd-arquivo">
             ${V.url ? `<video class="vd-previa" src="${V.url}" playsinline controls></video>` : ""}
             <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher o vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
@@ -7730,7 +7738,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `<h2 class="wz-titulo">Quais produtos?</h2>
         <p class="nota">Marque de 1 a 5 produtos. Se marcar mais de um, depois você escolhe a ordem.</p>
         ${filtroCatWz()}
-        <div class="wz-ops">${l.map((x) => { const i = R.itens.indexOf(x.id); return `<button type="button" class="wz-prod wz-flag${i >= 0 ? " on" : ""}" data-r-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small></span><i class="flag" aria-hidden="true"></i></button>`; }).join("") || '<p class="vazio-lista">Sua lista está vazia: adicione produtos na aba Lista.</p>'}</div>
+        <div class="wz-ops">${l.map((x) => { const i = R.itens.indexOf(x.id); return `<button type="button" class="wz-prod wz-flag${i >= 0 ? " on" : ""}" data-r-item="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span><b>${esc(x.nome || "Sem nome")}</b><small>${x.precoNovo ? brl(x.precoNovo) : "sem preço"}</small>${obsTag(x)}</span><i class="flag" aria-hidden="true"></i></button>`; }).join("") || '<p class="vazio-lista">Sua lista está vazia: adicione produtos na aba Lista.</p>'}</div>
         ${botaoContinuar(R.itens.length > 0, R.itens.length ? `Continuar (${R.itens.length} ${R.itens.length === 1 ? "produto" : "produtos"})` : "Continuar")}`;
       return;
     }
