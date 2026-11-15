@@ -1899,3 +1899,4 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
   .wz__corpo:has(> .wz-previa) > .wz-titulo, .wz__corpo:has(> .ka-previa) > .wz-titulo { grid-column: 1 / -1; grid-row: 1; }
   .wz__corpo:has(> .wz-previa) > .wz-previa, .wz__corpo:has(> .ka-previa) > .ka-previa { grid-row: 2 / span 60; }
 }
+.pe-pronto video { max-height: 46dvh; max-width: 100%; border-radius: 14px; box-shadow: var(--sombra); } @media (min-width: 960px) { .pe-pronto video { max-height: 72vh; } }

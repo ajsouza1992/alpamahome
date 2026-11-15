@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=251"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=252"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=251"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=252"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6445,7 +6445,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
   function abrirPersonagem(it) {
     calcFundoAuto(it);
-    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { cantoLogo: (lsPers.ler("cantos", {}) || {}).logo || "br", cantoArroba: (lsPers.ler("cantos", {}) || {}).arroba || "bl", cantoSelo: (lsPers.ler("cantos", {}) || {}).selo || "nao", moldura: lsPers.ler("moldura", "nao"), roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
+    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { cantoLogo: (lsPers.ler("cantos", {}) || {}).logo || "br", cantoArroba: (lsPers.ler("cantos", {}) || {}).arroba || "bl", cantoSelo: (lsPers.ler("cantos", {}) || {}).selo || "nao", moldura: lsPers.ler("moldura", "nao"), circulo: lsPers.ler("circulo", true), roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
     sortearRoupa(wz.pe); marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const fotosPers = () => lsPers.ler("fotos", [null, null]);
@@ -6524,17 +6524,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `<h2 class="wz-titulo">Logo, @ e legenda</h2>
         ${P.midia ? "" : `<p class="nota">Anexe ${P.tipo === "imagem" ? "a foto" : "o vídeo"} que a IA criou para começar a edição.</p>`}
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>
-        <div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
-        ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}
-        ${r ? `<figure class="rp-video"><video src="${r.url}" controls playsinline></video></figure>` : ""}
+        ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto. Mudou algo embaixo? Toque em Criar o vídeo de novo.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
+        ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}`}
         <div class="pe-cantos-l"><div><b class="ch-rot">Logo Miga</b>${cc("logo", P.cantoLogo || "br")}</div><div><b class="ch-rot">@ da Miga</b>${cc("arroba", P.cantoArroba || "bl")}</div>
           <div><b class="ch-rot">Selo %</b><div class="ed-chips pe-cantos">${[["nao", "✕"], ...cantos].map(([v, n]) => `<button type="button" data-pe-canto="selo:${v}" class="${(P.cantoSelo || "nao") === v ? "on" : ""}">${n}</button>`).join("")}</div></div>
           ${(P.cantoSelo || "nao") !== "nao" ? `<div><b class="ch-rot">Desconto</b><input id="peSeloTxt" class="pe-selo-txt" maxlength="6" value="${esc(P.seloTxt || "")}" placeholder="-40%"></div>` : ""}
+          <div><b class="ch-rot">Círculo no logo</b><div class="ed-chips pe-cantos"><button type="button" data-pe-circ="1" class="${P.circulo !== false ? "on" : ""}">Com</button><button type="button" data-pe-circ="0" class="${P.circulo === false ? "on" : ""}">Sem</button></div></div>
           <div class="pe-mold-l"><b class="ch-rot">Moldura</b><div class="ed-chips pe-fundos pe-molduras">${Object.entries(MOLDURAS_PERS).map(([k, [n, cor]]) => `<button type="button" data-pe-moldura="${k}" class="${(P.moldura || "nao") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div></div></div>
         <div class="campo"><span>Legenda pronta (pode editar)</span><textarea id="peLegenda" rows="9">${esc(P.legenda)}</textarea></div>
         <button type="button" class="btn btn--branco" id="peCopiarLeg">Copiar legenda</button>
         ${!P.midia ? "" : P.midia.tipo === "video"
-          ? `<div class="vd-progresso" id="peProgresso" hidden><i></i></div><button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`
+          ? `<button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`
           : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}
         <p class="nota">Ao postar, a legenda já vai copiada: é só colar no Instagram.</p>
         <button type="button" class="btn btn--branco pe-nav" id="peVoltar">Voltar ao prompt</button>`;
@@ -6570,6 +6570,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (cs !== "nao" && P.seloTxt) { const r = 92, mesmo = cs === cl, sx = cs[1] === "l" ? M + r : 1080 - M - r; let sy = cs[0] === "t" ? M + r : H - M - r; if (mesmo) sy += cs[0] === "t" ? tl + 24 : -(tl + 24);
       x.save(); x.translate(sx, sy); x.rotate(0.08); x.shadowColor = "rgba(0,0,0,.25)"; x.shadowBlur = 20; x.shadowOffsetY = 6; x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.fillStyle = "#ffd23f"; x.fill(); x.shadowColor = "transparent"; x.lineWidth = 8; x.strokeStyle = "#1d1d1f"; x.stroke();
       x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.textBaseline = "middle"; let f = 56; x.font = `900 ${f}px Poppins`; while (x.measureText(P.seloTxt).width > r * 1.6 && f > 26) { f -= 4; x.font = `900 ${f}px Poppins`; } x.fillText(P.seloTxt, 0, -8); x.font = "800 24px Poppins"; x.fillText("OFF", 0, 40); x.restore(); }
+    if (P.circulo !== false) { const cx = cl[1] === "l" ? 0 : 1080, cy = cl[0] === "t" ? 0 : H, r = M + tl + 70; x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fillStyle = mol && mol !== "#ffffff" ? mol : "#ffffff"; x.shadowColor = "rgba(0,0,0,.12)"; x.shadowBlur = 18; x.fill(); x.restore(); } // círculo no canto do logo: tampa a marca d'água da IA
     if (edMarca) x.drawImage(edMarca, lx, ly, tl, tl);
     // o @ fica na mesma linha (mesma altura) do logo: centralizado na faixa do tamanho do logo
     x.font = "800 40px Poppins"; const tw = x.measureText(at).width, faixa = ca[0] === "t" ? M + tl / 2 : H - M - tl / 2;
@@ -6643,27 +6644,36 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (P.midia && P.midia.video) { P.midia.video.muted = true; P.midia.video.loop = true; P.midia.video.play().catch(() => {}); }
     passo();
   }
+  /** A ferramenta de vídeo é carregada assim que você anexa o vídeo (a criação fica mais rápida) */
+  let ffCarregado = null;
+  function ffPronto() {
+    if (!ffCarregado) ffCarregado = (async () => { const { FFmpeg } = await import(FF_CDN + "@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"); const ff = new FFmpeg();
+      ff.on("progress", ({ progress }) => { if (ff._aviso && progress >= 0 && progress <= 1) ff._aviso(Math.round(progress * 100)); });
+      await ff.load({ classWorkerURL: new URL("ffmpeg-worker.js", location.href).href, coreURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js", wasmURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" }); return ff; })().catch((e) => { ffCarregado = null; throw e; });
+    return ffCarregado;
+  }
   /** Põe o logo, o @, o selo e a moldura no vídeo da IA sem regravar a tela: o som fica idêntico e sincronizado */
   async function videoComMarcaFF(P, M0, aviso) {
     const H = altPers(P), cam = document.createElement("canvas"); cam.width = 1080; cam.height = H; await carregarMarca(); quadroLogoArroba(cam.getContext("2d"), 1080, null, P, true);
     const png = await new Promise((ok) => cam.toBlob(ok, "image/png")), vid = await (await fetch(M0.url)).blob();
-    const { FFmpeg } = await import(FF_CDN + "@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js");
-    const ff = new FFmpeg(); ff.on("progress", ({ progress }) => { if (aviso && progress >= 0 && progress <= 1) aviso(Math.round(progress * 100)); });
-    await ff.load({ classWorkerURL: new URL("ffmpeg-worker.js", location.href).href, coreURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js", wasmURL: FF_CDN + "@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm" });
+    const ff = await ffPronto(); ff._aviso = aviso;
     await ff.writeFile("v.mp4", new Uint8Array(await vid.arrayBuffer())); await ff.writeFile("m.png", new Uint8Array(await png.arrayBuffer()));
-    await ff.exec(["-i", "v.mp4", "-i", "m.png", "-filter_complex", `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1[b];[b][1:v]overlay=0:0,format=yuv420p[o]`, "-map", "[o]", "-map", "0:a?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "s.mp4"]);
-    const d = await ff.readFile("s.mp4"); ff.terminate();
+    await ff.exec(["-i", "v.mp4", "-i", "m.png", "-filter_complex", `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1[b];[b][1:v]overlay=0:0,format=yuv420p[o]`, "-map", "[o]", "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "21", "-c:a", "copy", "-movflags", "+faststart", "s.mp4"]);
+    let d = await ff.readFile("s.mp4").catch(() => null);
+    if (!d || d.length < 2000) { await ff.exec(["-i", "v.mp4", "-i", "m.png", "-filter_complex", `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1[b];[b][1:v]overlay=0:0,format=yuv420p[o]`, "-map", "[o]", "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "21", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "s.mp4"]); d = await ff.readFile("s.mp4"); }
+    ffCarregado = null; ff.terminate();
     if (!d || d.length < 2000) throw new Error("ffmpeg vazio");
     return new Blob([d.buffer], { type: "video/mp4" });
   }
   async function gravarPersonagem() {
     const P = pe(), tipo = formatoGravacao(), M0 = P.midia; if (!M0 || !M0.video) return;
-    { const btn = $("#peGravar"), barra = $("#peProgresso"); if (btn) { btn.disabled = true; btn.textContent = "Preparando…"; } if (barra) { barra.hidden = false; barra.querySelector("i").style.width = "0%"; }
+    { const btn = $("#peGravar"); const pinta = (pc) => { if (!btn) return; btn.textContent = `Criando o vídeo… ${pc}%`; btn.style.background = `linear-gradient(90deg, #e8336d ${pc}%, #f39bb9 ${pc}%)`; btn.style.color = "#fff"; btn.style.opacity = "1"; };
+      if (btn) { btn.disabled = true; pinta(0); }
       try {
-        const blob = await videoComMarcaFF(P, M0, (pc) => { if (btn) btn.textContent = "Criando o vídeo… " + pc + "%"; if (barra) barra.querySelector("i").style.width = pc + "%"; });
+        const blob = await videoComMarcaFF(P, M0, pinta);
         const nome = nomeArquivo(wzItem() ? wzItem().nome : "criacao-ia").replace(/\.jpe?g$/i, "") + "-personagem.mp4";
         P.resultado = { blob, url: URL.createObjectURL(blob), nome, mp4: true }; mostrarPasso(); toast("Vídeo pronto"); return;
-      } catch (e) { console.warn("ffmpeg falhou, gravando em tempo real", e); if (btn) btn.disabled = false; if (barra) barra.hidden = true; } }
+      } catch (e) { console.warn("ffmpeg falhou, gravando em tempo real", e); if (btn) { btn.disabled = false; btn.style.background = ""; } } }
     if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return; }
     const btn = $("#peGravar"), barra = $("#peProgresso"); if (btn) btn.disabled = true; if (btn && barra) ligarBarra(btn, barra);
     const tela = document.createElement("canvas"); tela.width = 1080; tela.height = altPers(P); const ctx = tela.getContext("2d"), previa = $("#peQuadro") && $("#peQuadro").getContext("2d");
@@ -6723,7 +6733,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     }
     if (e.target.id === "peMidia" && e.target.files[0]) {
       const arq = e.target.files[0]; if (P.midia && P.midia.url) URL.revokeObjectURL(P.midia.url); P.resultado = null;
-      if (arq.type.startsWith("video/")) { const url = URL.createObjectURL(arq), v = document.createElement("video"); v.src = url; v.muted = true; v.playsInline = true; v.loop = true; await new Promise((ok) => { v.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 5000); }); P.midia = { tipo: "video", url, video: v }; }
+      if (arq.type.startsWith("video/")) { ffPronto().catch(() => {}); const url = URL.createObjectURL(arq), v = document.createElement("video"); v.src = url; v.muted = true; v.playsInline = true; v.loop = true; await new Promise((ok) => { v.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 5000); }); P.midia = { tipo: "video", url, video: v }; }
       else { try { P.midia = { tipo: "imagem", bmp: await createImageBitmap(arq) }; } catch (err) { toast("Não consegui abrir a imagem"); return; } }
       { const y = scrollY; mostrarPasso(); scrollTo(0, y); }
     }
@@ -6775,8 +6785,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#peCopiar")) { if (await copiarTexto($("#pePrompt").value)) toast("Prompt copiado: cole na IA com as fotos"); return; }
 
 
-    const cn = t.closest("[data-pe-canto]"); if (cn) { const [k, v] = cn.dataset.peCanto.split(":"); if (k === "logo") P.cantoLogo = v; else if (k === "selo") P.cantoSelo = v; else P.cantoArroba = v; lsPers.gravar("cantos", { logo: P.cantoLogo, arroba: P.cantoArroba, selo: P.cantoSelo }); P.resultado = null; if (k === "selo") { const y = scrollY; mostrarPasso(); scrollTo(0, y); } else cn.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === cn)); return; }
-    const ml = t.closest("[data-pe-moldura]"); if (ml) { P.moldura = ml.dataset.peMoldura; lsPers.gravar("moldura", P.moldura); P.resultado = null; ml.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ml)); return; }
+    const cn = t.closest("[data-pe-canto]"); if (cn) { const [k, v] = cn.dataset.peCanto.split(":"); if (k === "logo") P.cantoLogo = v; else if (k === "selo") P.cantoSelo = v; else P.cantoArroba = v; lsPers.gravar("cantos", { logo: P.cantoLogo, arroba: P.cantoArroba, selo: P.cantoSelo }); const tinha = !!P.resultado; P.resultado = null; if (k === "selo" || tinha) { const y = scrollY; mostrarPasso(); scrollTo(0, y); } else cn.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === cn)); return; }
+    const ci = t.closest("[data-pe-circ]"); if (ci) { P.circulo = ci.dataset.peCirc === "1"; lsPers.gravar("circulo", P.circulo); P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const ml = t.closest("[data-pe-moldura]"); if (ml) { P.moldura = ml.dataset.peMoldura; lsPers.gravar("moldura", P.moldura); if (P.resultado) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; } ml.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ml)); return; }
     if (t.closest("#peSom") && P.midia && P.midia.video) { const v = P.midia.video, b = t.closest("#peSom");
       if (!v.muted && !v.paused) { v.muted = true; b.textContent = "▶ Ouvir prévia com som"; return; }
       try { v.currentTime = 0; v.muted = false; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; } catch (er) { v.muted = true; toast("Não consegui tocar o som"); } return; }

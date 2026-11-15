@@ -4,9 +4,9 @@
  * para conviver com outros apps no mesmo domínio (ClockFit, Sort.IA...).
  * Estratégia "rede primeiro": pega a versão nova e, offline, usa a cópia.
  */
-const VERSAO = "miga-promo-v254";
+const VERSAO = "miga-promo-v255";
 const BASE = new URL("./", self.location).pathname; // ex.: "/miga/"
-const ARQUIVOS = ["./", "index.html", "style.css?v=251", "app.js?v=251", "firebase-config.js?v=251", "manifest.json", "favicon.png", "logo.png?v=251", "icone-192.png?v=251", "icone-512.png?v=251", "apple-touch-icon.png"];
+const ARQUIVOS = ["./", "index.html", "style.css?v=252", "app.js?v=252", "firebase-config.js?v=252", "manifest.json", "favicon.png", "logo.png?v=252", "icone-192.png?v=252", "icone-512.png?v=252", "apple-touch-icon.png"];
 
 self.addEventListener("install", (evento) => {
   evento.waitUntil(caches.open(VERSAO).then((cache) => cache.addAll(ARQUIVOS)).then(() => self.skipWaiting()));
