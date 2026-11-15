@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=245"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=246"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=245"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=246"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6889,19 +6889,20 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     for (let i = 0; i < qtd; i++) { const ang = (i / qtd) * Math.PI * 2 + i * 0.37, v = 700 + (i * 53) % 600, px = cx + Math.cos(ang) * v * u, py = cy + Math.sin(ang) * v * u + 900 * u * u;
       x.save(); x.globalAlpha = Math.max(0, 1 - u / 2.2); x.translate(px, py); x.rotate(u * 9 + i); x.fillStyle = cores[i % cores.length]; if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 12, 0, 7); x.fill(); } else x.fillRect(-18, -8, 36, 16); x.restore(); }
   }
-  /** Canhão de confete: sai de baixo (perto do logo da Miga, canto direito), sobe até o topo e cai de novo */
-  function canhaoConfete(x, u, ox, oy, qtd = 120) {
+  /** Canhão de confete: estoura dos dois cantos de baixo, cruza a tela subindo e cai leve, bem espalhado */
+  function canhaoConfete(x, u, qtd = 140) {
     if (u < 0) return; const cores = ["#e8336d", "#ffd23f", "#ffffff", "#4f7cff", "#2fa35a", "#f59ab8"];
     for (let i = 0; i < qtd; i++) {
+      const esq = i % 2 === 0, ox = esq ? 60 : 1020, oy = 1880;
       const r1 = ((i * 97) % 101) / 101, r2 = ((i * 53) % 89) / 89, r3 = ((i * 31) % 47) / 47;
-      const ta = 0.6 + 0.3 * r1, apexY = 30 + 520 * r2, h = oy - apexY, g = 2 * h / (ta * ta), vy = g * ta;
-      const xa = ox - (150 + 1000 * r3), vx = (xa - ox) / ta;
+      const ta = 0.55 + 0.3 * r1, apexY = 20 + 700 * r2, h = oy - apexY, g = 2 * h / (ta * ta), vy = g * ta;
+      const alvoX = esq ? 380 + 680 * r3 : 700 - 680 * r3, vx = (alvoX - ox) / ta; // cruza para o outro lado
       let px, py;
-      if (u <= ta) { px = ox + vx * u * (1 - 0.35 * u / ta); py = oy - vy * u + 0.5 * g * u * u; }
-      else { const d = u - ta, vt = 520 + 520 * r1; px = ox + vx * ta * 0.65 + Math.sin(d * (2 + r2 * 3) + i) * 40; py = apexY + vt * d; }
-      if (py > 1990) continue;
-      x.save(); x.translate(px, py); x.rotate(u * (4 + r3 * 6) + i); x.scale(1, Math.cos(u * 6 + i)); x.fillStyle = cores[i % cores.length];
-      if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 11, 0, 7); x.fill(); } else x.fillRect(-16, -7, 32, 14); x.restore();
+      if (u <= ta) { px = ox + vx * u; py = oy - vy * u + 0.5 * g * u * u; }
+      else { const d = u - ta, vt = 230 + 260 * r1; px = alvoX + (esq ? 1 : -1) * 60 * d + Math.sin(d * (1.6 + r2 * 2.5) + i) * (50 + 40 * r3); py = apexY + vt * d; } // caindo leve, balançando
+      if (py > 1990 || px < -40 || px > 1120) continue;
+      x.save(); x.translate(px, py); x.rotate(u * (3 + r3 * 5) + i); x.scale(1, Math.cos(u * 5 + i)); x.fillStyle = cores[i % cores.length];
+      if (i % 3 === 0) { x.beginPath(); x.arc(0, 0, 10, 0, 7); x.fill(); } else x.fillRect(-15, -6, 30, 12); x.restore();
     }
   }
   function confetes(x, u, qtd, ini = 0) {
@@ -6927,7 +6928,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function quadroSeguidores(x, t, CH, C, D, linha, adesivo, pilula, pm = 0) {
     const T = C.texto, A = C.d1, brilha = (bx, by, r, t0, u) => { const k = (u - t0) % 1.4; if (u < t0 || k > 0.7) return; const s = Math.sin(k / 0.7 * Math.PI); x.save(); x.translate(bx, by); x.scale(s, s); x.beginPath(); for (let i = 0; i < 8; i++) { const g = i * Math.PI / 4 - Math.PI / 2, q = i % 2 ? r * 0.28 : r; x.lineTo(Math.cos(g) * q, Math.sin(g) * q); } x.closePath(); x.fillStyle = "#ffffff"; x.shadowColor = "rgba(255,210,63,.9)"; x.shadowBlur = 18; x.fill(); x.restore(); };
     if (t < 3.2) {
-      canhaoConfete(x, t - 1.65, 890, 1780, 130); // estouro de confete só quando bate o número
+      canhaoConfete(x, t - 1.65, 150); // estouro de confete só quando bate o número
       if (D.etiqueta) pilula(D.etiqueta, 540, 430, "#ffd23f", "#1d1d1f", 46, 0.05, t, -0.04);
       linha(partesDestaque(D.t1, T, A), 640, 104, 0.2, t);
       const k = easeC((t - 0.35) / 0.4); if (k > 0) {
