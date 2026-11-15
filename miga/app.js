@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=272"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=273"; });
     }
     edFoto = null;
     try {
@@ -1663,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=272"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=273"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -3127,6 +3127,7 @@
     } else if (k === "telegram") {
       abrirTelegram(); r = "aberto";
     } else {
+      if (!it.texto) { it.texto = mensagemWhats(it, { modelo: wz.modelo, camp: wz.camp, titulo: wz.tituloArte }); it.textoEditado = false; salvarFila(); } // nunca vai sem a mensagem
       const foto = it.imagem ? await converterImagem(await arquivoDaImagem(it.imagem)) : null;
       r = await compartilharArquivo(foto, comLoja(it.texto || "", it.loja, it.link));
       if (r === "sem") { await copiarTexto(it.texto); abrirWhatsApp(it.texto); r = "aberto"; }
@@ -6908,7 +6909,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     P.resultado = { blob, url: URL.createObjectURL(blob), nome, mp4 }; mostrarPasso(); toast("Vídeo pronto");
   }
   async function imagemPersonagem() { const tela = document.createElement("canvas"); tela.width = 1080; tela.height = altPers(pe()); await carregarMarca(); quadroLogoArroba(tela.getContext("2d"), 1080, pe().midia && pe().midia.bmp, pe()); return telaParaJpeg(tela, nomeArquivo(wzItem() ? wzItem().nome : "criacao-ia").replace(/\.jpe?g$/i, "") + "-personagem.jpg"); }
-  async function compartilharArquivo(arq) {
+  async function compartilharArqPers(arq) { // Criação IA (nome próprio: não pode trocar o compartilhar com texto do passo a passo)
     if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
     baixarBlob(arq, arq.name); toast("Salvo: abra o Instagram e escolha da galeria");
   }
@@ -7013,9 +7014,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     { const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; } }
     if (t.closest("#peTrocarMus")) { tocarAmostra(""); folhaEst("Música baixinha ao fundo", `<p class="nota">Toque no ▶ para ouvir antes de escolher. Ela entra bem baixinha, sem atrapalhar a fala.</p><div class="lista-mod"><div class="mus-linha${!P.musica ? " on" : ""}"><button type="button" data-pe-escolhe-mus=""><b>Sem música</b><small>só a voz do vídeo</small></button></div>${LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${P.musica === k ? " on" : ""}"><button type="button" data-pe-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`); return; }
     if (t.closest("#peBaixarV")) { baixarBlob(P.resultado.blob, P.resultado.nome); toast("Vídeo salvo"); return; }
-    if (t.closest("#pePostarV")) { await copiarTexto($("#peLegenda").value); toast("Legenda copiada: cole no Instagram"); compartilharArquivo(new File([P.resultado.blob], P.resultado.nome, { type: P.resultado.blob.type })); return; }
+    if (t.closest("#pePostarV")) { await copiarTexto($("#peLegenda").value); toast("Legenda copiada: cole no Instagram"); compartilharArqPers(new File([P.resultado.blob], P.resultado.nome, { type: P.resultado.blob.type })); return; }
     if (t.closest("#peBaixarI")) { const a = await imagemPersonagem(); if (a) { baixarBlob(a, a.name); toast("Imagem salva"); } return; }
-    if (t.closest("#pePostarI")) { await copiarTexto($("#peLegenda").value); toast("Legenda copiada: cole no Instagram"); const a = await imagemPersonagem(); if (a) compartilharArquivo(a); return; }
+    if (t.closest("#pePostarI")) { await copiarTexto($("#peLegenda").value); toast("Legenda copiada: cole no Instagram"); const a = await imagemPersonagem(); if (a) compartilharArqPers(a); return; }
   });
   /* ===================== Tema pronto: "Corre pros Stories" (Reels chamando pros stories) ===================== */
   const NICHOS_CHAMADA = {
