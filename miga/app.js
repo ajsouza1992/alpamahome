@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=276"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=277"; });
     }
     edFoto = null;
     try {
@@ -1663,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=276"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=277"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2673,6 +2673,7 @@
           <input id="wzLinkCopiar" readonly value="${esc(item.link)}" aria-label="Link do produto">
           <button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button>
         </div>
+        ${!status && textoAdesivo(item) ? `<div class="link-copiar link-adesivo"><span>Texto do adesivo de link (no adesivo, toque em “Personalizar texto” e cole)</span><input id="wzAdesivoTxt" readonly value="${esc(textoAdesivo(item))}"><button type="button" class="btn btn--branco" id="wzCopiarAdesivo">Copiar texto do adesivo</button></div>` : ""}
         <p class="nota wz-centro">${status ? "Vai a imagem com o texto e o link: no WhatsApp, escolha “Meu status”." : wz.formato === "story" ? "No story, toque no adesivo de Link e cole. Se o link sumir da memória, volte aqui e toque em “Copiar link”." : "A legenda já vai copiada, avisando que o link está na bio (seu canal do WhatsApp)."}</p>`;
       prepararFoto(item).then(() => desenharMontagem($("#wzTela"), true));
       desenharMontagem($("#wzTela"), true);
@@ -2768,6 +2769,7 @@
     const ev = t.closest("[data-enviar-op]"); if (ev) { enviarWhats(ev.dataset.enviarOp); return; }
     const gr = t.closest("[data-grupo]"); if (gr) { enviarGrupo(gr.dataset.grupo); return; }
     if (t.closest("#wzPostar")) { postarInstagram(); return; }
+    if (t.closest("#wzCopiarAdesivo")) { const inp = $("#wzAdesivoTxt"); if (await copiarTexto(inp.value)) toast("Texto do adesivo copiado: no adesivo de link, toque em Personalizar texto e cole"); else { inp.focus(); inp.select(); } return; }
     if (t.closest("#wzCopiarLink")) {
       const inp = $("#wzLinkCopiar");
       if (await copiarTexto(inp.value)) toast("Link copiado: cole no adesivo de Link");
@@ -3024,7 +3026,7 @@
         if (podeMov && wz.mov && !vMov) { botao = `Criar o vídeo (${SEG_MOV} s)`; dica = `O app grava a arte se mexendo, sem música (leva ${SEG_MOV} segundos). No Instagram, adicione a música que quiser.`; }
         if (k === "feed") { botao = "Postar no feed"; dica = "Ao postar, a legenda já vai copiada: no Instagram é só colar."; }
         if (k === "feed") meio += `<div class="leg-bloco"><div class="leg-topo"><span>Legenda do feed</span><div><button type="button" class="leg-btn" id="rtCopiarLegFeed"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button></div></div><textarea id="rtLegFeed" rows="8">${esc(wz.legFeed && wz.legFeedId === item.id ? wz.legFeed : (wz.legFeedId = item.id, wz.legFeed = legendaFeed(item)))}</textarea></div><p class="nota">No feed o link não fica clicável: a legenda avisa que o link está na bio.</p>`;
-        else meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>`;
+        else meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>` + (k === "story" && textoAdesivo(item) ? `<div class="link-copiar link-adesivo"><span>Texto do adesivo de link (no adesivo, toque em “Personalizar texto” e cole)</span><input id="wzAdesivoTxt" readonly value="${esc(textoAdesivo(item))}"><button type="button" class="btn btn--branco" id="wzCopiarAdesivo">Copiar texto do adesivo</button></div>` : "");
       } else {
         const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
         meio = `<div class="balao wz-balao${k === "telegram" ? " wz-balao--tg" : ""}">${formatarWhats(txt)}</div>`;
@@ -6014,7 +6016,7 @@
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 - SB + OY); ctx.fillRect(540 - w / 2 + ld, 1252 - SB + OY, w - ld, 5); });
       if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) - SB + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom && storyComLink) campoCupomLink(ctx, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom); // fixo, sem animação
+      if (it.cupom && storyComLink) campoCupomLink(ctx, (antigo ? 1345 : 1290) - SB + OY + 70, it); // fixo, sem animação
       else if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
       return;
     }
@@ -6035,7 +6037,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom && storyComLink) campoCupomLink(ctx, y + 84, it.cupom); // fixo, sem animação
+    if (it.cupom && storyComLink) campoCupomLink(ctx, y + 70, it); // fixo, sem animação
     else if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
   }
   /** Quadro do Reels no tempo t */
@@ -6617,15 +6619,20 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
      Direita: branco livre para colar o adesivo de link do Instagram por cima. */
   const FONTE_LINK = '"Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif';
   try { document.fonts && document.fonts.load('500 60px "Roboto Condensed"'); } catch (e) { /* segue */ }
-  function campoCupomLink(ctx, y, codigo) {
-    const x0 = 64, h = 118, r = 18, n = 15, xd = 560, fim = 1100, az = "#3897f0", t = ("CUPOM: " + String(codigo)).toUpperCase();
-    ctx.save(); ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    const corpo = () => { ctx.beginPath(); ctx.moveTo(x0 + r, y); ctx.lineTo(xd - n, y); ctx.arc(xd, y, n, Math.PI, 0, true); ctx.lineTo(fim, y); ctx.lineTo(fim, y + h); ctx.lineTo(xd + n, y + h); ctx.arc(xd, y + h, n, 0, Math.PI, true);
-      ctx.lineTo(x0 + r, y + h); ctx.arcTo(x0, y + h, x0, y + h - r, r); ctx.lineTo(x0, y + r); ctx.arcTo(x0, y, x0 + r, y, r); ctx.closePath(); };
-    ctx.shadowColor = "rgba(0,0,0,.12)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3; corpo(); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
-    ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = "#cfcfcf"; ctx.beginPath(); ctx.moveTo(xd, y + n + 8); ctx.lineTo(xd, y + h - n - 8); ctx.stroke(); ctx.setLineDash([]);
-    let f = 70; ctx.font = `500 ${f}px ${FONTE_LINK}`; while (ctx.measureText(t).width > xd - x0 - 64 && f > 30) { f -= 2; ctx.font = `500 ${f}px ${FONTE_LINK}`; }
-    ctx.fillStyle = az; ctx.fillText(t, x0 + 32, y + h / 2 + 3);
+  /** Texto personalizado do adesivo de link do Instagram (só quando tem cupom): "MELI | CUPOM: CÓDIGO" */
+  const LOJA_ADESIVO = { mercadolivre: "MELI", shopee: "SHOPEE", amazon: "AMAZON", magalu: "MAGALU" };
+  const textoAdesivo = (it) => (it && it.cupom ? `${LOJA_ADESIVO[it.loja] || String(NOME_LOJA[it.loja] || "LINK").toUpperCase()} | CUPOM: ${String(it.cupom).toUpperCase()}` : "");
+  /** Campo branco com entalhe, centralizado embaixo do preço, do tamanho do adesivo de link com esse texto.
+      O entalhe fica na altura do "|". Sem texto: o adesivo do Instagram vai por cima. */
+  function campoCupomLink(ctx, y, it) {
+    const tx = textoAdesivo(it); if (!tx) return;
+    ctx.save(); ctx.font = `500 62px ${FONTE_LINK}`;
+    const ini = 26 + 62 + 14, larg = Math.min(1000, ini + ctx.measureText(tx).width + 30) + 52, h = 160, r = 26, n = 16, x = (1080 - larg) / 2;
+    const xd = Math.min(x + larg - 40, x + 26 + ini + ctx.measureText(tx.split("|")[0]).width + ctx.measureText("|").width / 2);
+    const corpo = () => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(xd - n, y); ctx.arc(xd, y, n, Math.PI, 0, true); ctx.lineTo(x + larg - r, y); ctx.arcTo(x + larg, y, x + larg, y + r, r); ctx.lineTo(x + larg, y + h - r); ctx.arcTo(x + larg, y + h, x + larg - r, y + h, r);
+      ctx.lineTo(xd + n, y + h); ctx.arc(xd, y + h, n, 0, Math.PI, true); ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath(); };
+    ctx.shadowColor = "rgba(0,0,0,.14)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4; corpo(); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
+    ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = "#d4d4d4"; ctx.beginPath(); ctx.moveTo(xd, y + n + 6); ctx.lineTo(xd, y + h - n - 6); ctx.stroke(); ctx.setLineDash([]);
     ctx.restore();
   }
   /* Selo de cupom (ticket): faixa com "CUPOM" de lado e o código grande, bem centralizado, na parte maior.
