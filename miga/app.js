@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=260"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=261"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=260"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=261"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6723,7 +6723,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (!(await VideoDecoder.isConfigSupported(dcfg)).supported) throw new Error("decodificador não suporta " + trilha.codec);
     let cfg = null;
     for (const codec of ["avc1.640033", "avc1.640028", "avc1.4d0028", "avc1.42e028"]) { for (const hw of ["prefer-hardware", "no-preference"]) {
-      const c = { codec, width: W, height: H, bitrate: alta ? 12e6 : 5e6, framerate: fps, avc: { format: "annexb" }, latencyMode: "realtime", hardwareAcceleration: hw };
+      const c = { codec, width: W, height: H, bitrate: alta ? 12e6 : 5e6, framerate: fps, avc: { format: "annexb" }, latencyMode: "quality", hardwareAcceleration: hw };
       try { if ((await VideoEncoder.isConfigSupported(c)).supported) { cfg = c; break; } } catch (e) { /* tenta outro */ } } if (cfg) break; }
     if (!cfg) throw new Error("sem H.264");
     const pedacos = []; let erro = null;
@@ -6733,37 +6733,50 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
     const tela = mk(W, H), ctx = tela.getContext("2d"), cru = mk(W, H), cr = cru.getContext("2d"), base = mk(W, H), bx = base.getContext("2d"), mini = mk(18, 32), mx = mini.getContext("2d", { willReadFrequently: true });
     ctx.imageSmoothingQuality = cr.imageSmoothingQuality = "high";
-    const luz = [], iniLuz = Math.max(0, n - 5 * fps); let j = 0, claro = -1, ref = 0;
+    const chunk = (a) => new EncodedVideoChunk({ type: a.is_sync ? "key" : "delta", timestamp: Math.round((a.cts * 1e6) / a.timescale), duration: Math.round((a.duration * 1e6) / a.timescale), data: a.data });
+    // 1ª passada (rápida): decodifica só os últimos segundos e mede o brilho de cada quadro, para saber onde o vídeo acaba de verdade
+    let c = n;
+    try {
+      let ini = Math.max(0, n - Math.round(5 * fps)); while (ini > 0 && !amostras[ini].is_sync) ini--;
+      const luz = []; let e1 = null;
+      const d1 = new VideoDecoder({ output: (fr) => { try { mx.drawImage(fr, 0, 0, 18, 32); const d = mx.getImageData(0, 0, 18, 32).data; let y = 0; for (let q = 0; q < d.length; q += 4) y += 0.299 * d[q] + 0.587 * d[q + 1] + 0.114 * d[q + 2]; luz.push(y / (d.length / 4)); } finally { fr.close(); } }, error: (e) => { e1 = e; } });
+      d1.configure(dcfg);
+      for (let i = ini; i < n && !e1; i++) { d1.decode(chunk(amostras[i])); while (d1.decodeQueueSize > 8 && !e1) await new Promise((ok) => setTimeout(ok, 3)); }
+      await d1.flush(); d1.close();
+      if (!e1 && luz.length > 3) {
+        const cl = luz.slice().sort((x, y) => y - x), rf = cl[Math.floor(cl.length * 0.3)] || 0, ult = luz[luz.length - 1];
+        if (ult < Math.max(24, rf * 0.35)) { // termina escuro: volta até o último quadro claro (no máximo 3 s)
+          let k = luz.length; const lim = Math.max(30, rf * 0.85), minK = Math.max(1, luz.length - Math.round(3 * fps)); while (k > minK && luz[k - 1] < lim) k--;
+          c = Math.max(1, ini + k - (luz.length - (n - ini))); }
+      }
+    } catch (e) { c = n; }
+    if (c < fps * 0.8) c = n;
+    if (aviso) aviso(5);
+    // 2ª passada: só os quadros até o fim de verdade (nenhum quadro escuro entra no vídeo)
+    let j = 0;
     const dec = new VideoDecoder({
       output: (fr) => {
         try {
+          if (j >= c) return;
           const fw = fr.displayWidth, fh = fr.displayHeight, k = Math.max(W / fw, H / fh); cr.drawImage(fr, (W - fw * k) / 2, (H - fh * k) / 2, fw * k, fh * k);
-          if (j >= iniLuz) { // brilho só no final, para achar a tela preta
-            mx.drawImage(fr, 0, 0, 18, 32); const d = mx.getImageData(0, 0, 18, 32).data; let y = 0; for (let q = 0; q < d.length; q += 4) y += 0.299 * d[q] + 0.587 * d[q + 1] + 0.114 * d[q + 2]; y /= d.length / 4; luz[j] = y;
-            ref = Math.max(ref, y); if (y >= Math.max(12, ref * 0.88)) { claro = j; bx.drawImage(cru, 0, 0); } }
+          if (j === c - 1) bx.drawImage(cru, 0, 0); // fundo do fechamento = último quadro de verdade
           ctx.drawImage(cru, 0, 0); ctx.drawImage(cam, 0, 0, W, H);
-          const vf = new VideoFrame(tela, { timestamp: Math.round(j * dt), duration: Math.round(dt) }); enc.encode(vf, { keyFrame: j % (fps * 2) === 0 }); vf.close(); j++;
-        } finally { fr.close(); }
+          const vf = new VideoFrame(tela, { timestamp: Math.round(j * dt), duration: Math.round(dt) }); enc.encode(vf, { keyFrame: j % (fps * 2) === 0 }); vf.close();
+        } finally { j++; fr.close(); }
       }, error: (e) => { erro = e; } });
     dec.configure(dcfg);
     const espera = async () => { while ((dec.decodeQueueSize > 6 || enc.encodeQueueSize > 6) && !erro) await new Promise((ok) => setTimeout(ok, 4)); };
     try {
-      for (let i = 0; i < n && !erro; i++) { const a = amostras[i];
-        dec.decode(new EncodedVideoChunk({ type: a.is_sync ? "key" : "delta", timestamp: Math.round((a.cts * 1e6) / a.timescale), duration: Math.round((a.duration * 1e6) / a.timescale), data: a.data }));
-        await espera(); if (aviso && i % 10 === 0) aviso(Math.round((i / n) * 85)); }
-      await dec.flush(); dec.close(); await enc.flush(); if (erro) throw erro;
-      const total = j; if (total < fps) throw new Error("poucos quadros decodificados");
-      // fim de verdade: se termina escuro, volta até o último quadro claro
-      let c = total; { const vs = luz.slice(iniLuz, total).filter((x) => x != null), cl = vs.slice().sort((x, y) => y - x), rf = cl[Math.floor(cl.length * 0.3)] || 0;
-        if (luz[total - 1] != null && luz[total - 1] < Math.max(8, rf * 0.3) && claro >= 0) c = claro + 1; }
-      if (c < fps * 0.8) c = total;
-      if (c === total) bx.drawImage(cru, 0, 0); // sem preto no fim: o fundo do fechamento é o último quadro
+      for (let i = 0; i < n && !erro; i++) { dec.decode(chunk(amostras[i])); await espera(); if (aviso && i % 10 === 0) aviso(5 + Math.round((i / n) * 80)); }
+      await dec.flush(); dec.close(); if (erro) throw erro;
+      if (j < c) c = j; if (c < fps * 0.5) throw new Error("poucos quadros decodificados");
+      if (j > 0 && c === j) bx.drawImage(cru, 0, 0);
       const nMeio = pedacos.length, cam2 = mk(1080, H0), cx2 = cam2.getContext("2d"), nF = Math.round(FECHO.total * fps);
       for (let m = 0; m < nF; m++) { quadroFechamento(cx2, H0, m / fps, cam); ctx.drawImage(base, 0, 0); ctx.drawImage(cam2, 0, 0, W, H);
         const vf = new VideoFrame(tela, { timestamp: Math.round((c + m) * dt), duration: Math.round(dt) }); enc.encode(vf, { keyFrame: m === 0 }); vf.close();
         await espera(); if (aviso && m % 6 === 0) aviso(85 + Math.round((m / nF) * 10)); }
       await enc.flush(); enc.close(); if (erro) throw erro;
-      const fica = pedacos.filter((p, i) => i >= nMeio || p.t < c * dt - 1); let tam = 0; fica.forEach((p) => { tam += p.b.length; });
+      const fica = pedacos; let tam = 0; fica.forEach((p) => { tam += p.b.length; });
       const h264 = new Uint8Array(tam); tam = 0; fica.forEach((p) => { h264.set(p.b, tam); tam += p.b.length; });
       const D = (c / fps).toFixed(3), tot = ((c + nF) / fps).toFixed(3);
       await ff.writeFile("v.mp4", new Uint8Array(bruto)); await ff.writeFile("v.h264", h264); await ff.writeFile("a.wav", await audioFechamento(P, c / fps));
