@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=273"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=274"; });
     }
     edFoto = null;
     try {
@@ -1663,7 +1663,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=273"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=274"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2910,10 +2910,14 @@
     return { previa, insta: "", titulo: linhasTitulo(wz.tituloArte ? tituloDigitado(wz.tituloArte) : campanha() ? campanha().titulo : M.padrao.titulo), texto: wz.tituloArte || campanha() ? "" : M.padrao.texto, botao: "", logo: false, espaco: wz.formato === "story", cupom: it.cupom || "", loja: it.loja || "", foto: ppFotos[it.id] || null, produto: { nome: limparNome(it.nome), antigo: it.precoAntigo, novo: it.precoNovo } };
   }
   const arteR = (modelo, cor) => { const mk = MODELOS_REELS[modelo || wz.modelo] ? (modelo || wz.modelo) : "achadinho", c = CORES_VIDEO[cor || wz.cor] ? (cor || wz.cor) : (DECOR[mk] || {}).cor || "rosa"; return { modelo: mk, camp: wz.camp || "", titulo: wz.tituloArte || "", cor: c }; };
+  /* Só no Story do Instagram: cupom encostado à esquerda e espaço livre na frente dele para o adesivo de link */
+  let storyComLink = false;
+  const ehStoryInsta = (f) => (wz && wz.canal === "roteiro" && wz.lugares ? wz.lugares[wz.idx] === "story" && f === "story" : f === "story" && !(wz && wz.canal === "whatsapp"));
   function desenharMontagem(tela, previa, modelo, cor, formato, tAnim) {
     const it = wzItem(); if (!it || !tela) return;
     const f = formato || wz.formato;
-    artePost(tela, arteR(modelo, cor), it, ppFotos[it.id], f === "story" || f === "status" ? "story" : f, tAnim);
+    storyComLink = ehStoryInsta(f);
+    try { artePost(tela, arteR(modelo, cor), it, ppFotos[it.id], f === "story" || f === "status" ? "story" : f, tAnim); } finally { storyComLink = false; }
   }
   /** Arte em movimento: a mesma arte do story/status se mexendo por 20 segundos, sem som (sem abertura e sem final) */
   const SEG_MOV = 20;
@@ -2924,14 +2928,14 @@
     await prepararFoto(it); await carregarMarca(); // sem música: a música você escolhe no próprio Instagram/WhatsApp
     const R = arteR(), E = MUSICAS[musicaDe(R)], tela = document.createElement("canvas"); tela.width = 1080; tela.height = 1920; const ctx = tela.getContext("2d");
     const previa = $("#rtTela"); const pctx = previa && previa.getContext("2d");
-    artePost(tela, R, it, ppFotos[it.id], "story", 0);
+    const comLink = ehStoryInsta("story"); storyComLink = comLink; artePost(tela, R, it, ppFotos[it.id], "story", 0); storyComLink = false;
     const fluxo = tela.captureStream(30);
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 }), partes = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
     const fim = new Promise((ok) => { rec.onstop = ok; });
     rec.start(); manterTelaAcesa(true); const ini = performance.now();
     const agora = () => (performance.now() - ini) / 1000;
     await new Promise((ok) => { const passo = () => { const t = agora(); if (t >= SEG_MOV + 0.4) { ok(); return; }
-      artePost(tela, R, it, ppFotos[it.id], "story", Math.min(t, SEG_MOV)); if (pctx) { if (previa.width !== 540) { previa.width = 540; previa.height = 960; } pctx.drawImage(tela, 0, 0, 540, 960); }
+      storyComLink = comLink; artePost(tela, R, it, ppFotos[it.id], "story", Math.min(t, SEG_MOV)); storyComLink = false; if (pctx) { if (previa.width !== 540) { previa.width = 540; previa.height = 960; } pctx.drawImage(tela, 0, 0, 540, 960); }
       if (botao) { const pc = Math.min(100, Math.round((t / SEG_MOV) * 100)); botao.textContent = `Criando o vídeo… ${pc}%`; botao.style.background = `linear-gradient(90deg, #e8336d ${pc}%, #f39bb9 ${pc}%)`; botao.style.color = "#fff"; botao.style.opacity = "1"; } requestAnimationFrame(passo); }; passo(); });
     rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false);
     const mp4 = tipo.startsWith("video/mp4"); const blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), SEG_MOV);
@@ -6008,7 +6012,7 @@
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 - SB + OY); ctx.fillRect(540 - w / 2 + ld, 1252 - SB + OY, w - ld, 5); });
       if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) - SB + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
+      if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, storyComLink ? 96 : 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
@@ -6028,7 +6032,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
+    if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, storyComLink ? 96 : 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; acentoCena = null; } }
