@@ -1289,7 +1289,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=266"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=267"; });
     }
     edFoto = null;
     try {
@@ -1660,7 +1660,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=266"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=267"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1761,7 +1761,7 @@
   const ppCategoria = grupoBotoes("#ppCategoria", "v");
   let ppAtual = null;          // produto aberto na edição
   const ppFotos = {};          // fotos já abertas (por produto), para as montagens
-  const fila = () => (config.fila = config.fila || []);
+  const fila = () => { const f = (config.fila = config.fila || []); if (f._obsOk !== f) { f.forEach((i) => { if (i && i.obs && !i.obsManual) delete i.obs; }); Object.defineProperty(f, "_obsOk", { value: f, configurable: true }); } return f; }; // tira a observação que o app tinha escrito sozinho
   let ppSalvarTimer;
   function salvarFila(logo) {
     clearTimeout(ppSalvarTimer);
@@ -1889,7 +1889,7 @@
   const ehLink = (t) => /https?:\/\//.test(String(t || ""));
   const semAcento = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   function textoBusca(i) {
-    return semAcento([i.nome, i.link, i.urlFinal, NOME_LOJA[i.loja], i.loja, i.precoNovo && brl(i.precoNovo), i.precoAntigo && brl(i.precoAntigo), i.cupom, i.obs, NOME_CAT[i.categoria] || i.categoria,
+    return semAcento([i.nome, i.link, i.urlFinal, NOME_LOJA[i.loja], i.loja, i.precoNovo && brl(i.precoNovo), i.precoAntigo && brl(i.precoAntigo), i.cupom, i.obsManual ? i.obs : "", NOME_CAT[i.categoria] || i.categoria,
       ...(i.ondePostou || []), i.postadoEm && dataCurta(i.postadoEm), foiCompartilhado(i) ? "postado" : "para postar"].filter(Boolean).join(" "));
   }
   function bateBusca(i) {
@@ -1942,7 +1942,7 @@
         <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           ${i.precoNovo ? `<span class="pp-preco">${brl(i.precoNovo)}${i.precoAntigo && i.precoAntigo > i.precoNovo ? `<s>${brl(i.precoAntigo)}</s>` : ""}</span>` : ""}
           <span class="meta">${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
-          ${i.obs ? `<span class="pp-obs">${marcaBusca(i.obs)}</span>` : ""}
+          ${i.obs && i.obsManual ? `<span class="pp-obs">${marcaBusca(i.obs)}</span>` : ""}
           ${post ? `<span class="pp-onde">${onde.length ? esc(onde.join(", ")) + " · " : ""}${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
         <span class="seta">›</span>
