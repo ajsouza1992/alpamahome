@@ -1289,7 +1289,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=264"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=265"; });
     }
     edFoto = null;
     try {
@@ -1660,7 +1660,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=264"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=265"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -2422,15 +2422,10 @@
     $("#ppSalvo").textContent = "Salvo"; clearTimeout(aplicarCamposPp.t); aplicarCamposPp.t = setTimeout(() => { $("#ppSalvo").textContent = "As mudanças são salvas sozinhas."; }, 1500);
   }
   /** Observação automática (só pra você): campanha, preço com e sem cupom, loja, etiquetas e o dia em que entrou na lista */
-  function obsAutomatica(it) {
-    const cp = campanhaEscolhida && CAMPANHAS[campanhaEscolhida] ? CAMPANHAS[campanhaEscolhida].nome : "", sem = it.precoSemCupom || it.precoNovo, l = [];
+  function obsAutomatica(it) { // curta e limpa: campanha e o preço com cupom
+    const cp = campanhaEscolhida && CAMPANHAS[campanhaEscolhida] ? CAMPANHAS[campanhaEscolhida].nome : "", l = [];
     if (cp) l.push(cp);
-    if (it.cupom && it.precoCupom) l.push(`${brl(it.precoCupom)} com o cupom ${String(it.cupom).toUpperCase()}${sem ? ` (sem cupom ${brl(sem)})` : ""}`);
-    else if (it.cupom) l.push(`cupom ${String(it.cupom).toUpperCase()}`);
-    else if (sem) l.push(brl(sem));
-    if (it.oferta) l.push(it.oferta); if (it.maisVendido) l.push(`${it.maisVendido}º mais vendido`);
-    if (NOME_LOJA[it.loja]) l.push(NOME_LOJA[it.loja]);
-    if (it.criadoEm) l.push("entrou em " + new Date(it.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }));
+    if (it.cupom && it.precoCupom) l.push(`${brl(it.precoCupom)} com o cupom ${String(it.cupom).toUpperCase()}`);
     return l.join(" · ");
   }
   $("#ppObs").addEventListener("input", () => { if (ppAtual) ppAtual.obsManual = !!$("#ppObs").value.trim(); });
@@ -5975,7 +5970,7 @@
   }
   function produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 760, cima = MODELOS_CIMA.has(D.chave), OY = cima ? 92 : 0, FY = 820 + OY;
+    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", L = 680, cima = MODELOS_CIMA.has(D.chave), OY = cima ? 92 : 0, FY = 800 + OY, SB = 70; // tudo um pouco mais pra cima: sobra espaço embaixo para o adesivo de link do Stories
     const nome = limparNome(it.nome || ""), novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
     const titulo = mk === "top" ? `Top ${idx + 1}\n*${n > 1 ? "da semana" : "achadinho"}*` : M.titulo.replace("{n}", n > 1 ? n : "");
     const icone = (D.ic && D.ic[0]) || M.icone || "brilho";
@@ -5998,15 +5993,15 @@
     if (cima) {
       ctx.font = "700 42px Poppins"; const lc = quebrarTexto(ctx, nome, 900, 2);
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
-      if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 + OY); ctx.fillRect(540 - w / 2 + ld, 1252 + OY, w - ld, 5); });
-      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 88).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) + OY + 84, it.cupom, 88, C.destaque, C.fundo); });
+      if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 - SB + OY); ctx.fillRect(540 - w / 2 + ld, 1252 - SB + OY, w - ld, 5); });
+      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) - SB + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? 0.04 * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
     ctx.font = "700 52px Poppins"; const ln = quebrarTexto(ctx, nome, 920, 2);
-    comSubida(ctx, t, A(3), () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 + j * 62)); });
-    let y = 1275 + ln.length * 62 + 30;
+    comSubida(ctx, t, A(3), () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 - SB + j * 62)); });
+    let y = 1275 - SB + ln.length * 62 + 30;
     const riscado = (tx, yy, tam) => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = corAntiga(C); ctx.fillText(tx, 540, yy); const w = ctx.measureText(tx).width, ld = ctx.measureText(tx.split(" ")[0] + " ").width; ctx.fillRect(540 - w / 2 + ld, yy + 2, w - ld, 5); };
     if (antigo && estilo === "oferta") comSubida(ctx, t, A(3.5), () => riscado("antes " + brl(antigo), y, 46));
     else if (antigo) comSubida(ctx, t, A(3.5), () => riscado("de " + brl(antigo), y, 46));
@@ -6020,7 +6015,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 88).w; desenharCupom(ctx, 540 - cw / 2, Math.min(y + 84, 1700), it.cupom, 88, C.destaque, C.fundo); });
+    if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
   }
   /** Quadro do Reels no tempo t */
   function quadroReels(ctx, W, t, R, l, fotos) { try { quadroReels0(ctx, W, t, R, l, fotos); } finally { pulsoTela = 0; acentoCena = null; } }
@@ -6604,7 +6599,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     let corpo = clara ? "#ffffff" : "#ffd23f"; if (hexOk(fundo) && Math.abs(luzDe(corpo) - luzDe(fundo)) < 0.08) corpo = clara ? "#1d1d1f" : "#ffffff";
     return { faixa, corpo, txFaixa: clara ? "#1d1d1f" : "#ffffff", txCorpo: luzDe(corpo) > 0.45 ? "#1d1d1f" : "#ffffff" };
   }
-  function medidaCupom(ctx, codigo, h) { ctx.save(); ctx.font = `900 ${Math.round(h * 0.42)}px Poppins`; const b = ctx.measureText(String(codigo).toUpperCase()).width + h * 1.1, a = h * 0.5; ctx.restore(); return { a, b, w: a + b }; }
+  function medidaCupom(ctx, codigo, h) { ctx.save(); ctx.font = `900 ${Math.round(h * 0.42)}px Poppins`; const b = ctx.measureText(String(codigo).toUpperCase()).width + h * 1.1, a = h * 0.66; ctx.restore(); return { a, b, w: a + b }; }
   function desenharCupom(ctx, x, y, codigo, h, destaque, fundo) {
     const cod = String(codigo).toUpperCase(), m = medidaCupom(ctx, cod, h), K = coresCupom(destaque, fundo), r = h * 0.12, n = h * 0.15, W = m.w;
     const corpo = () => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + W - r, y); ctx.arcTo(x + W, y, x + W, y + r, r); ctx.lineTo(x + W, y + h / 2 - n); ctx.arc(x + W, y + h / 2, n, -Math.PI / 2, Math.PI / 2, true);
@@ -6613,7 +6608,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = h * 0.16; ctx.shadowOffsetY = h * 0.05; corpo(); ctx.fillStyle = K.corpo; ctx.fill(); ctx.shadowColor = "transparent";
     ctx.save(); corpo(); ctx.clip(); ctx.fillStyle = K.faixa; ctx.fillRect(x, y, m.a, h); ctx.restore();
     ctx.setLineDash([h * 0.08, h * 0.065]); ctx.lineWidth = Math.max(2, h * 0.03); ctx.strokeStyle = K.corpo; ctx.beginPath(); ctx.moveTo(x + m.a, y + h * 0.08); ctx.lineTo(x + m.a, y + h * 0.92); ctx.stroke(); ctx.setLineDash([]);
-    ctx.save(); ctx.translate(x + m.a / 2, y + h / 2); ctx.rotate(-Math.PI / 2); ctx.fillStyle = K.txFaixa; let f = Math.round(h * 0.2); ctx.font = `800 ${f}px Poppins`; while (f > 8 && ctx.measureText("CUPOM").width > h * 0.78) { f--; ctx.font = `800 ${f}px Poppins`; } ctx.fillText("CUPOM", 0, h * 0.01); ctx.restore();
+    ctx.save(); ctx.translate(x + m.a / 2, y + h / 2); ctx.rotate(-Math.PI / 2); ctx.fillStyle = K.txFaixa; let f = Math.round(h * 0.3); ctx.font = `900 ${f}px Poppins`; while (f > 8 && ctx.measureText("CUPOM").width > h * 0.84) { f--; ctx.font = `900 ${f}px Poppins`; } ctx.fillText("CUPOM", 0, h * 0.02); ctx.restore();
     ctx.fillStyle = K.txCorpo; ctx.font = `900 ${Math.round(h * 0.42)}px Poppins`; ctx.fillText(cod, x + m.a + m.b / 2, y + h / 2 + h * 0.03);
     ctx.restore(); return W;
   }
