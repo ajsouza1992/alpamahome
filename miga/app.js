@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=242"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=243"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=242"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=243"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -5002,7 +5002,7 @@
         <div class="est-ctrl est-ctrl--3">${botaoEst("modelo", "Modelo", nomeM)}${botaoEst("cor", "Cor", CORES_VIDEO[C.cor].nome)}${botaoEst("cupons", "Cupons", String(C.sel.length))}</div>
         </div>
         <div class="campo"><span>Texto para os grupos</span><textarea id="cTexto" rows="8">${esc(C.texto)}</textarea></div>
-        <button type="button" class="btn btn--rosa" id="cStatus">Postar no Status / Story</button>
+        <button type="button" class="btn btn--rosa" id="cStatus">Postar</button>
         <button type="button" class="btn btn--rosa" id="cGrupos">Enviar nos grupos</button>
         <div class="duas"><button type="button" class="btn btn--branco" id="cCopiar">Copiar texto</button><button type="button" class="btn btn--branco" id="cBaixar">Baixar imagem</button></div>
         <button type="button" class="btn btn--branco" id="wzNovo">Voltar para a lista</button>`;
