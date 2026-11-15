@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=254"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=255"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=254"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=255"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6445,7 +6445,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
   function abrirPersonagem(it) {
     calcFundoAuto(it);
-    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { cantoLogo: (lsPers.ler("cantos", {}) || {}).logo || "br", cantoArroba: (lsPers.ler("cantos", {}) || {}).arroba || "bl", cantoSelo: (lsPers.ler("cantos", {}) || {}).selo || "nao", moldura: lsPers.ler("moldura", "nao"), circulo: lsPers.ler("circulo", "logo"), roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
+    wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { cantoLogo: (lsPers.ler("cantos", {}) || {}).logo || "br", cantoArroba: (lsPers.ler("cantos", {}) || {}).arroba || "bl", cantoSelo: (lsPers.ler("cantos", {}) || {}).selo || "nao", moldura: lsPers.ler("moldura", "nao"), circulo: true, musica: lsPers.ler("musica", ""), roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
     sortearRoupa(wz.pe); marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const fotosPers = () => lsPers.ler("fotos", [null, null]);
@@ -6526,10 +6526,12 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>
         ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}`}
+        ${P.midia && P.midia.tipo === "video" ? `<div class="pe-roupa ch-musica"><span><b>Música baixinha ao fundo:</b> ${P.musica && NOMES_MUSICA[P.musica] ? esc(NOMES_MUSICA[P.musica][0]) : "sem música"}</span>${P.musica ? `<button type="button" class="mus-play" data-ouvir="${P.musica}" aria-label="Ouvir">${ICO_PLAY}</button>` : ""}<button type="button" class="btn btn--branco" id="peTrocarMus">${P.musica ? "Trocar" : "Escolher"}</button></div>
+        <p class="nota">No fim do vídeo entra o fechamento da Miga: o círculo cresce, o logo vai pro meio e aparece o @ com plim.</p>` : ""}
         <div class="campo"><span>Legenda pronta (pode editar)</span><textarea id="peLegenda" rows="9">${esc(P.legenda)}</textarea></div>
         <button type="button" class="btn btn--branco" id="peCopiarLeg">Copiar legenda</button>
         ${!P.midia ? "" : P.midia.tipo === "video"
-          ? `<button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>`
+          ? `<button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">Deixe o app aberto até terminar.</p>`
           : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}
         <p class="nota">Ao postar, a legenda já vai copiada: é só colar no Instagram.</p>
         <button type="button" class="btn btn--branco pe-nav" id="peVoltar">Voltar ao prompt</button>`;
@@ -6650,14 +6652,61 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     return ffCarregado;
   }
   /** Põe o logo, o @, o selo e a moldura no vídeo da IA sem regravar a tela: o som fica idêntico e sincronizado */
+  /* Fechamento dos vídeos da Criação IA: o círculo do canto cresce até a tela ficar branca, o logo sobe pro meio e o @ aparece com plim */
+  const FECHO = { total: 2.6, quadros: 44, plim: 1.05 };
+  const suaveF = (x) => { x = Math.min(1, Math.max(0, x)); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const voltinha = (x) => { x = Math.min(1, Math.max(0, x)); const c = 1.70158 * 1.3; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  function quadroFechamento(x, H, t, base) {
+    const M = 48, tl = 170, lx = 1080 - M - tl, ly = H - M - tl, r0 = M + tl + 70, rMax = Math.hypot(1080, H) + 30;
+    x.clearRect(0, 0, 1080, H);
+    const some = 1 - suaveF(t / 0.35); if (some > 0) { x.save(); x.globalAlpha = some; x.drawImage(base, 0, 0); x.restore(); } // @ e selo somem
+    const r = r0 + (rMax - r0) * suaveF(t / 0.75); x.beginPath(); x.arc(1080, H, r, 0, Math.PI * 2); x.fillStyle = "#ffffff"; x.fill();
+    const k = suaveF((t - 0.4) / 0.6), tam = tl + (440 - tl) * k, cy = H / 2 - (H > 1200 ? 90 : 70);
+    const px = lx + (540 - tam / 2 - lx) * k, py = ly + (cy - tam / 2 - ly) * k; if (edMarca) x.drawImage(edMarca, px, py, tam, tam);
+    const q = (t - FECHO.plim) / 0.32; if (q > 0) { // selo do @ com pulinho
+      const at = arroba(config.instagram) || "@migapromo.oficial", sc = voltinha(q); x.save(); x.translate(540, cy + 440 / 2 + 70); x.scale(sc, sc); x.rotate(-0.03);
+      x.font = "800 56px Poppins"; const w = x.measureText(at).width + 90, h = 108; x.shadowColor = "rgba(232,51,109,.35)"; x.shadowBlur = 24; x.shadowOffsetY = 8;
+      retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = "#e8336d"; x.fill(); x.shadowColor = "transparent"; x.lineWidth = 6; x.strokeStyle = "#1d1d1f"; x.stroke();
+      x.fillStyle = "#ffffff"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(at, 0, 4); x.restore(); }
+  }
+  /** WAV 16 bits de um AudioBuffer (para o ffmpeg misturar a música e o plim) */
+  function wavDe(buf) {
+    const nc = buf.numberOfChannels, n = buf.length, sr = buf.sampleRate, dv = new DataView(new ArrayBuffer(44 + n * nc * 2)), ch = []; for (let c = 0; c < nc; c++) ch.push(buf.getChannelData(c));
+    const ws = (o, t) => { for (let i = 0; i < t.length; i++) dv.setUint8(o + i, t.charCodeAt(i)); };
+    ws(0, "RIFF"); dv.setUint32(4, 36 + n * nc * 2, true); ws(8, "WAVEfmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, nc, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * nc * 2, true); dv.setUint16(32, nc * 2, true); dv.setUint16(34, 16, true); ws(36, "data"); dv.setUint32(40, n * nc * 2, true);
+    let o = 44; for (let i = 0; i < n; i++) for (let c = 0; c < nc; c++) { const v = Math.max(-1, Math.min(1, ch[c][i])); dv.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2; }
+    return new Uint8Array(dv.buffer);
+  }
+  /** Áudio extra: música bem baixinha (se escolheu) + o plim do @ no fechamento */
+  async function audioFechamento(P, dur) {
+    const tot = dur + FECHO.total, SR = 44100, ac = new OfflineAudioContext(2, Math.ceil(tot * SR), SR);
+    if (P.musica && MUSICAS[P.musica]) { const E = MUSICAS[P.musica], g = ac.createGain(); g.connect(ac.destination);
+      g.gain.setValueAtTime(0.13, 0); g.gain.setValueAtTime(0.13, Math.max(0, tot - 1)); g.gain.linearRampToValueAtTime(0.0001, tot);
+      try { await carregarSons(ac, E); tocarTrilha(ac, g, tot, [], [], null, E, null); } catch (e) { /* sem música */ } }
+    const tp = dur + FECHO.plim; [[1568, 0, 0.42], [2093, 0.11, 0.38]].forEach(([f, d, v]) => { [[1, 1], [2.01, 0.4], [3, 0.16]].forEach(([h, gh]) => {
+      const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; const t = tp + d;
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v * gh, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 1.2); }); });
+    return wavDe(await ac.startRendering());
+  }
   async function videoComMarcaFF(P, M0, aviso) {
     const H = altPers(P), cam = document.createElement("canvas"); cam.width = 1080; cam.height = H; await carregarMarca(); quadroLogoArroba(cam.getContext("2d"), 1080, null, P, true);
     const png = await new Promise((ok) => cam.toBlob(ok, "image/png")), vid = await (await fetch(M0.url)).blob();
-    const ff = await ffPronto(); ff._aviso = aviso;
+    let dur = M0.video && isFinite(M0.video.duration) && M0.video.duration > 0 ? M0.video.duration : 0;
+    if (!dur) dur = await new Promise((ok) => { const v = document.createElement("video"); v.preload = "metadata"; v.onloadedmetadata = () => ok(isFinite(v.duration) ? v.duration : 8); v.onerror = () => ok(8); v.src = M0.url; });
+    const ff = await ffPronto(); ff._aviso = null;
     await ff.writeFile("v.mp4", new Uint8Array(await vid.arrayBuffer())); await ff.writeFile("m.png", new Uint8Array(await png.arrayBuffer()));
-    await ff.exec(["-i", "v.mp4", "-i", "m.png", "-filter_complex", `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1[b];[b][1:v]overlay=0:0,format=yuv420p[o]`, "-map", "[o]", "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "21", "-c:a", "copy", "-movflags", "+faststart", "s.mp4"]);
+    // quadros do fechamento (transparentes) e o áudio extra
+    const fc = document.createElement("canvas"); fc.width = 1080; fc.height = H; const fx = fc.getContext("2d");
+    for (let i = 0; i < FECHO.quadros; i++) { quadroFechamento(fx, H, i / 30, cam); const b = await new Promise((ok) => fc.toBlob(ok, "image/png")); await ff.writeFile("f" + String(i).padStart(3, "0") + ".png", new Uint8Array(await b.arrayBuffer())); if (aviso) aviso(Math.round((i / FECHO.quadros) * 8)); }
+    await ff.writeFile("a.wav", await audioFechamento(P, dur));
+    ff._aviso = (pc) => aviso && aviso(8 + Math.round(pc * 0.92));
+    const tot = (dur + FECHO.total).toFixed(3), D = dur.toFixed(3);
+    const vf = `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1,fps=30,tpad=stop_mode=clone:stop_duration=${FECHO.total}[b];[b][1:v]overlay=0:0:enable='lt(t,${D})'[c];[2:v]setpts=PTS-STARTPTS+${D}/TB[f];[c][f]overlay=0:0:eof_action=repeat,format=yuv420p[o]`;
+    const ent = ["-i", "v.mp4", "-i", "m.png", "-framerate", "30", "-i", "f%03d.png", "-i", "a.wav"], saida = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "21", "-r", "30", "-c:a", "aac", "-b:a", "160k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
+    await ff.exec([...ent, "-filter_complex", vf + `;[0:a]apad[v0];[v0][3:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "[o]", "-map", "[a]", ...saida]);
     let d = await ff.readFile("s.mp4").catch(() => null);
-    if (!d || d.length < 2000) { await ff.exec(["-i", "v.mp4", "-i", "m.png", "-filter_complex", `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1[b];[b][1:v]overlay=0:0,format=yuv420p[o]`, "-map", "[o]", "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "21", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "s.mp4"]); d = await ff.readFile("s.mp4"); }
+    if (!d || d.length < 2000) { await ff.exec([...ent, "-filter_complex", vf, "-map", "[o]", "-map", "3:a", ...saida]); d = await ff.readFile("s.mp4").catch(() => null); } // vídeo sem som
     ffCarregado = null; ff.terminate();
     if (!d || d.length < 2000) throw new Error("ffmpeg vazio");
     return new Blob([d.buffer], { type: "video/mp4" });
@@ -6790,6 +6839,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       try { v.currentTime = 0; v.muted = false; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; } catch (er) { v.muted = true; toast("Não consegui tocar o som"); } return; }
     if (t.closest("#peCopiarLeg")) { if (await copiarTexto($("#peLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
+    { const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; } }
+    if (t.closest("#peTrocarMus")) { tocarAmostra(""); folhaEst("Música baixinha ao fundo", `<p class="nota">Toque no ▶ para ouvir antes de escolher. Ela entra bem baixinha, sem atrapalhar a fala.</p><div class="lista-mod"><div class="mus-linha${!P.musica ? " on" : ""}"><button type="button" data-pe-escolhe-mus=""><b>Sem música</b><small>só a voz do vídeo</small></button></div>${LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${P.musica === k ? " on" : ""}"><button type="button" data-pe-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`); return; }
     if (t.closest("#peBaixarV")) { baixarBlob(P.resultado.blob, P.resultado.nome); toast("Vídeo salvo"); return; }
     if (t.closest("#pePostarV")) { await copiarTexto($("#peLegenda").value); toast("Legenda copiada: cole no Instagram"); compartilharArquivo(new File([P.resultado.blob], P.resultado.nome, { type: P.resultado.blob.type })); return; }
     if (t.closest("#peBaixarI")) { const a = await imagemPersonagem(); if (a) { baixarBlob(a, a.name); toast("Imagem salva"); } return; }
@@ -7127,6 +7178,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (e.target.dataset.i != null) { const D = dadosChamada(CH); CH.tx[k] = D[k].slice(); CH.tx[k][+e.target.dataset.i] = e.target.value; } else CH.tx[k] = e.target.value;
   });
   $("#folhaEst").addEventListener("click", (e) => {
+    if (wz.canal === "personagem") { const em = e.target.closest("[data-pe-escolhe-mus]"); if (em) { tocarAmostra(""); wz.pe.musica = em.dataset.peEscolheMus; lsPers.gravar("musica", wz.pe.musica); wz.pe.resultado = null; $("#folhaEst").close(); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+      const ou = e.target.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; } }
     if (wz.canal === "personagem") { const b = e.target.closest("[data-pe-prod]"); if (b) { wz.itemId = b.dataset.peProd; wz.pe.tx = null; wz.pe.promptEd = null; wz.pe.limparTxt = null; wz.pe.legenda = null; wz.pe.fundoAuto = null; calcFundoAuto(wzItem()); $("#folhaEst").close(); mostrarPasso(); } return; }
     if (wz.canal === "chamada") { const em = e.target.closest("[data-ch-escolhe-mus]"); if (em) { tocarAmostra(""); ch().musica = em.dataset.chEscolheMus; ch().resultado = null; $("#folhaEst").close(); mostrarPasso(); return; } }
     if (wz.canal !== "chamada") return; const CH = ch();
