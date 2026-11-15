@@ -1918,3 +1918,6 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .pp-obs { white-space: normal; overflow: visible; }
 .wz-obs-topo { margin: 0 0 12px; padding: 8px 12px; border-radius: 12px; background: #fff6d6; color: #6b5300; font-size: 13.5px; line-height: 1.35; }
 .wz-obs-topo b { color: #1d1d1f; }
+/* Tudo postado: check verde */
+.rt-big--ok { background: #22a55a; box-shadow: 0 10px 24px -10px rgba(34,165,90,.6); }
+.rt-big--ok svg { width: 46px; height: 46px; fill: none; stroke: #fff; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
