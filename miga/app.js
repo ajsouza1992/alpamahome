@@ -1292,7 +1292,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=261"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=262"; });
     }
     edFoto = null;
     try {
@@ -1667,7 +1667,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=261"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=262"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -6526,6 +6526,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>
         ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}`}
+        ${P.midia && P.midia.tipo === "video" ? `<div><b class="ch-rot">Onde o final entra</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-corte="auto" aria-checked="${P.corte == null}">Automático</button><button type="button" role="radio" data-pe-corte="manual" aria-checked="${P.corte != null}">Eu escolho</button></div>
+          ${P.corte != null ? `<input type="range" class="pe-corte" id="peCorte" min="0.5" max="${(P.midia.video && isFinite(P.midia.video.duration) ? P.midia.video.duration : 15).toFixed(2)}" step="0.05" value="${P.corte}"><p class="nota wz-centro">O final entra em <b id="peCorteTxt">${P.corte.toFixed(1).replace(".", ",")} s</b>. Arraste até a última cena boa (a prévia mostra ela).</p>` : `<p class="nota">O app acha sozinho o fim do vídeo e corta a tela preta.${P.corteAuto ? ` No último vídeo, o final entrou em ${P.corteAuto.toFixed(1).replace(".", ",")} s.` : ""}</p>`}</div>` : ""}
         ${P.midia && P.midia.tipo === "video" ? `<div class="pe-roupa ch-musica"><span><b>Música baixinha ao fundo:</b> ${P.musica && NOMES_MUSICA[P.musica] ? esc(NOMES_MUSICA[P.musica][0]) : "sem música"}</span>${P.musica ? `<button type="button" class="mus-play" data-ouvir="${P.musica}" aria-label="Ouvir">${ICO_PLAY}</button>` : ""}<button type="button" class="btn btn--branco" id="peTrocarMus">${P.musica ? "Trocar" : "Escolher"}</button></div>
         <div><b class="ch-rot">Qualidade do vídeo</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-qual="alta" aria-checked="${P.qualidade !== "rapido"}">Alta qualidade</button><button type="button" role="radio" data-pe-qual="rapido" aria-checked="${P.qualidade === "rapido"}">Rápido</button></div></div>
         <p class="nota">No fim do vídeo entra o fechamento da Miga: o círculo cresce, o logo vai pro meio e aparece o @ com plim.</p>` : ""}
@@ -6641,7 +6643,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const cv = $("#peQuadro"); if (!cv) return; const cx = cv.getContext("2d"), P = pe();
     const passo = () => { if ($("#peQuadro") !== cv || wz.canal !== "personagem" || wz.passo !== "peMontar") { if (P.midia && P.midia.video) P.midia.video.pause(); return; }
       if (!P.gravando) quadroLogoArroba(cx, 540, P.midia ? (P.midia.video || P.midia.bmp) : null, P); requestAnimationFrame(passo); };
-    if (P.midia && P.midia.video) { P.midia.video.muted = true; P.midia.video.loop = true; P.midia.video.play().catch(() => {}); }
+    if (P.midia && P.midia.video) { const v = P.midia.video; v.muted = true; v.loop = true; if (P.corte != null) { v.pause(); v.currentTime = Math.max(0, P.corte - 0.03); } else v.play().catch(() => {}); }
     passo();
   }
   /** A ferramenta de vídeo é carregada assim que você anexa o vídeo (a criação fica mais rápida) */
@@ -6734,20 +6736,28 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const tela = mk(W, H), ctx = tela.getContext("2d"), cru = mk(W, H), cr = cru.getContext("2d"), base = mk(W, H), bx = base.getContext("2d"), mini = mk(18, 32), mx = mini.getContext("2d", { willReadFrequently: true });
     ctx.imageSmoothingQuality = cr.imageSmoothingQuality = "high";
     const chunk = (a) => new EncodedVideoChunk({ type: a.is_sync ? "key" : "delta", timestamp: Math.round((a.cts * 1e6) / a.timescale), duration: Math.round((a.duration * 1e6) / a.timescale), data: a.data });
-    // 1ª passada (rápida): decodifica só os últimos segundos e mede o brilho de cada quadro, para saber onde o vídeo acaba de verdade
+    // 1ª passada (rápida): decodifica o final e mede o brilho de cada quadro, para saber onde o vídeo acaba de verdade.
+    // Se o final inteiro estiver preto (o YT Create às vezes deixa 5 s ou mais), volta mais e mais até achar imagem.
     let c = n;
-    try {
-      let ini = Math.max(0, n - Math.round(5 * fps)); while (ini > 0 && !amostras[ini].is_sync) ini--;
+    const medir = async (ini) => {
       const luz = []; let e1 = null;
       const d1 = new VideoDecoder({ output: (fr) => { try { mx.drawImage(fr, 0, 0, 18, 32); const d = mx.getImageData(0, 0, 18, 32).data; let y = 0; for (let q = 0; q < d.length; q += 4) y += 0.299 * d[q] + 0.587 * d[q + 1] + 0.114 * d[q + 2]; luz.push(y / (d.length / 4)); } finally { fr.close(); } }, error: (e) => { e1 = e; } });
       d1.configure(dcfg);
       for (let i = ini; i < n && !e1; i++) { d1.decode(chunk(amostras[i])); while (d1.decodeQueueSize > 8 && !e1) await new Promise((ok) => setTimeout(ok, 3)); }
-      await d1.flush(); d1.close();
-      if (!e1 && luz.length > 3) {
-        const cl = luz.slice().sort((x, y) => y - x), rf = cl[Math.floor(cl.length * 0.3)] || 0, ult = luz[luz.length - 1];
-        if (ult < Math.max(24, rf * 0.35)) { // termina escuro: volta até o último quadro claro (no máximo 3 s)
-          let k = luz.length; const lim = Math.max(30, rf * 0.85), minK = Math.max(1, luz.length - Math.round(3 * fps)); while (k > minK && luz[k - 1] < lim) k--;
-          c = Math.max(1, ini + k - (luz.length - (n - ini))); }
+      await d1.flush(); d1.close(); if (e1) throw e1; return luz;
+    };
+    if (P.corte != null) c = Math.max(1, Math.min(n, Math.round(P.corte * fps))); // você escolheu onde o final entra
+    else try {
+      const ESCURO = 26;
+      for (let jan = 5; ; jan *= 2) {
+        let ini = Math.max(0, n - Math.round(jan * fps)); while (ini > 0 && !amostras[ini].is_sync) ini--;
+        const luz = await medir(ini); if (luz.length < 2) break;
+        if (luz[luz.length - 1] >= ESCURO) break; // termina com imagem: não corta nada
+        const claros = luz.filter((y) => y >= ESCURO);
+        if (!claros.length) { if (ini === 0) break; continue; } // tudo preto nessa janela: olha mais pra trás
+        const cl = claros.slice().sort((x, y) => y - x), rf = cl[Math.floor(cl.length * 0.3)], lim = Math.max(ESCURO + 4, rf * 0.85);
+        let k = luz.length; while (k > 1 && luz[k - 1] < lim) k--;
+        c = Math.max(1, n - (luz.length - k)); break;
       }
     } catch (e) { c = n; }
     if (c < fps * 0.8) c = n;
@@ -6778,7 +6788,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       await enc.flush(); enc.close(); if (erro) throw erro;
       const fica = pedacos; let tam = 0; fica.forEach((p) => { tam += p.b.length; });
       const h264 = new Uint8Array(tam); tam = 0; fica.forEach((p) => { h264.set(p.b, tam); tam += p.b.length; });
-      const D = (c / fps).toFixed(3), tot = ((c + nF) / fps).toFixed(3);
+      const D = (c / fps).toFixed(3), tot = ((c + nF) / fps).toFixed(3); if (P.corte == null) P.corteAuto = c / fps;
       await ff.writeFile("v.mp4", new Uint8Array(bruto)); await ff.writeFile("v.h264", h264); await ff.writeFile("a.wav", await audioFechamento(P, c / fps));
       const ent = ["-framerate", String(fps), "-i", "v.h264", "-i", "v.mp4", "-i", "a.wav"], saida = ["-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
       await ff.exec([...ent, "-filter_complex", `[1:a]atrim=end=${D},apad[v0];[v0][2:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "0:v", "-map", "[a]", ...saida]);
@@ -6798,18 +6808,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const ff = await ffPronto(); ff._aviso = null;
     await ff.writeFile("v.mp4", new Uint8Array(await vid.arrayBuffer())); await ff.writeFile("m.png", new Uint8Array(await png.arrayBuffer()));
     // o fechamento entra no último quadro de verdade do vídeo: mede o brilho de cada quadro do final e corta a tela preta (ou o escurecer) do fim
-    try { const ini = Math.max(0, dur - 5), qs = []; let tq = null;
+    if (P.corte != null) dur = Math.max(0.5, Math.min(dur, P.corte)); // você escolheu onde o final entra
+    else try { for (const jan of [5, 1e6]) { const ini = Math.max(0, dur - jan), qs = []; let tq = null;
       ff._log = (m) => { let r = /pts_time:([\d.]+)/.exec(m); if (r) tq = parseFloat(r[1]); r = /YAVG=([\d.]+)/.exec(m); if (r && tq != null) qs.push([tq, parseFloat(r[1])]); };
       await ff.exec(["-ss", ini.toFixed(3), "-i", "v.mp4", "-an", "-vf", "scale=64:-2,signalstats,metadata=print:key=lavfi.signalstats.YAVG", "-f", "null", "-"]);
-      if (qs.length > 3) {
-        const passo = (qs[qs.length - 1][0] - qs[0][0]) / (qs.length - 1) || 1 / 30, claros = qs.map((q) => q[1]).sort((x, y) => y - x), ref = claros[Math.floor(claros.length * 0.3)];
-        // só corta se o vídeo termina escuro; aí volta até onde começou a escurecer
-        const escuro = Math.max(24, 16 + (ref - 16) * 0.35), limite = Math.max(28, 16 + (ref - 16) * 0.8); let i = qs.length;
-        if (qs[qs.length - 1][1] < escuro) while (i > 0 && qs[i - 1][1] < limite) i--;
-        const fim = i > 0 ? ini + qs[i - 1][0] + passo : ini; // logo depois do último quadro claro
-        if (fim > 0.8 && fim < dur + 0.5) dur = Math.min(dur, fim);
-      }
+      if (qs.length < 3 || qs[qs.length - 1][1] >= 26) break; // termina com imagem
+      const claros = qs.filter((q) => q[1] >= 26); if (!claros.length) continue; // tudo preto: olha o vídeo inteiro
+      const passo = (qs[qs.length - 1][0] - qs[0][0]) / (qs.length - 1) || 1 / 30, cl = claros.map((q) => q[1]).sort((x, y) => y - x), ref = cl[Math.floor(cl.length * 0.3)], limite = Math.max(30, 16 + (ref - 16) * 0.85);
+      let i = qs.length; while (i > 1 && qs[i - 1][1] < limite) i--;
+      const fim = ini + qs[i - 1][0] + passo; if (fim > 0.8 && fim < dur + 0.5) dur = Math.min(dur, fim); break; }
     } catch (e) { /* segue com a duração inteira */ } finally { ff._log = null; }
+    if (P.corte == null) P.corteAuto = dur;
     // quadros do fechamento (transparentes) e o áudio extra
     const fc = document.createElement("canvas"); fc.width = 1080; fc.height = H; const fx = fc.getContext("2d");
     for (let i = 0; i < FECHO.quadros; i++) { quadroFechamento(fx, H, i / 30, cam); const b = await new Promise((ok) => fc.toBlob(ok, "image/png")); await ff.writeFile("f" + String(i).padStart(3, "0") + ".png", new Uint8Array(await b.arrayBuffer())); if (aviso) aviso(Math.round((i / FECHO.quadros) * 8)); }
@@ -6891,7 +6900,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); it.fotoLimpa = true; salvarFila(true); toast("Foto do produto refeita: agora copie o prompt"); const y = scrollY; mostrarPasso(); scrollTo(0, y); } catch (err) { toast("Não consegui abrir a foto"); }
       return;
     }
-    if (e.target.id === "peMidia" && e.target.files[0]) {
+    if (e.target.id === "peMidia" && e.target.files[0]) { pe().corte = null; pe().corteAuto = null;
       const arq = e.target.files[0]; if (P.midia && P.midia.url) URL.revokeObjectURL(P.midia.url); P.resultado = null;
       if (arq.type.startsWith("video/")) { ffPronto().catch(() => {}); const url = URL.createObjectURL(arq), v = document.createElement("video"); v.src = url; v.muted = true; v.playsInline = true; v.loop = true; await new Promise((ok) => { v.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 5000); }); P.midia = { tipo: "video", url, video: v }; }
       else { try { P.midia = { tipo: "imagem", bmp: await createImageBitmap(arq) }; } catch (err) { toast("Não consegui abrir a imagem"); return; } }
@@ -6902,6 +6911,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.canal !== "personagem") return; const P = pe();
     if (e.target.id === "peLegenda") { P.legenda = e.target.value; return; }
     if (e.target.id === "peSeloTxt") { P.seloTxt = e.target.value.trim(); P.resultado = null; return; }
+    if (e.target.id === "peCorte") { P.corte = parseFloat(e.target.value); const tx = $("#peCorteTxt"); if (tx) tx.textContent = P.corte.toFixed(1).replace(".", ",") + " s";
+      const v = P.midia && P.midia.video; if (v) { v.pause(); v.currentTime = Math.max(0, P.corte - 0.03); }
+      if (P.resultado) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
     if (e.target.id === "pePrompt") { P.promptEd = e.target.value; const sp = e.target.previousElementSibling; if (sp) sp.textContent = `Prompt (pode editar · ${e.target.value.length}/800)`; return; }
     if (e.target.id === "peLimparTxt") { P.limparTxt = e.target.value; return; }
     if (e.target.id === "peFalaMeio") { P.falaMeio = e.target.value; P.promptEd = null; const pr = promptChamadaPers(P), tt = $("#pePrompt"); if (tt) { tt.value = pr; tt.previousElementSibling.textContent = `Prompt (pode editar · ${pr.length}/800)`; } return; }
@@ -6953,6 +6965,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       try { v.currentTime = 0; v.muted = false; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; } catch (er) { v.muted = true; toast("Não consegui tocar o som"); } return; }
     if (t.closest("#peCopiarLeg")) { if (await copiarTexto($("#peLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
+    { const q = t.closest("[data-pe-corte]"); if (q) { const v = P.midia && P.midia.video, d = v && isFinite(v.duration) ? v.duration : 15;
+      P.corte = q.dataset.peCorte === "auto" ? null : (P.corte != null ? P.corte : Math.min(d, P.corteAuto || d)); P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; } }
     { const q = t.closest("[data-pe-qual]"); if (q) { P.qualidade = q.dataset.peQual; lsPers.gravar("qualidade", P.qualidade); P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; } }
     { const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; } }
     if (t.closest("#peTrocarMus")) { tocarAmostra(""); folhaEst("Música baixinha ao fundo", `<p class="nota">Toque no ▶ para ouvir antes de escolher. Ela entra bem baixinha, sem atrapalhar a fala.</p><div class="lista-mod"><div class="mus-linha${!P.musica ? " on" : ""}"><button type="button" data-pe-escolhe-mus=""><b>Sem música</b><small>só a voz do vídeo</small></button></div>${LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${P.musica === k ? " on" : ""}"><button type="button" data-pe-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`); return; }
