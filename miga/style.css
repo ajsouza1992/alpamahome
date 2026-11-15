@@ -1878,3 +1878,24 @@ svg.ic-mono { width: 20px; height: 20px; flex: none; fill: none; stroke: current
 .ch-musica { align-items: center; }
 .ch-musica .mus-play { flex: none; }
 .ch-musica > span { flex: 1; }
+/* Padrão em todas as telas: prévia menor e os botões de edição logo abaixo (celular);
+   no computador, prévia fixa à esquerda e os controles ao lado, sem precisar rolar */
+.wz-previa canvas { max-height: 46dvh !important; }
+.ka-previa canvas { width: min(100%, 46dvh, 420px); }
+@media (min-width: 960px) {
+  .wz__corpo:has(> .wz-previa), .wz__corpo:has(> .ka-previa) { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); column-gap: 32px; align-items: start; }
+  .wz__corpo:has(> .wz-previa) > *, .wz__corpo:has(> .ka-previa) > * { grid-column: 2; }
+  .wz__corpo:has(> .wz-previa) > .wz-previa, .wz__corpo:has(> .ka-previa) > .ka-previa { grid-column: 1; grid-row: 1 / span 60; position: sticky; top: 24px; align-self: start; margin: 0; }
+  .wz__corpo:has(> .wz-previa) > .btn-previa { grid-column: 1; grid-row: auto; }
+  .wz-previa canvas { max-height: 72vh !important; max-width: 100%; }
+  .ka-previa canvas { width: 100%; }
+}
+@media (min-width: 960px) { .wz__corpo:has(> .wz-previa), .wz__corpo:has(> .ka-previa) { grid-auto-flow: row dense; } }
+/* Carrossel: "Montar com IA" vai para o fim, a prévia e a edição ficam em cima */
+.wz__corpo:has(> .ka-previa) { display: flex; flex-direction: column; }
+.wz__corpo:has(> .ka-previa) > .ka-ia { order: 50; margin-top: 16px; }
+@media (min-width: 960px) { .wz__corpo:has(> .ka-previa) { display: grid; } }
+@media (min-width: 960px) {
+  .wz__corpo:has(> .wz-previa) > .wz-titulo, .wz__corpo:has(> .ka-previa) > .wz-titulo { grid-column: 1 / -1; grid-row: 1; }
+  .wz__corpo:has(> .wz-previa) > .wz-previa, .wz__corpo:has(> .ka-previa) > .ka-previa { grid-row: 2 / span 60; }
+}
