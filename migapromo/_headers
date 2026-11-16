@@ -1,0 +1,9 @@
+/*.html
+  Cache-Control: no-cache
+/
+  Cache-Control: no-cache
+/app/sw.js
+  Cache-Control: no-cache
+/app/*
+  X-Robots-Tag: noindex, nofollow
+  X-Content-Type-Options: nosniff

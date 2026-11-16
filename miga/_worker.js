@@ -12,6 +12,7 @@
  *   POST /api/entrar   { codigo }   → confere o código de acesso (APP_SENHA)
  *
  *   POST /api/afiliado { url }      → troca um link da Shopee pelo seu link de afiliado
+ *   POST /api/descricao { url, nome, categoria } → descrição do produto para a vitrine (Mercado Livre pela API; senão a IA escreve)
  *   GET  /api/catalogo?filtro=moda|beleza|casa|fitness&loja=todas|mercadolivre|shopee&ordem=vendidos|comissao|preco
  *                                   → mais vendidos (APIs oficiais), lista limpa para o app
  *
@@ -253,6 +254,7 @@ async function completarPelaApiML(dados, env) {
       const v = await precoML(idItem, token);
       if (v) { dados.preco = v.preco; if (v.precoAntigo && v.precoAntigo > v.preco) dados.precoAntigo = v.precoAntigo; }
       const r = await getML(`/items/${idItem}`, token);
+      try { const de = await getML(`/items/${idItem}/description`, token); if (de.status === 200 && de.dados && de.dados.plain_text) dados.descricao = limparDescricao(de.dados.plain_text); } catch (e) { /* sem descrição */ }
       if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); Object.assign(dados, extrasML(r.dados)); }
       Object.assign(dados, await notaML(idItem, token));
     } else if (idProduto) {
@@ -266,6 +268,7 @@ async function completarPelaApiML(dados, env) {
       }
       if (preco) { dados.preco = preco; if (antigo && antigo > preco) dados.precoAntigo = antigo; }
       if (!dados.nome && b.name) dados.nome = b.name;
+      if (!dados.descricao) { const sd = (b.short_description && b.short_description.content) || ""; const mf = (b.main_features || []).map((f) => f.text).filter(Boolean).join("\n"); if (sd || mf) dados.descricao = limparDescricao(sd || mf); }
       if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url);
       const bw = b.buy_box_winner || {};
       if (bw.shipping && bw.shipping.free_shipping) dados.freteGratis = true;
@@ -275,6 +278,34 @@ async function completarPelaApiML(dados, env) {
   } catch (e) { /* fica com o que veio da página */ }
   dados.completo = !!(dados.nome && dados.preco && dados.imagem);
   return dados;
+}
+
+/** Descrição do vendedor sem excesso: sem linhas vazias repetidas, sem caixa alta gritando, até 1.200 letras */
+function limparDescricao(t) {
+  return String(t || "").replace(/\r/g, "").split("\n").map((l) => l.trim()).filter((l, i, a) => l || (i > 0 && a[i - 1])).join("\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 1200);
+}
+
+/* ======================= Descrição para a vitrine ======================= */
+const SISTEMA_DESCRICAO = "Você escreve descrições curtas de produtos para a vitrine de achadinhos da Miga Promo: português do Brasil, tom de amiga, claro e honesto. Não invente medidas, materiais ou números que não estejam nos dados. Não fale de preço, frete nem cupom. Sem emojis, sem hashtags, sem links.";
+async function rotaDescricao(request, env) {
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  let b; try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
+  const url = String(b.url || "").trim(), nome = String(b.nome || "").slice(0, 200), cat = String(b.categoria || "").slice(0, 40);
+  let descricao = "", fonte = "";
+  try {
+    if (lojaDaUrl(url) === "mercadolivre" && env.ML_APP_ID && env.ML_SECRET) {
+      let d = await lerCache("produto", url);
+      if (!d || !d.descricao) { d = await extrairProduto(url).catch(() => ({ loja: "mercadolivre", urlFinal: url })); d = await completarPelaApiML(d, env); }
+      if (d && d.descricao) { descricao = d.descricao; fonte = "loja"; }
+    }
+  } catch (e) { /* tenta a IA */ }
+  if (!descricao && nome && env.GEMINI_API_KEY) {
+    try {
+      const r = await chamarGemini([{ role: "user", parts: [{ text: `Produto: ${nome}${cat ? `\nTipo: ${cat}` : ""}\n\nEscreva a descrição deste produto para a vitrine em 2 ou 3 frases curtas (até 320 letras): o que é, para que serve e por que vale a pena. Responda só com a descrição.` }] }], env, SISTEMA_DESCRICAO);
+      descricao = String(r.texto || "").replace(/^["“]|["”]$/g, "").trim().slice(0, 600); fonte = "ia";
+    } catch (e) { return json({ descricao: "", erro: motivoIA(e) }); }
+  }
+  return json({ descricao, fonte });
 }
 
 /* ======================= Mensagem com IA (Gemini) ======================= */
@@ -394,11 +425,11 @@ function umPrecoSo(texto, link) {
 }
 
 /** Chama a API REST do Gemini (systemInstruction + conversa) e devolve o texto gerado */
-async function chamarGemini(contents, env) {
+async function chamarGemini(contents, env, sistema) {
   const modelo = env.GEMINI_MODEL || "gemini-2.5-flash";
   const chave = String(env.GEMINI_API_KEY || "").trim();
   const corpo = JSON.stringify({
-    systemInstruction: { parts: [{ text: INSTRUCAO }] },
+    systemInstruction: { parts: [{ text: sistema || INSTRUCAO }] },
     contents,
     generationConfig: {
       temperature: 0.7,
@@ -878,8 +909,8 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     const metodo = request.method;
-    // Aceita /miga/api/... (site alpama.app) e /api/... (app sozinho num domínio)
-    const m = pathname.match(/^(?:\/miga)?\/api\/([a-z]+)$/);
+    // Aceita /miga/api/... (site alpama.app), /app/api/... (domínio próprio da Miga) e /api/...
+    const m = pathname.match(/^(?:\/miga|\/app)?\/api\/([a-z]+)$/);
     try {
       if (m && m[1] === "produto" && metodo === "POST") return await rotaProduto(request, env);
       if (m && m[1] === "gerar" && metodo === "POST") return await rotaGerar(request, env);
@@ -888,6 +919,7 @@ export default {
       if (m && m[1] === "entrar" && metodo === "POST") return await rotaEntrar(request, env);
       if (m && m[1] === "catalogo" && metodo === "GET") return await rotaCatalogo(request, env);
       if (m && m[1] === "afiliado" && metodo === "POST") return await rotaAfiliado(request, env);
+      if (m && m[1] === "descricao" && metodo === "POST") return await rotaDescricao(request, env);
       if (m) return json({ erro: "Rota não encontrada." }, 404);
     } catch (e) {
       return json({ erro: "Erro no servidor: " + (e.message || e) }, 500);

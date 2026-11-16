@@ -21,6 +21,13 @@ service cloud.firestore {
       allow read, write: if autorizada();
     }
 
+    // Site público (vitrine): qualquer pessoa LÊ só os produtos que você pôs no site (nome, foto, preço, cupom, loja, link, descrição)
+    // e os links do canal/grupo. Só as contas autorizadas gravam. A lista, o histórico e os ajustes continuam fechados.
+    match /vitrine/miga/{documento=**} {
+      allow read: if true;
+      allow write: if autorizada();
+    }
+
     // Pasta antiga de cada conta (só para o app levar os dados para o espaço único)
     match /usuarios/{uid}/{documento=**} {
       allow read, write: if autorizada() && request.auth.uid == uid;

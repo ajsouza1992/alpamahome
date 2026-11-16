@@ -177,3 +177,12 @@ usuarios/{uid}/config/app       → { grupos: [{id, nome, link}], convite, cupon
 - Login com Google para usar em mais de um aparelho.
 - Agendar mensagens / fila de envio.
 - Variações de mensagem (A/B) e estatísticas de cliques.
+
+## Site público (vitrine)
+
+- Endereço: `https://alpama.app/miga/vitrine/` (página separada do app, sem login; não carrega o app).
+- O que aparece: só os produtos que você põe no site pelo app (Lista → Selecionar → Continuar → **Pôr no site**, ou nos 3 pontinhos → **Pôr no site / Tirar do site**).
+- Onde fica: Firestore `vitrine/miga` (links do canal, do grupo e o Instagram) e `vitrine/miga/produtos/{id}` (nome, foto, preço, cupom, loja, link de afiliado, tipo, para quem e descrição). A lista, o histórico e os ajustes continuam em `espacos/miga`, fechados.
+- Regras: o bloco `match /vitrine/miga/{documento=**}` do `firestore.rules` (leitura pública, gravação só das contas autorizadas) precisa estar publicado no Firebase.
+- Descrição: Mercado Livre pela API oficial (rota `/api/descricao`); nas outras lojas a IA (Gemini) escreve um texto curto. Dá para editar antes de publicar.
+- Mudou o preço, a foto ou o cupom no app: o site acompanha sozinho. Excluiu o produto da Lista: ele sai do site.

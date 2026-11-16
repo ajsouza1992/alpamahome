@@ -181,7 +181,7 @@
     if (tipo === "copia" && !/copiar|copiado/.test(rot)) return; // Postar, Gerar etc. ficam como estão (o aviso aparece em cima)
     if (tipo === "baixa" && !/baixar|baixado|salvar imagem|salvar v/.test(rot)) return;
     const alvo = [...b.childNodes].reverse().find((n) => n.nodeType === 3 && n.textContent.trim()) || (b.children.length ? null : b);
-    if (alvo) alvo.textContent = tipo === "baixa" ? "Baixado" : /link/.test(rot) ? "Link copiado" : "Copiado";
+    if (alvo) alvo.textContent = tipo === "baixa" ? "Baixado" : /link/.test(rot) && b.id !== "wzCopiarAdesivo" ? "Link copiado" : "Copiado";
     b.classList.add("copiado");
   }
   const marcarCopiado = () => marcarFeito("copia");
@@ -348,7 +348,13 @@
       lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), cupomInfo: ls.lerJson("miga_cupom_info", {}), instagram: ls.ler("miga_instagram") || "", prompts: ls.lerJson("miga_prompts", {}) }),
       gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_cupom_info", JSON.stringify(c.cupomInfo || {})); ls.gravar("miga_instagram", c.instagram || ""); ls.gravar("miga_prompts", JSON.stringify(c.prompts || {})); },
       lerFila: async () => ls.lerJson("miga_fila", []),
-      gravarFila: async (l) => { ls.gravar("miga_fila", JSON.stringify(l)); }
+      gravarFila: async (l) => { ls.gravar("miga_fila", JSON.stringify(l)); },
+      // Vitrine (site público): no modo local fica só neste navegador
+      vitrineListar: async () => Object.values(ls.lerJson("miga_vitrine", {})),
+      vitrineSalvar: async (p) => { const m = ls.lerJson("miga_vitrine", {}); m[p.id] = p; ls.gravar("miga_vitrine", JSON.stringify(m)); },
+      vitrineApagar: async (id) => { const m = ls.lerJson("miga_vitrine", {}); delete m[id]; ls.gravar("miga_vitrine", JSON.stringify(m)); },
+      vitrineLerConfig: async () => ls.lerJson("miga_vitrine_cfg", {}),
+      vitrineGravarConfig: async (c) => { ls.gravar("miga_vitrine_cfg", JSON.stringify(c)); }
     };
   })();
 
@@ -397,10 +403,17 @@
         }
         for (const id of [...salvos.keys()]) if (!ids.has(id)) tarefas.push(fs.deleteDoc(fs.doc(colLista(), id)).then(() => salvos.delete(id)));
         await Promise.all(tarefas);
-      }
+      },
+      // Vitrine (site público): vitrine/miga = canal, grupo e Instagram; vitrine/miga/produtos/{id} = só o que aparece no site
+      vitrineListar: async () => (await fs.getDocs(fs.collection(db, "vitrine", "miga", "produtos"))).docs.map((d) => d.data()),
+      vitrineSalvar: (p) => fs.setDoc(fs.doc(db, "vitrine", "miga", "produtos", p.id), p),
+      vitrineApagar: (id) => fs.deleteDoc(fs.doc(db, "vitrine", "miga", "produtos", id)),
+      vitrineLerConfig: async () => { const d = await fs.getDoc(fs.doc(db, "vitrine", "miga")); return d.exists() ? d.data() : {}; },
+      vitrineGravarConfig: (c) => fs.setDoc(fs.doc(db, "vitrine", "miga"), { ...c, atualizadoEm: Date.now() }, { merge: true })
     };
   }
   let dados = local;
+  let vitrineMap = new Map(), vitrineCfg = {}; // produtos no site (vitrine)
 
   /* =========================== Entrada (só com Google) =========================== */
   // Só contas Google autorizadas (regras do Firestore e lista do servidor) abrem o app.
@@ -477,6 +490,7 @@
     ls.gravar(marca, "1");
     if (novos.length || hist.length) toast(`Pronto: ${novos.length} ${novos.length === 1 ? "produto foi" : "produtos foram"} para a nuvem`);
   }
+  let entrarPorRedirecionamento = false;
   $("#entrarGoogleEntrada").addEventListener("click", async () => {
     if (!conta.fb) { toast("A nuvem (Firebase) não está configurada"); return; }
     const { auth, a } = conta.fb, prov = new auth.GoogleAuthProvider();
@@ -484,12 +498,14 @@
     carregandoEntrada(true);
     try {
       if (a.currentUser && a.currentUser.isAnonymous) await auth.signOut(a);
+      if (entrarPorRedirecionamento) { await auth.signInWithRedirect(a, prov); return; } // abre o Google na mesma tela e volta para o app
       await auth.signInWithPopup(a, prov);
       await abrirComConta();
     } catch (e) {
       aviso($("#avisoEntrada"), e.code === "auth/operation-not-allowed" ? "Ative o login com Google no Firebase (Authentication → Método de login → Google)."
         : e.code === "auth/unauthorized-domain" ? "Autorize este endereço no Firebase (Authentication → Configurações → Domínios autorizados)."
-        : e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request" ? "Login cancelado." : "Não consegui entrar: " + (e.code || e.message));
+        : e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request" || e.code === "auth/popup-blocked" ? "A janela do Google fechou antes de terminar. Toque de novo: agora o Google abre nesta mesma tela." : "Não consegui entrar: " + (e.code || e.message));
+      if (/popup/.test(e.code || "")) entrarPorRedirecionamento = true; // na próxima tentativa, sem janela separada
     }
     carregandoEntrada(false);
   });
@@ -502,6 +518,7 @@
       if (!config.fila.length && config.filaAntiga && config.filaAntiga.length) { config.fila = config.filaAntiga; await dados.gravarFila(config.fila); }
     } catch (e) { config.fila = config.fila || []; toast("Não consegui carregar a lista: " + (e.code || e.message)); }
     delete config.filaAntiga;
+    carregarVitrine();
     // Ao ligar a conta Google: junta a lista que estava neste aparelho
     if (listaDoAparelho && listaDoAparelho.length) {
       const links = new Set(config.fila.map((i) => i.link));
@@ -533,7 +550,7 @@
         await auth.signInWithCredential(a, cred);
       } else {
         toast(e.code === "auth/operation-not-allowed" ? "Ative o login com Google no Firebase (Authentication → Método de login → Google)"
-          : e.code === "auth/unauthorized-domain" ? "Autorize o domínio alpama.app no Firebase (Authentication → Configurações)"
+          : e.code === "auth/unauthorized-domain" ? `Autorize o domínio ${location.hostname} no Firebase (Authentication → Configurações → Domínios autorizados)`
           : e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request" ? "Login cancelado"
           : "Não consegui entrar com o Google: " + (e.code || e.message));
         return;
@@ -580,6 +597,7 @@
     mostrarEntrada(true);
     try {
       await iniciarFirebase();
+      try { await conta.fb.auth.getRedirectResult(conta.fb.a); } catch (e) { if (e && e.code && e.code !== "auth/no-auth-event") console.warn("login (redirecionamento)", e.code); } // volta do "outro jeito" de entrar
       const u = await usuarioAtual();
       if (u && !u.isAnonymous) await abrirComConta(); else pedirGoogle();
     } catch (e) { pedirGoogle(erroFirebase(e)); }
@@ -952,7 +970,7 @@
     const conf = d.configurado || {};
     if (!conf.mercadolivre && !conf.shopee) {
       $("#catalogo").innerHTML = `<div class="conectar"><strong>Catálogo ainda não conectado</strong>
-        <span>Para os mais vendidos aparecerem aqui, cadastre as chaves das lojas no Cloudflare (projeto alpama → Configurações → Variáveis e segredos):</span>
+        <span>Para os mais vendidos aparecerem aqui, cadastre as chaves das lojas no Cloudflare (seu projeto → Configurações → Variáveis e segredos):</span>
         <ol><li><b>Mercado Livre:</b> ML_APP_ID e ML_SECRET</li><li><b>Shopee:</b> SHOPEE_APP_ID e SHOPEE_SECRET</li></ol>
         <span>Depois faça uma nova implantação.</span></div>`;
       return;
@@ -1292,7 +1310,7 @@
     desenharCard();
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
     if (!edMarca) {
-      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=285"; });
+      edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=284"; });
     }
     edFoto = null;
     try {
@@ -1374,7 +1392,9 @@
     creme: { tipo: "creme", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.35)", bola2: "rgba(255,255,255,.75)", guia: "#d8c99a" },
     rosa: { tipo: "rosa", texto: "#ffffff", destaque: "#ffd23f", sub: "#ffe3ec", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.8)", bola1: "rgba(255,255,255,.9)", bola2: "rgba(255,255,255,.95)", guia: "rgba(255,255,255,.7)" },
     preto: { tipo: "preto", fundoCor: "#1d1d1f", texto: "#ffffff", destaque: "#ffd23f", sub: "#d6d0c6", pill: "#ffd23f", pillTexto: "#1d1d1f", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#ffd23f", antigo: "rgba(255,255,255,.7)", bola1: "rgba(232,51,109,.85)", bola2: "#e9e4d8", guia: "rgba(255,255,255,.6)" },
-    branco: { tipo: "branco", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#fff8e4", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.3)", bola2: "#efeae0", guia: "#d8c99a" }
+    branco: { tipo: "branco", texto: "#1d1d1f", destaque: "#e8336d", sub: "#6f6862", pill: "#e8336d", pillTexto: "#ffffff", cartao: "#fff8e4", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#e8336d", antigo: "#8a817b", bola1: "rgba(255,210,63,.3)", bola2: "#efeae0", guia: "#d8c99a" },
+    rose: { tipo: "rose", fundoCor: "#f6c9d3", texto: "#1d1d1f", destaque: "#b0124a", sub: "#6b3a48", pill: "#b0124a", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#b0124a", antigo: "#6b3a48", bola1: "rgba(255,255,255,.7)", bola2: "#ffffff", guia: "rgba(107,58,72,.4)" },
+    verde: { tipo: "verde", fundoCor: "#cdebd5", texto: "#1d1d1f", destaque: "#1f7a4d", sub: "#4f6b5a", pill: "#1f7a4d", pillTexto: "#ffffff", cartao: "#ffffff", cartaoTexto: "#1d1d1f", cartaoSub: "#6f6862", preco: "#1f7a4d", antigo: "#4f6b5a", bola1: "rgba(255,255,255,.7)", bola2: "#ffffff", guia: "rgba(31,122,77,.4)" }
   };
   const arroba = (v) => { const t = String(v || "").trim().replace(/^@+/, "").replace(/\s+/g, ""); return t ? "@" + t : ""; };
   // Título digitado: uma linha por linha; *trecho* fica em destaque
@@ -1663,7 +1683,7 @@
   }
   async function carregarMarca() {
     await carregarLogosLojas();
-    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=285"; });
+    if (!edMarca) edMarca = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = "logo.png?v=284"; });
     try { await Promise.all(["800 40px Poppins", "700 40px Poppins", "600 30px Poppins", "500 30px Poppins"].map((f) => document.fonts.load(f))); } catch (e) { /* segue */ }
   }
   async function fotoDoProdutoAtual() {
@@ -1770,7 +1790,7 @@
     clearTimeout(ppSalvarTimer);
     const ir = async () => {
       contarFila();
-      try { await dados.gravarFila(fila().filter((i) => !i.carregando).map(({ carregando, ...i }) => i)); }
+      try { await dados.gravarFila(fila().filter((i) => !i.carregando).map(({ carregando, ...i }) => i)); sincronizarVitrine(); }
       catch (e) { toast("Não consegui salvar a lista na nuvem: " + (e.code || e.message)); }
     };
     if (logo) ir(); else ppSalvarTimer = setTimeout(ir, 600);
@@ -1904,21 +1924,22 @@
   const marcaBusca = (txt) => { const s = esc(txt); const t = termoBusca.trim(); if (!t || ehLink(t)) return s; let out = s;
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
-  $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value); config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
+  $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value);
+    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), instagram: config.instagram || "" }; if (JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
   /* Prompts editáveis (Ajustes) */
   function pintarAjPrompts() {
     $("#ajPrompts").innerHTML = Object.entries(PROMPTS_PADRAO).map(([k, d]) => { const v = modeloPrompt(k), mudou = (config.prompts || {})[k] != null;
       return `<details class="aj-prompt"><summary><b>${esc(d.nome)}</b>${mudou ? '<small>editado</small>' : ""}<span class="aj-prompt__ver">Mostrar</span></summary>
         <p class="nota">Chaves: ${esc(d.chaves)}</p>
-        <textarea data-aj-prompt="${k}" rows="8" maxlength="800">${esc(v)}</textarea>
-        <div class="aj-prompt__rod"><span data-aj-cont="${k}">${v.length}/800</span><button type="button" class="btn btn--branco" data-aj-restaurar="${k}">Restaurar</button><button type="button" class="btn btn--rosa" data-aj-salvar-prompt="${k}">Salvar</button></div></details>`; }).join("");
+        <textarea data-aj-prompt="${k}" rows="8"${VIDEO_PROMPT.has(k) ? ` maxlength="${LIMITE_PROMPT}"` : ""}>${esc(v)}</textarea>
+        <div class="aj-prompt__rod"><span data-aj-cont="${k}">${VIDEO_PROMPT.has(k) ? `${v.length}/${LIMITE_PROMPT}` : `${v.length} caracteres`}</span><button type="button" class="btn btn--branco" data-aj-restaurar="${k}">Restaurar</button><button type="button" class="btn btn--rosa" data-aj-salvar-prompt="${k}">Salvar</button></div></details>`; }).join("");
   }
   $("#ajPrompts").addEventListener("toggle", (e) => { const d = e.target; if (d.matches && d.matches(".aj-prompt")) d.querySelector(".aj-prompt__ver").textContent = d.open ? "Ocultar" : "Mostrar"; }, true);
-  $("#ajPrompts").addEventListener("input", (e) => { const k = e.target.dataset && e.target.dataset.ajPrompt; if (k) $(`[data-aj-cont="${k}"]`).textContent = `${e.target.value.length}/800`; });
+  $("#ajPrompts").addEventListener("input", (e) => { const k = e.target.dataset && e.target.dataset.ajPrompt; if (k) $(`[data-aj-cont="${k}"]`).textContent = VIDEO_PROMPT.has(k) ? `${e.target.value.length}/${LIMITE_PROMPT}` : `${e.target.value.length} caracteres`; });
   $("#ajPrompts").addEventListener("click", async (e) => {
     const sv = e.target.closest("[data-aj-salvar-prompt]"), rs = e.target.closest("[data-aj-restaurar]"); if (!sv && !rs) return;
     const k = (sv || rs).dataset[sv ? "ajSalvarPrompt" : "ajRestaurar"]; config.prompts = { ...(config.prompts || {}) };
-    if (sv) { const v = $(`[data-aj-prompt="${k}"]`).value.trim().slice(0, 800); if (v && v !== PROMPTS_PADRAO[k].txt) config.prompts[k] = v; else delete config.prompts[k]; }
+    if (sv) { const v0 = $(`[data-aj-prompt="${k}"]`).value.trim(), v = VIDEO_PROMPT.has(k) ? v0.slice(0, LIMITE_PROMPT) : v0; if (v && v !== PROMPTS_PADRAO[k].txt) config.prompts[k] = v; else delete config.prompts[k]; }
     else { if (!(await confirmar({ titulo: "Restaurar o prompt?", texto: "Volta para o texto original do app.", ok: "Restaurar" }))) return; delete config.prompts[k]; }
     await gravarConfig(); const aberto = k; pintarAjPrompts(); const d = $(`[data-aj-prompt="${aberto}"]`); if (d) d.closest("details").open = true;
     toast(sv ? "Prompt salvo" : "Prompt restaurado");
@@ -1954,7 +1975,7 @@
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           ${i.precoNovo ? `<span class="pp-preco">${brl(i.precoNovo)}${i.precoAntigo && i.precoAntigo > i.precoNovo ? `<s>${brl(i.precoAntigo)}</s>` : ""}</span>` : ""}
-          <span class="meta">${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
+          <span class="meta">${vitrineMap.has(i.id) ? '<b class="pp-nosite">No site</b> ' : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
           ${i.obs && i.obsManual ? `<span class="pp-obs">${marcaBusca(i.obs)}</span>` : ""}
           ${post ? `<span class="pp-onde">${onde.length ? esc(onde.join(", ")) + " · " : ""}${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
@@ -2027,6 +2048,7 @@
       if (d.imagem) item.imagem = d.imagem;
       if (d.urlFinal) item.urlFinal = d.urlFinal;
       Object.assign(item, extrasDe(d)); if (d.diag) item.diag = d.diag; else delete item.diag;
+      if (d.descricao && !item.descricao) item.descricao = d.descricao;
       if (d.linkAfiliado && d.linkAfiliado !== item.link) { item.linkOriginal = item.link; item.link = d.linkAfiliado; toast("Link trocado pelo seu link de afiliado da Shopee"); }
       // O link encurtado levou a um produto que já está na lista
       const repetido = fila().find((i) => i !== item && mesmoProduto(i, item.urlFinal || item.link));
@@ -2182,13 +2204,15 @@
     ["roteiro", "Postar", "Story, Status, grupos, canal e feed. Com vários, um produto depois do outro", (n) => n >= 1, "Marque pelo menos 1 produto."],
     ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
     ["livre", "Imagem", "Arte com o produto, ou montagem com vários", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."],
-    ["carrossel", "Carrossel de preços", "Capa no tema e um slide de preço para cada produto", (n) => n >= 1 && n <= 8, "Marque de 1 a 8 produtos."]
+    ["carrossel", "Carrossel de preços", "Capa no tema e um slide de preço para cada produto", (n) => n >= 1 && n <= 8, "Marque de 1 a 8 produtos."],
+    ["site", "Pôr no site", "Vitrine pública com filtros, que leva para a loja pelo seu link", (n) => n >= 1, "Marque pelo menos 1 produto."]
   ];
   $("#bsAcoes").addEventListener("click", (e) => {
     const b = e.target.closest("[data-criar]"); if (!b) return;
     const n = itensMarcados().length, o = OPCOES_CRIAR.find((q) => q[0] === b.dataset.criar);
     if (!n) { toast("Toque nos produtos primeiro"); return; }
     if (!o[3](n)) { toast(`${o[1]}: ${o[4]}`); return; }
+    if (b.dataset.criar === "site") { abrirPorNoSite(itensMarcados()); return; }
     criarAPartirDaLista(n === 1 && b.dataset.criar === "livre" ? "instagram" : b.dataset.criar, itensMarcados());
   });
   $("#bsCampanha").addEventListener("click", async () => {
@@ -2215,21 +2239,22 @@
   $("#folhaCriarOps").addEventListener("click", (e) => {
     const b = e.target.closest("[data-criar]"); if (!b || b.disabled) return;
     $("#folhaCriar").close();
+    if (b.dataset.criar === "site") { abrirPorNoSite(itensMarcados()); return; }
     const l = itensMarcados(); criarAPartirDaLista(l.length === 1 && b.dataset.criar === "livre" ? "instagram" : b.dataset.criar, l);
   });
   function criarAPartirDaLista(canal, l, camp) {
     if (!l.length) return;
     const ids = l.map((x) => x.id), C = CAMPANHAS[camp === undefined ? campanhaEscolhida : camp] || null;
     wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), idx: 0, res: {}, lugares: lugaresSalvos() };
-    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true }; wz.passo = "rModelo"; }
-    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.passo = "kCarrossel"; }
+    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true }; wz.reels.modelo = (CAMPANHAS[wz.camp] ? "achadinho" : modeloAutomatico(l[0])); wz.passo = ids.length > 1 ? "rOrdem" : "rModelo"; }
+    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.reels.modelo = CAMPANHAS[wz.camp] ? "achadinho" : modeloAutomatico(l[0]); wz.passo = ids.length > 1 ? "rOrdem" : "kCarrossel"; }
     else if (canal === "video") { usarProdutoNoVideo(l[0]); const V = vd(); V.iniciado = true; if (C) { V.titulo = C.titulo; V.cor = C.cor; } if (!V.modelo) { V.modelo = "achadinho"; V.titulo = V.titulo || MODELOS_REELS.achadinho.titulo; } wz.passo = "vArquivo"; }
     else if (canal === "livre") {
       const L = livre(); L.itens = l.slice(0, 6).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
       if (C) L.titulo = C.titulo;
       L.n = [2, 3, 4, 6].find((q) => q >= L.itens.length) || 6; wz.passo = "grade";
     } else if (canal === "instagram") { wz.passo = "montagem"; }
-    else { wz.passo = "lugares"; wz.filaRoteiro = ids.length > 1 ? ids : null; if (C) l.forEach((it) => { if (!it.textoEditado) it.texto = ""; }); }
+    else { wz.passo = "lugares"; wz.rapido = true; wz.mov = movSalvo(); wz.filaRoteiro = ids.length > 1 ? ids : null; if (C) l.forEach((it) => { if (!it.textoEditado) it.texto = ""; }); }
     marcados.clear(); modoVarios = false;
     irPara("criar"); mostrarPasso();
   }
@@ -2271,20 +2296,92 @@
     $("#folhaItemSub").textContent = [it.precoNovo && brl(it.precoNovo), NOME_LOJA[it.loja], NOME_CAT[it.categoria || "outros"], post && "postado"].filter(Boolean).join(" · ");
     $("#folhaItemCriar").hidden = modo !== "criar"; $("#folhaItemOps").hidden = modo === "criar";
     $("#folhaItemCriar").innerHTML = `<button type="button" class="fi-principal" data-fi="roteiro"><svg><use href="#i-enviar"/></svg>Postar</button><div class="fi-grade">` + ACOES_ITEM.map(([k, n, ic]) => `<button type="button" class="fi-acao" data-fi="${k}"><svg><use href="#${ic}"/></svg>${n}</button>`).join("") + "</div>";
-    $("#folhaItemOps").innerHTML = `<button type="button" class="fi-op" data-fi="editar"><svg><use href="#i-lapis"/></svg>Editar</button>${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}<button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
+    $("#folhaItemOps").innerHTML = `<button type="button" class="fi-op" data-fi="editar"><svg><use href="#i-lapis"/></svg>Editar</button>${it.imagem ? `<button type="button" class="fi-op" data-fi="baixarimg"><svg><use href="#i-baixar"/></svg>Baixar imagem</button>` : ""}${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}${vitrineMap.has(it.id) ? `<button type="button" class="fi-op" data-fi="tirarsite"><svg><use href="#i-loja"/></svg>Tirar do site</button>` : `<button type="button" class="fi-op" data-fi="porsite"><svg><use href="#i-loja"/></svg>Pôr no site</button>`}<button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
     $("#folhaItem").showModal();
+  }
+  /* ======================= Vitrine (site público com os produtos que você publica) ======================= */
+  // O site (miga/vitrine/) só lê vitrine/miga: nome, foto, preço, cupom, loja, link, tipo, para quem e descrição. Nada da lista nem dos ajustes.
+  const PARA_SITE = { mulher: "Mulher", crianca: "Criança", casa: "Casa" };
+  // No alpama.app a vitrine fica em /miga/vitrine/; no domínio próprio da Miga ela é a página inicial (e o app fica em /app/)
+  const urlVitrine = () => (location.pathname.startsWith("/miga/") ? new URL("vitrine/", location.href.split("#")[0].split("?")[0].replace(/[^/]*$/, "")).href : location.origin + "/");
+  function paraQuemDe(it) {
+    const n = String(it.nome || "").toLowerCase();
+    if (/infantil|crian[çc]a|beb[eê]|kids|menin[oa]s?\b|juvenil/.test(n)) return "crianca";
+    if (it.categoria === "casa" || /cozinha|panela|organizador|decora|toalha|len[çc]ol|tapete|lumin[aá]ria|travesseiro|edredom|cortina/.test(n)) return "casa";
+    return "mulher";
+  }
+  /** Só o que aparece no site */
+  function produtoSite(it, para, descricao, antes) {
+    const img = String(it.imagem || ""), imgOk = img && (!img.startsWith("data:") || img.length < 600000) ? img : "";
+    return { id: it.id, nome: limparNome(it.nome || ""), preco: it.precoNovo || null, precoAntigo: it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? it.precoAntigo : null,
+      cupom: it.cupom ? String(it.cupom).toUpperCase() : "", loja: it.loja || "", link: it.link || "", imagem: imgOk, tipo: it.categoria || "outros", para: PARA_SITE[para] ? para : "mulher",
+      descricao: String(descricao || "").slice(0, 1200), publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
+  }
+  async function carregarVitrine() {
+    try { const l = await dados.vitrineListar(); vitrineMap = new Map(l.map((p) => [p.id, p])); } catch (e) { /* segue */ }
+    try { vitrineCfg = (await dados.vitrineLerConfig()) || {}; } catch (e) { vitrineCfg = {}; }
+    renderFila();
+  }
+  /** Mudou o preço, a foto ou o cupom no app: o site acompanha */
+  function sincronizarVitrine() {
+    for (const it of fila()) { const v = vitrineMap.get(it.id); if (!v || it.carregando) continue;
+      const novo = produtoSite(it, v.para, v.descricao, v), muda = ["nome", "preco", "precoAntigo", "cupom", "loja", "link", "imagem", "tipo"].some((k) => (novo[k] || "") !== (v[k] || ""));
+      if (muda) { vitrineMap.set(it.id, novo); dados.vitrineSalvar(novo).catch(() => {}); } }
+  }
+  let vsSel = null;
+  function abrirPorNoSite(l) {
+    l = l.filter((i) => !i.carregando && i.link); if (!l.length) { toast("Escolha produtos com link"); return; }
+    vsSel = { ids: l.map((i) => i.id), para: {}, desc: {} };
+    l.forEach((i) => { const v = vitrineMap.get(i.id); vsSel.para[i.id] = v ? v.para : paraQuemDe(i); vsSel.desc[i.id] = v && v.descricao ? v.descricao : i.descricao || ""; });
+    pintarPorNoSite();
+    l.forEach(async (i) => { if (vsSel.desc[i.id]) return;
+      try { const d = await api("descricao", { url: i.link, nome: limparNome(i.nome || ""), categoria: NOME_CAT[i.categoria] || "" });
+        if (d.descricao && vsSel && !vsSel.desc[i.id]) { vsSel.desc[i.id] = d.descricao; i.descricao = d.descricao; salvarFila(); const ta = document.querySelector(`[data-vs-desc="${i.id}"]`); if (ta && !ta.value.trim()) ta.value = d.descricao; } }
+      catch (e) { /* escreve à mão */ } finally { const ta = document.querySelector(`[data-vs-desc="${i.id}"]`); if (ta) ta.placeholder = "Escreva uma descrição curta (opcional)"; } });
+  }
+  function pintarPorNoSite() {
+    const l = vsSel.ids.map((id) => fila().find((i) => i.id === id)).filter(Boolean);
+    folhaEst(`Pôr no site · ${l.length}`, `<p class="nota">O app escolhe para quem pelo nome do produto. Confira e publique: aparece na hora no site.</p>
+      ${l.map((i) => `<div class="vs-item"><div class="vs-cab">${fotoMini(i)}<span><b>${esc(limparNome(i.nome || "Produto"))}</b><small>Tipo: ${esc(NOME_CAT[i.categoria] || "Outros")} · ${esc(NOME_LOJA[i.loja] || "Loja")}${i.cupom ? " · cupom " + esc(String(i.cupom).toUpperCase()) : ""}${vitrineMap.has(i.id) ? " · já está no site" : ""}</small></span></div>
+        <div class="pe-seg vs-para">${Object.entries(PARA_SITE).map(([k, n]) => `<button type="button" data-vs-para="${esc(i.id)}:${k}" class="${vsSel.para[i.id] === k ? "on" : ""}">${n}</button>`).join("")}</div>
+        <label class="ka2-campo"><span>Descrição (aparece no site)</span><textarea data-vs-desc="${esc(i.id)}" rows="3" maxlength="1200" placeholder="${vsSel.desc[i.id] ? "" : "Buscando a descrição…"}">${esc(vsSel.desc[i.id] || "")}</textarea></label></div>`).join("")}
+      <button type="button" class="btn btn--rosa" id="vsPublicar">Publicar no site</button>`);
+  }
+  $("#folhaEst").addEventListener("click", async (e) => {
+    if (!vsSel) return; const t = e.target;
+    const pq = t.closest("[data-vs-para]"); if (pq) { const [id, k] = pq.dataset.vsPara.split(":"); vsSel.para[id] = k; pq.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === pq)); return; }
+    if (t.closest("#vsPublicar")) { const b = t.closest("#vsPublicar"); b.disabled = true; b.textContent = "Publicando…";
+      document.querySelectorAll("[data-vs-desc]").forEach((ta) => { vsSel.desc[ta.dataset.vsDesc] = ta.value.trim(); });
+      const l = vsSel.ids.map((id) => fila().find((i) => i.id === id)).filter(Boolean); let ok = 0;
+      for (const i of l) { const p = produtoSite(i, vsSel.para[i.id], vsSel.desc[i.id], vitrineMap.get(i.id)); try { await dados.vitrineSalvar(p); vitrineMap.set(i.id, p); ok++; } catch (err) { console.warn(err); } }
+      vsSel = null; $("#folhaEst").close(); if (modoVarios) sairModoVarios(); renderFila();
+      toast(ok === l.length ? `${ok} ${ok === 1 ? "produto publicado" : "produtos publicados"} no site` : ok ? `${ok} de ${l.length} publicados. Tente de novo os outros.` : "Não consegui publicar. Confira as regras do Firestore (vitrine).");
+    }
+  });
+  $("#folhaEst").addEventListener("input", (e) => { if (vsSel && e.target.dataset && e.target.dataset.vsDesc) vsSel.desc[e.target.dataset.vsDesc] = e.target.value; });
+  $("#folhaEst").addEventListener("close", () => { vsSel = null; });
+  async function tirarDoSite(it) {
+    try { await dados.vitrineApagar(it.id); vitrineMap.delete(it.id); renderFila(); toast("Saiu do site"); } catch (e) { toast("Não consegui tirar do site"); }
   }
   async function excluirProduto(it) {
     if (!(await confirmar({ titulo: "Excluir este produto?", texto: `“${limparNome(it.nome || "Produto")}” sai da lista.`, ok: "Excluir" }))) return false;
     config.fila = fila().filter((i) => i !== it); if (it.histId) dados.apagar(it.histId).catch(() => {});
+    if (vitrineMap.has(it.id)) { vitrineMap.delete(it.id); dados.vitrineApagar(it.id).catch(() => {}); }
     if (ppAtual === it) fecharItemFila(true);
     salvarFila(true); renderFila(); contarFila(); if (!$("#aba-inicio").hidden) renderInicio(); toast("Produto excluído"); return true;
   }
   $("#folhaItem").addEventListener("click", async (e) => {
+    const rp = e.target.closest("[data-fi-rp]"); if (rp && itemMenu) { $("#folhaItem").close(); postarRapido(itemMenu, rp.dataset.fiRp); return; }
     const b = e.target.closest("[data-fi]"); const it = itemMenu; if (!b || !it) return;
     const k = b.dataset.fi; $("#folhaItem").close();
     if (k === "editar") { irPara("postar"); abrirItemFila(it); ppEditando = true; $("#ppSalvar").hidden = false; $("#ppSalvar").textContent = "Salvar alterações"; return; }
     if (k === "excluir") { excluirProduto(it); return; }
+    if (k === "porsite") { abrirPorNoSite([it]); return; }
+    if (k === "tirarsite") { tirarDoSite(it); return; }
+    if (k === "baixarimg") { toast("Baixando a imagem…"); let arq = null; try { arq = await converterImagem(await arquivoDaImagem(it.imagem), "image/jpeg"); } catch (err) { arq = null; }
+      if (!arq) { toast("Não consegui baixar a imagem deste produto"); return; }
+      const jpg = arq.type === "image/jpeg"; baixarBlob(arq, jpg ? nomeArquivo(it.nome) : nomeArquivo(it.nome).replace(/\.jpg$/, "." + ((arq.type || "").split("/")[1] || "img")));
+      toast("Imagem salva"); return; }
     if (k === "restaurar") { restaurarNaLista([it.id]); return; }
     if (k === "link") { if (it.link) window.open(it.link, "_blank", "noopener"); return; }
     if (k === "ia") { abrirKitIA(it); return; }
@@ -2362,7 +2459,7 @@
     $("#ppSeloLoja").innerHTML = it && LOGO_LOJA[it.loja] ? (it.link ? `<a class="selo-link" href="${esc(it.link)}" target="_blank" rel="noopener" data-abrir-link title="Abrir na ${esc(NOME_LOJA[it.loja])}">${seloLojaHtml(it.loja)}</a>` : seloLojaHtml(it.loja)) : "";
   }
   function abrirItemFila(item, pedirFalta) {
-    ppAtual = item;
+    ppAtual = item; $("#ppDescartar").hidden = true; document.querySelector(".pp-postar").hidden = false;
     $("#ppListaBloco").hidden = !ehPC(); $("#ppItem").hidden = false; if (ehPC()) renderFila();
     mostrarFotoPp();
     $("#ppNome").value = item.nome || "";
@@ -2375,6 +2472,7 @@
     $("#ppLinkItem").value = item.link || "";
     ppCategoria.marcar(item.categoria || "outros"); pintarCatPp(item.categoria || "outros");
     mostrarFalta(pedirFalta);
+    ajustarObs();
     ppEditando = false; $("#ppSalvar").hidden = !modoCompletar && !ppNovo; if (!ppNovo) { $("#ppNovoTopo").hidden = true; $("#ppSalvar").textContent = "Próximo para completar →"; } pintarCampanhaBotoes(); pintarMarcados();
     if (!ehPC()) window.scrollTo({ top: 0 });
   }
@@ -2441,7 +2539,14 @@
   function abrirNovoProduto(item) {
     ppNovo = true; irPara("postar"); abrirItemFila(item, true);
     $("#ppNovoTopo").hidden = false; $("#ppSalvar").hidden = false; $("#ppSalvar").textContent = "Salvar produto";
+    $("#ppDescartar").hidden = false; document.querySelector(".pp-postar").hidden = true; // produto novo: Salvar ou Descartar
   }
+  /** Produto novo que veio sem foto/dados e você não quer editar: descarta (sai da lista) */
+  $("#ppDescartar").addEventListener("click", () => {
+    const it = ppAtual; if (!it) return;
+    config.fila = fila().filter((i) => i !== it); salvarFila(true);
+    ppNovo = false; $("#ppNovoTopo").hidden = true; fecharItemFila(true); contarFila(); toast("Produto descartado");
+  });
   $("#ppSalvar").addEventListener("click", () => {
     const it = ppAtual; if (!it) return; aplicarCamposPp(true);
     if (ppEditando) { ppEditando = false; fecharItemFila(true); toast("Alterações salvas"); return; }
@@ -2449,6 +2554,10 @@
     const p = incompletos().find((x) => x !== it);
     if (p) { abrirItemFila(p, true); toast("Próximo para completar"); } else { modoCompletar = false; fecharItemFila(); toast("Pronto! Todos completos"); }
   });
+  /* Tela do produto: nome sem quebra de linha e observação que cresce conforme você escreve */
+  function ajustarObs() { const t = $("#ppObs"); if (!t) return; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 120) + "px"; }
+  $("#ppObs").addEventListener("input", ajustarObs);
+  $("#ppNome").addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
   $("#ppAcoes").addEventListener("click", (e) => {
     if (e.target.closest("#ppPers") && ppAtual) { aplicarCamposPp(true); const it = ppAtual; modoCompletar = false; fecharItemFila(); abrirPersonagem(it); return; }
     const b = e.target.closest("[data-pp-criar]"); if (!b || !ppAtual) return;
@@ -2487,7 +2596,7 @@
   // Quando o título é seu (tema ou campanha), a legenda da miniatura mostra o estilo da arte
   const ESTILO_MONTAGEM = { achadinho: "Foto e preço", relampago: "Foto com % OFF", baixou: "Preço grande", ultimas: "Foto maior", novidade: "Foto clássica", enquete: "Foto e nome" };
   const NOME_MONTAGEM = { achadinho: "Achadinho do dia", relampago: "Oferta relâmpago", baixou: "Baixou o preço", ultimas: "Últimas horas", novidade: "Chegou novidade", enquete: "Você usaria?" };
-  const CORES_NOME = { creme: "Creme", rosa: "Rosa", branco: "Branco", preto: "Preto" };
+  const CORES_NOME = { creme: "Creme", rosa: "Rosa", branco: "Branco", preto: "Preto", rose: "Rosê", verde: "Verde pastel" };
   let wz = {};
   const wzItem = () => fila().find((i) => i.id === wz.itemId);
   function passosDe(canal) {
@@ -2498,10 +2607,10 @@
     if (canal === "livre") return ["canal", "grade", "itens", "tema", "livre"];
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
     if (canal === "cupons") return ["cEscolher", "cPronto"];
-    if (canal === "chamada") return ["chEditar", "chPronto"];
-    if (canal === "personagem") return wz.pe && wz.pe.tipo === "chamada" ? ["peEscolher", "pePrompt", "peMontar"] : ["peEscolher", "pePrompt", "peMontar"];
-    if (canal === "cartas") return ["kaEditar"];
-    if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", "kCarrossel"] : ["canal", "rItens", "rModelo", "rPronto"];
+    if (canal === "chamada") return wz && wz.ch && wz.ch.tipo === "seg" ? ["chEditar", "chPronto"] : wz && wz.ch && wz.ch.modo === "img" ? ["chInicio", "chImg", "chImgPostar", "chFim"] : ["chInicio", "chRevisar", "chPostar", "chFim"];
+    if (canal === "personagem") return ["peEscolher", "pePrompt", "peMontar", "peLugares", "peRodar", "peResumo"];
+    if (canal === "cartas") return ["kaInicio", "kaRevisar", "kaPostar", "kaPronto"];
+    if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", ...(wz.reels.itens.length > 1 ? ["rOrdem"] : []), "kCarrossel", "kPronto", "rDepois"] : ["canal", "rItens", ...((wz.reels && wz.reels.itens.length > 1) ? ["rOrdem"] : []), "rModelo", "rPronto", "rDepois"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "montagem", "postar"]; // story/post é escolhido no próprio estúdio
@@ -2512,14 +2621,16 @@
   }
   const filtroCatWz = () => `<button type="button" class="chip-filtro chip-filtro--largo" data-wz-cat><small>Categoria</small><b>${(wz.filtroCat && wz.filtroCat !== "todas") ? CATS_LISTA[wz.filtroCat] : "Todas"}</b><span class="seta">▾</span></button>`;
   function iniciarCriar(op = {}) {
-    wz = { passo: op.itemId ? "lugares" : "canal", canal: op.itemId ? "roteiro" : null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: "auto", idx: 0, res: {}, lugares: lugaresSalvos() };
+    wz = { passo: op.itemId ? "lugares" : "canal", canal: op.itemId ? "roteiro" : null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: op.itemId ? proximaCor() : "auto", idx: 0, res: {}, lugares: lugaresSalvos(), rapido: !!op.itemId, mov: movSalvo() };
     mostrarPasso();
   }
   function irPasso(dir) {
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
     let prox = l[i + dir];
+    if (wz.canal === "personagem" && dir < 0 && wz.passo === "peRodar" && wz.pe.idx > 0) { wz.pe.idx--; delete wz.pe.res[lugaresIA(wz.pe)[wz.pe.idx]]; mostrarPasso(); return; }
+    if (wz.canal === "personagem" && dir < 0 && wz.passo === "peResumo") { wz.pe.idx = Math.max(0, lugaresIA(wz.pe).length - 1); wz.passo = "peRodar"; mostrarPasso(); return; }
     if (wz.canal === "roteiro" && dir < 0 && wz.passo === "rodar" && wz.idx > 0) { wz.idx--; delete wz.res[wz.lugares[wz.idx]]; mostrarPasso(); return; }
-    if (wz.canal === "roteiro" && prox === "rodar") { wz.idx = 0; wz.res = {}; }
+    if (wz.canal === "roteiro" && prox === "rodar" && !wz.rapido) { wz.idx = 0; wz.res = {}; }
     if (wz.canal === "roteiro" && dir < 0 && prox === "rodar") prox = l[i + dir - 1];
     if (!prox) return;
     wz.passo = prox; mostrarPasso();
@@ -2830,7 +2941,8 @@
     marcarPostado(it, "whatsapp", "WhatsApp"); return true;
   }
   /* Cores em sequência (Creme → Rosa → Branco → Preto): guarda a do último post e o próximo começa na seguinte */
-  const ORDEM_CORES = ["creme", "rosa", "branco", "preto"];
+  const ORDEM_CORES = ["creme", "rosa", "branco", "preto"]; // o app alterna sozinho entre estas
+  const CORES_ESCOLHA = [...ORDEM_CORES, "rose", "verde"]; // todas as que dá para escolher
   function guardarCorUsada(cor) { if (!ORDEM_CORES.includes(cor)) return; try { localStorage.setItem("miga_ult_cor", cor); } catch (e) { /* segue */ } }
   function proximaCor() { let u = ""; try { u = localStorage.getItem("miga_ult_cor") || ""; } catch (e) { /* segue */ } const i = ORDEM_CORES.indexOf(u); return ORDEM_CORES[(i + 1) % ORDEM_CORES.length]; }
   $("#wzCorpo").addEventListener("click", (e) => {
@@ -2923,23 +3035,28 @@
   }
   /** Arte em movimento: a mesma arte do story/status se mexendo por 20 segundos, sem som (sem abertura e sem final) */
   const SEG_MOV = 20;
+  let movCancelar = false; // Postar rápido: trocou modelo/cor no meio da gravação
   async function gravarArteMovimento(botao) {
     const it = wzItem(), tipo = formatoGravacao(); if (!it) return null;
     if (!tipo || !HTMLCanvasElement.prototype.captureStream) { toast("Este navegador não consegue gravar vídeo. Use o Chrome atualizado."); return null; }
-    wz.gravandoMov = true; setTimeout(() => { wz.gravandoMov = false; }, (SEG_MOV + 8) * 1000);
+    const tokGrav = (wz.gravTok = (wz.gravTok || 0) + 1), rapidoGrav = !!wz.rapido; movCancelar = false;
+    wz.gravandoMov = true; setTimeout(() => { if (wz.gravTok === tokGrav) wz.gravandoMov = false; }, (SEG_MOV + 8) * 1000);
     await prepararFoto(it); await carregarMarca(); // sem música: a música você escolhe no próprio Instagram/WhatsApp
     const R = arteR(), E = MUSICAS[musicaDe(R)], tela = document.createElement("canvas"); tela.width = 1080; tela.height = 1920; const ctx = tela.getContext("2d");
-    const previa = $("#rtTela"); const pctx = previa && previa.getContext("2d");
+    let previa = $("#rtTela"), pctx = previa && previa.getContext("2d");
     const comLink = ehStoryInsta("story"); storyComLink = comLink; artePost(tela, R, it, ppFotos[it.id], "story", 0); storyComLink = false;
     const fluxo = tela.captureStream(30);
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 }), partes = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
     const fim = new Promise((ok) => { rec.onstop = ok; });
     rec.start(); manterTelaAcesa(true); const ini = performance.now();
     const agora = () => (performance.now() - ini) / 1000;
-    await new Promise((ok) => { const passo = () => { const t = agora(); if (t >= SEG_MOV + 0.4) { ok(); return; }
+    await new Promise((ok) => { const passo = () => { const t = agora(); if (t >= SEG_MOV + 0.4 || movCancelar) { ok(); return; }
+      if (rapidoGrav) { const pv = $("#rtTela"); if (pv !== previa) { previa = pv; pctx = pv && pv.getContext("2d"); } botao = $("#rtPostar[data-rp-grav]"); }
       storyComLink = comLink; artePost(tela, R, it, ppFotos[it.id], "story", Math.min(t, SEG_MOV)); storyComLink = false; if (pctx) { if (previa.width !== 540) { previa.width = 540; previa.height = 960; } pctx.drawImage(tela, 0, 0, 540, 960); }
       if (botao) { const pc = Math.min(100, Math.round((t / SEG_MOV) * 100)); botao.textContent = `Criando o vídeo… ${pc}%`; botao.style.background = `linear-gradient(90deg, #e8336d ${pc}%, #f39bb9 ${pc}%)`; botao.style.color = "#fff"; botao.style.opacity = "1"; } requestAnimationFrame(passo); }; passo(); });
     rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false);
+    if (rapidoGrav) wz.gravandoMov = false;
+    if (movCancelar) { movCancelar = false; return null; }
     const mp4 = tipo.startsWith("video/mp4"); const blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), SEG_MOV);
     return { blob, url: URL.createObjectURL(blob), nome: nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + (mp4 ? ".mp4" : ".webm"), chave: [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|") };
   }
@@ -2993,6 +3110,8 @@
   const precisaTexto = () => (wz.lugares || []).some((k) => LUGARES[k].texto);
   function passosRoteiro() {
     const temPreco = !!(wzItem() || {}).precoNovo;
+    if (wz.rapido) return [...(wz.rpPulaLugares ? [] : ["lugares"]), ...(precisaTexto() && !temPreco ? ["mensagem"] : []), "rpConferir", "rodar", "resumo"]; // Postar: ordem e onde → aprovar → postar
+
     // Modelo e cor (com a legenda) sempre antes de postar
     return ["canal", ...(wz.veioDaLista ? [] : ["produto"]), "lugares", "montagem", ...(precisaTexto() && !temPreco ? ["mensagem"] : []), "rodar", "resumo"];
   }
@@ -3006,6 +3125,7 @@
         ${botaoContinuar(wz.lugares.length > 0, `Começar (${wz.lugares.length} ${wz.lugares.length === 1 ? "lugar" : "lugares"})`)}`;
       return true;
     }
+    if (wz.passo === "rpConferir") { telaRpConferir(c, item); return true; }
     if (wz.passo === "rodar") {
       const k = wz.lugares[wz.idx], L = LUGARES[k], n = wz.lugares.length;
       if (L.texto && !item.texto) usarModeloTexto();
@@ -3029,20 +3149,38 @@
         else meio += `<div class="link-copiar"><span>Link do produto</span><input id="wzLinkCopiar" readonly value="${esc(item.link)}"><button type="button" class="btn btn--branco" id="wzCopiarLink">Copiar link</button></div>` + (k === "story" && textoAdesivo(item) ? `<div class="link-copiar link-adesivo"><span>Texto do adesivo de link (no adesivo, toque em “Personalizar texto” e cole)</span><input id="wzAdesivoTxt" readonly value="${esc(textoAdesivo(item))}"><button type="button" class="btn btn--branco" id="wzCopiarAdesivo">Copiar texto do adesivo</button></div>` : "");
       } else {
         const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
-        meio = `<div class="balao wz-balao${k === "telegram" ? " wz-balao--tg" : ""}">${formatarWhats(txt)}</div>`;
+        meio = `<div class="balao wz-balao${k === "telegram" ? " wz-balao--tg" : ""}${wz.rapido ? " rp-balao" : ""}">${formatarWhats(txt)}</div>`;
         if (k === "grupo") { botao = "Enviar no WhatsApp"; dica = "Escolha o grupo ou o canal. A foto e a mensagem vão juntas. Para mandar no outro, toque de novo em “Enviar no WhatsApp”."; }
         if (k === "canal") { botao = "Enviar no canal"; dica = "Escolha o WhatsApp com “B” e o seu canal. Se o canal não aparecer, use “Copiar o texto” e cole no canal."; }
         if (k === "telegram") { botao = "Abrir no Telegram"; dica = "No Telegram o link fica clicável."; }
         meio += `<button type="button" class="btn btn--branco" id="rtCopiarTexto">Copiar o texto</button>`;
       }
-      c.innerHTML = `${barra}${meio}<p class="nota wz-centro">${dica}</p>
+      const gravando = wz.rapido && podeMov && wz.mov && !vMov;
+      if (wz.rapido) { telaRpPostar(c, item, k, L, n, feito, gravando, vMov, podeMov); return true; }
+      if (wz.rapido && L.arte) { // Postar rápido: tudo numa tela, sem rolagem
+        meio = (vMov ? `<div class="wz-previa rt-video rp-prev rp-prev--grande"><video src="${vMov.url}" playsinline loop autoplay muted></video></div>` : `<div class="wz-previa rp-prev rp-prev--grande"><canvas id="rtTela"></canvas></div>`);
+        if (k === "feed") meio += `<div class="leg-bloco"><div class="leg-topo"><span>Legenda do feed</span><div><button type="button" class="leg-btn" id="rtCopiarLegFeed">Copiar</button></div></div><textarea id="rtLegFeed" rows="3">${esc(wz.legFeed && wz.legFeedId === item.id ? wz.legFeed : (wz.legFeedId = item.id, wz.legFeed = legendaFeed(item)))}</textarea></div>`;
+        else meio += `<button type="button" class="btn btn--branco rp-adesivo" id="wzCopiarLink">Copiar link<small>${esc(item.link)}</small></button><input id="wzLinkCopiar" class="rp-oculto" readonly value="${esc(item.link)}" tabindex="-1" aria-hidden="true">`
+          + (k === "story" && textoAdesivo(item) ? `<button type="button" class="btn btn--branco rp-adesivo" id="wzCopiarAdesivo">Copiar texto do adesivo<small>${esc(textoAdesivo(item))}</small></button><input id="wzAdesivoTxt" class="rp-oculto" readonly value="${esc(textoAdesivo(item))}" tabindex="-1" aria-hidden="true">` : "");
+        dica = "";
+        if (gravando) botao = "Criando o vídeo… 0%";
+      }
+      c.innerHTML = `${barra}${meio}${dica ? `<p class="nota wz-centro">${dica}</p>` : ""}
         ${feito ? '<p class="nota wz-centro rt-feito">Postado. Toque em “Próximo” para seguir.</p>' : ""}
-        <div class="wz-rodape rt-rodape"><button type="button" class="btn ${feito ? "btn--branco" : "btn--rosa"} wz-continuar${!feito && (k === "status" || k === "grupo" || k === "canal") ? " wz-zap" : !feito && k === "telegram" ? " wz-tg" : ""}" id="rtPostar">${feito ? "Postar de novo" : botao}</button>${pular}</div>`;
+        <div class="wz-rodape rt-rodape${wz.rapido ? " pr-rodape" : ""}"><button type="button"${gravando && !feito ? " data-rp-grav disabled" : ""} class="btn ${feito ? "btn--branco" : "btn--rosa"} wz-continuar${!feito && (k === "status" || k === "grupo" || k === "canal") ? " wz-zap" : !feito && k === "telegram" ? " wz-tg" : ""}" id="rtPostar">${feito ? "Postar de novo" : botao}</button>${pular}</div>`;
       if (L.arte) {
         const desenhar = () => desenharMontagem($("#rtTela"), true, null, null, L.arte); desenhar(); prepararFoto(item).then(() => { if (wz.passo === "rodar") desenhar(); });
         // Em movimento: a prévia já mostra a arte se mexendo (em loop), antes de criar o vídeo
+        if (gravando) rpGravarFundo(); // Postar rápido: se ainda não tem vídeo, continua/começa a criar sozinho
         if (podeMov && wz.mov && !vMov) { const cv = $("#rtTela"), ini = performance.now(); const passo = () => { if (!cv.isConnected) return; if (wz.gravandoMov) { requestAnimationFrame(passo); return; } desenharMontagem(cv, true, null, null, "story", ((performance.now() - ini) / 1000) % SEG_MOV); requestAnimationFrame(passo); }; prepararFoto(item).then(passo); }
       }
+      return true;
+    }
+    if (wz.passo === "resumo" && wz.rapido) {
+      const h = wz.rpHist || [], tudo = h.length && h.every((x) => x.feitos.length === x.total);
+      c.innerHTML = `<div class="rt-fim"><h2 class="wz-titulo">${tudo ? "Tudo postado!" : "Postagem concluída"}</h2>
+        <div class="rt-lista">${h.map((x) => `<div><span>${esc(x.nome)}${x.feitos.length ? " · " + esc(x.feitos.join(", ")) : ""}</span><b class="${x.feitos.length ? "ok" : ""}">${x.feitos.length ? "Postado" : "Pulado"}</b></div>`).join("")}</div></div>
+        <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="rtLista">Voltar para a lista</button></div>`;
       return true;
     }
     if (wz.passo === "resumo") {
@@ -3075,6 +3213,8 @@
     wz.aguardando = false;
     if (wz.idx < wz.lugares.length - 1) { wz.idx++; mostrarPasso(); return; }
     const prox = proximoDaFila();
+    if (wz.rapido) rpFecharProduto();
+    if (prox && wz.rapido) { guardarCorUsada(wz.cor); if (!wz.camp) wz.cor = proximaCor(); wz.itemId = prox.id; wz.idx = 0; wz.res = {}; wz.vidMov = null; wz.passo = passosRoteiro().includes("mensagem") ? "mensagem" : "rpConferir"; toast(`Agora: ${limparNome(prox.nome || "próximo produto")}`); mostrarPasso(); scrollTo(0, 0); return; }
     if (prox) { guardarCorUsada(wz.cor); wz.cor = proximaCor(); wz.itemId = prox.id; wz.idx = 0; wz.res = {}; wz.passo = "montagem"; toast(`Agora: ${limparNome(prox.nome || "próximo produto")} · escolha modelo e cor`); mostrarPasso(); scrollTo(0, 0); return; }
     wz.passo = "resumo"; mostrarPasso();
   }
@@ -3083,7 +3223,7 @@
   function postarProdutosNoWhats(ids, base = {}) {
     ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
     const lug = lugaresSalvos().filter((k) => LUGARES[k].texto);
-    wz = { canal: "roteiro", passo: "montagem", veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
+    wz = { canal: "roteiro", passo: "rpConferir", rapido: true, rpPulaLugares: true, rpItemModelo: ids[0], mov: movSalvo(), veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
     ids.forEach((id) => { const it = fila().find((x) => x.id === id); if (it && !it.textoEditado) it.texto = ""; });
     mostrarPasso(); scrollTo(0, 0);
   }
@@ -3115,9 +3255,10 @@
     let r = "sem";
     if (L.arte && (k === "story" || k === "status") && wz.mov) {
       const v = vidMovAtual();
+      if (!v && wz.rapido) { toast("O vídeo ainda está sendo criado"); rpGravarFundo(); return; }
       if (!v) { const b = $("#rtPostar"); if (b) b.disabled = true; const novo = await gravarArteMovimento(b); if (novo) wz.vidMov = novo; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
       const arq = new File([v.blob], v.nome, { type: v.blob.type }); let texto = "";
-      if (k === "story") await copiarTexto(it.link);
+      if (k === "story") { await copiarTexto(it.link); prepararAdesivo(it); }
       if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { baixarBlob(v.blob, v.nome); if (texto) await copiarTexto(texto); toast("Vídeo salvo: abra o app e escolha da galeria"); }
@@ -3125,7 +3266,7 @@
       const tela = document.createElement("canvas"); desenharMontagem(tela, false, null, null, L.arte);
       const arq = await telaParaArquivo(tela, nomeArquivo(it.nome));
       let texto = "";
-      if (k === "story") await copiarTexto(it.link);
+      if (k === "story") { await copiarTexto(it.link); prepararAdesivo(it); }
       if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
       if (k === "feed") { const el = $("#rtLegFeed"); await copiarTexto(el ? el.value : legendaFeed(it)); toast("Legenda copiada: é só colar no Instagram"); }
       r = await compartilharArquivo(arq, texto);
@@ -3138,12 +3279,202 @@
       r = await compartilharArquivo(foto, comLoja(it.texto || "", it.loja, it.link));
       if (r === "sem") { await copiarTexto(it.texto); abrirWhatsApp(it.texto); r = "aberto"; }
     }
+    if (r !== "ok") adesivoPendente = "";
     if (r === "cancelado") return;
     wz.res[k] = "feito";
     registrarCompartilhado(L.canal, L.nome);
     const y = scrollY; mostrarPasso(); scrollTo(0, y);
   }
-  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "rtLegFeed") wz.legFeed = e.target.value; });
+  /* =========================== Postar rápido (liga e desliga nos Ajustes) =========================== */
+  function rpLer() { return { on: true, modelo: "auto", cor: "auto" }; } // sempre ligado: modelo e cor automáticos (dá para trocar na tela)
+  // Modelo automático: cupom > desconto grande > baixou o preço > categoria > achadinho
+  const MODELO_CAT = { perfumes: "cheirosa", maquiagem: "make", skincare: "peleRica", cabelo: "linda", looks: "look", calcados: "look", acessorios: "look", fitness: "fitness", suplementos: "suplementos", eletronicos: "tech", casa: "casa" };
+  function modeloAutomatico(it) {
+    const off = it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? 1 - it.precoNovo / it.precoAntigo : 0;
+    const k = it.cupom ? "cupom" : off >= 0.4 ? "relampago" : off >= 0.15 ? "baixou" : MODELO_CAT[it.categoria] || "achadinho";
+    return MODELOS_REELS[k] ? k : "achadinho";
+  }
+  function htmlRapido(attr) { return rpLer().on ? `<div class="rp-bloco"><b>Postar rápido</b><div class="rp-botoes">${[["story", "Story"], ["status", "Status"], ["grupo", "Grupos"], ["feed", "Feed"], ["tudo", "Tudo"]].map(([k, n]) => `<button type="button" ${attr}="${k}">${n}</button>`).join("")}</div></div>` : ""; }
+  /** Um toque: já abre a tela de postar com modelo, cor e (se ligado) o vídeo sendo criado */
+  function postarRapido(it, onde) {
+    if (!it || it.carregando) return;
+    if (!it.nome) { toast("Complete o nome do produto primeiro"); return; }
+    const P = rpLer(), lug = onde === "tudo" ? lugaresSalvos() : LUGARES[onde] ? [onde] : ["story"];
+    const C = CAMPANHAS[campanhaEscolhida] || null;
+    const modelo = P.modelo === "auto" || !MODELOS_REELS[P.modelo] ? modeloAutomatico(it) : P.modelo;
+    const cor = C ? (corCampanha || C.cor) : P.cor !== "auto" && CORES_VIDEO[P.cor] ? P.cor : proximaCor();
+    wz = { canal: "roteiro", passo: "rodar", itemId: it.id, veioDaLista: true, camp: C ? campanhaEscolhida : "", formato: lug.every((k) => LUGARES[k].arte === "post") ? "post" : "story", modelo, cor, idx: 0, res: {}, lugares: lug, rapido: true, rpPulaLugares: true, rpItemModelo: it.id, mov: movSalvo(), filaRoteiro: null };
+    if (C && !it.textoEditado) it.texto = "";
+    wz.passo = passosRoteiro()[0]; // "Conferir" (ou o preço antes, se faltar)
+    marcados.clear(); modoVarios = false;
+    irPara("criar"); mostrarPasso(); scrollTo(0, 0);
+  }
+  const textoStatus = (it) => `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
+  /** Guarda o que foi postado de cada produto (para o resumo no fim) */
+  function rpFecharProduto() {
+    const it = wzItem(); if (!it) return; const h = wz.rpHist || (wz.rpHist = []);
+    const feitos = wz.lugares.filter((k) => wz.res[k] === "feito").map((k) => ({ story: "Story", status: "Status", grupo: "Grupos", feed: "Feed" })[k] || LUGARES[k].nome);
+    const reg = { id: it.id, nome: limparNome(it.nome || "Produto"), feitos, total: wz.lugares.length }, i = h.findIndex((x) => x.id === it.id);
+    if (i >= 0) h[i] = reg; else h.push(reg);
+  }
+  /** Tela de postar (um lugar por vez): antes de postar → botão de postar + "Pular este lugar"; depois → "Próximo: …" + "Postar de novo" */
+  function telaRpPostar(c, item, k, L, n, feito, gravando, vMov, podeMov) {
+    const curto = { story: "Story", status: "Status", grupo: "Grupos", feed: "Feed" }, proxLug = wz.idx < n - 1 ? wz.lugares[wz.idx + 1] : null, proxProd = proximoDaFila();
+    const barra = `<div class="rt-prog">${wz.lugares.map((x, i) => `<i class="${wz.res[x] === "feito" ? "ok" : wz.res[x] === "pulado" ? "pulo" : i === wz.idx ? "at" : ""}"></i>`).join("")}</div>
+      <div class="rt-etapa">${wz.filaRoteiro ? `Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ` : ""}${{ story: "Story do Instagram", status: "Status do WhatsApp", grupo: "Grupos e canal", feed: "Feed do Instagram" }[k] || L.nome}</div>`;
+    const ok = ""; // sem aviso de "postado": a tela fica até você tocar em Continuar
+    let meio = "";
+    if (L.arte) {
+      meio = (vMov ? `<div class="wz-previa rt-video rp-prev rp-prev--grande${feito ? " rp-prev--feito" : ""}"><video src="${vMov.url}" playsinline loop autoplay muted></video></div>` : `<div class="wz-previa rp-prev rp-prev--grande${feito ? " rp-prev--feito" : ""}"><canvas id="rtTela"></canvas></div>`) + ok;
+      if (k === "feed") meio += `<div class="leg-bloco"><div class="leg-topo"><span>Legenda do feed</span><div><button type="button" class="leg-btn" id="rtCopiarLegFeed">Copiar</button></div></div><textarea id="rtLegFeed" rows="3">${esc(wz.legFeed && wz.legFeedId === item.id ? wz.legFeed : (wz.legFeedId = item.id, wz.legFeed = legendaFeed(item)))}</textarea></div>`;
+      else if (k === "status") meio += `<button type="button" class="btn btn--branco rp-adesivo" id="rpCopiarStatus">Copiar texto do Status<small>${esc(textoStatus(item).replace("\n", " · "))}</small></button>`;
+      else meio += `<button type="button" class="btn btn--branco rp-adesivo" id="wzCopiarLink">Copiar link<small>${esc(item.link)}</small></button><input id="wzLinkCopiar" class="rp-oculto" readonly value="${esc(item.link)}" tabindex="-1" aria-hidden="true">`
+        + (k === "story" && textoAdesivo(item) ? `<button type="button" class="btn btn--branco rp-adesivo" id="wzCopiarAdesivo">Copiar texto do adesivo<small>${esc(textoAdesivo(item))}</small></button><input id="wzAdesivoTxt" class="rp-oculto" readonly value="${esc(textoAdesivo(item))}" tabindex="-1" aria-hidden="true">` : "");
+    } else {
+      const txt = k === "telegram" ? String(item.texto).replace(/[*~_]/g, "") : item.texto;
+      meio = (item.imagem ? `<div class="rp-foto"><img src="${esc(item.imagem)}" alt="" referrerpolicy="no-referrer"></div>` : "")
+        + (wz.rpEditando ? `<textarea id="rpTexto" class="rp-texto" aria-label="Mensagem">${esc(item.texto || "")}</textarea>` : `<div class="balao wz-balao rp-balao${k === "telegram" ? " wz-balao--tg" : ""}">${formatarWhats(txt)}</div>`) + ok
+        + `<div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="rpEditar">${wz.rpEditando ? "Pronto" : "Editar texto"}</button><button type="button" class="btn btn--branco rp-adesivo" id="rtCopiarTexto">Copiar o texto</button></div>`;
+    }
+    const rot = { story: "Postar no Instagram", status: "Postar no Status", grupo: "Enviar no WhatsApp", feed: "Postar no feed", canal: "Enviar no canal", telegram: "Abrir no Telegram" }[k] || "Postar";
+    const verde = k === "status" || k === "grupo" || k === "canal";
+    let principal, segundo;
+    if (!feito) {
+      principal = `<button type="button" class="btn btn--rosa wz-continuar${verde ? " wz-zap" : ""}" id="rtPostar"${gravando ? " data-rp-grav disabled" : ""}>${gravando ? "Criando o vídeo… 0%" : rot}</button>`;
+      segundo = `<button type="button" class="rp-link" id="rtPular">Pular este lugar</button>`;
+    } else {
+      principal = `<button type="button" class="btn btn--rosa wz-continuar" id="rtPular">Continuar</button>`;
+      segundo = k === "grupo" ? `<button type="button" class="btn btn--branco rp-outro" id="rtPostar">Enviar em outro grupo</button>` : `<button type="button" class="rp-link" id="rtPostar">Postar de novo</button>`;
+    }
+    c.innerHTML = `${barra}${meio}<div class="wz-rodape pr-rodape rp-rod2">${principal}${segundo}</div>`;
+    if (!L.arte) return;
+    const cv = $("#rtTela"); if (!cv) return;
+    const anima = podeMov && wz.mov && !vMov, ini = performance.now();
+    const pintar = () => { if (!cv.isConnected) return; if (!wz.gravandoMov) desenharMontagem(cv, true, null, null, L.arte === "post" ? "post" : "story", anima ? ((performance.now() - ini) / 1000) % SEG_MOV : undefined); if (anima) requestAnimationFrame(pintar); };
+    prepararFoto(item).then(pintar);
+    if (gravando) rpGravarFundo();
+  }
+  /* Postar rápido · tela "Conferir": prévia, modelo, cor e movimento numa tela só */
+  const rpTemMov = () => (wz.lugares || []).some((k) => k === "story" || k === "status");
+  const rpFormato = () => ((wz.lugares || []).some((k) => LUGARES[k].arte === "story") ? "story" : "post");
+  function telaRpConferir(c, item) {
+    if (wz.rpItemModelo !== item.id) { wz.rpItemModelo = item.id; if (!wz.camp) wz.modelo = modeloAutomatico(item); wz.rpEscolheu = false; }
+    const lug = wz.lugares.map((k) => ({ story: "Story", status: "Status", grupo: "Grupos", feed: "Feed" })[k] || LUGARES[k].nome).join(" · "), temArte = wz.lugares.some((k) => LUGARES[k].arte), mov = rpTemMov();
+    const nomeModelo = (MODELOS_REELS[wz.modelo] || MODELOS_REELS.achadinho).nome;
+    c.innerHTML = `<div class="rp-conf">
+      <p class="rt-etapa">${wz.filaRoteiro ? `Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ` : ""}${esc(lug)}</p>
+      ${temArte ? `<div class="wz-previa rp-prev"><canvas id="rtTela"></canvas></div>` : `<div class="wz-previa rp-prev">${item.imagem ? `<img src="${esc(item.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}</div>`}
+      <button type="button" class="rp-modelo" id="rpTrocarModelo"><span><small>${campanha() ? "Campanha" : wz.rpEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(campanha() ? campanha().nome : nomeModelo)}</b></span><i>Trocar</i></button>
+      ${temArte ? `<div class="rp-linha"><b>Cor</b></div><div class="rp-cores">${CORES_ESCOLHA.map((k) => `<button type="button" data-rp-cor="${k}" class="${wz.cor === k ? "on" : ""}" style="background:${CORES_VIDEO[k].fundo}" aria-label="${CORES_NOME[k]}"></button>`).join("")}</div>` : ""}
+      ${temArte && mov ? `<label class="rp-mov"><input type="checkbox" id="rpMov"${wz.mov ? " checked" : ""}><span><b>Em movimento</b><small id="rpProg">${wz.mov ? (vidMovAtual() ? "Vídeo pronto" : "O vídeo é criado quando você aprovar") : "Desmarcado: vai a imagem parada"}</small></span></label>` : ""}
+    </div>${botaoContinuar(true, temArte && mov && wz.mov && !vidMovAtual() ? `<svg class="rp-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>Aprovar e criar o vídeo` : "Continuar").replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
+    if (!temArte) return;
+    const cv = $("#rtTela"); let ini = performance.now();
+    const pintar = () => { if (!cv.isConnected) return; if (!(wz.gravandoMov && mov && wz.mov)) desenharMontagem(cv, true, null, null, rpFormato(), mov && wz.mov ? ((performance.now() - ini) / 1000) % SEG_MOV : undefined); if (mov && wz.mov) requestAnimationFrame(pintar); };
+    prepararFoto(item).then(pintar);
+  }
+  /** Cria o vídeo em segundo plano; se você trocar modelo/cor no meio, recomeça com a escolha nova */
+  async function rpGravarFundo() {
+    if (!wz.rapido || !wz.mov || !rpTemMov() || vidMovAtual()) return;
+    if (wz.gravandoMov && wz.gravRp) { if (wz.gravRp !== chaveRp()) { movCancelar = true; wz.rpRegravar = true; } return; }
+    const w = wz; w.gravRp = chaveRp();
+    const novo = await gravarArteMovimento(null);
+    if (wz !== w) return;
+    w.gravRp = null;
+    if (novo && novo.chave === chaveRp()) w.vidMov = novo;
+    const regravar = w.rpRegravar; w.rpRegravar = false;
+    if (regravar && w.mov && !vidMovAtual()) { rpGravarFundo(); return; } // trocou modelo/cor no meio: grava de novo
+    if (wz.passo === "rodar") { const y = scrollY; mostrarPasso(); scrollTo(0, y); }
+    else if (wz.passo === "rpConferir") mostrarPasso();
+  }
+  function chaveRp() { const it = wzItem(), R = arteR(); return it ? [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|") : ""; }
+  function rpMudou() { if (wz.gravandoMov && wz.gravRp && wz.gravRp !== chaveRp()) { movCancelar = true; wz.rpRegravar = true; } mostrarPasso(); }
+  $("#wzCorpo").addEventListener("change", (e) => {
+    if (!wz.rapido || wz.passo !== "rpConferir") return;
+    if (e.target.id === "rpModelo") { wz.modelo = e.target.value; const it = wzItem(); if (it && !it.textoEditado) it.texto = ""; rpMudou(); }
+    if (e.target.id === "rpMov") { wz.mov = e.target.checked; try { localStorage.setItem("miga_mov", wz.mov ? "1" : ""); } catch (er) { /* segue */ } if (!wz.mov && wz.gravandoMov) { movCancelar = true; wz.rpRegravar = false; } mostrarPasso(); }
+  });
+  $("#wzCorpo").addEventListener("click", (e) => {
+    if (!wz.rapido || wz.passo !== "rpConferir") return;
+    if (e.target.closest("#rpTrocarModelo")) { abrirFolhaModelo(); return; }
+    const b = e.target.closest("[data-rp-cor]"); if (!b) return; wz.cor = b.dataset.rpCor; rpMudou();
+  });
+  /* Janela "Escolha o cenário" (Criação IA): Estúdio · Em casa · Fora de casa · Outro */
+  function abrirFolhaCenario() {
+    let d = $("#folhaCenario");
+    if (!d) {
+      d = document.createElement("dialog"); d.id = "folhaCenario"; d.className = "dialogo folha folha-modelo"; document.body.appendChild(d);
+      d.addEventListener("click", (e) => {
+        if (e.target === d || e.target.closest("[data-fc-fechar]")) { d.close(); return; }
+        if (e.target.closest("[data-fc-livre]")) { const v = (d.querySelector("#fcLivre").value || "").trim(); if (!v) { toast("Descreva o lugar"); d.querySelector("#fcLivre").focus(); return; } const P = pe(); P.cenario = "livre"; P.cenarioLivre = v; lsPers.gravar("cenario", "livre"); lsPers.gravar("cenarioLivre", v); P.promptEd = null; P.cenasResp = null; d.close(); mostrarPasso(); return; }
+        const op = e.target.closest("[data-fc-cen]"); if (!op) return;
+        const P = pe(); P.cenario = op.dataset.fcCen; lsPers.gravar("cenario", P.cenario); P.promptEd = null; P.cenasResp = null; d.close(); mostrarPasso();
+      });
+    }
+    const atual = cenarioPers(pe()), grupos = [...new Set(Object.values(CENARIOS_PERS).map((c) => c[2]))];
+    d.innerHTML = `<div class="fm-cab"><h2>Escolha o cenário</h2><button type="button" class="fm-x" data-fc-fechar aria-label="Fechar">✕</button></div>
+      <div class="fm-rolar">${grupos.map((g) => `<p class="fm-sec">${g}</p><div class="fm-grade">${Object.entries(CENARIOS_PERS).filter(([, c]) => c[2] === g).map(([k, c]) => `<button type="button" class="fm-op fm-op--sem${k === atual ? " on" : ""}" data-fc-cen="${k}"><span>${esc(c[0])}${c[1] ? `<small>${esc(c[1])}</small>` : ""}</span></button>`).join("")}</div>`).join("")}
+        <p class="fm-sec">Ou descreva o seu</p><label class="ka2-campo fc-livre"><span>Como é o lugar?</span><input id="fcLivre" maxlength="140" placeholder="Ex.: varanda com plantas, fim de tarde" value="${esc(pe().cenarioLivre || "")}"></label>
+        <button type="button" class="btn btn--rosa fc-livre-ok" data-fc-livre>Usar este cenário</button></div>
+      <button type="button" class="btn btn--branco fm-fechar" data-fc-fechar>Fechar</button>`;
+    d.showModal();
+  }
+  /* Janela "Escolha o modelo": Sugestões · Temas · Categorias · Campanhas */
+  function icModelo(k, camp) { const d = DECOR[camp ? "c_" + k : k], ic = (d && d.ic && d.ic[0]) || (!camp && MODELOS_REELS[k] && MODELOS_REELS[k].icone) || "brilho"; return ICONES_MIGA["f_" + ic] || ICONES_MIGA.f_brilho; }
+  function sugestoesModelo(it) {
+    const off = it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? Math.round((1 - it.precoNovo / it.precoAntigo) * 100) : 0, l = [];
+    const add = (k, por) => { if (MODELOS_REELS[k] && !l.some((x) => x[0] === k)) l.push([k, por]); };
+    add(modeloAutomatico(it), "escolhido pelo app");
+    if (it.cupom) add("cupom", "tem cupom");
+    if (off >= 40) add("relampago", `${off}% OFF`); else if (off >= 15) add("baixou", `${off}% OFF`);
+    if (MODELO_CAT[it.categoria]) add(MODELO_CAT[it.categoria], "categoria");
+    add("achadinho", "sempre combina");
+    return l.slice(0, 4);
+  }
+  function abrirFolhaModelo() {
+    let d = $("#folhaModelo");
+    if (!d) {
+      d = document.createElement("dialog"); d.id = "folhaModelo"; d.className = "dialogo folha folha-modelo"; document.body.appendChild(d);
+      d.addEventListener("click", (e) => {
+        if (e.target === d || e.target.closest("[data-fm-fechar]")) { d.close(); return; }
+        const ab = e.target.closest("[data-fm-ir]"); if (ab) { const alvo = d.querySelector(`[data-fm-sec="${ab.dataset.fmIr}"]`); if (alvo) d.querySelector(".fm-rolar").scrollTo({ top: alvo.offsetTop - d.querySelector(".fm-rolar").offsetTop, behavior: "smooth" }); d.querySelectorAll("[data-fm-ir]").forEach((x) => x.classList.toggle("on", x === ab)); return; }
+        const op = e.target.closest("[data-fm-mod], [data-fm-camp]"); if (!op) return;
+        if (wz.canal === "reels") { const R = rr(); if (op.dataset.fmMod) { R.modelo = op.dataset.fmMod; R.camp = ""; R.titulo = ""; R.rrEscolheu = true; } else { const k = op.dataset.fmCamp; R.camp = k; if (CAMPANHAS[k]) R.cor = corCampanha || CAMPANHAS[k].cor; } R.legenda = null; R.resultado = null; R.postado = false; d.close(); mostrarPasso(); return; }
+        const it = wzItem();
+        if (op.dataset.fmMod) { wz.modelo = op.dataset.fmMod; wz.camp = ""; }
+        else { const k = op.dataset.fmCamp; wz.camp = k; if (CAMPANHAS[k]) wz.cor = corCampanha || CAMPANHAS[k].cor; }
+        wz.rpEscolheu = true; if (it && !it.textoEditado) it.texto = "";
+        d.close(); rpMudou();
+      });
+    }
+    const it = wz.canal === "reels" ? itensReels()[0] : wzItem(); if (!it) return;
+    const alvo = wz.canal === "reels" ? rr() : wz;
+    const card = (attr, k, nome, por, on, camp) => `<button type="button" class="fm-op${on ? " on" : ""}" ${attr}="${k}"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icModelo(k, camp)}"/></svg></i><span>${esc(nome)}${por ? `<small>${esc(por)}</small>` : ""}</span></button>`;
+    const modOn = (k) => !alvo.camp && alvo.modelo === k;
+    const sug = sugestoesModelo(it), naSug = new Set(sug.map(([k]) => k));
+    const temas = Object.entries(MODELOS_REELS).filter(([k, m]) => !m.cat && !naSug.has(k)), cats = Object.entries(MODELOS_REELS).filter(([k, m]) => m.cat && !naSug.has(k));
+    const secs = [["sug", "Sugestões", "Sugestões para este produto", sug.map(([k, por]) => card("data-fm-mod", k, MODELOS_REELS[k].nome, por, modOn(k)))],
+      ["temas", "Temas", "Temas", temas.map(([k, m]) => card("data-fm-mod", k, m.nome, "", modOn(k)))],
+      ["cats", "Categorias", "Categorias", cats.map(([k, m]) => card("data-fm-mod", k, m.nome, "", modOn(k)))],
+      ["camps", "Campanhas", "Campanhas · trocam o título e a cor", Object.entries(CAMPANHAS).map(([k, c]) => card("data-fm-camp", k, c.nome, "", alvo.camp === k, true))]];
+    d.innerHTML = `<div class="fm-cab"><h2>Escolha o modelo</h2><button type="button" class="fm-x" data-fm-fechar aria-label="Fechar">✕</button></div>
+      <div class="fm-abas">${secs.map(([id, ab], i) => `<button type="button" data-fm-ir="${id}"${i ? "" : ' class="on"'}>${ab}</button>`).join("")}</div>
+      <div class="fm-rolar">${secs.map(([id, , tit, ops]) => `<p class="fm-sec" data-fm-sec="${id}">${tit}</p><div class="fm-grade">${ops.join("")}</div>`).join("")}</div>
+      <button type="button" class="btn btn--branco fm-fechar" data-fm-fechar>Fechar</button>`;
+    d.showModal();
+  }
+  /* Story com cupom: quando você volta do Instagram, o texto do adesivo já fica copiado */
+  let adesivoPendente = "", adesivoSaiu = false;
+  function prepararAdesivo(it) { adesivoPendente = wz.rapido ? textoAdesivo(it) : ""; adesivoSaiu = false; }
+  async function copiarAdesivoAoVoltar() {
+    if (!adesivoPendente || !adesivoSaiu || document.visibilityState !== "visible") return;
+    const tx = adesivoPendente;
+    if (await copiarTexto0(tx)) { adesivoPendente = ""; adesivoSaiu = false; toast("Texto do adesivo copiado: no adesivo de link, toque em Personalizar texto e cole"); }
+  }
+  document.addEventListener("visibilitychange", () => { if (!adesivoPendente) return; if (document.visibilityState === "hidden") adesivoSaiu = true; else setTimeout(copiarAdesivoAoVoltar, 500); });
+  window.addEventListener("focus", () => { if (adesivoPendente && adesivoSaiu) setTimeout(copiarAdesivoAoVoltar, 500); });
+  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "rtLegFeed") wz.legFeed = e.target.value;
+    if (e.target.id === "rpTexto") { const it = wzItem(); if (it) { it.texto = e.target.value; it.textoEditado = true; salvarFila(); } } });
   $("#wzCorpo").addEventListener("change", (e) => {
     if (e.target.id !== "rtMov") return; wz.mov = e.target.checked; try { localStorage.setItem("miga_mov", wz.mov ? "1" : ""); } catch (er) { /* segue */ }
     const y = scrollY; mostrarPasso(); scrollTo(0, y);
@@ -3167,7 +3498,10 @@
       b.disabled = !n; b.textContent = `Começar (${n} ${n === 1 ? "lugar" : "lugares"})`;
       return;
     }
-    if (t.closest("#rtPostar")) { postarLugar(); return; }
+    if (t.closest("#rtPostar")) { wz.rpEditando = false; postarLugar(); return; }
+    if (t.closest("#rpEditar")) { wz.rpEditando = !wz.rpEditando; const y = scrollY; mostrarPasso(); scrollTo(0, y); if (wz.rpEditando) { const ta = $("#rpTexto"); if (ta) ta.focus(); } return; }
+    if (t.closest("#rpCopiarStatus")) { const it = wzItem(); if (await copiarTexto(textoStatus(it))) toast("Texto do Status copiado"); return; }
+    if (t.closest("#rtPular")) { wz.rpEditando = false; }
     if (t.closest("#rtPular")) { const k = wz.lugares[wz.idx]; if (wz.res[k] !== "feito") wz.res[k] = "pulado"; avancarRoteiro(); return; }
     if (t.closest("#rtCopiarTexto")) { const it = wzItem(); const k = wz.lugares[wz.idx]; if (await copiarTexto(k === "telegram" ? it.texto.replace(/[*~_]/g, "") : it.texto)) toast("Texto copiado"); return; }
     if (t.closest("#rtLista")) { irPara("postar"); iniciarCriar(); return; }
@@ -3404,7 +3738,10 @@
     creme: { nome: "Creme", antigo: "#8a817b", fundo: "#fff3c4", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff", bola: "rgba(255,210,63,.45)" },
     rosa: { nome: "Rosa", antigo: "rgba(255,255,255,.85)", fundo: "#e8336d", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f", bola: "rgba(255,255,255,.9)" },
     branco: { nome: "Branco", antigo: "#8a817b", fundo: "#ffffff", texto: "#1d1d1f", destaque: "#e8336d", pill: "#e8336d", pillTexto: "#fff", bola: "rgba(255,210,63,.35)" },
-    preto: { nome: "Preto", antigo: "rgba(255,255,255,.75)", fundo: "#1d1d1f", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f", bola: "rgba(232,51,109,.85)" }
+    preto: { nome: "Preto", antigo: "rgba(255,255,255,.75)", fundo: "#1d1d1f", texto: "#ffffff", destaque: "#ffd23f", pill: "#ffd23f", pillTexto: "#1d1d1f", bola: "rgba(232,51,109,.85)" },
+    // cores oficiais: Rosê e Verde pastel
+    rose: { nome: "Rosê", antigo: "#6b3a48", fundo: "#f6c9d3", texto: "#1d1d1f", destaque: "#b0124a", pill: "#b0124a", pillTexto: "#ffffff", bola: "rgba(255,255,255,.7)" },
+    verde: { nome: "Verde pastel", antigo: "#4f6b5a", fundo: "#cdebd5", texto: "#1d1d1f", destaque: "#1f7a4d", pill: "#1f7a4d", pillTexto: "#ffffff", bola: "rgba(255,255,255,.7)" }
   };
   /* Cor própria das campanhas especiais e dos temas: a barrinha escolhe o tom ("h0" a "h359"),
      o brilho é sempre o mesmo do rosa da Miga. Tons claros (amarelo, verde-limão...) ganham texto escuro. */
@@ -3669,7 +4006,7 @@
       if (edMarca) ctx.drawImage(edMarca, 62, 80, 76, 76); ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText(insta, 150, 120); ctx.textAlign = "center";
       ctx.save(); ctx.translate(w / 2, h * 0.58); ctx.rotate(-0.05);
       const tt = V.titulo.replace(/[*]/g, "").replace(/\s*\n\s*/g, " "); ctx.font = "900 72px Poppins"; const tl = quebrarTexto(ctx, tt, 760, 2), tw = Math.max(...tl.map((x) => ctx.measureText(x).width)) + 90, th = tl.length * 86 + 60;
-      retArredondado(ctx, -tw / 2, -th / 2, tw, th, 30); ctx.fillStyle = C.fundo; ctx.fill(); ctx.fillStyle = C.destaque === "#e8336d" && V.cor !== "creme" && V.cor !== "branco" ? "#fff" : C.texto; tl.forEach((x, j) => ctx.fillText(x, 0, -((tl.length - 1) * 43) + j * 86 + 4)); ctx.restore();
+      retArredondado(ctx, -tw / 2, -th / 2, tw, th, 30); ctx.fillStyle = C.fundo; ctx.fill(); ctx.fillStyle = C.texto; tl.forEach((x, j) => ctx.fillText(x, 0, -((tl.length - 1) * 43) + j * 86 + 4)); ctx.restore();
       if (V.novo) { ctx.save(); ctx.translate(w / 2, h * 0.58 + 220); ctx.rotate(0.04); ctx.font = "900 70px Poppins"; const t = (V.antigo > V.novo ? "por " : "") + brl(V.novo), qw = ctx.measureText(t).width + 80; retArredondado(ctx, -qw / 2, -58, qw, 116, 24); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore(); }
       ctx.font = "800 44px Poppins"; const lk = String(V.botao == null ? "Link na bio" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim().toUpperCase(), lw = ctx.measureText(lk).width + 80;
       if (lk) { retArredondado(ctx, w / 2 - lw / 2, h - 330, lw, 100, 20); ctx.fillStyle = "#fff"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(lk, w / 2, h - 278); }
@@ -3692,7 +4029,7 @@
     } else if (V.tema === "neon") { // fundo escuro, vídeo com borda brilhante
       ctx.fillStyle = "#0e0b16"; ctx.fillRect(0, 0, w, h);
       titulo(190, "#ffffff", "#ff4fa0", 96);
-      const cor = V.cor === "creme" ? "#ffd23f" : "#ff4fa0";
+      const cor = V.cor === "creme" ? "#ffd23f" : V.cor === "verde" ? "#7dffb2" : V.cor === "rose" ? "#ffb3c8" : "#ff4fa0";
       ctx.save(); ctx.shadowColor = cor; ctx.shadowBlur = 60; retArredondado(ctx, 110, 420, w - 220, 960, 40); ctx.lineWidth = 12; ctx.strokeStyle = cor; ctx.stroke(); ctx.restore();
       ctx.save(); retArredondado(ctx, 116, 426, w - 232, 948, 36); ctx.clip(); pintar(116, 426, w - 232, 948); ctx.restore();
       const y2 = 1440 + infos(1440, "#ffffff", cor, "rgba(255,255,255,.7)", false, 90);
@@ -3737,7 +4074,7 @@
   /* ===================== Editor de vídeo: camadas que você arrasta na prévia ===================== */
   const CORES_EDITOR = { rosa: "#e8336d", amarelo: "#ffd23f", preto: "#1d1d1f", branco: "#ffffff", creme: "#fff3c4", verde: "#1f8a4c", roxo: "#7b3fe4", laranja: "#ff7a00" };
   const contraste = (hex) => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1d1f" : "#ffffff"; };
-  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "noel", "champanhe", "fogueira", "setabaixo", "cifrao", "saco", "termometro", "alfinete", "lua", "boca", "frio", "estrelada", "apaixonada", "descolada", "biquini", "brasil", "laco", "oculos", "espelho", "sol", "pincel", "foguete", "bomba", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao", "seguidor", "notificacao", "medalha", "confete", "grafico", "bolo", "curtida", "baloes"];
+  const FIGURAS = ["brilho", "estrela", "top", "tenis", "pote", "fogo", "raio", "coracao", "presente", "bolsa", "carrinho", "etiqueta", "cupom", "porcento", "dinheiro", "seta", "megafone", "relogio", "check", "trofeu", "arvore", "floco", "casa", "panela", "perfume", "batom", "cabide", "haltere", "patinha", "mamadeira", "fone", "aviao", "lapis", "noel", "champanhe", "fogueira", "setabaixo", "cifrao", "saco", "termometro", "alfinete", "lua", "boca", "frio", "estrelada", "apaixonada", "descolada", "biquini", "brasil", "laco", "oculos", "espelho", "sol", "pincel", "foguete", "bomba", "flor", "sacola", "caminhao", "celular", "sino", "olhos", "carteira", "diamante", "coroa", "calendario", "lupa", "vestido", "balao", "seguidor", "notificacao", "medalha", "confete", "grafico", "bolo", "curtida", "baloes", "jeans", "shortjeans", "saia", "camiseta", "salto", "bone", "brinco", "mochila", "paleta", "secador", "chinelo"];
   const FONTES_EDITOR = { forte: ["Forte", "800", "Poppins"], leve: ["Leve", "600", "Poppins"], script: ["Assinatura", "700", "\"Dancing Script\""], contorno: ["Contorno", "900", "Poppins"] };
   let videoRelogio = 99; // tempo dentro do vídeo (para as camadas que entram na batida); 99 = tudo visível
   const EMOJIS = ["🔥", "💸", "✨", "💖", "🛍️", "🎁", "⚡", "⏰", "✅", "👇", "👉", "🎉", "😍", "🤩", "⭐", "❤️", "🏷️", "🎟️", "📦", "🚚", "💄", "🏠", "🍳", "👗", "💪", "🐶", "👶", "🎧", "✈️", "🎄", "🖤", "🥂", "😱", "🤑", "💯", "🆕", "🛒", "📣", "👀", "💥"];
@@ -4214,6 +4551,8 @@
   let flutua = null; // tempo da arte em movimento (suave, sem seguir a batida)
   let pulsoTela = 0; // 1 no tempo da batida (só nos vídeos; na imagem parada fica 0)
   const emTempos = (seg, batida) => Math.max(2, Math.round(seg / batida / 2) * 2) * batida; // duração com número par de tempos
+  /** Story do Instagram em movimento: 1 = mais movimento só no título e no preço (o campo do cupom continua parado) */
+  const movStory = () => (flutua != null && storyComLink ? 1 : 0);
   let semEntrada = false; // Story em movimento: tudo já aparece no primeiro instante (o adesivo de link não fica sozinho)
   const entrada = (t, ini, dur = 0.5) => (semEntrada ? 1 : Math.max(0, Math.min(1, (t - noTempo(ini)) / dur)));
   const pulo = (p) => p <= 0 ? 0 : p < 0.6 ? 0.6 + (1.08 - 0.6) * (p / 0.6) : 1.08 - 0.08 * ((p - 0.6) / 0.4);
@@ -5664,6 +6003,50 @@
     const poli = (pts, cor) => { ctx.beginPath(); pts.forEach(([x, y], i) => ctx[i ? "lineTo" : "moveTo"](x, y)); ctx.closePath(); contorno(cor); };
     const bola = (x, y, r, cor) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); contorno(cor); };
     const brilhoBranco = (x, y, rx, ry, g = -0.6) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, g, 0, Math.PI * 2); ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fill(); };
+    const JEANS = "#4a7fd4", JEANS2 = "#8fb4ef";
+    const costura = (pts) => { ctx.save(); ctx.setLineDash([9, 8]); ctx.lineWidth = 5; ctx.strokeStyle = JEANS2; ctx.beginPath(); pts.forEach(([x, y], i) => ctx[i ? "lineTo" : "moveTo"](x, y)); ctx.stroke(); ctx.restore(); };
+    if (nome === "jeans") { // calça jeans
+      poli([[-62, -66], [62, -66], [68, 96], [16, 96], [0, -14], [-16, 96], [-68, 96]], JEANS);
+      poli([[-60, -94], [60, -94], [62, -66], [-62, -66]], JEANS); bola(0, -80, 8, AMAR);
+      costura([[-46, -56], [-40, -30], [-20, -30]]); costura([[46, -56], [40, -30], [20, -30]]); costura([[-44, 0], [-50, 86]]); costura([[44, 0], [50, 86]]);
+      return; }
+    if (nome === "shortjeans") {
+      poli([[-68, -50], [68, -50], [78, 52], [16, 52], [0, 0], [-16, 52], [-78, 52]], JEANS);
+      poli([[-66, -80], [66, -80], [68, -50], [-68, -50]], JEANS); bola(0, -65, 8, AMAR);
+      costura([[-50, -40], [-44, -16], [-22, -16]]); costura([[50, -40], [44, -16], [22, -16]]); costura([[-74, 40], [-22, 40]]); costura([[74, 40], [22, 40]]);
+      return; }
+    if (nome === "saia") {
+      poli([[-50, -62], [50, -62], [90, 74], [-90, 74]], ROSA); poli([[-54, -88], [54, -88], [52, -62], [-52, -62]], AMAR);
+      ctx.save(); ctx.lineWidth = 6; ctx.strokeStyle = "rgba(255,255,255,.75)"; [-34, 0, 34].forEach((x) => { ctx.beginPath(); ctx.moveTo(x * 0.7, -54); ctx.lineTo(x * 1.35, 66); ctx.stroke(); }); ctx.restore();
+      return; }
+    if (nome === "camiseta") {
+      poli([[-40, -86], [-92, -58], [-70, -12], [-48, -24], [-48, 88], [48, 88], [48, -24], [70, -12], [92, -58], [40, -86], [20, -70], [-20, -70]], ROSA);
+      estrela(0, 18, 26, AMAR); return; }
+    if (nome === "salto") { // sapato de salto
+      poli([[-94, 30], [-88, 4], [-44, 8], [16, -50], [58, -62], [94, -46], [94, -26], [72, -18], [62, 74], [44, 74], [46, -8], [6, 32], [-30, 58], [-94, 58]], ROSA);
+      ctx.save(); ctx.lineWidth = 7; ctx.strokeStyle = AMAR; ctx.beginPath(); ctx.moveTo(-86, 40); ctx.lineTo(-30, 44); ctx.stroke(); ctx.restore(); brilhoBranco(30, -38, 14, 6); return; }
+    if (nome === "bone") { // boné
+      ctx.beginPath(); ctx.moveTo(-74, 24); ctx.bezierCurveTo(-74, -86, 66, -86, 66, 24); ctx.closePath(); contorno(ROSA);
+      poli([[44, 8], [104, 22], [100, 46], [30, 34]], AMAR); bola(-4, -58, 10, AMAR); brilhoBranco(-36, -30, 14, 8); return; }
+    if (nome === "brinco") {
+      [[-42, 0], [42, 14]].forEach(([x, dy]) => { bola(x, -78 + dy, 12, AMAR); traco([[x, -64 + dy], [x, -34 + dy]], AMAR, 7);
+        ctx.beginPath(); ctx.moveTo(x, -34 + dy); ctx.bezierCurveTo(x + 40, 4 + dy, x + 30, 52 + dy, x, 52 + dy); ctx.bezierCurveTo(x - 30, 52 + dy, x - 40, 4 + dy, x, -34 + dy); ctx.closePath(); contorno(ROSA); brilhoBranco(x - 10, 14 + dy, 7, 12, -0.3); });
+      return; }
+    if (nome === "mochila") {
+      ctx.save(); ctx.lineWidth = 12; ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.arc(0, -54, 30, Math.PI, 0); ctx.stroke(); ctx.restore();
+      retArredondado(ctx, -66, -56, 132, 150, 34); contorno(ROSA); retArredondado(ctx, -44, 22, 88, 56, 14); contorno(AMAR);
+      ctx.save(); ctx.lineWidth = 6; ctx.strokeStyle = PRETO; ctx.beginPath(); ctx.moveTo(-30, 42); ctx.lineTo(30, 42); ctx.stroke(); ctx.restore(); return; }
+    if (nome === "paleta") { // paleta de maquiagem
+      ctx.save(); ctx.rotate(-0.12); retArredondado(ctx, -92, -62, 184, 124, 22); contorno(BRANCO);
+      [["#e8336d", -52, -24], ["#ffd23f", 0, -24], ["#c97b5a", 52, -24], ["#f6a6bf", -52, 26], ["#8a5a2b", 0, 26], ["#ffd9b0", 52, 26]].forEach(([c, x, y]) => bola(x, y, 20, c));
+      ctx.restore(); return; }
+    if (nome === "secador") { // secador de cabelo
+      poli([[-44, 6], [-6, 6], [-18, 96], [-52, 96]], AMAR);
+      retArredondado(ctx, 20, -64, 80, 60, 12); contorno(ROSA); bola(-12, -34, 60, ROSA); bola(-12, -34, 24, BRANCO);
+      ctx.save(); ctx.lineWidth = 6; ctx.strokeStyle = "rgba(255,255,255,.8)"; [-50, -34, -18].forEach((y) => { ctx.beginPath(); ctx.moveTo(106, y); ctx.lineTo(124, y); ctx.stroke(); }); ctx.restore(); return; }
+    if (nome === "chinelo") {
+      ctx.save(); ctx.rotate(-0.35); ctx.beginPath(); ctx.ellipse(0, 4, 54, 96, 0, 0, Math.PI * 2); contorno(ROSA);
+      traco([[-44, -6], [0, -50], [44, -6]], AMAR, 16); bola(0, -50, 10, AMAR); ctx.restore(); return; }
     if (nome === "foguete") {
       ctx.rotate(0.6);
       poli([[-38, 30], [-72, 72], [-38, 62]], ROSA); poli([[38, 30], [72, 72], [38, 62]], ROSA);
@@ -5991,48 +6374,46 @@
   }
   function produtoModerno(ctx, t, it, bmp, idx, n, mk, M, C, cor) {
     fundoReels(ctx, C, cor); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", cl = storyComLink && !!it.cupom, L = cl ? 640 : 680, cima = MODELOS_CIMA.has(D.chave), OY = cima ? 92 : 0, FY = (cl ? 780 : 800) + OY, SB = cl ? 112 : 70; // tudo um pouco mais pra cima: sobra espaço embaixo para o adesivo de link do Stories
+    const D = decorAtual || {}, estilo = ESTILO_LAY[D.lay] || "centro", cl = storyComLink, L = cl ? 650 : 680, cima = MODELOS_CIMA.has(D.chave), OY = cima ? 92 : 0, FY = (cl ? 760 : 800) + OY, SB = cl ? (cima ? 80 : 112) : 70; // tudo um pouco mais pra cima: sobra espaço embaixo para o adesivo de link do Stories
     const nome = limparNome(it.nome || ""), novo = it.precoNovo, antigo = it.precoAntigo && it.precoAntigo > novo ? it.precoAntigo : null;
     const titulo = mk === "top" ? `Top ${idx + 1}\n*${n > 1 ? "da semana" : "achadinho"}*` : M.titulo.replace("{n}", n > 1 ? n : "");
     const icone = (D.ic && D.ic[0]) || M.icone || "brilho";
     const preco = novo ? brl(novo) : "", off = antigo ? Math.round((1 - novo / antigo) * 100) : 0;
     // Alguns modelos invertem: nome e preço em cima, título embaixo da foto
-    const MV = storyComLink && flutua != null; // Story em movimento: os itens se mexem mais (menos o campo do cupom, que fica parado)
-    comSubida(ctx, t, A(0), () => { const ty = cima ? 186 + OY : 270;
-      if (MV) { ctx.translate(540, ty); ctx.rotate(0.025 * Math.sin(flutua * 0.9)); const sc = 1 + 0.035 * Math.sin(flutua * 1.3); ctx.scale(sc, sc); ctx.translate(-540, -ty + 8 * Math.sin(flutua * 1.1 + 1)); }
-      tituloGrande(ctx, titulo, ty, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone); });
+    const mv = movStory(), tyT = cima ? 186 + OY : 270;
+    comSubida(ctx, t, A(0), () => { if (mv) { ctx.translate(540, tyT + Math.sin(flutua * 1.3) * 10); ctx.rotate(0.02 * Math.sin(flutua * 0.9)); const st = 1 + 0.03 * Math.sin(flutua * 1.7); ctx.scale(st, st); ctx.translate(-540, -tyT); } tituloGrande(ctx, titulo, cima ? 186 + OY : 270, cima ? 100 : estilo === "grande" ? 128 : 124, C, estilo, icone); });
     // Foto (sempre igual)
     comPulo(ctx, t, A(1), 540, FY, () => {
-      if (flutua != null) { ctx.translate(0, Math.sin(flutua * 1.1) * (MV ? 24 : 12)); if (MV) ctx.rotate(0.03 * Math.sin(flutua * 0.8)); const sf = 1 + (MV ? 0.035 : 0.018) * Math.sin(flutua * 0.7); ctx.scale(sf, sf); }
+      if (flutua != null) { ctx.translate(0, Math.sin(flutua * 1.1) * 12); const sf = 1 + 0.018 * Math.sin(flutua * 0.7); ctx.scale(sf, sf); }
       ctx.save(); ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.restore();
       if (bmp) { const s = Math.min((L - 80) / bmp.width, (L - 80) / bmp.height) * (1 + 0.05 * Math.min(1, t / T_PROD)); ctx.save(); retArredondado(ctx, -L / 2, -L / 2, L, L, 64); ctx.clip(); ctx.drawImage(bmp, -bmp.width * s / 2, -bmp.height * s / 2, bmp.width * s, bmp.height * s); ctx.restore(); }
       else iconeReels(ctx, "bolsa", 300);
     });
-    if (it.loja) comPulo(ctx, t, A(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => { if (MV) { ctx.translate(0, 10 * Math.sin(flutua * 1.7 + 0.5)); ctx.rotate(0.15 * Math.sin(flutua * 1.2)); } seloLojaCanvas(ctx, it.loja, 0, 0, 62); });
+    if (it.loja) comPulo(ctx, t, A(2), 540 - L / 2 + 22, FY - L / 2 + 22, () => seloLojaCanvas(ctx, it.loja, 0, 0, 62));
     // Selo de desconto liso no canto da foto
     if (off >= 5) comPulo(ctx, t, A(2), 540 + L / 2 - 30, FY - L / 2 + 62, () => {
-      ctx.rotate(0.08 + (flutua != null ? (MV ? 0.14 : 0.06) * Math.sin(flutua * 1.4) : 0)); if (MV) { const bs = 1 + 0.08 * Math.sin(flutua * 2.1); ctx.scale(bs, bs); } { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? ((C.fundo === "#e8336d") ? "#ffd23f" : "#e8336d") : C.pill; ctx.fill(); ctx.restore();
+      ctx.rotate(0.08 + (flutua != null ? 0.06 * Math.sin(flutua * 1.4) : 0)); { const ps = 1 + 0.08 * pulsoTela; ctx.scale(ps, ps); } ctx.save(); ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fillStyle = estilo === "oferta" ? ((C.fundo === "#e8336d") ? "#ffd23f" : "#e8336d") : C.pill; ctx.fill(); ctx.restore();
       ctx.fillStyle = estilo === "oferta" ? ((C.fundo === "#e8336d") ? "#1d1d1f" : "#ffffff") : C.pillTexto; ctx.font = "900 58px Poppins"; ctx.fillText(`-${off}%`, 0, -8); ctx.font = "700 24px Poppins"; ctx.fillText("OFF", 0, 38);
     });
     if (cima) {
       ctx.font = "700 42px Poppins"; const lc = quebrarTexto(ctx, nome, 900, 2);
       comSubida(ctx, t, A(3), () => { ctx.font = "700 42px Poppins"; ctx.fillStyle = C.texto; lc.forEach((l, j) => ctx.fillText(l, 540, (lc.length > 1 ? 312 : 336) + OY + j * 48)); });
       if (antigo) comSubida(ctx, t, A(3.5), () => { ctx.font = "600 44px Poppins"; ctx.fillStyle = corAntiga(C); const tx = "de " + brl(antigo), w = ctx.measureText(tx).width, ld = ctx.measureText("de ").width; ctx.fillText(tx, 540, 1250 - SB + OY); ctx.fillRect(540 - w / 2 + ld, 1252 - SB + OY, w - ld, 5); });
-      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) - SB + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? (MV ? 0.07 : 0.04) * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
-      if (it.cupom && storyComLink) campoCupomLink(ctx, (antigo ? 1345 : 1290) - SB + OY + 88, it, C.destaque); // fixo, sem animação
+      if (novo) comPulo(ctx, t, A(4), 540, (antigo ? 1345 : 1290) - SB + OY, () => { { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? (0.04 + 0.05 * mv) * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); if (mv) ctx.rotate(0.025 * Math.sin(flutua * 1.2)); } const tx = (antigo ? "por " : "") + preco; let f = 112; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; } ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0); });
+      if (storyComLink) campoCupomLink(ctx, (antigo ? 1345 : 1290) - SB + OY + 88, it, C.destaque); // fixo, sem animação
       else if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, (antigo ? 1345 : 1290) - SB + OY + 84, it.cupom, 100, C.destaque, C.fundo); });
       return;
     }
     // Nome, preço antigo e preço (sempre centralizados)
     ctx.font = "700 52px Poppins"; const ln = quebrarTexto(ctx, nome, 920, 2);
-    comSubida(ctx, t, A(3), () => { if (MV) { ctx.translate(540, 1300 - SB); const ns = 1 + 0.025 * Math.sin(flutua * 1.5 + 2); ctx.scale(ns, ns); ctx.translate(-540, -(1300 - SB)); } ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 - SB + j * 62)); });
+    comSubida(ctx, t, A(3), () => { ctx.font = "700 52px Poppins"; ctx.fillStyle = C.texto; ln.forEach((l, j) => ctx.fillText(l, 540, 1275 - SB + j * 62)); });
     let y = 1275 - SB + ln.length * 62 + 30;
     const riscado = (tx, yy, tam) => { ctx.font = `600 ${tam}px Poppins`; ctx.fillStyle = corAntiga(C); ctx.fillText(tx, 540, yy); const w = ctx.measureText(tx).width, ld = ctx.measureText(tx.split(" ")[0] + " ").width; ctx.fillRect(540 - w / 2 + ld, yy + 2, w - ld, 5); };
     if (antigo && estilo === "oferta") comSubida(ctx, t, A(3.5), () => riscado("antes " + brl(antigo), y, 46));
     else if (antigo) comSubida(ctx, t, A(3.5), () => riscado("de " + brl(antigo), y, 46));
     y += antigo ? 95 : 55;
     if (novo) comPulo(ctx, t, A(4), 540, y, () => {
-      { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? (MV ? 0.07 : 0.04) * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); }
+      { const ps = 1 + 0.05 * pulsoTela + (flutua != null ? (0.04 + 0.05 * mv) * Math.sin(flutua * 1.6) : 0); ctx.scale(ps, ps); if (mv) ctx.rotate(0.025 * Math.sin(flutua * 1.2)); }
       const tx = (antigo ? "por " : "") + preco;
       if (estilo === "grande") { ctx.font = "900 88px Poppins"; const w = ctx.measureText(tx).width + 90; retArredondado(ctx, -w / 2, -64, w, 128, 64); ctx.fillStyle = C.pill; ctx.fill(); ctx.fillStyle = C.pillTexto; ctx.fillText(tx, 0, 4); return; }
       let f = estilo === "oferta" ? 124 : 108; ctx.font = `900 ${f}px Poppins`; while (f > 70 && ctx.measureText(tx).width > 960) { f -= 4; ctx.font = `900 ${f}px Poppins`; }
@@ -6040,7 +6421,7 @@
       if (estilo === "contorno") { ctx.lineWidth = 5; ctx.strokeStyle = C.destaque; ctx.strokeText(tx, 0, 0); ctx.fillStyle = C.destaque; ctx.fillRect(-w / 2, f * 0.52, w, 10); return; }
       ctx.fillStyle = C.destaque; ctx.fillText(tx, 0, 0);
     });
-    if (it.cupom && storyComLink) campoCupomLink(ctx, y + 88, it, C.destaque); // bem separado do preço // fixo, sem animação
+    if (storyComLink) campoCupomLink(ctx, y + 88, it, C.destaque); // bem separado do preço // fixo, sem animação
     else if (it.cupom) comSubida(ctx, t, A(5), () => { const cw = medidaCupom(ctx, it.cupom, 100).w; desenharCupom(ctx, 540 - cw / 2, y + 84, it.cupom, 100, C.destaque, C.fundo); });
   }
   /** Quadro do Reels no tempo t */
@@ -6091,7 +6472,7 @@
     const parar = () => { amostraK = ""; document.querySelectorAll("[data-ouvir]").forEach((b) => { b.innerHTML = ICO_PLAY; b.classList.remove("tocando"); }); };
     if (!k || k === amostraK) { parar(); return; }
     parar(); amostraK = k;
-    const b = document.querySelector(`[data-ouvir="${k}"]`); if (b) { b.innerHTML = ICO_PAUSA; b.classList.add("tocando"); }
+    document.querySelectorAll(`[data-ouvir="${k}"]`).forEach((b) => { b.innerHTML = ICO_PAUSA; b.classList.add("tocando"); }); // todos os botões dessa música (a da lista e a da tela de trás)
     try { amostra = new (window.AudioContext || window.webkitAudioContext)(); const ac = amostra; amostra.resume && amostra.resume();
       carregarSons(ac, MUSICAS[k]).then(() => { if (amostra === ac) tocarTrilha(ac, ac.destination, 8, [], [], null, MUSICAS[k], null); }); amostraT = setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } parar(); }, 8300); } catch (e) { parar(); }
   }
@@ -6150,7 +6531,9 @@
     branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", em: "#e8336d", b1: "rgba(255,210,63,.45)", b2: "#efeae0", b3: "rgba(255,210,63,.45)", circ: "#fff8e4" },
     rosa: { nome: "Rosa", fundo: "#e8336d", texto: "#ffffff", em: "#ffd23f", b1: "#ffffff", b2: "#ffffff", b3: "rgba(255,255,255,.7)", circ: "#ffffff" },
     creme: { nome: "Creme", fundo: "#fff3c4", texto: "#1d1d1f", em: "#e8336d", b1: "rgba(255,210,63,.6)", b2: "#ffffff", b3: "rgba(255,210,63,.6)", circ: null, grad: true },
-    preto: { nome: "Preto", fundo: "#1d1d1f", texto: "#ffffff", em: "#ffd23f", b1: "#e8336d", b2: "#e9e4d8", b3: "#e8336d", circ: "#ffffff" }
+    preto: { nome: "Preto", fundo: "#1d1d1f", texto: "#ffffff", em: "#ffd23f", b1: "#e8336d", b2: "#e9e4d8", b3: "#e8336d", circ: "#ffffff" },
+    rose: { nome: "Rosê", fundo: "#f6c9d3", texto: "#1d1d1f", em: "#b0124a", b1: "rgba(255,255,255,.7)", b2: "#ffffff", b3: "rgba(255,255,255,.7)", circ: "#ffffff" },
+    verde: { nome: "Verde pastel", fundo: "#cdebd5", texto: "#1d1d1f", em: "#1f7a4d", b1: "rgba(255,255,255,.7)", b2: "#ffffff", b3: "rgba(255,255,255,.7)", circ: "#ffffff" }
   };
   const EMOJIS_CARTA = ["💖", "✨", "🔥", "💸", "👀", "😍", "🛍️", "🎁", "⏳", "👉", "✅", "⭐", "🌸", "💄", "👗", "👟"];
   const car = () => wz.car;
@@ -6161,10 +6544,11 @@
       { cor: "branco", ic: "porcento", titulo: "Pague *menos*\nnas compras online", texto: "5 truques que eu uso todo dia", botao: "Arrasta pro lado →" },
       { cor: "rosa", ic: "carrinho", titulo: "*1.* Seu título aqui", texto: "Escreva a dica aqui.", botao: "" },
       { cor: "preto", ic: "coracao", titulo: "Entra no meu\n*canal*", texto: "Achadinho conferido todo dia no canal do WhatsApp. O link tá na bio!", botao: at ? `Segue a ${at}` : "Segue a gente 💖" }];
-    wz = { canal: "cartas", passo: "kaEditar", veioDaLista: true, car: { telas: salvo && Array.isArray(salvo.telas) && salvo.telas.length ? salvo.telas : padrao, legenda: (salvo && salvo.legenda) || "", assunto: (salvo && salvo.assunto) || "", sel: 0, campo: "titulo" } };
+    const temSalvo = !!(salvo && Array.isArray(salvo.telas) && salvo.telas.length);
+    wz = { canal: "cartas", passo: "kaInicio", veioDaLista: true, car: { telas: temSalvo ? salvo.telas : padrao, padrao, legenda: (salvo && salvo.legenda) || "", assunto: (salvo && salvo.assunto) || "", ideia: (salvo && salvo.ideia) || "", qtd: (salvo && salvo.qtd) || 5, corBase: (salvo && salvo.corBase) || "alterna", temSalvo, resp: null, sel: 0, campo: "titulo" } };
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
-  const guardarCartas = () => { try { localStorage.setItem("miga_carrossel", JSON.stringify({ telas: car().telas, legenda: car().legenda || "", assunto: car().assunto || "" })); } catch (e) { /* segue */ } };
+  const guardarCartas = () => { const K = car(); try { localStorage.setItem("miga_carrossel", JSON.stringify({ telas: K.telas, legenda: K.legenda || "", assunto: K.assunto || "", ideia: K.ideia || "", qtd: K.qtd || 5, corBase: K.corBase || "alterna" })); } catch (e) { /* segue */ } };
   function quebrarCarta(ctx, txt, larg) {
     const saida = [];
     String(txt || "").split("\n").forEach((par) => { let linha = ""; par.split(" ").forEach((p) => { const t = linha ? linha + " " + p : p; if (ctx.measureText(t.replace(/\*/g, "")).width > larg && linha) { saida.push(linha); linha = p; } else linha = t; }); saida.push(linha); });
@@ -6193,20 +6577,20 @@
     x.restore();
   }
   /** Prompt para pedir o carrossel a uma IA (Gemini, ChatGPT…) e colar a resposta aqui */
-  const promptCartas = (assunto) => `Você vai criar um carrossel para o Instagram da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}): perfil de achadinhos e promoções da Shopee, Mercado Livre e Amazon, para mulheres. Tom de amiga, alegre e direto, frases curtas, português do Brasil.
+  const promptCartas = (assunto, qtd, corBase) => `Você vai criar um carrossel para o Instagram da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}): perfil de achadinhos e promoções da Shopee, Mercado Livre e Amazon, para mulheres. Tom de amiga, alegre e direto, frases curtas, português do Brasil.
 
 ASSUNTO DO CARROSSEL: ${assunto}
-QUANTIDADE DE TELAS: de 5 a 8 (você decide)
+QUANTIDADE DE TELAS: exatamente ${qtd || 5}
 
 Regras:
 - A tela 1 é a capa: um gancho forte que dá vontade de arrastar para o lado.
 - As telas do meio ensinam (uma dica por tela, numeradas: *1.*, *2.*...).
 - A última tela chama para seguir o perfil e entrar no canal do WhatsApp (link na bio).
 - O @ do perfil é ${arroba(config.instagram) || "@migapromo.oficial"}: escreva sempre exatamente assim, completo.
-- Comece pela cor "branco" e depois alterne entre "rosa", "creme" e "preto".
+- ${corBase && corBase !== "alterna" ? `Todas as telas com a cor "${corBase}".` : 'Comece pela cor "branco" e depois alterne entre "rosa", "creme" e "preto".'}
 
 Campos de cada tela:
-- cor: "branco", "rosa", "creme" ou "preto"
+- cor: "branco", "rosa", "creme", "preto", "rose" (rosê) ou "verde" (verde pastel)
 - figurinha: uma destas (ou "" para nenhuma): ${FIGURAS.join(", ")}
 - titulo: até 40 letras. Coloque *asteriscos* em volta de 1 palavra para destacar. Use \\n para quebrar a linha.
 - texto: até 140 letras (pode ser "")
@@ -6222,11 +6606,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   {"cor": "branco", "figurinha": "porcento", "titulo": "Pague *menos*\\nnas compras online", "texto": "5 truques que eu uso todo dia", "botao": "Arrasta pro lado →"},
   {"cor": "rosa", "figurinha": "carrinho", "titulo": "*1.* Deixa no carrinho", "texto": "Muita loja manda cupom pra quem esquece o produto no carrinho.", "botao": ""}
  ]}`;
-  const NOME_FIG = { brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", setabaixo: "seta para baixo", noel: "Papai Noel", champanhe: "taça de champanhe", fogueira: "fogueira", cifrao: "cifrão", esmalte: "mão passando esmalte", saco: "saco de dinheiro", termometro: "termômetro", alfinete: "alfinete", abobora: "abóbora", lua: "lua", musculo: "braço forte", boca: "boca", frio: "carinha com frio", estrelada: "carinha com olhos de estrela", apaixonada: "carinha apaixonada", descolada: "carinha de óculos escuros", biquini: "biquíni", brasil: "bandeira do Brasil", laco: "laço", oculos: "óculos de sol", espelho: "espelho de mão", sol: "sol", pincel: "pincel de maquiagem", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa", seguidor: "novo seguidor", notificacao: "notificação de seguidores", medalha: "medalha", confete: "confete de festa", grafico: "gráfico subindo", bolo: "bolo de comemoração", curtida: "coração de curtida", baloes: "balões de festa" };
+  const NOME_FIG = { jeans: "calça jeans", shortjeans: "short jeans", saia: "saia", camiseta: "camiseta", salto: "sapato de salto", bone: "boné", brinco: "brincos", mochila: "mochila", paleta: "paleta de maquiagem", secador: "secador de cabelo", chinelo: "chinelo", brilho: "brilhos", estrela: "estrela", top: "top de academia", tenis: "tênis", pote: "pote de suplemento", fogo: "fogo", raio: "raio", coracao: "coração", presente: "presente", bolsa: "bolsa", carrinho: "carrinho de compras", etiqueta: "etiqueta de preço", cupom: "cupom", porcento: "símbolo de porcentagem", dinheiro: "nota de dinheiro", seta: "seta", megafone: "megafone", relogio: "despertador", check: "sinal de certo", trofeu: "troféu", arvore: "árvore de Natal", floco: "floco de neve", casa: "casinha", panela: "panela", perfume: "frasco de perfume", batom: "batom", cabide: "cabide", haltere: "haltere", patinha: "patinha", mamadeira: "mamadeira", fone: "fone de ouvido", aviao: "avião", lapis: "lápis", foguete: "foguete", setabaixo: "seta para baixo", noel: "Papai Noel", champanhe: "taça de champanhe", fogueira: "fogueira", cifrao: "cifrão", esmalte: "mão passando esmalte", saco: "saco de dinheiro", termometro: "termômetro", alfinete: "alfinete", abobora: "abóbora", lua: "lua", musculo: "braço forte", boca: "boca", frio: "carinha com frio", estrelada: "carinha com olhos de estrela", apaixonada: "carinha apaixonada", descolada: "carinha de óculos escuros", biquini: "biquíni", brasil: "bandeira do Brasil", laco: "laço", oculos: "óculos de sol", espelho: "espelho de mão", sol: "sol", pincel: "pincel de maquiagem", bomba: "bomba", corra: "pessoa correndo", flor: "flor", sacola: "sacola de compras", caminhao: "caminhão de entrega", celular: "celular", sino: "sino", olhos: "olhos", carteira: "carteira", diamante: "diamante", coroa: "coroa", calendario: "calendário", lupa: "lupa", vestido: "vestido", balao: "balão de conversa", seguidor: "novo seguidor", notificacao: "notificação de seguidores", medalha: "medalha", confete: "confete de festa", grafico: "gráfico subindo", bolo: "bolo de comemoração", curtida: "coração de curtida", baloes: "balões de festa" };
   const semDestaque = (s) => String(s || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " ").trim();
   /** Texto alternativo feito pelo app: diz o que aparece e copia exatamente o que está escrito na imagem */
   function altCarta(tela, i, n) {
-    const cor = { branco: "branco", rosa: "rosa", creme: "creme", preto: "preto" }[tela.cor] || "branco";
+    const cor = { branco: "branco", rosa: "rosa", creme: "creme", preto: "preto", rose: "rosê", verde: "verde pastel" }[tela.cor] || "branco";
     const partes = [`Imagem ${i + 1} de ${n}. Arte de fundo ${cor}${tela.ic ? ` com a figurinha de ${NOME_FIG[tela.ic] || tela.ic}` : ""}.`];
     if (tela.titulo) partes.push(`Título: "${semDestaque(tela.titulo)}".`); if (tela.texto) partes.push(`Texto: "${semDestaque(tela.texto)}".`); if (tela.botao) partes.push(`Botão: "${semDestaque(tela.botao)}".`);
     return partes.join(" ");
@@ -6250,10 +6634,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (!l) { const i = txt.indexOf("["), j = txt.lastIndexOf("]"); if (i < 0 || j < i) return null; try { l = jsonTolerante(txt.slice(i, j + 1)); } catch (e) { return null; } }
     if (!Array.isArray(l) || !l.length) return null;
     const telas = l.slice(0, 10).map((o) => ({ alt: "", cor: CORES_CARTA[String(o.cor || "").toLowerCase()] ? String(o.cor).toLowerCase() : "branco", ic: FIGURAS.includes(o.figurinha) ? o.figurinha : "",
-      titulo: String(o.titulo || "").slice(0, 80), texto: String(o.texto || "").slice(0, 200), botao: String(o.botao || "").slice(0, 34) }));
+      titulo: String(o.titulo || "").replace(/\\n/g, "\n").slice(0, 80), texto: String(o.texto || "").replace(/\\n/g, "\n").slice(0, 200), botao: String(o.botao || "").slice(0, 34) }));
     return { telas, legenda };
   }
-  function telaCartas(c) {
+  function telaCartas(c) { if (telaCartasNova(c)) return; telaCartasAntiga(c); }
+  function telaCartasAntiga(c) {
     const K = car(), T = K.telas, s = T[K.sel] || T[0];
     const chips = (attr, lista, atual) => `<div class="ed-chips ch-chips">${lista.map(([k, n]) => `<button type="button" ${attr}="${k}" class="${k === atual ? "on" : ""}">${n}</button>`).join("")}</div>`;
     c.innerHTML = `<h2 class="wz-titulo">Carrossel</h2>
@@ -6282,6 +6667,126 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     carregarMarca().then(pintarCartas);
     document.querySelectorAll("[data-fig-ka]").forEach((cv) => { const x = cv.getContext("2d"); x.translate(30, 30); iconeReels(x, cv.dataset.figKa, 46); });
   }
+  /* ===== Carrossel de imagens no padrão: Sobre o que é? → Revisar (rolando) → Postar → Pronto ===== */
+  const IDEIAS_CARTAS = { Economia: ["Como achar cupom na Shopee", "Dicas pra economizar nas compras", "Erros ao comprar online", "Como comprar sem pagar taxa"], Achadinhos: ["Achadinhos da semana", "Achadinhos até R$ 50", "Os mais vendidos do mês", "Presentes baratos e lindos"], Categorias: ["Perfumes que valem a pena", "Make barata que funciona", "Casa organizada gastando pouco", "Moda fitness baratinha"] };
+  const corTelaCarta = (K, i) => (K.corBase && K.corBase !== "alterna" ? K.corBase : ["branco", "rosa", "creme", "preto"][i % 4]);
+  const BOLA_ALTERNA = "conic-gradient(#fff 0 25%, #e8336d 0 50%, #fff3c4 0 75%, #1d1d1f 0)";
+  function telaCartasNova(c) {
+    const K = car(), T = K.telas, pd = (h) => h.replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"');
+    if (wz.passo === "kaInicio") {
+      const assunto = K.assunto || K.ideia || "";
+      c.innerHTML = `<div class="ka2">
+        ${K.temSalvo ? `<div class="ka2-ult"><canvas width="88" height="88" data-ka2-ult></canvas><span><b>Último carrossel</b>${esc(semDestaque(T[0] && T[0].titulo || "Carrossel"))}</span></div>
+        <div class="rp-duas ka2-ult-bt"><button type="button" class="btn btn--rosa" id="ka2Continuar">Continuar</button><button type="button" class="btn btn--branco" id="ka2Novo">Novo</button></div>` : ""}
+        <button type="button" class="rp-modelo" id="ka2Ideias"><span><small>Ideia pronta</small><b>${esc(K.ideia || "Escolher uma ideia")}</b></span><i>${K.ideia ? "Trocar" : "Escolher"}</i></button>
+        <label class="ka2-campo"><span>Ou escreva do que vai falar</span><input id="kaAssunto" maxlength="120" placeholder="Ex.: como comprar na Shein sem taxa" value="${esc(K.assunto || "")}"></label>
+        <b class="ch-rot">Quantas telas?</b><div class="pe-seg">${[3, 5, 7].map((q) => `<button type="button" data-ka2-qtd="${q}" class="${(K.qtd || 5) === q ? "on" : ""}">${q}</button>`).join("")}</div>
+        <b class="ch-rot">Cor</b><div class="rp-cores">${[["alterna", BOLA_ALTERNA, "Alternar as cores"], ...Object.entries(CORES_CARTA).map(([k, v]) => [k, v.fundo, v.nome])].map(([k, bg, n]) => `<button type="button" data-ka2-cor="${k}" class="${(K.corBase || "alterna") === k ? "on" : ""}" style="background:${bg}" aria-label="${n}" title="${n}"></button>`).join("")}</div>
+        <div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="ka2Copiar">Copiar prompt</button><button type="button" class="btn ${K.resp ? "btn--branco" : "btn--rosa"} rp-adesivo ka2-colar" id="ka2Colar">${K.resp ? `Colado · ${K.resp.telas.length} telas` : "Colar resposta"}</button></div>
+        <p class="nota">${K.resp ? "Resposta da IA colada: toque em Montar o carrossel." : assunto ? "Copie o prompt, faça na IA e cole a resposta. Sem colar, o app monta telas prontas para você escrever." : "Escolha uma ideia ou escreva o assunto, copie o prompt, faça na IA (ChatGPT ou Gemini) e cole a resposta."}</p>
+      </div>
+      <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="ka2Montar">Montar o carrossel</button></div>`;
+      if (K.temSalvo) carregarMarca().then(() => { const cv = document.querySelector("[data-ka2-ult]"); if (cv && T[0]) desenharCarta(cv.getContext("2d"), 88, T[0], 0, T.length); });
+      return true;
+    }
+    if (wz.passo === "kaRevisar") {
+      c.innerHTML = `<div class="ka2">${T.map((t, i) => `<section class="ka2-tela" data-ka2-tela="${i}">
+          <p class="rt-etapa">Tela ${i + 1} de ${T.length}${i === 0 ? " · capa" : i === T.length - 1 && T.length > 1 ? " · final" : ""}</p>
+          <div class="wz-previa rp-prev ka2-prev"><canvas width="540" height="540" data-ka2-cv="${i}"></canvas></div>
+          <div class="ka2-alt"><span><b>Texto alternativo:</b> <i data-ka2-alt="${i}">${esc(t.alt || altCarta(t, i, T.length))}</i></span><button type="button" data-ka2-copalt="${i}">Copiar</button></div>
+          <label class="ka2-campo"><span>Título (use *asteriscos* para destacar)</span><textarea rows="2" maxlength="80" data-ka2-campo="titulo" data-i="${i}">${esc(t.titulo || "")}</textarea></label>
+          <label class="ka2-campo"><span>Texto</span><textarea rows="2" maxlength="200" data-ka2-campo="texto" data-i="${i}">${esc(t.texto || "")}</textarea></label>
+          <label class="ka2-campo"><span>Botão amarelo (vazio para não ter)</span><input maxlength="34" data-ka2-campo="botao" data-i="${i}" value="${esc(t.botao || "")}"></label>
+          <div class="rp-duas"><button type="button" class="rp-modelo ka2-fig" data-ka2-fig="${i}"><span><small>Figurinha</small><b>${esc(t.ic ? (NOME_FIG[t.ic] || t.ic) : "Sem figurinha")}</b></span><i>Trocar</i></button><button type="button" class="btn btn--branco rp-adesivo" data-ka2-emo="${i}">😀 Emojis</button></div>
+          <div class="rp-cores ka2-cores">${Object.entries(CORES_CARTA).map(([k, v]) => `<button type="button" data-ka2-tcor="${i}:${k}" class="${t.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}"></button>`).join("")}</div>
+          <div class="ka2-ops"><button type="button" data-ka2-op="sobe:${i}"${i === 0 ? " disabled" : ""}>↑ Subir</button><button type="button" data-ka2-op="desce:${i}"${i === T.length - 1 ? " disabled" : ""}>↓ Descer</button><button type="button" data-ka2-op="dup:${i}"${T.length >= 10 ? " disabled" : ""}>Duplicar</button><button type="button" class="ka2-tirar" data-ka2-op="tirar:${i}"${T.length <= 1 ? " disabled" : ""}>Tirar</button></div>
+        </section>`).join("")}
+        ${T.length < 10 ? '<button type="button" class="ka2-nova" id="ka2NovaTela">+ Nova tela</button>' : ""}</div>
+        ${pd(botaoContinuar(true, "Ir para postar"))}`;
+      carregarMarca().then(() => document.querySelectorAll("[data-ka2-cv]").forEach((cv) => { const i = +cv.dataset.ka2Cv; desenharCarta(cv.getContext("2d"), 540, T[i], i, T.length); }));
+      return true;
+    }
+    if (wz.passo === "kaPostar") {
+      c.innerHTML = `<div class="ka2"><p class="rt-etapa">Carrossel · ${T.length} imagens</p>
+        <div class="car-trilho kk-trilho">${T.map((t, i) => `<canvas width="540" height="540" data-ka2-cv="${i}"></canvas>`).join("")}</div>
+        <p class="nota kk-nota">Arraste para o lado para ver todas.</p>
+        <textarea id="kaLegenda" class="rr-leg" aria-label="Legenda (toque para editar)" placeholder="Escreva a legenda do post">${esc(K.legenda || "")}</textarea>
+        <div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="kaCopiarLeg">Copiar legenda</button><button type="button" class="btn btn--branco rp-adesivo" id="kaBaixar">Baixar as ${T.length} imagens</button></div>
+        ${ehComputador() ? "" : '<button type="button" class="ka2-zip" id="kaZip">Baixar tudo em .zip (com legenda e textos alternativos)</button>'}</div>
+        <div class="wz-rodape pr-rodape rp-rod2">${K.postado ? '<button type="button" class="btn btn--rosa wz-continuar" id="ka2Fim">Continuar</button><button type="button" class="rp-link" id="ka2Postar">Postar de novo</button>' : '<button type="button" class="btn btn--rosa wz-continuar" id="ka2Postar">Postar no Instagram</button><button type="button" class="rp-link" id="ka2Fim">Pular</button>'}</div>`;
+      carregarMarca().then(() => document.querySelectorAll("[data-ka2-cv]").forEach((cv) => { const i = +cv.dataset.ka2Cv; desenharCarta(cv.getContext("2d"), 540, T[i], i, T.length); }));
+      return true;
+    }
+    if (wz.passo === "kaPronto") {
+      c.innerHTML = `<div class="rt-fim"><h2 class="wz-titulo">${K.postado ? "Carrossel postado!" : "Carrossel pronto"}</h2><div class="rt-lista"><div><span>Instagram · ${T.length} imagens</span><b class="${K.postado ? "ok" : ""}">${K.postado ? "Postado" : "Não postado"}</b></div></div></div>
+        <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="ka2Outro">Começar um carrossel novo</button><button type="button" class="btn btn--branco rp-outro" id="ka2Inicio">Voltar para o início</button></div>`;
+      return true;
+    }
+    return false;
+  }
+  function folhaFig(i) {
+    const K = car(), t = K.telas[i];
+    folhaEst("Escolha a figurinha", `<div class="ch-figs ka2-figs">${["", ...FIGURAS].map((f) => `<button type="button" data-ka2-pick="${i}:${f}" class="${f === (t.ic || "") ? "on" : ""}" aria-label="${f || "sem figurinha"}">${f ? `<canvas width="60" height="60" data-fig-ka2="${f}"></canvas>` : "✕"}</button>`).join("")}</div>`);
+    document.querySelectorAll("[data-fig-ka2]").forEach((cv) => { const x = cv.getContext("2d"); x.translate(30, 30); iconeReels(x, cv.dataset.figKa2, 46); });
+  }
+  function folhaIdeias() {
+    const K = car();
+    folhaEst("Ideias prontas", Object.entries(IDEIAS_CARTAS).map(([g, l]) => `<p class="fm-sec">${g}</p><div class="fm-grade">${l.map((x) => `<button type="button" class="fm-op fm-op--sem${K.ideia === x ? " on" : ""}" data-ka2-ideia="${esc(x)}"><span>${esc(x)}</span></button>`).join("")}</div>`).join("") + '');
+  }
+  function redesenharTelaKa(i) { const K = car(), cv = document.querySelector(`[data-ka2-cv="${i}"]`); if (cv) desenharCarta(cv.getContext("2d"), 540, K.telas[i], i, K.telas.length); const a = document.querySelector(`[data-ka2-alt="${i}"]`); if (a) a.textContent = K.telas[i].alt || altCarta(K.telas[i], i, K.telas.length); }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "cartas") return; const K = car(), T = K.telas, t = e.target;
+    const re = () => { guardarCartas(); const y = scrollY; mostrarPasso(); scrollTo(0, y); };
+    if (t.closest("#ka2Continuar")) { K.resp = null; wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#ka2Novo")) { if (!(await confirmar({ titulo: "Começar um novo?", texto: "O último carrossel será apagado.", ok: "Começar novo" }))) return; try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } K.telas = K.padrao.map((x) => ({ ...x })); K.legenda = ""; K.assunto = ""; K.ideia = ""; K.temSalvo = false; K.resp = null; K.postado = false; mostrarPasso(); toast("Pronto: comece o novo carrossel"); return; }
+    if (t.closest("#ka2Ideias")) { folhaIdeias(); return; }
+    const q = t.closest("[data-ka2-qtd]"); if (q) { K.qtd = +q.dataset.ka2Qtd; guardarCartas(); re(); return; }
+    const cb = t.closest("[data-ka2-cor]"); if (cb) { K.corBase = cb.dataset.ka2Cor; guardarCartas(); re(); return; }
+    if (t.closest("#ka2Copiar")) { const as = (K.assunto || K.ideia || "").trim(); if (!as) { toast("Escolha uma ideia ou escreva do que vai falar"); return; } if (await copiarTexto(promptCartas(as, K.qtd || 5, K.corBase))) toast("Prompt copiado: cole no ChatGPT ou no Gemini"); return; }
+    if (t.closest("#ka2Colar")) {
+      let txt = ""; try { txt = await navigator.clipboard.readText(); } catch (err) { txt = ""; }
+      const r = txt ? lerRespostaCartas(txt) : null;
+      if (!r) { folhaEst("Colar resposta da IA", `<p class="nota">Cole aqui a resposta inteira da IA (o bloco que começa com { ).</p><label class="ch-campo"><span>Resposta</span><textarea id="kaResp" rows="9"></textarea></label><button type="button" class="btn btn--rosa" id="ka2Aplicar">Usar esta resposta</button>`); return; }
+      K.resp = r; toast(`${r.telas.length} telas prontas: toque em Montar o carrossel`); re(); return;
+    }
+    if (t.closest("#ka2Montar")) { if (!K.resp) { K.telas = K.padrao.map((x, i) => ({ ...x, cor: corTelaCarta(K, i) })); K.temSalvo = true; K.postado = false; guardarCartas(); wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; } /* sem a IA: telas prontas para escrever */ K.telas = K.resp.telas.map((x, i) => (K.corBase && K.corBase !== "alterna" ? { ...x, cor: K.corBase } : x)); if (K.resp.legenda) K.legenda = K.resp.legenda; K.resp = null; K.temSalvo = true; K.postado = false; guardarCartas(); wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#ka2Zero")) { K.telas = K.padrao.map((x, i) => ({ ...x, cor: corTelaCarta(K, i) })); K.resp = null; K.temSalvo = true; K.postado = false; guardarCartas(); wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; }
+    const ca = t.closest("[data-ka2-copalt]"); if (ca) { const i = +ca.dataset.ka2Copalt; if (await copiarTexto(T[i].alt || altCarta(T[i], i, T.length))) toast(`Texto alternativo da tela ${i + 1} copiado`); return; }
+    const fg = t.closest("[data-ka2-fig]"); if (fg) { folhaFig(+fg.dataset.ka2Fig); return; }
+    const em = t.closest("[data-ka2-emo]"); if (em) { const i = +em.dataset.ka2Emo; K.campoI = i; folhaEst("Emojis", `<p class="nota">Entram no campo que você tocou por último (${K.campo === "texto" ? "texto" : K.campo === "botao" ? "botão" : "título"} da tela ${i + 1}).</p><div class="ka-emojis">${EMOJIS_CARTA.map((x) => `<button type="button" data-ka2-emoji="${x}">${x}</button>`).join("")}</div>`); return; }
+    const tc = t.closest("[data-ka2-tcor]"); if (tc) { const [i, k] = tc.dataset.ka2Tcor.split(":"); T[+i].cor = k; tc.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === tc)); guardarCartas(); redesenharTelaKa(+i); return; }
+    const op = t.closest("[data-ka2-op]"); if (op) { const [o, i0] = op.dataset.ka2Op.split(":"), i = +i0;
+      if (o === "sobe" && i > 0) [T[i - 1], T[i]] = [T[i], T[i - 1]]; else if (o === "desce" && i < T.length - 1) [T[i + 1], T[i]] = [T[i], T[i + 1]]; else if (o === "dup" && T.length < 10) T.splice(i + 1, 0, { ...T[i] }); else if (o === "tirar" && T.length > 1) T.splice(i, 1); re(); return; }
+    if (t.closest("#ka2NovaTela")) { const fim = T.length > 1 ? T.length - 1 : T.length; T.splice(fim, 0, { cor: corTelaCarta(K, fim), ic: "estrela", titulo: `*${fim}.* Seu título aqui`, texto: "Escreva a dica aqui.", botao: "" }); re(); return; }
+    if (t.closest("#ka2Postar")) {
+      K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas(); await carregarMarca(); const arqs = [];
+      for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, i === 0 ? "00-capa.jpg" : `${String(i).padStart(2, "0")}.jpg`)); }
+      if (K.legenda) await copiarTexto(K.legenda);
+      let ok = false;
+      if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs }); ok = true; } catch (err) { if (err.name === "AbortError") return; } }
+      if (!ok) { arqs.forEach((f, i) => setTimeout(() => baixarBlob(f, f.name), i * 350)); toast("Imagens salvas: no Instagram, escolha várias na ordem. A legenda já está copiada"); }
+      else if (K.legenda) toast("Legenda copiada: é só colar no Instagram");
+      K.postado = true; re(); return;
+    }
+    if (t.closest("#ka2Fim")) { wz.passo = "kaPronto"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#ka2Outro")) { abrirCartas(); return; }
+    if (t.closest("#ka2Inicio")) { wz = {}; irPara("inicio"); return; }
+  });
+  $("#folhaEst").addEventListener("click", (e) => {
+    if (wz.canal !== "cartas") return; const K = car(), t = e.target;
+    if (t.closest("[data-ka2-fechar]")) { $("#folhaEst").close(); return; }
+    const id = t.closest("[data-ka2-ideia]"); if (id) { K.ideia = id.dataset.ka2Ideia; K.assunto = ""; guardarCartas(); $("#folhaEst").close(); mostrarPasso(); return; }
+    const pk = t.closest("[data-ka2-pick]"); if (pk) { const [i, f] = pk.dataset.ka2Pick.split(":"); K.telas[+i].ic = f; guardarCartas(); $("#folhaEst").close(); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const em = t.closest("[data-ka2-emoji]"); if (em) { const i = K.campoI || 0, campo = K.campo || "titulo", el = document.querySelector(`[data-ka2-campo="${campo}"][data-i="${i}"]`); if (!el) return;
+      const p = el.selectionStart ?? el.value.length; el.value = el.value.slice(0, p) + em.dataset.ka2Emoji + el.value.slice(el.selectionEnd ?? p); K.telas[i][campo] = el.value; guardarCartas(); redesenharTelaKa(i); toast("Emoji colocado"); return; }
+    if (t.closest("#ka2Aplicar")) { const r = lerRespostaCartas($("#kaResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } K.resp = r; $("#folhaEst").close(); mostrarPasso(); toast(`${r.telas.length} telas prontas: toque em Montar o carrossel`); }
+  });
+  $("#wzCorpo").addEventListener("focusin", (e) => { if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.ka2Campo) { car().campo = e.target.dataset.ka2Campo; car().campoI = +e.target.dataset.i; } });
+  $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal !== "cartas") return; const K = car(), d = e.target.dataset || {};
+    if (d.ka2Campo) { const i = +d.i; K.telas[i][d.ka2Campo] = e.target.value; guardarCartas(); redesenharTelaKa(i); return; }
+    if (e.target.id === "kaAssunto" && wz.passo === "kaInicio") { K.assunto = e.target.value; if (e.target.value.trim()) K.ideia = ""; guardarCartas(); }
+  });
   function pintarCartas(soAtual) {
     const K = car(); if (!K) return; const q = $("#kaQuadro"); if (q) desenharCarta(q.getContext("2d"), 540, K.telas[K.sel], K.sel, K.telas.length);
     document.querySelectorAll("[data-ka-mini]").forEach((cv) => { const i = +cv.dataset.kaMini; if (soAtual && i !== K.sel) return; desenharCarta(cv.getContext("2d"), 120, K.telas[i], i, K.telas.length); });
@@ -6297,7 +6802,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const co = t.closest("[data-ka-cor]"); if (co) {
       s.cor = co.dataset.kaCor;
       // mudou a cor da capa: as outras telas seguem a sequência branco → rosa → creme → preto
-      if (K.sel === 0) { const seq = ["branco", "rosa", "creme", "preto"], ini = seq.indexOf(s.cor); T.forEach((x, i) => { x.cor = seq[(ini + i) % 4]; }); toast("As outras telas seguiram a sequência das cores"); }
+      if (K.sel === 0) { const seq = ["branco", "rosa", "creme", "preto"], ini = Math.max(0, seq.indexOf(s.cor)); T.forEach((x, i) => { x.cor = seq[(ini + i) % 4]; }); toast("As outras telas seguiram a sequência das cores"); }
       redesenhar(); return; }
     const ic = t.closest("[data-ka-ic]"); if (ic) { s.ic = ic.dataset.kaIc; document.querySelectorAll("[data-ka-ic]").forEach((b) => b.classList.toggle("on", b === ic)); guardarCartas(); pintarCartas(true); return; }
     const em = t.closest("[data-ka-emoji]"); if (em) { const campo = K.campo || "titulo", el = document.querySelector(`[data-ka-campo="${campo}"]`); if (!el) return;
@@ -6346,7 +6851,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     outros: { acao: "mostra o produto da foto do produto para a câmera", foto: "segurando o produto da foto do produto com as duas mãos", lugar: "um quarto claro e aconchegante", frase: "útil demais no dia a dia" }
   };
   const CENA_PT = { perfumes: "borrifa no pulso e sorri", looks: "vestindo a peça no espelho", fitness: "vestindo e alongando", calcados: "calçando e dando dois passos", acessorios: "usando e ajeitando", maquiagem: "passando no espelho", skincare: "aplicando no rosto", cabelo: "passando no cabelo", suplementos: "mostrando e preparando", eletronicos: "usando e reagindo", casa: "usando em casa", outros: "mostrando para a câmera" };
-  const LIMITE_PROMPT = 800;
+  const LIMITE_PROMPT = 900; // só para vídeo; imagem não tem limite
+  const VIDEO_PROMPT = new Set(["video", "perfume", "semproduto"]); // modelos de prompt de vídeo (limite de 900 caracteres)
   /* Modelos de prompt editáveis em ⚙️ Ajustes (salvos na nuvem). As {chaves} o app preenche sozinho. */
   const PROMPTS_PADRAO = {
     limpar: { nome: "Refazer a foto do produto", chaves: "{produto} {detalhe}", txt: `Crie uma foto de catálogo nova deste mesmo produto da imagem anexada ("{produto}").
@@ -6369,10 +6875,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   // Enquadramento escolhido (vai no prompt para a IA não cortar nem inventar o corpo)
   const ENQUAD_PERS = { rosto: ["Rosto", "Enquadramento: close do rosto e ombros, de frente."], perfil: ["De perfil", "Enquadramento: ela de perfil (de lado), do peito para cima."], cintura: ["Cintura pra cima", "Enquadramento: da cintura para cima, de frente."], inteiro: ["Corpo inteiro", "Enquadramento: corpo inteiro, da cabeça aos pés, de frente."] };
   function enquadDe(P, it) { if (P && ENQUAD_PERS[P.enquad]) return P.enquad; const n = String((it && it.nome) || ""); if (it && (it.categoria === "calcados" || it.categoria === "looks" || it.categoria === "fitness" || /t[êe]nis|sand[áa]lia|sapat|bota|salto|vestido|conjunto|cal[çc]a|saia/i.test(n))) return "inteiro"; if (/bon[eé]|chap[eé]u|[óo]culos|brinco|colar|batom|maquiagem/i.test(n) || (it && (it.categoria === "maquiagem" || it.categoria === "skincare"))) return "rosto"; return "cintura"; }
-  const quadradoPers = (P) => P && (P.tipo === "imagem" || P.formato === "quadrado");
-  const abreVideo = (P) => quadradoPers(P) ? "Vídeo hiper-realista quadrado 1:1 para post do feed" : "Vídeo hiper-realista vertical 9:16";
+  /* Formato da Criação IA: Feed 4:5 (padrão da imagem, câmera mais perto), Quadrado 1:1 ou Em pé 9:16 (padrão do vídeo) */
+  const fmtPers = (P) => (P && ["quadrado", "vertical"].includes(P.formato) ? P.formato : P && P.tipo === "imagem" ? "quadrado" : "vertical"); // 4:5 saiu (o Instagram não aceitou no compartilhar)
+  const quadradoPers = (P) => fmtPers(P) === "quadrado";
+  const FRASE_FMT = { feed: "vertical 4:5 para post do feed, com a câmera mais próxima (ela e o produto ocupam quase toda a imagem)", quadrado: "quadrado 1:1 para post do feed", vertical: "vertical 9:16" };
+  const formatoTxt = (P) => FRASE_FMT[fmtPers(P)];
+  const abreVideo = (P) => "Vídeo hiper-realista " + formatoTxt(P);
+  /** Troca o formato escrito no prompt da imagem (o modelo editável começa com "Foto quadrada 1:1 para post do feed do Instagram") */
+  const fmtNaImagem = (txt, P) => fmtPers(P) === "quadrado" ? txt : txt.replace(/Foto quadrada 1:1 para post do feed do Instagram/i, fmtPers(P) === "feed" ? "Foto vertical 4:5 para post do feed do Instagram, com a câmera mais próxima (ela e o produto ocupam quase toda a foto)" : "Foto vertical 9:16 para story do Instagram")
+    .replace(/Formato obrigatório: quadrado 1:1\.?/i, fmtPers(P) === "feed" ? "Formato obrigatório: vertical 4:5." : "Formato obrigatório: vertical 9:16.");
   /* Estúdio com o fundo nas cores da Miga + o jeito certo de USAR cada tipo de produto (boné na cabeça, óculos no rosto...) */
-  const FUNDOS_PERS = { creme: ["Creme", "#fff3c4", "creme suave (#fff3c4)", "white"], branco: ["Branco", "#ffffff", "branco puro", "black"], preto: ["Preto", "#1d1d1f", "preto fosco (#1d1d1f)", "white"], rosa: ["Rosa", "#e8336d", "rosa pink (#e8336d)", "white"] };
+  const FUNDOS_PERS = { creme: ["Creme", "#fff3c4", "creme suave (#fff3c4)", "white"], branco: ["Branco", "#ffffff", "branco puro", "black"], preto: ["Preto", "#1d1d1f", "preto fosco (#1d1d1f)", "white"], rosa: ["Rosa", "#e8336d", "rosa pink (#e8336d)", "white"], rose: ["Rosê", "#f6c9d3", "rosê claro (#f6c9d3)", "black"], verde: ["Verde pastel", "#cdebd5", "verde pastel (#cdebd5)", "black"] };
   const USOS_PERS = [
     [/(^|[^a-zà-ú])bon[eé]s?([^a-zà-ú]|$)|chap[eé]u|viseira|touca|gorro|boina|bucket/i, "está usando o boné/chapéu da foto do produto na cabeça, ajeita a aba com uma mão e sorri", "usando o boné/chapéu da foto do produto na cabeça, tocando a aba com uma mão"],
     [/[óo]culos/i, "coloca os óculos da foto do produto e sorri", "usando os óculos da foto do produto, tocando a armação com uma mão"],
@@ -6426,7 +6939,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   // Detalhe de cada categoria para a foto limpa do produto
   const LIMPAR_CAT = { perfumes: "Mostre o frasco sem a tampa, com o borrifador à mostra.", looks: "Mostre só a peça, sem modelo e sem manequim, de frente, bem esticada e sem amassados.", fitness: "Mostre só as peças, sem modelo, de frente, bem esticadas.", calcados: "Mostre o par, de lado, com o solado aparecendo.", acessorios: "Mostre o acessório inteiro, de frente, com as alças ou correntes à mostra.", maquiagem: "Mostre a embalagem aberta ao lado da tampa, com o produto aparecendo.", skincare: "Mostre a embalagem de frente, com o rótulo bem legível.", cabelo: "Mostre a embalagem de frente, com o rótulo bem legível.", suplementos: "Mostre o pote de frente, com o rótulo bem legível.", eletronicos: "Mostre o aparelho inteiro, de frente, com acabamento brilhante.", casa: "Mostre o produto inteiro, de frente.", outros: "Mostre o produto inteiro, de frente." };
   function promptLimparProduto(it) {
-    return preencher("limpar", { produto: limparNome(it.nome || "o produto").slice(0, 90), detalhe: LIMPAR_CAT[it.categoria] || LIMPAR_CAT.outros }).slice(0, LIMITE_PROMPT);
+    return preencher("limpar", { produto: limparNome(it.nome || "o produto").slice(0, 90), detalhe: LIMPAR_CAT[it.categoria] || LIMPAR_CAT.outros });
   }
 
   const lsPers = { ler: (k, d) => { try { const v = localStorage.getItem("miga_pers_" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, gravar: (k, v) => { try { localStorage.setItem("miga_pers_" + k, JSON.stringify(v)); return true; } catch (e) { return false; } } };
@@ -6442,22 +6955,56 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     return `Oi, miga! Olha esse ${nomeFala(it.nome, max)}, ${C.frase}. Segue a Miga Promo pra mais promoções!`;
   }
   /** Prompt padrão (imagem ou vídeo), sempre com no máximo 900 caracteres */
+  /* Cenários da Criação IA (janela "Escolha o cenário"): [nome, detalhe, grupo, como vai no prompt] */
+  const CENARIOS_PERS = {
+    estudio: ["Estúdio colorido", "fundo na cor escolhida", "Estúdio"], estudioBranco: ["Estúdio branco", "fundo infinito", "Estúdio"],
+    quarto: ["Quarto aconchegante", "", "Em casa", "um quarto aconchegante e claro, com luz natural da janela"], sala: ["Sala clara", "", "Em casa", "uma sala clara e moderna, com sofá e plantas"],
+    cozinha: ["Cozinha moderna", "", "Em casa", "uma cozinha moderna e clara"], closet: ["Closet / provador", "", "Em casa", "um closet elegante, com espelho grande e araras de roupa"],
+    banheiro: ["Banheiro com espelho", "", "Em casa", "um banheiro claro e elegante, diante de um espelho grande"], varanda: ["Varanda", "", "Em casa", "uma varanda com plantas e luz do fim da tarde"],
+    academia: ["Academia", "", "Fora de casa", "uma academia moderna e bem iluminada"], praia: ["Praia", "", "Fora de casa", "uma praia ensolarada com o mar azul ao fundo"],
+    rua: ["Rua da cidade", "", "Fora de casa", "uma rua charmosa da cidade, com fachadas bonitas e luz do dia"], cafe: ["Café", "", "Fora de casa", "um café aconchegante, perto da janela"],
+    jardim: ["Jardim", "", "Fora de casa", "um jardim florido e ensolarado"], piscina: ["Piscina", "", "Fora de casa", "a beira de uma piscina, num dia de sol"],
+    auto: ["A IA escolhe", "combina com o produto", "Outro"]
+  };
+  const cenarioPers = (P) => (P && P.cenario === "livre" && P.cenarioLivre ? "livre" : P && CENARIOS_PERS[P.cenario] ? P.cenario : "estudio");
+  const nomeCenario = (P) => (cenarioPers(P) === "livre" ? P.cenarioLivre : CENARIOS_PERS[cenarioPers(P)][0]);
+  const qtdPers = (P) => (P && P.tipo === "imagem" && [1, 2, 3].includes(P.qtd) ? P.qtd : 1);
+  const ANGULOS_PERS = ["de frente", "de lado (3/4), como se estivesse andando", "mais perto, mostrando o produto em detalhe"];
+  /** Prompt curto das fotos 2 e 3 (mandar na mesma conversa, depois da foto 1) */
+  const promptFotoN = (n, P) => `Agora a foto ${n} de ${qtdPers(P)} do mesmo ensaio: mesma mulher, mesma roupa, mesmo produto, mesmo cenário e mesma luz da foto anterior. Ângulo: ${ANGULOS_PERS[n - 1]}. Pose livre e natural. Gere UMA única foto, sem colagem, sem grade e sem montagem, ${fmtPers(P) === "vertical" ? "vertical 9:16" : "quadrada 1:1"}. Só o produto da foto aparece, sem outros objetos nas mãos. Escreva também embaixo o texto alternativo desta foto, começando com "Texto alternativo:".`;
+  const ALT_PEDIDO = 'Depois de gerar, escreva embaixo o TEXTO ALTERNATIVO da imagem (a descrição para acessibilidade do Instagram), em português do Brasil, em 1 ou 2 frases, começando com "Texto alternativo:".';
+  /** Texto alternativo da Criação IA: o que a IA escreveu (colado) ou um feito pelo app */
+  const altIA = (P, it) => P.alt != null ? P.alt : `Foto de uma mulher ${it ? `com ${limparNome(it.nome || "o produto")}` : "sorrindo"}, em ${String(nomeCenario(P) || "estúdio").toLowerCase()}.`;
+  const POSE_LIVRE = "à vontade com o produto, natural e confiante, como numa sessão de fotos de influenciadora";
+  const POSE_LIVRE_ROUPA = "à vontade, natural e confiante, mostrando bem a roupa, como numa sessão de fotos de influenciadora";
+  const SO_PRODUTO = "Só o produto da foto aparece: nenhum outro produto ou objeto nas mãos ou em destaque (sem garrafas, coqueteleiras, celular ou sacolas).";
+  const SO_ROUPA = "O destaque é a roupa: mãos livres, na cintura ou no cabelo.";
   function promptPersonagem(it, tipo) {
-    const P0 = wz.pe || {}, fundo = P0.fundo === "auto" || !P0.fundo ? (P0.fundoAuto || "rosa") : P0.fundo;
+    const P0 = wz.pe || {}, cenK = cenarioPers(P0);
+    let fundo = P0.fundo === "auto" || !P0.fundo ? (P0.fundoAuto || "rosa") : P0.fundo;
+    if (cenK === "estudioBranco") fundo = "branco"; else if (cenK !== "estudio") fundo = "cenario";
     const C = cenaDoItem(it, fundo === "cenario" ? "" : fundo), ficha0 = ""; // como ela é: as fotos de referência já mostram
+    if ((CENARIOS_PERS[cenK] || [])[3]) C.lugar = CENARIOS_PERS[cenK][3];
+    if (cenK === "livre") C.lugar = P0.cenarioLivre;
+    const usoFixo = USOS_PERS.some(([re]) => re.test(it.nome || "")), pose = P0.poseLivre === false ? C.foto : usoFixo ? `${C.foto}, e fica à vontade para posar` : C.roupa === null ? POSE_LIVRE_ROUPA : POSE_LIVRE;
+    const soProd = SO_PRODUTO + (C.roupa === null ? " " + SO_ROUPA : "");
     const roupa = C.roupa ? `Roupa: ${C.roupa}.` : "Ela veste a roupa da foto do produto anexada.";
-    const formato = quadradoPers(P0) ? "quadrado 1:1 para post do feed" : "vertical 9:16", enq = ENQUAD_PERS[enquadDe(P0, it)][1], cen = C.lugar.replace(" e luz suave de estúdio", "").replace(/ \(#\w+\)/, "");
+    const formato = formatoTxt(P0), enq = tipo === "imagem" && qtdPers(P0) > 1 ? "" : ENQUAD_PERS[enquadDe(P0, it)][1], cen = C.lugar.replace(" e luz suave de estúdio", "").replace(/ \(#\w+\)/, "");
     if (tipo === "video" && it.categoria === "perfumes" && !USOS_PERS.some(([re]) => re.test(it.nome || ""))) {
       const nomeP = (n) => nomeFala(String(it.nome || "").replace(/\s*\d+\s*(ml|g|oz)\b.*$/i, "").replace(/^\s*(perfume|body splash|col[oô]nia|deo col[oô]nia)\s+(feminino|masculino|unissex)?\s*/i, ""), n);
       let nm = 6, p2 = preencher("perfume", { formato, cenario: cen, enquadramento: enq, nome: nomeP(nm) }); while (p2.length > LIMITE_PROMPT && nm > 2) { nm--; p2 = preencher("perfume", { formato, cenario: cen, enquadramento: enq, nome: nomeP(nm) }); }
       return p2.slice(0, LIMITE_PROMPT);
     }
     const monta = (nomeMax) => tipo === "video"
-      ? preencher("video", { formato, roupa, cenario: cen, enquadramento: enq, acao: C.acao, fala: falaPersonagem(it, nomeMax) })
-      : preencher("imagem", { roupa, cenario: cen, enquadramento: enq, pose: C.foto });
+      ? preencher("video", { formato, roupa, cenario: cen, enquadramento: enq, acao: C.acao, fala: falaPersonagem(it, nomeMax) }) + " " + SO_PRODUTO
+      : fmtNaImagem(preencher("imagem", { roupa, cenario: cen, enquadramento: enq, pose }), P0) + " " + soProd;
     let nomeMax = 5, p = monta(nomeMax);
-    while (p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(nomeMax); }
-    return p.slice(0, LIMITE_PROMPT);
+    while (tipo === "video" && p.length > LIMITE_PROMPT && nomeMax > 2) { nomeMax--; p = monta(nomeMax); }
+    if (tipo === "video") p = p.slice(0, LIMITE_PROMPT); // vídeo: até 900 caracteres; imagem: à vontade
+    const q = tipo === "imagem" ? qtdPers(P0) : 1; // várias fotos: um prompt por foto, na mesma conversa
+    if (tipo === "imagem") p += q > 1 ? "" : `\n\n${ALT_PEDIDO}`;
+    if (q > 1) p += `\n\nIMPORTANTE: quero ${q} IMAGENS SEPARADAS (${q} arquivos diferentes), uma para cada ângulo, todas do mesmo ensaio (mesma mulher, mesma roupa, mesmo cenário e mesma luz). NÃO junte as fotos em colagem, grade, mosaico ou montagem: cada imagem tem uma única foto. Gere uma imagem de cada vez: ${ANGULOS_PERS.slice(0, q).map((a, i) => `imagem ${i + 1}: ${a}`).join("; ")}.\n\n${ALT_PEDIDO.replace("da imagem", "de cada imagem")}`;
+    return p;
   }
   /* Vídeo sem produto: ela chama a galera (canal, grupo, stories...). Sempre "Oi, miga!" no começo e "Segue a Miga Promo..." no fim */
   const ASSUNTOS_PERS = [
@@ -6474,13 +7021,15 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const falaChamadaPers = (P) => `Oi, miga! ${String(P.falaMeio != null ? P.falaMeio : assuntoDe(P)[2]).trim()} Segue a Miga Promo pra mais promoções!`;
   function promptChamadaPers(P) {
     const fundo = P.fundo === "auto" || !P.fundo ? "rosa" : P.fundo, F = FUNDOS_PERS[fundo] || FUNDOS_PERS.rosa;
-    return preencher("semproduto", { formato: quadradoPers(P) ? "quadrado 1:1 para post do feed" : "vertical 9:16", cenario: `estúdio com fundo infinito ${F[2].replace(/ \(#\w+\)/, "")}`, enquadramento: ENQUAD_PERS[enquadDe(P, null)][1], fala: falaChamadaPers(P) }).slice(0, LIMITE_PROMPT);
+    return preencher("semproduto", { formato: formatoTxt(P), cenario: `estúdio com fundo infinito ${F[2].replace(/ \(#\w+\)/, "")}`, enquadramento: ENQUAD_PERS[enquadDe(P, null)][1], fala: falaChamadaPers(P) }).slice(0, LIMITE_PROMPT);
   }
   const semProduto = () => wz.pe && wz.pe.tipo === "chamada";
   function calcFundoAuto(it) { if (it) prepararFoto(it).then(() => { if (wz.canal === "personagem" && wz.itemId === it.id && ppFotos[it.id]) { wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); if (wz.passo === "pePrompt") mostrarPasso(); } }); }
   function abrirPersonagem(it) {
     calcFundoAuto(it);
     wz = { canal: "personagem", passo: "peEscolher", veioDaLista: true, itemId: it ? it.id : null, pe: { cantoLogo: (lsPers.ler("cantos", {}) || {}).logo || "br", cantoArroba: (lsPers.ler("cantos", {}) || {}).arroba || "bl", cantoSelo: (lsPers.ler("cantos", {}) || {}).selo || "nao", moldura: lsPers.ler("moldura", "nao"), circulo: true, musica: lsPers.ler("musica", ""), qualidade: lsPers.ler("qualidade", "alta"), roupa: 0, fundo: lsPers.ler("fundo", "auto"), tipo: "video", midia: null, pos: { ...POS_PADRAO, ...lsPers.ler("pos", {}) }, mostrar: { selo: true, cupom: true }, tx: null, resultado: null } };
+    Object.assign(wz.pe, lsPers.ler("mostrar", {})); // caixinhas Logo / @ / Selo
+    wz.pe.qtd = lsPers.ler("qtd", 1); wz.pe.cenas = lsPers.ler("cenas", 1); wz.pe.cenarioLivre = lsPers.ler("cenarioLivre", ""); wz.pe.cenario = lsPers.ler("cenario", "estudio"); wz.pe.poseLivre = lsPers.ler("pose", true);
     sortearRoupa(wz.pe); marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const fotosPers = () => lsPers.ler("fotos", [null, null]);
@@ -6488,21 +7037,145 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const desc = it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? Math.round((1 - it.precoNovo / it.precoAntigo) * 100) : 0;
     return { chamada: "Achadinho do dia ✨", nome: limparNome(it.nome || ""), de: it.precoAntigo && it.precoAntigo > it.precoNovo ? brl(it.precoAntigo) : "", por: it.precoNovo ? brl(it.precoNovo) : "", cupom: it.cupom ? String(it.cupom).toUpperCase() : "", selo: desc >= 5 ? `-${desc}%` : "" };
   }
+  /* ===== Criação IA · vídeo de até 30 s em cenas de 10 s (a IA de vídeo faz 10 s por vez) ===== */
+  const cenasN = (P) => (P && P.tipo === "video" && [2, 3].includes(P.cenas) ? P.cenas : 1);
+  const TIT_CENAS = { 2: ["gancho", "chamada"], 3: ["gancho", "usando", "chamada"] };
+  function promptCenas(it, P) {
+    const n = cenasN(P), base = P.promptEd != null ? P.promptEd : promptPersonagem(it, "video");
+    const papeis = n === 2 ? ["gancho: ela aparece e apresenta o produto", "usando o produto, mostrando os detalhes, e a chamada final"] : ["gancho: ela aparece e apresenta o produto", "usando o produto e mostrando os detalhes", "chamada final: ela sorri e convida a ver o link"];
+    return `Você é roteirista de vídeos curtos para Reels. Vou criar um vídeo de ${n * 10} segundos numa IA de vídeo que só gera 10 segundos por vez. Por isso preciso de ${n} prompts separados, um para cada cena de 10 segundos, que depois eu junto num vídeo só.
+
+PROMPT BASE (personagem, produto, roupa, cenário, enquadramento e fala):
+${base}
+
+REGRAS:
+- A mesma mulher das fotos de referência em todas as cenas (em cada cena vou anexar as fotos dela e a foto do produto).
+- Mesma roupa, mesmo produto, mesmo cenário, mesma luz e mesmo estilo de câmera em todas as cenas.
+- Cada cena começa exatamente onde a anterior terminou: no começo de cada prompt, descreva a posição dela no primeiro quadro, igual ao último quadro da cena anterior.
+- ${papeis.map((x, i) => `Cena ${i + 1}: ${x}`).join(". ")}.
+- Uma fala curta em português do Brasil em cada cena (a fala do prompt base dividida entre as cenas), sem falar preço.
+- Cada prompt é completo e independente (repita a descrição do cenário, da roupa e do produto em todos), ${formatoTxt(P)}, com até ${LIMITE_PROMPT} caracteres.
+- Cada cena tem 10 segundos (ignore a duração do prompt base). Só a última cena termina com a pose final.
+- ${SO_PRODUTO}
+
+Responda SOMENTE com o bloco abaixo, sem explicação:
+{"cenas": [${TIT_CENAS[n].map((x) => `{"titulo": "${x}", "prompt": "..."}`).join(", ")}]}`;
+  }
+  function lerRespostaCenas(txt, n) {
+    const s = String(txt || ""); let l = [];
+    const i = s.indexOf("{"), j = s.lastIndexOf("}");
+    if (i >= 0 && j > i) { try { const o = jsonTolerante(s.slice(i, j + 1)); l = (Array.isArray(o) ? o : o.cenas || []).map((c) => (typeof c === "string" ? { prompt: c } : { titulo: c.titulo || c.nome || "", prompt: c.prompt || c.texto || "" })); } catch (e) { l = []; } }
+    if (!l.length) { const partes = s.split(/^\s*\**\s*cena\s*(\d)\b[^\n]*\n/gim); for (let k = 1; k < partes.length; k += 2) l.push({ titulo: "", prompt: partes[k + 1] || "" }); }
+    l = l.map((c, k) => ({ titulo: String(c.titulo || TIT_CENAS[n][k] || "").trim(), prompt: String(c.prompt || "").trim() })).filter((c) => c.prompt).slice(0, n);
+    return l.length ? l : null;
+  }
+  /** O último quadro de verdade da cena (pula o escurecer do fim), para começar a próxima cena dele */
+  async function ultimoQuadroCena(url) {
+    const v = document.createElement("video"); v.src = url; v.muted = true; v.playsInline = true; v.preload = "auto";
+    await new Promise((ok) => { v.addEventListener("loadedmetadata", ok, { once: true }); setTimeout(ok, 6000); });
+    const dur = isFinite(v.duration) ? v.duration : 0, W = v.videoWidth || 1080, H = v.videoHeight || 1920;
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const x = c.getContext("2d");
+    const p = document.createElement("canvas"); p.width = 32; p.height = 32; const px = p.getContext("2d", { willReadFrequently: true });
+    for (let tr = 0.06; tr <= 2.1; tr += 0.25) {
+      v.currentTime = Math.max(0, dur - tr); await new Promise((ok) => { v.addEventListener("seeked", ok, { once: true }); setTimeout(ok, 3000); });
+      x.drawImage(v, 0, 0, W, H); px.drawImage(c, 0, 0, 32, 32); const d = px.getImageData(0, 0, 32, 32).data; let s = 0; for (let k = 0; k < d.length; k += 4) s += d[k] + d[k + 1] + d[k + 2];
+      if (s / (d.length / 4) / 3 > 28) break; // não é tela preta
+    }
+    return new Promise((ok) => c.toBlob((b) => ok(b), "image/jpeg", 0.95));
+  }
+  /** Junta as cenas num vídeo só: igual formato = cópia direta (na hora); senão refaz no mesmo tamanho */
+  async function juntarCenas(cs, aviso) {
+    const ff = await ffPronto(); ff._log = null; ff._aviso = null; const nomes = [];
+    for (let i = 0; i < cs.length; i++) { const n = `cena${i}.mp4`; await ff.writeFile(n, new Uint8Array(await cs[i].arq.arrayBuffer())); nomes.push(n); if (aviso) aviso(Math.round(((i + 1) / cs.length) * 8)); }
+    const ler = async () => { const d = await ff.readFile("j.mp4").catch(() => null); await ff.deleteFile("j.mp4").catch(() => {}); return d && d.length > 2000 ? d : null; };
+    let d = null; const W0 = cs[0].w, H0 = cs[0].h, iguais = W0 && cs.every((c) => c.w === W0 && c.h === H0 && c.arq.type === cs[0].arq.type);
+    if (iguais) { await ff.writeFile("lista.txt", new TextEncoder().encode(nomes.map((n) => `file '${n}'`).join("\n")));
+      try { await ff.exec(["-f", "concat", "-safe", "0", "-i", "lista.txt", "-c", "copy", "-movflags", "+faststart", "j.mp4"]); d = await ler(); } catch (e) { d = null; } }
+    if (!d) {
+      const W = Math.round((W0 || 1080) / 2) * 2, H = Math.round((H0 || (fmtPers(pe()) === "vertical" ? 1920 : 1080)) / 2) * 2, ent = nomes.flatMap((n) => ["-i", n]);
+      const vs = nomes.map((_, i) => `[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=30,format=yuv420p[v${i}]`).join(";");
+      const enc = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "19", "-movflags", "+faststart"];
+      ff._aviso = (pc) => aviso && aviso(8 + Math.round(pc * 0.9));
+      try { await ff.exec([...ent, "-filter_complex", `${vs};${nomes.map((_, i) => `[v${i}][${i}:a]`).join("")}concat=n=${nomes.length}:v=1:a=1[v][a]`, "-map", "[v]", "-map", "[a]", ...enc, "-c:a", "aac", "-b:a", "160k", "j.mp4"]); d = await ler(); } catch (e) { d = null; }
+      if (!d) { try { await ff.exec([...ent, "-filter_complex", `${vs};${nomes.map((_, i) => `[v${i}]`).join("")}concat=n=${nomes.length}:v=1:a=0[v]`, "-map", "[v]", ...enc, "j.mp4"]); d = await ler(); } catch (e) { d = null; } } // alguma cena sem som
+      ff._aviso = null;
+    }
+    [...nomes, "lista.txt"].forEach((x) => ff.deleteFile(x).catch(() => {}));
+    if (!d) throw new Error("não juntou as cenas");
+    if (aviso) aviso(100);
+    return new Blob([d.buffer], { type: "video/mp4" });
+  }
+  $("#folhaEst").addEventListener("click", (e) => {
+    if (wz.canal !== "personagem" || !e.target.closest("#peCenasAplicar")) return; const P = pe(), l = lerRespostaCenas($("#peCenasResp").value || "", cenasN(P));
+    if (!l) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; }
+    P.cenasResp = l; P.cenasCop = []; $("#folhaEst").close(); mostrarPasso();
+  });
+  /** Plano B (sem o ffmpeg): toca as cenas uma atrás da outra e grava a tela com o som */
+  async function juntarCenasTempoReal(cs, aviso) {
+    const tipo = formatoGravacao(); if (!tipo || !HTMLCanvasElement.prototype.captureStream) throw new Error("sem gravação");
+    const W = Math.round((cs[0].w || 1080) / 2) * 2, H = Math.round((cs[0].h || 1920) / 2) * 2, tela = document.createElement("canvas"); tela.width = W; tela.height = H; const x = tela.getContext("2d");
+    const ac = new (window.AudioContext || window.webkitAudioContext)(); await ac.resume().catch(() => {}); const dest = ac.createMediaStreamDestination();
+    const fluxo = tela.captureStream(30); dest.stream.getAudioTracks().forEach((tr) => fluxo.addTrack(tr));
+    const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 10e6 }), partes = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
+    const fim = new Promise((ok) => { rec.onstop = ok; }), total = cs.reduce((t, c) => t + (c.dur || 10), 0); let feito = 0;
+    manterTelaAcesa(true); rec.start();
+    try {
+      for (const c of cs) {
+        const v = document.createElement("video"); v.src = c.url; v.playsInline = true; v.preload = "auto";
+        await new Promise((ok) => { v.addEventListener("canplay", ok, { once: true }); setTimeout(ok, 6000); });
+        try { ac.createMediaElementSource(v).connect(dest); } catch (e) { v.muted = true; }
+        await v.play().catch(() => {});
+        await new Promise((ok) => { const passo = () => { const vw = v.videoWidth || W, vh = v.videoHeight || H, k = Math.max(W / vw, H / vh); x.fillStyle = "#000"; x.fillRect(0, 0, W, H); x.drawImage(v, (W - vw * k) / 2, (H - vh * k) / 2, vw * k, vh * k);
+          if (aviso) aviso(Math.min(99, Math.round(((feito + v.currentTime) / total) * 100))); if (v.ended || v.paused && v.currentTime > 0 && v.currentTime >= (v.duration || 0) - 0.05) { ok(); return; } requestAnimationFrame(passo); }; passo(); });
+        feito += c.dur || v.duration || 10;
+      }
+    } finally { rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); ac.close().catch(() => {}); }
+    const mp4 = tipo.startsWith("video/mp4"); if (aviso) aviso(100);
+    return comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
+  }
+  function telaCenasPrompt(c, it, P) {
+    const n = cenasN(P), l = P.cenasResp || [], cop = P.cenasCop || [];
+    c.innerHTML = `<h2 class="wz-titulo">Vídeo de ${n * 10} s em ${n} cenas</h2>
+      <div class="pe-etp"><b>1</b><span>Baixe a foto do produto</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peLimparBaixar">Baixar</button></div>
+      <div class="pe-etp"><b>2</b><span>Envie a foto para a IA com este prompt, para refazer a foto</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peLimparCopiar">Copiar</button></div>
+      <div class="pe-etp"><b>3</b><span>Peça as ${n} cenas ao ChatGPT ou ao Gemini e cole a resposta aqui</span></div>
+      <div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="peCenasCopiar">Copiar prompt</button><button type="button" class="btn ${l.length ? "btn--branco" : "btn--rosa"} rp-adesivo" id="peCenasColar">${l.length ? "Colar de novo" : "Colar resposta"}</button></div>
+      ${l.map((x, i) => `<div class="pe-cena${cop[i] ? " ok" : ""}"><div class="pe-cena-t"><b>Cena ${i + 1} · ${i * 10} a ${(i + 1) * 10} s${x.titulo ? " · " + esc(x.titulo) : ""}</b><button type="button" data-pe-cena-copiar="${i}">${cop[i] ? "Copiado" : "Copiar"}</button></div><p>${esc(x.prompt.slice(0, 170))}${x.prompt.length > 170 ? "…" : ""}</p></div>`).join("")}
+      <p class="nota">${l.length ? "Na IA de vídeo, crie uma cena por vez: anexe as fotos dela e a do produto e cole o prompt da cena." : "A IA devolve um prompt para cada cena, com a mesma personagem, o mesmo produto e o mesmo cenário. Cada cena começa onde a anterior termina."}</p>
+      <details class="pe-ver"><summary>Ver e editar o prompt base</summary><div class="campo pe-pr-limpar"><span>Prompt da foto do produto</span><textarea id="peLimparTxt" rows="5">${esc(P.limparTxt != null ? P.limparTxt : promptLimparProduto(it))}</textarea></div>
+        <div class="campo"><span>Prompt base do vídeo</span><textarea id="pePrompt" rows="7">${esc(P.promptEd != null ? P.promptEd : promptPersonagem(it, "video"))}</textarea></div></details>
+      ${botaoContinuar(true, "Já criei, anexar as cenas").replace('id="wzContinuar"', 'id="peJaCriei"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
+  }
+  function telaCenasAnexar(c, P) {
+    const n = cenasN(P), cs = P.cenasVid || (P.cenasVid = []), nOk = cs.filter(Boolean).length, tot = cs.filter(Boolean).reduce((s, x) => s + (x.dur || 10), 0);
+    const slots = Array.from({ length: n }, (_, i) => { const x = cs[i]; return x ? `<div class="pe-cs"><video src="${x.url}#t=0.1" muted playsinline preload="metadata"></video><b>Cena ${i + 1}</b><span class="pe-cs-dur">${Math.round(x.dur || 0)} s</span><button type="button" class="pe-cs-x" data-pe-cena-tirar="${i}" aria-label="Tirar a cena ${i + 1}">✕</button></div>`
+      : `<label class="pe-cs pe-cs--vz"><input type="file" accept="video/*" data-pe-cena-arq="${i}" hidden><span>+ Anexar<br>cena ${i + 1}</span></label>`; }).join("");
+    const quadros = cs.map((x, i) => (x && i < n - 1 ? `<button type="button" class="rp-modelo" data-pe-cena-quadro="${i}"><span><small>Para a cena ${i + 2} continuar da ${i + 1}</small><b>Último quadro da cena ${i + 1}</b></span><i>Baixar</i></button>` : "")).join("");
+    c.innerHTML = `<h2 class="wz-titulo">Anexe as ${n} cenas</h2>
+      <div class="pe-cenas-slots pe-cenas-${n}">${slots}</div>
+      ${quadros}${quadros ? '<p class="nota pe-cenas-dica">Na IA de vídeo, use esse quadro como <b>imagem inicial</b> da próxima cena (junto com as fotos dela e do produto). Assim o vídeo parece um só.</p>' : '<p class="nota">Anexe cada vídeo que a IA criou, na ordem das cenas.</p>'}
+      <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="peJuntar"${nOk >= 2 && !P.juntando ? "" : " disabled"}>${P.juntando ? "Juntando as cenas… 0%" : nOk >= 2 ? `Juntar e editar (${Math.round(tot)} s)` : "Juntar e editar"}</button></div>`;
+  }
   function telaPersonagem(c) {
     const it = wzItem(), P = pe();
     const f = P.fotosAgora || fotosPers(), tipoTxt = P.tipo === "video" ? "vídeo" : "imagem";
     const prodHtml = it ? `<div class="pe-prod">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.fotoLimpa ? " · foto refeita" : ""}</small></span></div>` : "";
     const nav = (cont, txt = "Continuar", rosa = true) => `<div class="duas pe-nav"><button type="button" class="btn btn--branco" id="peVoltar">Voltar</button><button type="button" class="btn ${rosa ? "btn--rosa" : "btn--branco"}" id="${cont}">${txt}</button></div>`;
     const etapa = (n, txt, acao) => `<div class="pe-etapa"><b class="pe-num">${n}</b><span class="pe-etxt">${txt}</span>${acao}</div>`;
+    const segFmt = () => `<b class="ch-rot">Formato</b><div class="pe-seg">${[["quadrado", "Quadrado 1:1"], ["vertical", "Em pé 9:16"]].map(([k, n]) => `<button type="button" data-pe-formato="${k}" class="${fmtPers(P) === k ? "on" : ""}">${n}</button>`).join("")}</div>`;
     if (wz.passo === "peEscolher") {
-      c.innerHTML = `<h2 class="wz-titulo">Criação IA</h2>
-        <p class="nota">Escolha o que vai criar e o produto.</p>
-        <div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-tipo="imagem" aria-checked="${P.tipo === "imagem"}">Imagem</button><button type="button" role="radio" data-pe-tipo="video" aria-checked="${P.tipo === "video"}">Vídeo</button><button type="button" role="radio" data-pe-tipo="chamada" aria-checked="${P.tipo === "chamada"}">Sem produto</button></div>
+      const comProd = P.tipo !== "chamada";
+      c.innerHTML = `<div class="pe-tela"><b class="ch-rot">Criar</b>
+        <div class="pe-seg">${[["imagem", "Imagem"], ["video", "Vídeo"], ["chamada", "Sem produto"]].map(([k, n]) => `<button type="button" data-pe-tipo="${k}" class="${P.tipo === k ? "on" : ""}">${n}</button>`).join("")}</div>
         ${P.tipo === "chamada" ? '<p class="nota">Vídeo dela chamando a galera (canal, grupo, stories…), sem produto.</p>' : ""}
-        <p class="nota pe-dica-fotos">As fotos dela você anexa direto na IA (ChatGPT ou Gemini), pela galeria do celular.</p>
-        ${P.tipo === "chamada" ? "" : `<b class="ch-rot">Produto</b>
-        ${it ? prodHtml : ""}<button type="button" class="btn btn--branco" id="peEscolherProd">${it ? "Trocar produto" : "Escolher produto da Lista"}</button>`}
-        ${nav("peIr2")}`;
+        ${comProd ? (it ? `<button type="button" class="pe-prodcx" id="peEscolherProd">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.precoNovo ? " · " + brl(it.precoNovo) : ""}</small></span><i>Trocar</i></button>` : `<button type="button" class="btn btn--branco" id="peEscolherProd">Escolher produto da Lista</button>`) : ""}
+        ${segFmt()}
+        ${P.tipo === "imagem" ? `<b class="ch-rot">Quantas fotos?</b><div class="pe-seg">${[1, 2, 3].map((q) => `<button type="button" data-pe-qtd="${q}" class="${qtdPers(P) === q ? "on" : ""}">${q} ${q === 1 ? "foto" : "fotos"}</button>`).join("")}</div>` : ""}
+        ${comProd ? `${P.tipo === "video" ? `<b class="ch-rot">Duração do vídeo</b><div class="pe-seg">${[[1, "10 s", "1 cena"], [2, "20 s", "2 cenas"], [3, "30 s", "3 cenas"]].map(([q, a, b]) => `<button type="button" data-pe-cenas="${q}" class="${cenasN(P) === q ? "on" : ""}">${a}<small>${b}</small></button>`).join("")}</div>` : ""}<button type="button" class="rp-modelo" id="peCenario"><span><small>${cenasN(P) > 1 ? `Cenário · o mesmo nas ${cenasN(P)} cenas` : "Cenário"}</small><b>${esc(nomeCenario(P))}</b></span><i>Trocar</i></button>` : ""}
+        ${comProd && cenarioPers(P) === "estudio" ? `<div class="pe-fundo2"><button type="button" data-pe-fundo="auto" class="pe-auto${(P.fundo || "auto") === "auto" ? " on" : ""}">Automático</button>${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="pe-bola${P.fundo === k ? " on" : ""}" style="background:${x[1]}" aria-label="${x[0]}" title="${x[0]}"></button>`).join("")}</div>` : ""}
+        ${P.tipo === "imagem" ? `<label class="pe-pose"><input type="checkbox" id="pePose"${P.poseLivre === false ? "" : " checked"}><span><b>Pose livre</b> <small>· ela posa à vontade</small></span></label>` : ""}
+        ${comProd && qtdPers(P) === 1 ? `<b class="ch-rot">Enquadramento</b><div class="ed-chips pe-enq">${Object.entries(ENQUAD_PERS).map(([k, [n]]) => `<button type="button" data-pe-enquad="${k}" class="${enquadDe(P, it) === k ? "on" : ""}">${n}</button>`).join("")}</div>` : ""}
+        </div>${botaoContinuar(true).replace('id="wzContinuar"', 'id="peIr2"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
       return;
     }
     if (semProduto()) {
@@ -6513,12 +7186,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
           <p class="nota">Ela chama a galera. Começa com "Oi, miga!" e termina com "Segue a Miga Promo pra mais promoções!".</p>
           <div class="pe-roupa"><span><b>Assunto:</b> ${esc(a[1])}</span><button type="button" class="btn btn--branco" id="peAssunto">Trocar</button></div>
           <div class="campo"><span>O que ela fala no meio (pode editar)</span><textarea id="peFalaMeio" rows="2" maxlength="140">${esc(P.falaMeio != null ? P.falaMeio : a[2])}</textarea></div>
-          ${P.tipo === "imagem" ? "" : `<b class="ch-rot">Formato</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-formato="vertical" aria-checked="${!quadradoPers(P)}">Vertical (Reels)</button><button type="button" role="radio" data-pe-formato="quadrado" aria-checked="${quadradoPers(P)}">Quadrado 1:1 (post)</button></div>`}
           <b class="ch-rot">Enquadramento</b><div class="ed-chips pe-fundos">${Object.entries(ENQUAD_PERS).map(([k, [n]]) => `<button type="button" data-pe-enquad="${k}" class="${enquadDe(P, null) === k ? "on" : ""}">${n}</button>`).join("")}</div>
           <b class="ch-rot">Fundo do estúdio</b>
           <div class="ed-chips pe-fundos">${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo === "auto" || !P.fundo ? "rosa" : P.fundo) === k ? "on" : ""}"><i style="background:${x[1]}"></i>${x[0]}</button>`).join("")}</div>
           <p class="nota pe-roupa-nota">Roupa: a IA escolhe um look que combina com o fundo.</p>
-          <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/800)</span><textarea id="pePrompt" rows="9" maxlength="800">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
+          <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/${LIMITE_PROMPT})</span><textarea id="pePrompt" rows="9" maxlength="${LIMITE_PROMPT}">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
           <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt</button>
           <p class="nota">Envie o prompt para a IA com as fotos da modelo.</p>
           ${nav("peJaCriei", "Continuar")}`;
@@ -6527,26 +7199,23 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     }
     else if (!it) { wz.passo = "peEscolher"; telaPersonagem(c); return; }
     if (!P.tx && it) P.tx = txPersonagem(it);
+    if ((it || semProduto()) && telaPersPostar(c, it, P)) return;
+    if (wz.passo === "pePrompt" && cenasN(P) > 1) { telaCenasPrompt(c, it, P); return; }
+    if (wz.passo === "peMontar" && cenasN(P) > 1 && !P.midia) { telaCenasAnexar(c, P); return; }
     if (wz.passo === "pePrompt") {
       const pr = promptPersonagem(it, P.tipo);
-      c.innerHTML = `<h2 class="wz-titulo">Prompt d${P.tipo === "video" ? "o vídeo" : "a imagem"}</h2>
-        <p class="nota">Siga as 3 etapas e toque em Continuar para anexar o que a IA criou e editar.</p>
-        ${prodHtml}
-        <div class="pe-etapas">
-          ${etapa(1, "Baixe a foto original do produto", '<button type="button" class="pe-mini" id="peLimparBaixar">Baixar</button>')}
-          ${etapa(2, "Copie o prompt e envie para a IA com a foto do produto, para refazer a foto", '<button type="button" class="pe-mini" id="peLimparCopiar">Copiar</button>')}
-          <div class="campo pe-pr-limpar"><span>Prompt da foto (pode editar)</span><textarea id="peLimparTxt" rows="6">${esc(P.limparTxt != null ? P.limparTxt : promptLimparProduto(it))}</textarea></div>
-        </div>
-        <div class="pe-etapa pe-etapa--3"><b class="pe-num">3</b><span class="pe-etxt">Copie o prompt e envie para a IA a foto do produto refeita e as fotos da modelo, para criar ${P.tipo === "video" ? "o vídeo" : "a imagem"}</span></div>
-        ${P.tipo === "imagem" ? "" : `<b class="ch-rot">Formato</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-formato="vertical" aria-checked="${!quadradoPers(P)}">Vertical (Reels)</button><button type="button" role="radio" data-pe-formato="quadrado" aria-checked="${quadradoPers(P)}">Quadrado 1:1 (post)</button></div>`}
-        <b class="ch-rot">Enquadramento</b><div class="ed-chips pe-fundos">${Object.entries(ENQUAD_PERS).map(([k, [n]]) => `<button type="button" data-pe-enquad="${k}" class="${enquadDe(P, it) === k ? "on" : ""}">${n}</button>`).join("")}</div>
-        <b class="ch-rot">Fundo do estúdio</b>
-        <div class="ed-chips pe-fundos">${[["auto", `Automático${P.fundoAuto ? " (" + FUNDOS_PERS[P.fundoAuto][0].toLowerCase() + ")" : ""}`, ""], ...Object.entries(FUNDOS_PERS).map(([k, x]) => [k, x[0], x[1]])].map(([k, n, cor]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo || "auto") === k ? "on" : ""}">${cor ? `<i style="background:${cor}"></i>` : ""}${n}</button>`).join("")}</div>
-        <p class="nota pe-roupa-nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto (a roupa da foto do produto)." : "Roupa: a IA escolhe um look que combina com o fundo e com o produto."}</p>
-        ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it)).replace("Oi, miga!", '<i>Oi, miga!</i>').replace("Segue a Miga Promo pra mais promoções!", "<i>Segue a Miga Promo pra mais promoções!</i>")}<small>sem preço na fala</small></div>` : ""}
-        <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/800)</span><textarea id="pePrompt" rows="9" maxlength="800">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
-        <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt</button>
-        ${nav("peJaCriei", "Continuar")}`;
+      c.innerHTML = `<h2 class="wz-titulo">Faça na IA em 3 passos</h2>
+        <div class="pe-etp"><b>1</b><span>Baixe a foto do produto</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peLimparBaixar">Baixar</button></div>
+        <div class="pe-etp"><b>2</b><span>Envie a foto para a IA com este prompt, para refazer a foto</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peLimparCopiar">Copiar</button></div>
+        <div class="pe-etp"><b>3</b><span>Envie a foto refeita e as fotos da modelo com o prompt principal${qtdPers(P) > 1 && P.tipo === "imagem" ? ` (pede ${qtdPers(P)} imagens separadas)` : ""}</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peCopiar">Copiar</button></div>
+        <details class="pe-ver"><summary>Ver e editar os prompts</summary>
+          <div class="campo pe-pr-limpar"><span>Prompt da foto do produto</span><textarea id="peLimparTxt" rows="5">${esc(P.limparTxt != null ? P.limparTxt : promptLimparProduto(it))}</textarea></div>
+          <div class="campo"><span>Prompt principal${P.tipo === "video" ? ` (${(P.promptEd != null ? P.promptEd : pr).length}/${LIMITE_PROMPT})` : ""}</span><textarea id="pePrompt" rows="8"${P.tipo === "video" ? ` maxlength="${LIMITE_PROMPT}"` : ""}>${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
+          <p class="nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto." : "Roupa: a IA escolhe um look que combina com o fundo e com o produto."}</p>
+          ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it))}<small>sem preço na fala</small></div>` : ""}
+        </details>
+        <p class="nota pe-prev-pr">${esc((P.promptEd != null ? P.promptEd : pr).slice(0, 150))}…</p>
+        ${botaoContinuar(true, "Já criei, anexar").replace('id="wzContinuar"', 'id="peJaCriei"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
       return;
     }
     if (wz.passo === "peMontar") {
@@ -6556,9 +7225,27 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       const cc = (k, atual) => `<div class="ed-chips pe-cantos">${cantos.map(([v, n]) => `<button type="button" data-pe-canto="${k}:${v}" class="${atual === v ? "on" : ""}">${n}</button>`).join("")}</div>`;
       if (P.legenda == null) P.legenda = legendaCriacao(P, it);
       if (P.seloTxt == null) P.seloTxt = it && it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? `-${Math.round((1 - it.precoNovo / it.precoAntigo) * 100)}%` : "";
-      c.innerHTML = `<h2 class="wz-titulo">Logo, @ e legenda</h2>
+      const chk = `<b class="ch-rot">Mostrar na arte</b><div class="pe-mostra">${[["Logo", "logo", "Logo"], ["Arroba", "arroba", "@ da Miga"], ["Selo", "selo", "Selo %"]].map(([K, k, n]) => `<label class="${P["sem" + K] ? "" : "on"}"><input type="checkbox" data-pe-mostra="${K}"${P["sem" + K] ? "" : " checked"} hidden><span>${n}</span></label>`).join("")}</div>`;
+      if (P.tipo === "imagem") { // Aprovar a arte: prévia, caixinhas e seguir para onde postar
+        const fs = P.midias || [], nSel = fotosIA().length;
+        c.innerHTML = `<div class="pe-aprovar">
+          <div class="wz-previa rp-prev pe-prev${fs.length ? " pe-prev--fotos" : ""}"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
+          ${fs.length ? `<div class="pe-grade">${[0, 1, 2].map((i) => { const m = fs[i]; return m ? `<div class="pe-gq${i === (P.edIdx || 0) ? " ver" : ""}"><button type="button" class="pe-gq-img" data-pe-ver="${i}" aria-label="Ver a foto ${i + 1}"><canvas data-pe-mini="${i}" width="160" height="${Math.round(altPers(P) / 1080 * 160)}"></canvas></button><button type="button" class="pe-gq-x" data-pe-tirar="${i}" aria-label="Tirar a foto ${i + 1}">✕</button></div>`
+            : `<label class="pe-gq pe-gq--vazio"><input type="file" accept="image/*" id="${i === fs.length ? "peMidiaMais" : "peMidiaMais" + i}" multiple hidden><span>+ Anexar</span></label>`; }).join("")}</div>`
+          : `<label class="pe-anexo"><input type="file" accept="image/*" id="peMidia" multiple hidden><span><small>${qtdPers(P) > 1 ? `Até ${qtdPers(P)} fotos de uma vez` : "Arte da IA"}</small><b>Anexe ${qtdPers(P) > 1 ? "as fotos" : "a foto"} que a IA criou</b><small>${qtdPers(P) > 1 ? "até 3" : ""}</small></span><i>Anexar</i></label>`}
+          ${chk}
+          </div>${botaoContinuar(nSel > 0, nSel > 1 ? `Escolher onde postar (${nSel} fotos)` : "Aprovar e escolher onde postar").replace('id="wzContinuar"', 'id="peAprovar"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
+        carregarMarca().then(() => { loopPersonagem(); desenharMinisIA(); }); return;
+      }
+      if (r && P.tipo !== "imagem") { // vídeo pronto: só o vídeo e seguir para onde postar
+        c.innerHTML = `<h2 class="wz-titulo">Vídeo pronto</h2>
+          <div class="wz-previa rt-video rp-prev rp-prev--grande"><video src="${r.url}" playsinline loop autoplay muted controls></video></div>
+          <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="peAprovar">Escolher onde postar</button><button type="button" class="rp-link" id="peRefazerV">Mudar e gravar de novo</button></div>`;
+        return;
+      }
+      c.innerHTML = `<h2 class="wz-titulo">Montar o vídeo</h2>
         ${P.midia ? "" : `<p class="nota">Anexe ${P.tipo === "imagem" ? "a foto" : "o vídeo"} que a IA criou para começar a edição.</p>`}
-        <label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>
+        ${cenasN(P) > 1 && P.midia ? '<button type="button" class="btn btn--branco pe-escolher" id="peTrocarCenas">Trocar as cenas</button>' : `<label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>`}
         ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}`}
         ${P.midia && P.midia.tipo === "video" ? `<div><b class="ch-rot">Onde o final entra</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-corte="auto" aria-checked="${P.corte == null}">Automático</button><button type="button" role="radio" data-pe-corte="manual" aria-checked="${P.corte != null}">Eu escolho</button></div>
@@ -6566,16 +7253,155 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${P.midia && P.midia.tipo === "video" ? `<div class="pe-roupa ch-musica"><span><b>Música baixinha ao fundo:</b> ${P.musica && NOMES_MUSICA[P.musica] ? esc(NOMES_MUSICA[P.musica][0]) : "sem música"}</span>${P.musica ? `<button type="button" class="mus-play" data-ouvir="${P.musica}" aria-label="Ouvir">${ICO_PLAY}</button>` : ""}<button type="button" class="btn btn--branco" id="peTrocarMus">${P.musica ? "Trocar" : "Escolher"}</button></div>
         <div><b class="ch-rot">Qualidade do vídeo</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-qual="alta" aria-checked="${P.qualidade !== "rapido"}">Alta qualidade</button><button type="button" role="radio" data-pe-qual="rapido" aria-checked="${P.qualidade === "rapido"}">Rápido</button></div></div>
         <p class="nota">No fim do vídeo entra o fechamento da Miga: o círculo cresce, o logo vai pro meio e aparece o @ com plim.</p>` : ""}
-        <div class="campo"><span>Legenda pronta (pode editar)</span><textarea id="peLegenda" rows="9">${esc(P.legenda)}</textarea></div>
-        <button type="button" class="btn btn--branco" id="peCopiarLeg">Copiar legenda</button>
-        ${!P.midia ? "" : P.midia.tipo === "video"
-          ? `<button type="button" class="btn btn--rosa" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarV">Postar</button><button type="button" class="btn btn--branco" id="peBaixarV">Baixar vídeo</button></div>' : ""}<p class="nota">Deixe o app aberto até terminar.</p>`
-          : '<div class="duas"><button type="button" class="btn btn--rosa" id="pePostarI">Postar</button><button type="button" class="btn btn--branco" id="peBaixarI">Baixar imagem</button></div>'}
-        <p class="nota">Ao postar, a legenda já vai copiada: é só colar no Instagram.</p>
-        <button type="button" class="btn btn--branco pe-nav" id="peVoltar">Voltar ao prompt</button>`;
+        ${chk}
+        ${P.midia && P.midia.tipo === "video" ? `<button type="button" class="btn ${r ? "btn--branco" : "btn--rosa"}" id="peGravar">${r ? "Gravar de novo" : "Criar o vídeo"}</button>${r ? "" : '<p class="nota">Deixe o app aberto até terminar.</p>'}` : ""}
+        ${P.midia && (P.midia.tipo !== "video" || r) ? botaoContinuar(true, "Escolher onde postar").replace('id="wzContinuar"', 'id="peAprovar"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"') : ""}`;
       carregarMarca().then(() => loopPersonagem());
     }
   }
+  /* Criação IA · postar a imagem: onde postar → um lugar por vez (com Continuar) → resumo */
+  const LUG_IA = { feed: ["Feed", "arte + legenda", "Feed do Instagram"], story: ["Story", "arte + link", "Story do Instagram"], status: ["Status", "arte + texto com link", "Status do WhatsApp"], grupo: ["Grupos e canal", "imagem limpa + mensagem", "Grupos e canal"] };
+  const videoIA = () => { const P = pe(); return P && P.tipo !== "imagem" && P.resultado ? P.resultado : null; };
+  /** Nome e descrição de cada lugar: imagem (arte) ou vídeo */
+  const lugIA = (k) => { const v = videoIA(), nf = fotosIA().length; if (v) return { feed: ["Reels / Feed", "vídeo + legenda", "Reels / Feed do Instagram"], story: ["Story", "vídeo + link", "Story do Instagram"], status: ["Status", "vídeo + texto com link", "Status do WhatsApp"], grupo: ["Grupos e canal", "vídeo + mensagem", "Grupos e canal"] }[k];
+    const L = LUG_IA[k], zap = { status: "foto do produto + texto com link", grupo: "foto do produto + mensagem" }[k];
+    return [L[0], zap || (nf > 1 ? { feed: `carrossel com as ${nf} fotos`, story: "1 story por foto" }[k] : L[1]), L[2]]; };
+  const lugaresIA = (P) => P.lugares || (P.lugares = lsPers.ler("lugares", ["feed", "story", "status", "grupo"]).filter((k) => LUG_IA[k]));
+  function telaPersPostar(c, it, P) {
+    if (wz.passo === "peLugares") {
+      const l = lugaresIA(P);
+      c.innerHTML = `<h2 class="wz-titulo">Onde vai postar?</h2>
+        <div class="pe-lug">${Object.keys(LUG_IA).map((k) => { const [n, d] = lugIA(k); return `<button type="button" data-pe-lug="${k}" class="${l.includes(k) ? "on" : ""}"><b>${n}</b><small>${d}</small></button>`; }).join("")}</div>
+        ${videoIA() ? "" : '<p class="nota">No WhatsApp (Status e Grupos) vai a foto original do produto.</p>'}
+        <p class="nota">A legenda e a mensagem são criadas sozinhas, e dá para editar em cada lugar.</p>
+        ${botaoContinuar(l.length > 0, `Começar (${l.length} ${l.length === 1 ? "lugar" : "lugares"})`).replace('id="wzContinuar"', 'id="peComecar"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
+      return true;
+    }
+    if (wz.passo === "peRodar") {
+      const l = lugaresIA(P), k = l[P.idx || 0], L = k ? lugIA(k) : null, feito = (P.res || {})[k] === "feito", n = l.length;
+      if (!k) { wz.passo = "peResumo"; return telaPersPostar(c, it, P); }
+      if (P.legenda == null) P.legenda = legendaCriacao(P, it);
+      if (P.txGrupo == null) P.txGrupo = it ? (it.texto || mensagemWhats(it, { modelo: "achadinho" })) : P.legenda;
+      const vid = videoIA();
+      const fotoProd = !vid && (k === "status" || k === "grupo"); // WhatsApp: foto original do produto
+      const sel = vid || fotoProd ? [] : fotosIA(), nf = sel.length, st = Math.min(P.stIdx || 0, Math.max(0, nf - 1)), varias = nf > 1 && k !== "story";
+      const barra = `<div class="rt-prog">${l.map((x, i) => `<i class="${(P.res || {})[x] === "feito" ? "ok" : (P.res || {})[x] === "pulado" ? "pulo" : i === P.idx ? "at" : ""}"></i>`).join("")}</div><div class="rt-etapa">${L[2]}${k === "story" && nf > 1 ? ` · foto ${st + 1} de ${nf}` : ""}</div>`;
+      let meio = fotoProd ? (it && it.imagem ? `<div class="rp-foto"><img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer"></div>` : "") : vid ? `<div class="wz-previa rt-video rp-prev ${k === "grupo" ? "pe-prev-grupo" : k === "feed" ? "rr-pronto" : "rp-prev--grande"}"><video src="${vid.url}" playsinline loop autoplay muted controls></video></div>` : varias ? `<div class="pe-carr${k === "grupo" ? " pe-carr--grupo" : ""}">${sel.map((m, i) => `<canvas data-pe-rod="${i}"></canvas>`).join("")}</div>` : `<div class="wz-previa rp-prev ${k === "grupo" ? "pe-prev-grupo" : k === "feed" ? "pe-prev-feed" : "rp-prev--grande"}"><canvas data-pe-rod="${k === "story" ? st : 0}"></canvas></div>`;
+      if (k === "feed") meio += `<textarea id="peRtLeg" class="rr-leg" aria-label="Legenda (toque para editar)">${esc(P.legenda)}</textarea><div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopLeg">Copiar legenda</button><button type="button" class="btn btn--branco rp-adesivo" id="peRtBaixar">${vid ? "Baixar vídeo" : nf > 1 ? "Baixar fotos" : "Baixar imagem"}</button></div>`
+        + (vid ? "" : `<label class="ka2-campo pe-alt"><span>Texto alternativo (cole o que a IA escreveu)</span><textarea id="peRtAlt" rows="3">${esc(altIA(P, it))}</textarea></label><div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="peRtColarAlt">Colar da IA</button><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopAlt">Copiar texto alternativo</button></div>`);
+      if (k === "story" && it) meio += `<button type="button" class="btn btn--branco rp-adesivo" id="peRtCopLink">Copiar link<small>${esc(it.link || "")}</small></button><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopAdesivo">Copiar texto do adesivo<small>${esc(textoAdesivo(it))}</small></button>`;
+      if (k === "status") meio += `<button type="button" class="btn btn--branco rp-adesivo" id="peRtCopStatus">Copiar texto do Status<small>${esc((it ? textoStatus(it) : P.legenda).replace(/\s+/g, " ").slice(0, 80))}</small></button>`;
+      if (k === "grupo") meio += (P.peEditTx ? `<textarea id="peRtTexto" class="rp-texto">${esc(P.txGrupo)}</textarea>` : `<div class="balao wz-balao rp-balao">${formatarWhats(P.txGrupo)}</div>`)
+        + `<div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="peRtEditTx">${P.peEditTx ? "Pronto" : "Editar texto"}</button><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopTx">Copiar o texto</button></div>`;
+      const rot = { feed: "Postar no Instagram", story: "Postar no Instagram", status: "Postar no Status", grupo: "Enviar no WhatsApp" }[k], verde = k === "status" || k === "grupo";
+      const bts = !feito ? `<button type="button" class="btn btn--rosa wz-continuar${verde ? " wz-zap" : ""}" id="peRtPostar">${k === "story" && nf > 1 ? `Postar a foto ${st + 1} de ${nf}` : rot}</button><button type="button" class="rp-link" id="peRtPular">Pular este lugar</button>`
+        : `<button type="button" class="btn btn--rosa wz-continuar" id="peRtProx">Continuar</button>${k === "grupo" ? '<button type="button" class="btn btn--branco rp-outro" id="peRtPostar">Enviar em outro grupo</button>' : '<button type="button" class="rp-link" id="peRtPostar">Postar de novo</button>'}`;
+      c.innerHTML = `${barra}${meio}<div class="wz-rodape pr-rodape rp-rod2">${bts}</div>`;
+      if (!vid && !fotoProd) carregarMarca().then(() => document.querySelectorAll("[data-pe-rod]").forEach((cv) => { const m = sel[+cv.dataset.peRod]; if (!m) return; const a = arteLugarIA(k, m.bmp), d = varias ? 4 : 2; cv.width = a.width / d; cv.height = a.height / d; cv.getContext("2d").drawImage(a, 0, 0, cv.width, cv.height); }));
+      return true;
+    }
+    if (wz.passo === "peResumo") {
+      const l = lugaresIA(P), feitos = l.filter((k) => (P.res || {})[k] === "feito");
+      c.innerHTML = `<div class="rt-fim"><h2 class="wz-titulo">${feitos.length === l.length ? "Tudo postado!" : "Postagem concluída"}</h2>
+        <div class="rt-lista">${l.map((k) => `<div><span>${lugIA(k)[2]}</span><b class="${(P.res || {})[k] === "feito" ? "ok" : ""}">${(P.res || {})[k] === "feito" ? "Postado" : "Pulado"}</b></div>`).join("")}</div></div>
+        <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="peRtLista">Voltar para a lista</button></div>`;
+      return true;
+    }
+    return false;
+  }
+  /** A arte de cada lugar: Feed = no formato escolhido; Story/Status = em pé 9:16 com o fundo completando; Grupos = imagem limpa (ou a arte) */
+  function artePersTela(limpa, bmp) {
+    const P = pe(), f = bmp || (P.midia && P.midia.bmp), c = document.createElement("canvas"), x = c.getContext("2d");
+    if (limpa && f) { c.width = 1080; c.height = Math.round(1080 * f.height / f.width); x.imageSmoothingQuality = "high"; x.drawImage(f, 0, 0, c.width, c.height); return c; }
+    c.width = 1080; c.height = altPers(P); quadroLogoArroba(x, 1080, f || null, P); return c;
+  }
+  function artePersStory(base) {
+    if (base.height === 1920) return base;
+    const P = pe(), F = FUNDOS_PERS[P.fundo && FUNDOS_PERS[P.fundo] ? P.fundo : (P.fundoAuto || "rosa")] || FUNDOS_PERS.rosa, c = document.createElement("canvas"), x = c.getContext("2d");
+    c.width = 1080; c.height = 1920; x.fillStyle = F[1]; x.fillRect(0, 0, 1080, 1920);
+    const s = Math.min(1, 1500 / base.height), w = 1080 * s, h = base.height * s; x.save(); x.shadowColor = "rgba(0,0,0,.25)"; x.shadowBlur = 40; x.shadowOffsetY = 10; x.drawImage(base, (1080 - w) / 2, (1920 - h) / 2 - 60, w, h); x.restore();
+    return c;
+  }
+  const arteLugarIA = (k, bmp) => k === "grupo" ? artePersTela(pe().grupoLimpa !== false, bmp) : k === "feed" ? artePersTela(false, bmp) : artePersStory(artePersTela(false, bmp));
+  /** Fotos marcadas para postar (Criação IA, imagem) */
+  const fotosIA = () => { const P = pe(); if (P.midias && P.midias.length) return P.midias.filter((m) => m.on); return P.midia && P.midia.bmp ? [{ bmp: P.midia.bmp, on: true }] : []; };
+  async function anexarFotosIA(files, mais) {
+    const P = pe(), novos = [];
+    for (const f of [...files].slice(0, 3)) { try { novos.push({ bmp: await createImageBitmap(f), on: true }); } catch (e) { /* segue */ } }
+    if (!novos.length) { toast("Não consegui abrir a imagem"); return; }
+    if (mais && (P.midias || []).length + novos.length > 3) toast("O limite é de 3 fotos");
+    P.midias = mais ? [...(P.midias || []), ...novos].slice(0, 3) : novos; P.edIdx = mais ? Math.max(0, P.midias.length - novos.length) : 0;
+    P.midia = { tipo: "imagem", bmp: P.midias[P.edIdx].bmp }; P.resultado = null;
+    const y = scrollY; mostrarPasso(); scrollTo(0, y);
+  }
+  function desenharMinisIA() { const P = pe(); document.querySelectorAll("[data-pe-mini]").forEach((cv) => { const m = (P.midias || [])[+cv.dataset.peMini]; if (m) quadroLogoArroba(cv.getContext("2d"), cv.width, m.bmp, P); }); }
+  async function compartilharVarios(arqs, texto) {
+    arqs = arqs.filter(Boolean); if (arqs.length === 1) return compartilharArquivo(arqs[0], texto);
+    const d = texto ? { files: arqs, text: texto } : { files: arqs };
+    if (navigator.canShare && navigator.canShare(d)) { try { await navigator.share(d); return "ok"; } catch (e) { if (e.name === "AbortError") return "cancelado"; } }
+    return "sem";
+  }
+  async function postarLugarIA() {
+    const P = pe(), it = wzItem(), k = lugaresIA(P)[P.idx || 0], vid = videoIA(), fotoProd = !vid && (k === "status" || k === "grupo"), sel = vid ? [] : fotosIA(); if (!k || (!vid && !sel.length)) return;
+    await carregarMarca();
+    const nomeBase = it ? nomeArquivo(it.nome) : "miga-promo.jpg", lista = k === "story" ? [sel[Math.min(P.stIdx || 0, sel.length - 1)]] : sel;
+    const arqs = fotoProd ? [it && it.imagem ? await converterImagem(await arquivoDaImagem(it.imagem)) : null].filter(Boolean) : vid ? [new File([vid.blob], vid.nome, { type: vid.blob.type })] : await Promise.all(lista.map((m, i) => telaParaArquivo(arteLugarIA(k, m.bmp), nomeBase.replace(/(\.jpe?g)?$/i, lista.length > 1 ? `-${i + 1}.jpg` : ".jpg"))));
+    let texto = "";
+    if (k === "feed") await copiarTexto(P.legenda || legendaCriacao(P, it));
+    if (k === "story" && it) { await copiarTexto(it.link); adesivoPendente = textoAdesivo(it); adesivoSaiu = false; }
+    if (k === "status") texto = it ? textoStatus(it) : P.legenda;
+    if (k === "grupo") texto = it ? comLoja(P.txGrupo || "", it.loja, it.link) : P.txGrupo || "";
+    const r = await compartilharVarios(arqs, texto);
+    if (r === "sem") { if (k === "grupo") { await copiarTexto(texto); abrirWhatsApp(texto); } else { arqs.forEach((a) => a && baixarBlob(a, a.name)); if (texto) await copiarTexto(texto); toast(vid ? "Vídeo salvo: abra o app e escolha da galeria" : arqs.length > 1 ? "Fotos salvas: abra o app e escolha da galeria" : "Imagem salva: abra o app e escolha da galeria"); } }
+    if (r !== "ok") adesivoPendente = "";
+    if (r === "cancelado") return;
+    if (!vid && k === "story" && (P.stIdx || 0) < sel.length - 1) { P.stIdx = (P.stIdx || 0) + 1; toast(`Agora o story da foto ${P.stIdx + 1}`); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; } // um story por foto
+    (P.res || (P.res = {}))[k] = "feito";
+    registrarCompartilhado(k === "feed" || k === "story" ? "instagram" : "whatsapp", lugIA(k)[2]);
+    const y = scrollY; mostrarPasso(); scrollTo(0, y);
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "personagem") return; const P = pe(), t = e.target;
+    if (t.closest("#peRefazerV")) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peAprovar")) { if (videoIA()) { /* vídeo pronto */ } else if (P.midia && P.midia.tipo === "video") { toast("Crie o vídeo primeiro"); return; } else if (!fotosIA().length) { toast("Anexe a foto que a IA criou"); return; } wz.passo = "peLugares"; mostrarPasso(); scrollTo(0, 0); return; }
+    const qd = t.closest("[data-pe-qtd]"); if (qd) { P.qtd = +qd.dataset.peQtd; lsPers.gravar("qtd", P.qtd); P.promptEd = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peCenario")) { abrirFolhaCenario(); return; }
+    const tr = t.closest("[data-pe-tirar]"); if (tr) { const i = +tr.dataset.peTirar; (P.midias || []).splice(i, 1); if (!P.midias.length) { P.midias = null; P.midia = null; P.edIdx = 0; } else { P.edIdx = Math.min(P.edIdx || 0, P.midias.length - 1); P.midia = { tipo: "imagem", bmp: P.midias[P.edIdx].bmp }; } const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const tc = t.closest("[data-pe-toca]"); if (tc) { const i = +tc.dataset.peToca, m = (P.midias || [])[i]; if (m) { m.on = !m.on; P.edIdx = i; P.midia = { tipo: "imagem", bmp: m.bmp }; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; } // tocar marca/desmarca e mostra grande
+    const us = t.closest("[data-pe-usar]"); if (us) { const m = (P.midias || [])[+us.dataset.peUsar]; if (m) { m.on = !m.on; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
+    const vr = t.closest("[data-pe-ver]"); if (vr && !t.closest("[data-pe-usar]")) { const i = +vr.dataset.peVer, m = (P.midias || [])[i]; if (m) { P.edIdx = i; P.midia = { tipo: "imagem", bmp: m.bmp }; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
+    const lg = t.closest("[data-pe-lug]"); if (lg) { const k = lg.dataset.peLug, l = lugaresIA(P); P.lugares = l.includes(k) ? l.filter((x) => x !== k) : Object.keys(LUG_IA).filter((x) => x === k || l.includes(x)); lsPers.gravar("lugares", P.lugares); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peComecar")) { if (!lugaresIA(P).length) return; P.idx = 0; P.stIdx = 0; P.res = {}; P.peEditLeg = false; P.peEditTx = false; wz.passo = "peRodar"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#peRtPostar")) { P.peEditLeg = false; P.peEditTx = false; postarLugarIA(); return; }
+    if (t.closest("#peRtPular") || t.closest("#peRtProx")) { const l = lugaresIA(P), k = l[P.idx || 0]; if (P.res[k] !== "feito") P.res[k] = "pulado"; P.peEditLeg = false; P.peEditTx = false; P.stIdx = 0; P.idx = (P.idx || 0) + 1; wz.passo = P.idx < l.length ? "peRodar" : "peResumo"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#peRtLista")) { wz = {}; irPara("postar"); return; }
+    const it = wzItem();
+    if (t.closest("#peRtCopLeg")) { if (await copiarTexto(P.legenda)) toast("Legenda copiada"); return; }
+    if (t.closest("#peRtCopAlt")) { if (await copiarTexto(altIA(P, wzItem()))) toast("Texto alternativo copiado: no Instagram, Configurações avançadas → Texto alternativo"); return; }
+    if (t.closest("#peRtColarAlt")) { let txt = ""; try { txt = await navigator.clipboard.readText(); } catch (err) { txt = ""; }
+      txt = String(txt || "").replace(/\r/g, ""); const m = /texto alternativo[^:\n]*:\s*([\s\S]+)/i.exec(txt); if (m) txt = m[1]; txt = txt.split(/\n\s*\n/)[0].trim();
+      if (!txt) { toast("Copie o texto alternativo na IA e toque em Colar de novo (ou cole direto na caixa)"); const ta = $("#peRtAlt"); if (ta) ta.focus(); return; }
+      P.alt = txt.slice(0, 600); const ta = $("#peRtAlt"); if (ta) ta.value = P.alt; toast("Texto alternativo colado"); return; }
+    if (t.closest("#peRtEditLeg")) { P.peEditLeg = !P.peEditLeg; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peRtBaixar")) { const v = videoIA(); if (v) { baixarBlob(v.blob, v.nome); toast("Vídeo salvo"); return; } await carregarMarca(); const sel = fotosIA(); for (let i = 0; i < sel.length; i++) { const a = await telaParaArquivo(arteLugarIA("feed", sel[i].bmp), nomeArquivo(it.nome).replace(/(\.jpe?g)?$/i, sel.length > 1 ? `-${i + 1}.jpg` : ".jpg")); if (a) baixarBlob(a, a.name); } toast(sel.length > 1 ? "Fotos salvas" : "Imagem salva"); return; }
+    if (t.closest("#peRtCopLink")) { if (await copiarTexto(it.link)) toast("Link copiado: cole no adesivo de Link"); return; }
+    if (t.closest("#peRtCopAdesivo")) { if (await copiarTexto(textoAdesivo(it))) toast("Texto do adesivo copiado: no adesivo de link, toque em Personalizar texto e cole"); return; }
+    if (t.closest("#peRtCopStatus")) { if (await copiarTexto(it ? textoStatus(it) : P.legenda)) toast("Texto do Status copiado"); return; }
+    if (t.closest("#peRtEditTx")) { P.peEditTx = !P.peEditTx; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peRtCopTx")) { if (await copiarTexto(P.txGrupo)) toast("Texto copiado"); return; }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal !== "personagem") return; const P = pe();
+    if (e.target.id === "peRtLeg") P.legenda = e.target.value;
+    if (e.target.id === "peRtAlt") P.alt = e.target.value;
+    if (e.target.id === "peRtTexto") P.txGrupo = e.target.value;
+  });
+  $("#wzCorpo").addEventListener("change", (e) => {
+    if (wz.canal !== "personagem") return; const P = pe();
+    const m = e.target.closest("[data-pe-mostra]"); if (m) { P["sem" + m.dataset.peMostra] = !m.checked; const lb = m.closest("label"); if (lb) lb.classList.toggle("on", m.checked); lsPers.gravar("mostrar", { semLogo: !!P.semLogo, semArroba: !!P.semArroba, semSelo: !!P.semSelo }); P.resultado = null; desenharMinisIA(); return; }
+    if (e.target.id === "peLimpa") P.grupoLimpa = e.target.checked;
+    if (e.target.id === "pePose") { P.poseLivre = e.target.checked; lsPers.gravar("pose", P.poseLivre); P.promptEd = null; }
+  });
   /** Legenda pronta do post: produto (nome, preço, cupom) ou o assunto do vídeo sem produto, com 5 hashtags */
   function legendaCriacao(P, it) {
     const at = arroba(config.instagram) || "@migapromo.oficial";
@@ -6585,7 +7411,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const tags = (TAGS[it.categoria] || TAGS.outros).split(" ").slice(0, 3).join(" ") + " #achadinhos #promocao";
     return [`✨ ${nome}`, "", preco, it.cupom ? `🎟️ Cupom: ${String(it.cupom).toUpperCase()}` : "", "", FRASES[it.categoria] || "Achadinho com preço de amiga 💖", "", `🔗 Link na bio (${at})`, "Corre que esse preço não costuma durar ⏳", "", tags].filter((l, i, a) => l !== "" || (a[i - 1] !== "" && i > 0)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
   }
-  const MOLDURAS_PERS = { nao: ["Sem", ""], rosa: ["Rosa", "#e8336d"], preto: ["Preto", "#1d1d1f"], creme: ["Creme", "#fff3c4"], branco: ["Branco", "#ffffff"] };
+  const MOLDURAS_PERS = { nao: ["Sem", ""], rosa: ["Rosa", "#e8336d"], preto: ["Preto", "#1d1d1f"], creme: ["Creme", "#fff3c4"], branco: ["Branco", "#ffffff"], rose: ["Rosê", "#f6c9d3"], verde: ["Verde pastel", "#cdebd5"] };
   /** A foto/vídeo da IA + moldura (opcional) + logo, @ e selo de desconto nos cantos escolhidos */
   function quadroLogoArroba(ctx, W, fonte, P, soCamada = false) {
     const x = ctx, k = W / 1080, H = altPers(P); x.save(); x.scale(k, k);
@@ -6604,16 +7430,16 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     // "Logo em cima": o logo desce até o cantinho e o quadrado rosa cobre a marca d'água da IA (estrelinha ~75 px da borda)
     const enc = false, lx = cl[1] === "l" ? (enc ? 10 : M) : (enc ? 1080 - 180 : 1080 - M - tl), ly = cl[0] === "t" ? (enc ? -10 : M) : (enc ? H - 160 : H - M - tl);
     // selo de desconto
-    if (cs !== "nao" && P.seloTxt) { const r = 92, mesmo = cs === cl, sx = cs[1] === "l" ? M + r : 1080 - M - r; let sy = cs[0] === "t" ? M + r : H - M - r; if (mesmo) sy += cs[0] === "t" ? tl + 24 : -(tl + 24);
+    if (cs !== "nao" && P.seloTxt && !P.semSelo) { const r = 92, mesmo = cs === cl, sx = cs[1] === "l" ? M + r : 1080 - M - r; let sy = cs[0] === "t" ? M + r : H - M - r; if (mesmo) sy += cs[0] === "t" ? tl + 24 : -(tl + 24);
       x.save(); x.translate(sx, sy); x.rotate(0.08); x.shadowColor = "rgba(0,0,0,.25)"; x.shadowBlur = 20; x.shadowOffsetY = 6; x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.fillStyle = "#ffd23f"; x.fill(); x.shadowColor = "transparent"; x.lineWidth = 8; x.strokeStyle = "#1d1d1f"; x.stroke();
       x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.textBaseline = "middle"; let f = 56; x.font = `900 ${f}px Poppins`; while (x.measureText(P.seloTxt).width > r * 1.6 && f > 26) { f -= 4; x.font = `900 ${f}px Poppins`; } x.fillText(P.seloTxt, 0, -8); x.font = "800 24px Poppins"; x.fillText("OFF", 0, 40); x.restore(); }
-    if (true) { const cx = cl[1] === "l" ? 0 : 1080, cy = cl[0] === "t" ? 0 : H, r = M + tl + 70; x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fillStyle = mol && mol !== "#ffffff" ? mol : "#ffffff"; x.shadowColor = "rgba(0,0,0,.12)"; x.shadowBlur = 18; x.fill(); x.restore(); } // círculo no canto do logo: tampa a marca d'água da IA
-    if (edMarca) x.drawImage(edMarca, lx, ly, tl, tl);
+    if (!P.semLogo) { const cx = cl[1] === "l" ? 0 : 1080, cy = cl[0] === "t" ? 0 : H, r = M + tl + 70; x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fillStyle = mol && mol !== "#ffffff" ? mol : "#ffffff"; x.shadowColor = "rgba(0,0,0,.12)"; x.shadowBlur = 18; x.fill(); x.restore(); } // círculo no canto do logo: tampa a marca d'água da IA
+    if (edMarca && !P.semLogo) x.drawImage(edMarca, lx, ly, tl, tl);
     // o @ fica na mesma linha (mesma altura) do logo: centralizado na faixa do tamanho do logo
     x.font = "800 40px Poppins"; const tw = x.measureText(at).width, faixa = ca[0] === "t" ? M + tl / 2 : H - M - tl / 2;
     let ax = ca[1] === "l" ? M + tw / 2 : 1080 - M - tw / 2, ay = faixa + 14;
     if (ca === cl) ax = ca[1] === "l" ? lx + tl + 18 + tw / 2 : lx - 18 - tw / 2;
-    textoContorno(x, at, ax, ay, 40, "#ffffff", 800, "center");
+    if (!P.semArroba) textoContorno(x, at, ax, ay, 40, "#ffffff", 800, "center");
     x.restore();
   }
   /** Texto sem fundo: letra com contorno escuro (lê em qualquer foto) */
@@ -6624,7 +7450,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   try { document.fonts && document.fonts.load('500 60px "Roboto Condensed"'); } catch (e) { /* segue */ }
   /** Texto personalizado do adesivo de link do Instagram (só quando tem cupom): "LINK: MELI | CUPOM: CÓDIGO" */
   const LOJA_ADESIVO = { mercadolivre: "MELI", shopee: "SHOPEE", amazon: "AMAZON", magalu: "MAGALU" };
-  const textoAdesivo = (it) => (it && it.cupom ? `LINK: ${LOJA_ADESIVO[it.loja] || String(NOME_LOJA[it.loja] || "LINK").toUpperCase()} | CUPOM: ${String(it.cupom).toUpperCase()}` : "");
+  const textoAdesivo = (it) => { if (!it) return ""; const loja = LOJA_ADESIVO[it.loja] || String(NOME_LOJA[it.loja] || "LINK").toUpperCase(); return it.cupom ? `LINK: ${loja} | CUPOM: ${String(it.cupom).toUpperCase()}` : `LINK: ${loja}`; }; // sem cupom: só a loja
   /** Campo branco com borda tracejada na cor do tema, centralizado embaixo do preço, do tamanho do adesivo de link
       com esse texto. Sem texto: o adesivo do Instagram vai por cima. */
   function campoCupomLink(ctx, y, it, cor) {
@@ -6669,7 +7495,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function quebraLinhas(x, txt, larg, max) { const out = []; let l = ""; String(txt || "").split(/\s+/).filter(Boolean).forEach((p) => { const t = l ? l + " " + p : p; if (x.measureText(t).width > larg && l) { out.push(l); l = p; } else l = t; }); if (l) out.push(l); if (out.length > max) { out.length = max; out[max - 1] = out[max - 1].replace(/\s*\S*$/, "") + "…"; } return out; }
   /** Imagem = post quadrado 1:1 (1080 × 1080); vídeo e "sem produto" = 9:16 (1080 × 1920) */
-  const altPers = (P) => (quadradoPers(P) ? 1080 : 1920);
+  const altPers = (P) => ({ feed: 1350, quadrado: 1080, vertical: 1920 })[fmtPers(P)];
   /* Editor livre: cada item tem posição (x, y em 0–1), tamanho e se aparece. Arrasta com o dedo ou o mouse. */
   const ITENS_LIVRE = { chamada: "Chamada", nome: "Nome", preco: "Preço", cupom: "Cupom", selo: "Selo %", logo: "Logo Miga", arroba: "@ da Miga" };
   // posições iniciais [x, y, tamanho]: em pé (vídeo) e quadrado (post)
@@ -6972,11 +7798,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.canal !== "personagem") return; const P = pe();
     const fo = e.target.dataset && e.target.dataset.peFoto; if (fo != null && e.target.files[0]) {
       try { const f = fotosPers(); f[+fo] = await compactarArquivo(e.target.files[0]); if (!lsPers.gravar("fotos", f)) toast("Foto grande demais para guardar: ela vale só agora"); P.fotosAgora = f; mostrarPasso(); } catch (err) { toast("Não consegui abrir a foto"); } return; }
+    const ca = e.target.dataset && e.target.dataset.peCenaArq; if (ca != null && e.target.files[0]) { const i = +ca, arq = e.target.files[0];
+      if (!arq.type.startsWith("video/")) { toast("Anexe o vídeo da cena"); return; }
+      const url = URL.createObjectURL(arq), v = document.createElement("video"); v.src = url; v.muted = true; v.preload = "metadata";
+      await new Promise((ok) => { v.addEventListener("loadedmetadata", ok, { once: true }); setTimeout(ok, 5000); });
+      (P.cenasVid = P.cenasVid || [])[i] = { arq, url, dur: isFinite(v.duration) ? v.duration : 10, w: v.videoWidth, h: v.videoHeight }; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     if (e.target.id === "peLimparFoto" && e.target.files[0]) {
       const it = wzItem(), f = e.target.files[0];
       try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); it.fotoLimpa = true; salvarFila(true); toast("Foto do produto refeita: agora copie o prompt"); const y = scrollY; mostrarPasso(); scrollTo(0, y); } catch (err) { toast("Não consegui abrir a foto"); }
       return;
     }
+    if ((e.target.id === "peMidia" || /^peMidiaMais/.test(e.target.id)) && e.target.files[0] && P.tipo === "imagem") { await anexarFotosIA(e.target.files, /^peMidiaMais/.test(e.target.id)); e.target.value = ""; return; }
     if (e.target.id === "peMidia" && e.target.files[0]) { pe().corte = null; pe().corteAuto = null;
       const arq = e.target.files[0]; if (P.midia && P.midia.url) URL.revokeObjectURL(P.midia.url); P.resultado = null;
       if (arq.type.startsWith("video/")) { ffPronto().catch(() => {}); const url = URL.createObjectURL(arq), v = document.createElement("video"); v.src = url; v.muted = true; v.playsInline = true; v.loop = true; await new Promise((ok) => { v.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 5000); }); P.midia = { tipo: "video", url, video: v }; }
@@ -6991,9 +7823,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (e.target.id === "peCorte") { P.corte = parseFloat(e.target.value); const tx = $("#peCorteTxt"); if (tx) tx.textContent = P.corte.toFixed(1).replace(".", ",") + " s";
       const v = P.midia && P.midia.video; if (v) { v.pause(); v.currentTime = Math.max(0, P.corte - 0.03); }
       if (P.resultado) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
-    if (e.target.id === "pePrompt") { P.promptEd = e.target.value; const sp = e.target.previousElementSibling; if (sp) sp.textContent = `Prompt (pode editar · ${e.target.value.length}/800)`; return; }
+    if (e.target.id === "pePrompt") { P.promptEd = e.target.value; const sp = e.target.previousElementSibling; if (sp) sp.textContent = P.tipo === "imagem" ? "Prompt principal" : `Prompt (pode editar · ${e.target.value.length}/${LIMITE_PROMPT})`; return; }
     if (e.target.id === "peLimparTxt") { P.limparTxt = e.target.value; return; }
-    if (e.target.id === "peFalaMeio") { P.falaMeio = e.target.value; P.promptEd = null; const pr = promptChamadaPers(P), tt = $("#pePrompt"); if (tt) { tt.value = pr; tt.previousElementSibling.textContent = `Prompt (pode editar · ${pr.length}/800)`; } return; }
+    if (e.target.id === "peFalaMeio") { P.falaMeio = e.target.value; P.promptEd = null; const pr = promptChamadaPers(P), tt = $("#pePrompt"); if (tt) { tt.value = pr; tt.previousElementSibling.textContent = `Prompt (pode editar · ${pr.length}/${LIMITE_PROMPT})`; } return; }
     if (e.target.id === "peFicha") { lsPers.gravar("ficha", e.target.value); const it = wzItem(), pr = promptPersonagem(it, P.tipo), t = $("#pePrompt"); if (t) { t.value = pr; t.previousElementSibling.textContent = `Prompt pronto (${pr.length}/900 caracteres)`; } return; }
     const k = e.target.dataset && e.target.dataset.peTx; if (k) P.tx[k] = e.target.value;
   });
@@ -7031,7 +7863,30 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#peAbrirGPT")) { window.open("https://chatgpt.com/", "_blank", "noopener"); return; }
     if (t.closest("#peAbrirGemini")) { window.open("https://gemini.google.com/app", "_blank", "noopener"); return; }
     if (t.closest("#peJaCriei")) { wz.passo = "peMontar"; mostrarPasso(); scrollTo(0, 0); return; }
+    const qc = t.closest("[data-pe-cenas]"); if (qc) { P.cenas = +qc.dataset.peCenas; lsPers.gravar("cenas", P.cenas); P.cenasResp = null; P.cenasCop = null; P.cenasVid = null; if (P.midia && P.midia.url) URL.revokeObjectURL(P.midia.url); P.midia = null; P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peCenasCopiar")) { if (!it) return; if (await copiarTexto(promptCenas(it, P))) toast("Prompt copiado: cole no ChatGPT ou no Gemini"); return; }
+    if (t.closest("#peCenasColar")) {
+      let txt = ""; try { txt = await navigator.clipboard.readText(); } catch (err) { txt = ""; }
+      const l = txt ? lerRespostaCenas(txt, cenasN(P)) : null;
+      if (!l) { folhaEst("Colar resposta da IA", `<p class="nota">Cole aqui a resposta inteira da IA (o bloco que começa com { ).</p><label class="ch-campo"><span>Resposta</span><textarea id="peCenasResp" rows="9"></textarea></label><button type="button" class="btn btn--rosa" id="peCenasAplicar">Usar esta resposta</button>`); return; }
+      P.cenasResp = l; P.cenasCop = []; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
+    }
+    const cc = t.closest("[data-pe-cena-copiar]"); if (cc) { const i = +cc.dataset.peCenaCopiar, x = (P.cenasResp || [])[i]; if (!x) return; if (await copiarTexto(x.prompt)) { (P.cenasCop = P.cenasCop || [])[i] = true; toast(`Prompt da cena ${i + 1} copiado`); const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
+    const ct = t.closest("[data-pe-cena-tirar]"); if (ct) { const i = +ct.dataset.peCenaTirar, x = (P.cenasVid || [])[i]; if (x) URL.revokeObjectURL(x.url); P.cenasVid[i] = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const cq = t.closest("[data-pe-cena-quadro]"); if (cq) { const i = +cq.dataset.peCenaQuadro, x = (P.cenasVid || [])[i]; if (!x) return; toast("Pegando o último quadro…");
+      const b = await ultimoQuadroCena(x.url).catch(() => null); if (!b) { toast("Não consegui pegar o quadro"); return; }
+      const arq = new File([b], `cena-${i + 1}-ultimo-quadro.jpg`, { type: "image/jpeg" }); baixarBlob(arq, arq.name); toast(`Quadro salvo: use como imagem inicial da cena ${i + 2}`); return; }
+    if (t.closest("#peJuntar")) { const cs = (P.cenasVid || []).filter(Boolean); if (cs.length < 2 || P.juntando) return;
+      P.juntando = true; const btn = $("#peJuntar"), pinta = (pc) => { if (!btn) return; btn.disabled = true; btn.textContent = `Juntando as cenas… ${pc}%`; btn.style.background = `linear-gradient(90deg, #e8336d ${pc}%, #f39bb9 ${pc}%)`; btn.style.color = "#fff"; btn.style.opacity = "1"; }; pinta(0);
+      try { let blob = null; try { blob = await juntarCenas(cs, pinta); } catch (e1) { console.warn("ffmpeg indisponível, juntando em tempo real", e1); pinta(0); blob = await juntarCenasTempoReal(cs, pinta); }
+        const url = URL.createObjectURL(blob), v = document.createElement("video"); v.src = url; v.muted = true; v.playsInline = true; v.loop = true;
+        await new Promise((ok) => { v.addEventListener("loadeddata", ok, { once: true }); setTimeout(ok, 5000); });
+        P.corte = null; P.corteAuto = null; P.resultado = null; P.midia = { tipo: "video", url, video: v }; toast("Cenas juntas: agora edite o vídeo");
+      } catch (err) { console.warn(err); toast("Não consegui juntar as cenas. Tente de novo no Chrome atualizado."); }
+      P.juntando = false; if (wz.canal === "personagem" && wz.passo === "peMontar") { mostrarPasso(); scrollTo(0, 0); } return; }
+    if (t.closest("#peTrocarCenas")) { if (P.midia && P.midia.video) P.midia.video.pause(); if (P.midia && P.midia.url) URL.revokeObjectURL(P.midia.url); P.midia = null; P.resultado = null; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peCopiar")) { if (await copiarTexto($("#pePrompt").value)) toast("Prompt copiado: cole na IA com as fotos"); return; }
+    const cf = t.closest("[data-pe-copfoto]"); if (cf) { const n = +cf.dataset.peCopfoto; if (await copiarTexto(promptFotoN(n, P))) toast(`Prompt da foto ${n} copiado: cole na mesma conversa`); return; }
 
 
     const cn = t.closest("[data-pe-canto]"); if (cn) { const [k, v] = cn.dataset.peCanto.split(":"); if (k === "logo") P.cantoLogo = v; else if (k === "selo") P.cantoSelo = v; else P.cantoArroba = v; lsPers.gravar("cantos", { logo: P.cantoLogo, arroba: P.cantoArroba, selo: P.cantoSelo }); const tinha = !!P.resultado; P.resultado = null; if (k === "selo" || tinha) { const y = scrollY; mostrarPasso(); scrollTo(0, y); } else cn.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === cn)); return; }
@@ -7072,8 +7927,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     rosa: { nome: "Rosa", fundo: "#e8336d", texto: "#ffffff", d1: "#ffd23f", d2: "#1d1d1f", bola1: "rgba(255,255,255,.22)", bola2: "rgba(255,255,255,.22)", pontoA: "#ffd23f", pontoB: "#ffffff", suave: "rgba(255,255,255,.88)" },
     creme: { nome: "Creme", fundo: "#fff3c4", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.6)", bola2: "#ffffff", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" },
     branco: { nome: "Branco", fundo: "#ffffff", texto: "#1d1d1f", d1: "#e8336d", d2: "#e8336d", bola1: "rgba(255,210,63,.45)", bola2: "#efeae0", pontoA: "#e8336d", pontoB: "#ffd23f", suave: "#6f6862" },
-    // cores extras: só nos temas de campanha (Corre pros Stories e Seguidores), as artes dos produtos seguem com as 4 cores
-    rose: { nome: "Rosê", fundo: "#f6c9d3", texto: "#1d1d1f", d1: "#b0124a", d2: "#b0124a", bolaC: "rgba(255,255,255,.7)", bolaC2: "#ffffff", suave: "#6b3a48", extra: true },
+    // cores oficiais Rosê e Verde pastel (valem em todas as ferramentas)
+    rose: { nome: "Rosê", fundo: "#f6c9d3", texto: "#1d1d1f", d1: "#b0124a", d2: "#b0124a", bolaC: "rgba(255,255,255,.7)", bolaC2: "#ffffff", suave: "#6b3a48" },
+    verde: { nome: "Verde pastel", fundo: "#cdebd5", texto: "#1d1d1f", d1: "#1f7a4d", d2: "#1f7a4d", bolaC: "rgba(255,255,255,.7)", bolaC2: "#ffffff", suave: "#3f5c4b" },
   };
   // na barrinha: qualquer tom com o brilho padrão da Miga
   const CORES_CHAMADA_P = new Proxy(CORES_CHAMADA, { get: (o, k) => (k in o ? o[k] : corPropria(k) ? (corClara(k)
@@ -7083,9 +7939,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /** Textos do tema: o padrão do nicho + o que você editou (use *palavra* para destacar) */
   function dadosChamada(CH) {
     const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, at = arroba(config.instagram);
-    const base = CH.tipo === "seg" ? baseSeguidores(CH, at) : { etiqueta: "ATUALIZEI OS STORIES", t1: "Enchi meus", t2: "stories de", palavra: N.palavra, sub: "com preço de amiga",
+    const base = CH.tipo === "seg" ? baseSeguidores(CH, at) : { etiqueta: "ATUALIZEI OS STORIES", t1: "Enchi meus", t2: "stories de", palavra: CH.palavraIdeia || N.palavra, sub: "com preço de amiga",
       frase: N.frase.map(([p, d]) => p + (d ? `*${d}*` : "")), lista: "Tem de tudo:", itens: N.itens.slice(), cta1: "Corre nos meus", cta2: "STORIES", toque: "toca na minha foto", arroba: at,
-      ic: N.ic.slice(), icFrase: N.icFrase, ic2: N.ic2.slice() };
+      ic: (CH.icIdeia || N.ic).slice(), icFrase: N.icFrase, ic2: N.ic2.slice() };
     const tx = CH.tx || {}; const d = { ...base, ...tx };
     ["frase", "itens", "ic", "ic2"].forEach((k) => { d[k] = base[k].map((v, i) => (tx[k] && tx[k][i] != null ? tx[k][i] : v)); });
     return d;
@@ -7094,7 +7950,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const partesDestaque = (s, cor, corD) => String(s || "").split("*").map((p, i) => [p, i % 2 ? corD : cor]).filter(([p]) => p);
   const ch = () => wz.ch;
   function abrirChamada(tipo) {
-    wz = { canal: "chamada", passo: "chEditar", veioDaLista: true, ch: tipo === "seg" ? { tipo: "seg", numero: "500", nicho: "geral", cor: "rose", musica: "dancepop", resultado: null, legenda: null } : { nicho: "perfumes", cor: "preto", musica: "traparabe", resultado: null, legenda: null } };
+    wz = { canal: "chamada", passo: tipo === "seg" ? "chEditar" : "chInicio", veioDaLista: true, ch: tipo === "seg" ? { tipo: "seg", numero: "500", nicho: "geral", cor: "rose", musica: "dancepop", resultado: null, legenda: null } : { nicho: "perfumes", modo: "video", cor: "preto", musica: "traparabe", resultado: null, legenda: null } };
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
   const easeC = (t) => t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);
@@ -7280,10 +8136,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (CH.tipo === "seg") return legendaSeguidores(CH);
     const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, nome = CH.nicho === "geral" ? "promoção" : (NOME_CAT[CH.nicho] || N.palavra).toLowerCase(), at = arroba(config.instagram);
     const tags = { perfumes: "#perfume #perfumes #perfumefeminino #bodysplash #perfumearabe", looks: "#moda #lookdodia #modafeminina #looks", fitness: "#modafitness #fitness #treino #legging", calcados: "#calcados #tenis #sandalias #sapatos", acessorios: "#bolsas #acessorios #bijuterias", maquiagem: "#maquiagem #make #makebarata", skincare: "#skincare #cuidadoscomapele #pele", cabelo: "#cabelo #cabelos #cuidadoscomocabelo", suplementos: "#suplementos #whey #creatina", eletronicos: "#tecnologia #fone #eletronicos", casa: "#casa #decoracao #organizacao #cozinha", geral: "#promocao #ofertas" }[CH.nicho] || "";
-    return `Enchi meus stories de ${N.palavra.toLowerCase()} ✨\n\nTem ${N.itens.slice(0, -1).join(", ").toLowerCase()} e ${N.itens[N.itens.length - 1].toLowerCase()}, tudo com preço de amiga 💸\n\n👉 Corre nos meus stories antes que acabe! É só tocar na minha foto${at ? ` (${at})` : ""}.\n\nQual você quer primeiro? Me conta aqui 👇\n\n${tags} #achadinhos #achadinhosmercadolivre #achadinhosshopee #promoção #cupomdedesconto`.replace(" de promoção ✨", " de promoção ✨").replace(nome + nome, nome);
+    return `Enchi meus stories de ${(CH.palavraIdeia || N.palavra).toLowerCase()} ✨\n\nTem ${N.itens.slice(0, -1).join(", ").toLowerCase()} e ${N.itens[N.itens.length - 1].toLowerCase()}, tudo com preço de amiga 💸\n\n👉 Corre nos meus stories antes que acabe! É só tocar na minha foto${at ? ` (${at})` : ""}.\n\nQual você quer primeiro? Me conta aqui 👇\n\n${tags} #achadinhos #achadinhosmercadolivre #achadinhosshopee #promoção #cupomdedesconto`.replace(" de promoção ✨", " de promoção ✨").replace(nome + nome, nome);
   }
   function telaChamada(c) {
-    const CH = ch();
+    const CH = ch(); if (telaChamadaNova(c)) return;
     if (wz.passo === "chEditar") {
       const chips = (attr, lista, atual) => `<div class="ed-chips ch-chips">${lista.map(([k, n]) => `<button type="button" ${attr}="${k}" class="${k === atual ? "on" : ""}">${esc(n)}</button>`).join("")}</div>`;
       const nichos = Object.keys(NICHOS_CHAMADA).map((k) => [k, k === "geral" ? "Promoções gerais" : NOME_CAT[k] || k]);
@@ -7328,6 +8184,216 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         </div></div>`;
     }
   }
+  /* ===== Corre pros Stories novo: Vídeo (Reels de 12 s) ou Imagem com caixinha de pergunta ===== */
+  const IDEIAS_CHAMADA = [["Jeans", "looks", "JEANS", ["jeans", "shortjeans"]], ["Saias e vestidos", "looks", "SAIAS", ["saia", "cabide"]], ["Camisetas", "looks", "CAMISETAS", ["camiseta", "coracao"]],
+    ["Saltos", "calcados", "SALTOS", ["salto", "brilho"]], ["Chinelos e rasteiras", "calcados", "CHINELOS", ["chinelo", "coracao"]], ["Bonés", "acessorios", "BONÉS", ["bone", "estrela"]],
+    ["Brincos e bijuterias", "acessorios", "BRINCOS", ["brinco", "brilho"]], ["Mochilas", "acessorios", "MOCHILAS", ["mochila", "estrela"]], ["Paletas de make", "maquiagem", "PALETAS", ["paleta", "batom"]],
+    ["Secadores e chapinhas", "cabelo", "SECADORES", ["secador", "brilho"]], ["Perfumes árabes", "perfumes", "PERFUMES", ["perfume", "brilho"]], ["Achadinhos até R$ 50", "geral", "ATÉ R$ 50", ["dinheiro", "porcento"]]];
+  const nomeNichoCh = (k) => (k === "geral" ? "Promoções gerais" : NOME_CAT[k] || k);
+  const assuntoCh = (CH) => (CH.livre || "").trim() || CH.ideia || (CH.nicho === "geral" ? "promoções variadas" : nomeNichoCh(CH.nicho));
+  const assinaturaCh = (CH) => JSON.stringify([CH.tx, CH.cor, CH.musica, CH.nicho, CH.palavraIdeia, CH.icIdeia]);
+  const CENAS_CH = [["Capa", ["etiqueta", "Etiqueta"], ["t1", "Linha 1"], ["t2", "Linha 2"], ["palavra", "Palavra grande"], ["sub", "Frase de baixo"]], ["Frase"], ["Lista", ["lista", "Título"]], ["Final", ["cta1", "Linha 1"], ["cta2", "Palavra grande"], ["arroba", "Seu @ (ou deixe vazio)"], ["toque", "Frase de baixo"]]];
+  function resumoCenaCh(D, i) {
+    return semDestaque(i === 0 ? `${D.t1} ${D.t2} ${D.palavra}` : i === 1 ? D.frase.join(" ") : i === 2 ? `${D.lista} ${D.itens.join(", ")}` : `${D.cta1} ${D.cta2}`);
+  }
+  function dadosCaixinha(CH) {
+    const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, pal = CH.palavraIdeia || N.palavra, at = arroba(config.instagram);
+    const base = { etiqueta: "CAIXINHA ABERTA", chamada: CH.nicho === "geral" && !CH.palavraIdeia ? "Qual *achadinho* você quer ver hoje?" : `Qual achadinho de *${pal}* você quer ver?`,
+      pergunta: CH.nicho === "geral" && !CH.palavraIdeia ? "O que você está procurando?" : `Qual ${pal.toLowerCase()} você está procurando?`, sub: "Responde que eu procuro pra você 💖", arroba: at, ic: (CH.icIdeia || N.ic).slice() };
+    const m = CH.img || {}, d = { ...base, ...m }; d.ic = base.ic.map((v, i) => (m.ic && m.ic[i] != null ? m.ic[i] : v)); return d;
+  }
+  /** Quebra o texto em linhas, mantendo o *destaque* */
+  function linhasDestaqueCh(x, s, maxW) {
+    const toks = []; let d = false, buf = "", sp = false;
+    for (const c of String(s || "")) { if (c === "*") { if (buf) { toks.push([buf, d, sp]); buf = ""; sp = false; } d = !d; continue; } if (/\s/.test(c)) { if (buf) { toks.push([buf, d, sp]); buf = ""; } sp = true; continue; } buf += c; }
+    if (buf) toks.push([buf, d, sp]);
+    const linhas = []; let at = [], w = 0; const esp = x.measureText(" ").width;
+    toks.forEach(([p, dd, s2]) => { const pw = x.measureText(p).width, extra = at.length && s2 ? esp : 0;
+      if (at.length && s2 && w + extra + pw > maxW) { linhas.push({ partes: at, w }); at = []; w = 0; }
+      at.push([(at.length && s2 ? " " : "") + p, dd]); w += (at.length > 1 && s2 ? esp : 0) + pw; });
+    if (at.length) linhas.push({ partes: at, w }); return linhas;
+  }
+  /** Story 1080x1920 com a caixinha de pergunta (a área tracejada só aparece na prévia) */
+  function quadroCaixinha(ctx, W, CH, vaga) {
+    const C = CORES_CHAMADA_P[CH.cor] || CORES_CHAMADA.preto, D = dadosCaixinha(CH), x = ctx;
+    x.save(); x.scale(W / 1080, W / 1080); x.fillStyle = C.fundo; x.fillRect(0, 0, 1080, 1920);
+    { const pu = pulsoTela; pulsoTela = 0; bolinhas(x, C.bolaC || (CORES_VIDEO[CH.cor] || CORES_VIDEO.preto).bola, C.bolaC2 || (CH.cor === "preto" ? "#e9e4d8" : "#ffffff"), 0); pulsoTela = pu; }
+    const ret = (a, b, w, h, r) => { x.beginPath(); if (x.roundRect) x.roundRect(a, b, w, h, r); else x.rect(a, b, w, h); };
+    x.textAlign = "center"; x.textBaseline = "middle";
+    if (D.etiqueta) { x.save(); x.translate(540, 330); x.rotate(-0.04); x.font = "800 46px Poppins"; const w = Math.min(960, x.measureText(D.etiqueta).width + 80); ret(-w / 2, -46, w, 92, 46); x.fillStyle = "#ffd23f"; x.fill(); x.fillStyle = "#1d1d1f"; x.fillText(D.etiqueta, 0, 2, 900); x.restore(); }
+    let f = 112, L = []; for (; f >= 60; f -= 6) { x.font = `900 ${f}px Poppins`; L = linhasDestaqueCh(x, D.chamada, 930); if (L.length <= 4 && L.every((l) => l.w <= 960)) break; }
+    const lh = f * 1.16, y0 = 620 - ((L.length - 1) * lh) / 2 + Math.max(0, (L.length - 3)) * lh * 0.35;
+    L.forEach((l, i) => { let xx = 540 - l.w / 2; x.textAlign = "left"; l.partes.forEach(([p, dd]) => { x.fillStyle = dd ? C.d1 : C.texto; x.fillText(p, xx, y0 + i * lh); xx += x.measureText(p).width; }); });
+    x.textAlign = "center";
+    if (vaga) { x.save(); x.setLineDash([26, 18]); x.lineWidth = 7; x.strokeStyle = C.suave; x.globalAlpha = 0.9; ret(150, 960, 780, 380, 48); x.stroke(); x.setLineDash([]); x.fillStyle = C.suave; x.font = "700 50px Poppins"; x.fillText("Caixinha de perguntas aqui", 540, 1125, 700); x.font = "500 38px Poppins"; x.fillText("(não sai na imagem)", 540, 1190); x.restore(); }
+    if (D.ic[0]) { x.save(); x.translate(190, 1290); x.rotate(-0.12); iconeReels(x, D.ic[0], 210); x.restore(); }
+    if (D.ic[1]) { x.save(); x.translate(895, 950); x.rotate(0.1); iconeReels(x, D.ic[1], 200); x.restore(); }
+    if (D.sub) { x.font = "600 52px Poppins"; x.fillStyle = C.suave; x.fillText(D.sub, 540, 1500, 880); }
+    if (D.arroba) { x.font = "800 52px Poppins"; x.fillStyle = C.d1; x.fillText(D.arroba, 540, 1590, 880); }
+    if (edMarca) x.drawImage(edMarca, 1080 - 210, 1920 - 210, 160, 160);
+    x.restore();
+  }
+  const promptCaixinha = (assunto) => `Você vai escrever os textos de um Story da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}; perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Story é uma imagem com a caixinha de perguntas do Instagram, para as seguidoras responderem o que querem que eu procure.
+
+ASSUNTO: ${assunto}
+
+Preencha os campos (frases curtas; pode usar emojis):
+- etiqueta (até 22 letras, em maiúsculas, ex.: "CAIXINHA ABERTA")
+- chamada (até 60 letras: uma pergunta que chama as respostas; use *asteriscos* em volta de 1 palavra para destacar)
+- pergunta (até 40 letras: o texto que vai dentro da caixinha de perguntas do Instagram)
+- frase_baixo (até 40 letras)
+- figurinha_esquerda, figurinha_direita (escolha desta lista): ${FIGURAS.join(", ")}
+
+Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
+{"etiqueta": "CAIXINHA ABERTA", "chamada": "Qual achadinho de *JEANS* você quer ver?", "pergunta": "Qual jeans você está procurando?", "frase_baixo": "Responde que eu procuro pra você 💖", "figurinha_esquerda": "jeans", "figurinha_direita": "shortjeans"}`;
+  function lerRespostaCaixinha(txt) {
+    const i = txt.indexOf("{"), j = txt.lastIndexOf("}"); if (i < 0 || j < i) return null;
+    let o; try { o = jsonTolerante(txt.slice(i, j + 1)); } catch (e) { return null; }
+    const s = (v, n) => String(v == null ? "" : v).slice(0, n), f = (v) => (FIGURAS.includes(v) ? v : "");
+    const img = { etiqueta: s(o.etiqueta, 30), chamada: s(o.chamada, 90), pergunta: s(o.pergunta, 60), sub: s(o.frase_baixo, 50) };
+    Object.keys(img).forEach((k) => { if (img[k] === "") delete img[k]; });
+    if (!img.chamada && !img.pergunta) return null;
+    const ic = [f(o.figurinha_esquerda), f(o.figurinha_direita)]; if (ic[0] || ic[1]) img.ic = ic; return { img };
+  }
+  function desenharImgCh(vaga) { const cv = $("#chImgCv"); if (cv) carregarMarca().then(() => quadroCaixinha(cv.getContext("2d"), 540, ch(), vaga)); }
+  function folhaAssuntoCh() {
+    const CH = ch(), op = (attr, nome, on) => `<button type="button" class="fm-op fm-op--sem${on ? " on" : ""}" data-ch-ass="${attr}"><span>${esc(nome)}</span></button>`;
+    folhaEst("Assunto", `<p class="fm-sec">Ideias</p><div class="fm-grade">${IDEIAS_CHAMADA.map(([n], i) => op("ideia:" + i, n, CH.ideia === n)).join("")}</div>
+      <p class="fm-sec">Nichos</p><div class="fm-grade">${Object.keys(NICHOS_CHAMADA).map((k) => op("nicho:" + k, nomeNichoCh(k), !CH.ideia && CH.nicho === k)).join("")}</div>`);
+  }
+  function folhaCenaCh(i) {
+    const CH = ch(), D = dadosChamada(CH), [nome, ...cs] = CENAS_CH[i];
+    const campo = (k, rot, v, j) => `<label class="ch-campo"><span>${rot}</span><input data-ch-tx="${k}"${j != null ? ` data-i="${j}"` : ""} maxlength="40" value="${esc(v || "")}"></label>`;
+    const figs = (k, atual, j) => `<div class="ch-figs">${["", ...FIGURAS].map((f) => `<button type="button" data-ch-ic="${k}"${j != null ? ` data-i="${j}"` : ""} data-v="${f}" class="${f === atual ? "on" : ""}" aria-label="${f || "sem figurinha"}">${f ? `<canvas width="60" height="60" data-fig-ch="${f}"></canvas>` : "✕"}</button>`).join("")}</div>`;
+    let h = cs.map(([k, r]) => campo(k, r, D[k])).join("");
+    if (i === 1) h += D.frase.map((s, j) => campo("frase", "Linha " + (j + 1), s, j)).join("");
+    if (i === 2) h += D.itens.map((s, j) => campo("itens", "Item " + (j + 1), s, j)).join("");
+    if (i === 0) h += `<b class="ch-rot">Figurinha da esquerda</b>${figs("ic", D.ic[0], 0)}<b class="ch-rot">Figurinha da direita</b>${figs("ic", D.ic[1], 1)}`;
+    if (i === 1) h += `<b class="ch-rot">Figurinha</b>${figs("icFrase", D.icFrase)}`;
+    if (i === 2) h += `<b class="ch-rot">Figurinha da esquerda</b>${figs("ic2", D.ic2[0], 0)}<b class="ch-rot">Figurinha da direita</b>${figs("ic2", D.ic2[1], 1)}`;
+    folhaEst(`Cena ${i + 1} · ${nome}`, `<p class="nota">Use *asteriscos* para destacar uma palavra. Dá para colocar emojis.</p>${h}<button type="button" class="btn btn--rosa" id="chSalvarTx">Pronto</button>`);
+    document.querySelectorAll("[data-fig-ch]").forEach((c) => { const x = c.getContext("2d"); x.translate(30, 30); iconeReels(x, c.dataset.figCh, 46); });
+  }
+  function telaChamadaNova(c) {
+    const CH = ch(); if (CH.tipo === "seg") return false;
+    const img = CH.modo === "img", rod = (h) => `<div class="wz-rodape pr-rodape rp-rod2">${h}</div>`;
+    if (wz.passo === "chInicio") {
+      c.innerHTML = `<div class="ka2">
+        <div class="pe-seg ch-modo"><button type="button" data-ch-modo="video" class="${img ? "" : "on"}">Vídeo<small>Reels de 12 s</small></button><button type="button" data-ch-modo="img" class="${img ? "on" : ""}">Imagem<small>com caixinha de pergunta</small></button></div>
+        <button type="button" class="rp-modelo" id="chAssuntoBt"><span><small>Assunto</small><b>${esc(CH.ideia || nomeNichoCh(CH.nicho))}</b></span><i>Trocar</i></button>
+        <label class="ka2-campo"><span>Ou escreva do que vai falar</span><input id="chLivre" maxlength="120" placeholder="Ex.: calças jeans até R$ 80" value="${esc(CH.livre || "")}"></label>
+        <b class="ch-rot">Cor</b><div class="rp-cores">${Object.entries(CORES_CHAMADA).map(([k, v]) => `<button type="button" data-ch-cor="${k}" class="${CH.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}" title="${v.nome}"></button>`).join("")}</div>
+        <div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="chCopPrompt">Copiar prompt</button><button type="button" class="btn ${CH.resp ? "btn--branco" : "btn--rosa"} rp-adesivo ka2-colar" id="chColar2">${CH.resp ? "Resposta colada" : "Colar resposta"}</button></div>
+        <p class="nota">${CH.resp ? `Resposta da IA colada: toque em Montar ${img ? "a imagem" : "o vídeo"}.` : "Copie o prompt, faça na IA (ChatGPT ou Gemini) e cole a resposta. Sem colar, o app usa textos prontos do assunto."}</p>
+      </div>${rod(`<button type="button" class="btn btn--rosa wz-continuar" id="chMontar">${img ? "Montar a imagem" : "Montar o vídeo"}</button>`)}`;
+      return true;
+    }
+    if (wz.passo === "chRevisar") {
+      const D = dadosChamada(CH), mu = NOMES_MUSICA[CH.musica] || [CH.musica];
+      c.innerHTML = `<div class="rr-aprovar">
+        <div class="wz-previa rp-prev rr-prev"><canvas id="chQuadro" width="540" height="960"></canvas></div>
+        <button type="button" class="rr-ouvir3" id="chPrevia">▶ Ver prévia com música</button>
+        <button type="button" class="rp-modelo" id="chTrocarMus"><span><small>Música</small><b>${esc(mu[0])}</b></span><i>Trocar</i></button>
+        ${CENAS_CH.map(([n], i) => `<button type="button" class="rp-modelo" data-ch-cena="${i}"><span><small>Cena ${i + 1} · ${n}</small><b>${esc(resumoCenaCh(D, i))}</b></span><i>Editar</i></button>`).join("")}
+        ${arroba(config.instagram) ? "" : '<p class="nota">Dica: coloque o seu @ do Instagram em ⚙️ Ajustes para ele aparecer no final.</p>'}
+      </div>${rod(`<button type="button" class="btn btn--rosa wz-continuar" id="chAprovar"><svg class="rp-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>Aprovar e criar o vídeo</button>`)}`;
+      carregarMarca().then(() => loopChamada());
+      return true;
+    }
+    if (wz.passo === "chPostar") {
+      const r = CH.resultado; if (CH.legenda == null) CH.legenda = CH.legendaIA || legendaChamada(CH);
+      const midia = r ? `<div class="wz-previa rt-video rp-prev rr-pronto"><video src="${r.url}" playsinline loop autoplay muted controls></video></div>` : `<div class="wz-previa rp-prev rr-pronto"><canvas id="chQuadro" width="540" height="960"></canvas></div>`;
+      const bts = !r ? `<span id="chGerar" class="rp-oculto" hidden></span><div class="vd-progresso" id="chProgresso" data-txt="Criando o vídeo… 0%"><i></i></div><button type="button" class="rp-link" id="chPular">Pular</button>`
+        : !CH.postado ? `<button type="button" class="btn btn--rosa wz-continuar" id="chPostar">Postar no Instagram</button><button type="button" class="rp-link" id="chPular">Pular</button>`
+        : `<button type="button" class="btn btn--rosa wz-continuar" id="chPular">Continuar</button><button type="button" class="rp-link" id="chPostar">Postar de novo</button>`;
+      c.innerHTML = `${midia}<textarea id="chLegenda" class="rr-leg" aria-label="Legenda (toque para editar)">${esc(CH.legenda)}</textarea>
+        <div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="chCopiar">Copiar legenda</button><button type="button" class="btn btn--branco rp-adesivo" id="chBaixar"${r ? "" : " disabled"}>Baixar vídeo</button></div>
+        ${r ? `<div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="chBaixarCapa">Baixar capa</button><button type="button" class="btn btn--branco rp-adesivo" id="chCopiarAlt2">Copiar texto alternativo</button></div>` : '<p class="nota">O vídeo é gravado em tempo real: deixe o app aberto até terminar.</p>'}
+        ${r && !r.mp4 ? '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>' : ""}
+        ${rod(bts)}`;
+      if (!r) { carregarMarca().then(() => { const cv = $("#chQuadro"); if (cv && !(CH.tocando && CH.tocando.gravando)) quadroChamada(cv.getContext("2d"), 540, 2.6, CH); });
+        const ir = () => { if (wz.canal !== "chamada" || wz.ch !== CH || wz.passo !== "chPostar" || CH.resultado) return; if (CH.tocando) { if (CH.tocando.gravando) { ligarBarra($("#chGerar"), $("#chProgresso")); return; } CH.tocando.parar(); setTimeout(ir, 200); return; } rodarChamada(true); };
+        setTimeout(ir, 300); }
+      return true;
+    }
+    if (wz.passo === "chImg") {
+      const D = dadosCaixinha(CH), fig = (i) => `<button type="button" class="rp-modelo" data-ch-imgfig="${i}"><span><small>Figurinha ${i ? "da direita" : "da esquerda"}</small><b>${esc(D.ic[i] ? (NOME_FIG[D.ic[i]] || D.ic[i]) : "Sem figurinha")}</b></span><i>Trocar</i></button>`;
+      c.innerHTML = `<div class="rr-aprovar">
+        <div class="wz-previa rp-prev rr-prev"><canvas id="chImgCv" width="540" height="960"></canvas></div>
+        <p class="nota wz-centro">A área tracejada é só para você saber onde colocar a caixinha: ela não sai na imagem.</p>
+        <label class="ka2-campo"><span>Etiqueta</span><input data-ch-img="etiqueta" maxlength="30" value="${esc(D.etiqueta)}"></label>
+        <label class="ka2-campo"><span>Chamada (use *asteriscos* para destacar)</span><textarea rows="2" maxlength="90" data-ch-img="chamada">${esc(D.chamada)}</textarea></label>
+        <label class="ka2-campo"><span>Texto da caixinha de perguntas</span><input data-ch-img="pergunta" maxlength="60" value="${esc(D.pergunta)}"></label>
+        <label class="ka2-campo"><span>Frase de baixo</span><input data-ch-img="sub" maxlength="50" value="${esc(D.sub)}"></label>
+        ${fig(0)}${fig(1)}
+      </div>${rod('<button type="button" class="btn btn--rosa wz-continuar" id="chImgAprovar">Aprovar a imagem</button>')}`;
+      desenharImgCh(true); return true;
+    }
+    if (wz.passo === "chImgPostar") {
+      const D = dadosCaixinha(CH);
+      c.innerHTML = `<div class="wz-previa rp-prev rr-prev"><canvas id="chImgCv" width="540" height="960"></canvas></div>
+        <button type="button" class="btn btn--branco rp-adesivo" id="chCopCaixa">Copiar texto da caixinha<small>${esc(D.pergunta)}</small></button>
+        <button type="button" class="btn btn--branco rp-adesivo" id="chBaixarImg">Baixar imagem</button>
+        <p class="nota">No Instagram, coloque a figurinha <b>Perguntas</b> no meio da imagem e cole o texto da caixinha.</p>
+        ${rod(CH.postado ? '<button type="button" class="btn btn--rosa wz-continuar" id="chPular">Continuar</button><button type="button" class="rp-link" id="chImgPostar">Postar de novo</button>' : '<button type="button" class="btn btn--rosa wz-continuar" id="chImgPostar">Postar no Story</button><button type="button" class="rp-link" id="chPular">Pular</button>')}`;
+      desenharImgCh(false); return true;
+    }
+    if (wz.passo === "chFim") {
+      c.innerHTML = `<div class="rt-fim"><h2 class="wz-titulo">${CH.postado ? (img ? "Story postado!" : "Reels postado!") : "Pronto"}</h2><div class="rt-lista"><div><span>${img ? "Story · imagem com caixinha" : "Reels · " + Math.round(T_CHAMADA) + " s"}</span><b class="${CH.postado ? "ok" : ""}">${CH.postado ? "Postado" : "Não postado"}</b></div></div></div>
+        ${rod('<button type="button" class="btn btn--rosa wz-continuar" id="chOutro">Criar outro</button><button type="button" class="btn btn--branco rp-outro" id="chIrInicio">Voltar para o início</button>')}`;
+      return true;
+    }
+    return false;
+  }
+  async function imagemCaixinha() { await carregarMarca(); const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1920; quadroCaixinha(cv.getContext("2d"), 1080, ch(), false); return telaParaJpeg(cv, "miga-caixinha-de-perguntas.jpg"); }
+  const reCh = () => { const y = scrollY; mostrarPasso(); scrollTo(0, y); };
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "chamada" || !wz.ch || wz.ch.tipo === "seg") return; const CH = ch(), t = e.target;
+    const mo = t.closest("[data-ch-modo]"); if (mo) { if (CH.modo !== mo.dataset.chModo) { CH.modo = mo.dataset.chModo; CH.resp = null; } reCh(); return; }
+    if (t.closest("#chAssuntoBt")) { folhaAssuntoCh(); return; }
+    if (t.closest("#chCopPrompt")) { const as = assuntoCh(CH); if (await copiarTexto(CH.modo === "img" ? promptCaixinha(as) : promptChamada(as))) toast("Prompt copiado: cole no ChatGPT ou no Gemini"); return; }
+    if (t.closest("#chColar2")) {
+      let txt = ""; try { txt = await navigator.clipboard.readText(); } catch (err) { txt = ""; }
+      const r = txt ? (CH.modo === "img" ? lerRespostaCaixinha(txt) : lerRespostaChamada(txt)) : null;
+      if (!r) { folhaEst("Colar resposta da IA", `<p class="nota">Cole aqui a resposta inteira da IA (o bloco que começa com { ).</p><label class="ch-campo"><span>Resposta</span><textarea id="chResp2" rows="9"></textarea></label><button type="button" class="btn btn--rosa" id="chAplicar2">Usar esta resposta</button>`); return; }
+      CH.resp = r; toast("Resposta colada: toque em Montar"); reCh(); return;
+    }
+    if (t.closest("#chMontar")) {
+      if (CH.modo === "img") { CH.img = CH.resp ? CH.resp.img : null; CH.postado = false; wz.passo = "chImg"; mostrarPasso(); return; }
+      if (CH.resp) { const tx = { ...CH.resp.tx }; delete tx.numero; CH.tx = tx; CH.legendaIA = CH.resp.legenda || null; } else { CH.tx = null; CH.legendaIA = null; }
+      CH.legenda = null; CH.alt = CH.resp && CH.resp.alt ? CH.resp.alt : null; CH.postado = false; wz.passo = "chRevisar"; mostrarPasso(); return;
+    }
+    const ce = t.closest("[data-ch-cena]"); if (ce) { folhaCenaCh(+ce.dataset.chCena); return; }
+    if (t.closest("#chAprovar")) { if (CH.tocando && !CH.tocando.gravando) CH.tocando.parar(); if (CH.resultado && CH.resultado.sig !== assinaturaCh(CH)) CH.resultado = null; CH.postado = CH.resultado ? CH.postado : false; wz.passo = "chPostar"; mostrarPasso(); return; }
+    if (t.closest("#chPular")) { if ($("#chLegenda")) CH.legenda = $("#chLegenda").value; if (CH.tocando) CH.tocando.parar(); wz.passo = "chFim"; mostrarPasso(); return; }
+    if (t.closest("#chCopiarAlt2")) { if (await copiarTexto(CH.alt || altChamada(CH))) toast("Texto alternativo copiado"); return; }
+    const fi = t.closest("[data-ch-imgfig]"); if (fi) { const i = +fi.dataset.chImgfig, D = dadosCaixinha(CH);
+      folhaEst("Escolha a figurinha", `<div class="ch-figs ka2-figs">${["", ...FIGURAS].map((f) => `<button type="button" data-ch-imgpick="${i}:${f}" class="${f === (D.ic[i] || "") ? "on" : ""}" aria-label="${f || "sem figurinha"}">${f ? `<canvas width="60" height="60" data-fig-ch="${f}"></canvas>` : "✕"}</button>`).join("")}</div>`);
+      document.querySelectorAll("[data-fig-ch]").forEach((cv) => { const x = cv.getContext("2d"); x.translate(30, 30); iconeReels(x, cv.dataset.figCh, 46); }); return; }
+    if (t.closest("#chImgAprovar")) { CH.postado = false; wz.passo = "chImgPostar"; mostrarPasso(); return; }
+    if (t.closest("#chCopCaixa")) { if (await copiarTexto(dadosCaixinha(CH).pergunta)) toast("Texto da caixinha copiado"); return; }
+    if (t.closest("#chBaixarImg")) { const f = await imagemCaixinha(); if (f) { baixarBlob(f, f.name); toast("Imagem salva"); } return; }
+    if (t.closest("#chImgPostar")) { const f = await imagemCaixinha(); if (!f) return; await copiarTexto(dadosCaixinha(CH).pergunta);
+      let ok = false; if (navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); ok = true; } catch (err) { if (err.name === "AbortError") return; } }
+      if (!ok) { baixarBlob(f, f.name); toast("Imagem salva: no Instagram, escolha da galeria. O texto da caixinha já está copiado"); } else toast("Texto da caixinha copiado: cole na figurinha Perguntas");
+      CH.postado = true; reCh(); return; }
+    if (t.closest("#chOutro")) { abrirChamada(); return; }
+    if (t.closest("#chIrInicio")) { wz = {}; irPara("inicio"); return; }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal !== "chamada" || !wz.ch || wz.ch.tipo === "seg") return; const CH = ch();
+    if (e.target.id === "chLivre") { CH.livre = e.target.value; return; }
+    const k = e.target.dataset && e.target.dataset.chImg; if (k) { CH.img = CH.img || {}; CH.img[k] = e.target.value; desenharImgCh(true); }
+  });
+  $("#folhaEst").addEventListener("click", (e) => {
+    if (wz.canal !== "chamada" || !wz.ch || wz.ch.tipo === "seg") return; const CH = ch(), t = e.target;
+    const a = t.closest("[data-ch-ass]"); if (a) { const [tp, v] = a.dataset.chAss.split(":");
+      if (tp === "ideia") { const [n, ni, pal, ic] = IDEIAS_CHAMADA[+v]; CH.ideia = n; CH.nicho = ni; CH.palavraIdeia = pal; CH.icIdeia = ic.slice(); } else { CH.ideia = ""; CH.nicho = v; CH.palavraIdeia = null; CH.icIdeia = null; }
+      CH.livre = ""; CH.resp = null; CH.tx = null; CH.img = null; CH.legendaIA = null; CH.legenda = null; $("#folhaEst").close(); reCh(); return; }
+    if (t.closest("#chAplicar2")) { const txt = $("#chResp2").value || "", r = CH.modo === "img" ? lerRespostaCaixinha(txt) : lerRespostaChamada(txt);
+      if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } CH.resp = r; $("#folhaEst").close(); toast("Resposta colada: toque em Montar"); reCh(); return; }
+    const p = t.closest("[data-ch-imgpick]"); if (p) { const [i, f] = p.dataset.chImgpick.split(":"), D = dadosCaixinha(CH); CH.img = CH.img || {}; CH.img.ic = D.ic.slice(); CH.img.ic[+i] = f; $("#folhaEst").close(); reCh(); return; }
+  });
   const promptChamada = (assunto) => ch() && ch().tipo === "seg" ? promptSeguidores(assunto) : `Você vai escrever os textos de um Reels da Miga Promo (${arroba(config.instagram) || "@migapromo.oficial"}; perfil de achadinhos e promoções para mulheres, tom de amiga, alegre e direto, português do Brasil). O Reels chama as seguidoras para ver as promoções que acabei de postar nos stories.
 
 ASSUNTO: ${assunto}
@@ -7400,7 +8466,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   });
   function loopChamada() {
     const cv = $("#chQuadro"); if (!cv) return; const cx = cv.getContext("2d"), ini = performance.now();
-    const passo = () => { const v = $("#chQuadro"); if (!v || v !== cv || wz.canal !== "chamada" || wz.passo !== "chEditar") return; if (!ch().tocando) quadroChamada(cx, 540, ((performance.now() - ini) / 1000) % T_CHAMADA, ch()); requestAnimationFrame(passo); };
+    const passo = () => { const v = $("#chQuadro"); if (!v || v !== cv || wz.canal !== "chamada" || (wz.passo !== "chEditar" && wz.passo !== "chRevisar")) return; if (!ch().tocando) quadroChamada(cx, 540, ((performance.now() - ini) / 1000) % T_CHAMADA, ch()); requestAnimationFrame(passo); };
     passo();
   }
   async function rodarChamada(gravar) {
@@ -7439,8 +8505,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const tc = document.createElement("canvas"); tc.width = 1080; tc.height = 1920; quadroChamada(tc.getContext("2d"), 1080, CH.tipo === "seg" ? 2.4 : 2.6, CH);
     const base = CH.tipo === "seg" ? `miga-${String(dadosChamada(CH).numero).replace(/\W+/g, "")}-seguidores` : "miga-corre-pros-stories";
     const capa = await telaParaJpeg(tc, `${base}-capa.jpg`);
-    CH.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `${base}.${mp4 ? "mp4" : "webm"}`, capa };
-    wz.passo = "chPronto"; mostrarPasso();
+    CH.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `${base}.${mp4 ? "mp4" : "webm"}`, capa, sig: assinaturaCh(CH) };
+    if (wz.canal !== "chamada" || wz.ch !== CH) return;
+    wz.passo = CH.tipo === "seg" ? "chPronto" : "chPostar"; mostrarPasso();
   }
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "chamada") return;
@@ -7464,9 +8531,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#chCopiarAlt")) { CH.alt = $("#chAlt").value; if (await copiarTexto(CH.alt)) toast("Texto alternativo copiado"); return; }
     if (t.closest("#chCopiar")) { if (await copiarTexto($("#chLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#chPostar")) { const r = CH.resultado, arq = new File([r.blob], r.nome, { type: r.blob.type });
-      if (await copiarTexto($("#chLegenda").value)) toast("Legenda copiada: é só colar no Instagram");
-      if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); return; } catch (err) { if (err.name === "AbortError") return; } }
-      baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram e escolha da galeria"); }
+      CH.legenda = $("#chLegenda").value; if (await copiarTexto(CH.legenda)) toast("Legenda copiada: é só colar no Instagram");
+      const feito = () => { if (CH.tipo !== "seg") { CH.postado = true; reCh(); } };
+      if (navigator.canShare && navigator.canShare({ files: [arq] })) { try { await navigator.share({ files: [arq] }); feito(); return; } catch (err) { if (err.name === "AbortError") return; } }
+      baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram e escolha da galeria"); feito(); }
   });
   $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal === "chamada" && e.target.id === "chLegenda") ch().legenda = e.target.value;
     if (wz.canal === "chamada" && e.target.id === "chBarra") { ch().cor = "h" + e.target.value; document.querySelectorAll("[data-ch-cor]").forEach((b) => b.classList.remove("on")); e.target.parentElement.classList.add("on"); return; }
@@ -7645,7 +8713,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const tira = t.closest("[data-lp-tira]"); if (tira) { if (R.itens.length <= 1) { toast("Deixe pelo menos 1 produto"); return; } R.itens = R.itens.filter((x) => x !== tira.dataset.lpTira); folhaProdutos(); return; }
     const poe = t.closest("[data-lp-poe]"); if (poe) { if (R.itens.length >= limiteReels()) { toast(`No máximo ${limiteReels()} produtos`); return; } R.itens.push(poe.dataset.lpPoe); folhaProdutos(); return; }
   });
-  $("#folhaEst").addEventListener("close", () => { if (wz && wz.canal === "chamada" && wz.passo === "chEditar") mostrarPasso(); });
+  $("#folhaEst").addEventListener("close", () => { if (wz && wz.canal === "chamada" && (wz.passo === "chEditar" || wz.passo === "chRevisar")) { const y = scrollY; mostrarPasso(); scrollTo(0, y); } });
   $("#folhaEst").addEventListener("close", () => { tocarAmostra(""); if ((wz.canal === "reels" && (wz.passo === "rModelo" || wz.passo === "kCarrossel")) || (wz.canal === "video" && wz.passo === "vTema")) aposMudarEstudio(); });
   /** Título digitado: quebra em 2 linhas e destaca a última palavra (ou o que estiver entre *asteriscos*) */
   function tituloDigitado(t) {
@@ -7745,7 +8813,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         if (parado || t >= total + (gravar ? 0.45 : 0)) { ok(); return; } // folga ao gravar: o celular às vezes perde os últimos quadros
         quadroReels(ctx, W, Math.min(Math.max(0, t), total - 0.01), R, l, fotos);
         if (gravar && previa) previa.drawImage(tela, 0, 0, 540, 960);
-        if (btn) btn.textContent = (gravar ? "Gravando… " : "Tocando… ") + Math.min(100, Math.round((t / total) * 100)) + "%";
+        if (btn) { const pc = Math.min(100, Math.round((t / total) * 100)); btn.textContent = (gravar ? (btn.dataset.rrFill ? "Criando o vídeo… " : "Gravando… ") : "Tocando… ") + pc + "%"; if (gravar && btn.dataset.rrFill) btn.style.background = `linear-gradient(90deg, #e8336d ${pc}%, #f39bb9 ${pc}%)`; }
         if (gravar && barra) barra.querySelector("i").style.width = Math.min(100, (t / total) * 100) + "%";
         requestAnimationFrame(passo);
       };
@@ -7754,7 +8822,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     R.tocando = null;
     if (rec) { rec.requestData(); rec.stop(); await fim; manterTelaAcesa(false); }
     if (ac) ac.close().catch(() => {});
-    if (!gravar) { if (btn) { btn.disabled = false; btn.textContent = "▶ Ver prévia com música"; } return; }
+    if (!gravar) { if (btn) { btn.disabled = false; btn.textContent = btn.classList.contains("rr-ouvir2") ? "▶ Ouvir prévia" : "▶ Ver prévia com música"; } return; }
     const mp4 = tipo.startsWith("video/mp4"); let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
     blob = await somCompativel(blob, tipo, (m) => { if (btn) btn.textContent = m; });
     // Capa: a abertura do Reels já montada
@@ -7766,7 +8834,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function telaReels(c) {
     const R = rr();
-    if (wz.passo === "kCarrossel") { telaCarrossel(c); return; }
+    if (wz.passo === "kCarrossel" || wz.passo === "kPronto") { telaCarrosselNova(c, R); return; }
     if (wz.passo === "rItens") {
       if (!R.iniciado) { R.iniciado = true; if (wz.itemId && !R.itens.length) R.itens = [wz.itemId]; }
       const l = fila().filter((x) => !x.carregando && (!wz.filtroCat || wz.filtroCat === "todas" || (x.categoria || "outros") === wz.filtroCat));
@@ -7777,6 +8845,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         ${botaoContinuar(R.itens.length > 0, R.itens.length ? `Continuar (${R.itens.length} ${R.itens.length === 1 ? "produto" : "produtos"})` : "Continuar")}`;
       return;
     }
+    if (telaReelsNova(c, R)) return;
     if (wz.passo === "rModelo") {
       const n = itensReels().length, Mx = MODELOS_REELS[R.modelo], mu = NOMES_MUSICA[musicaDe(R)];
       const nomeModelo = R.titulo || (CAMPANHAS[R.camp] ? CAMPANHAS[R.camp].nome : Mx.nome);
@@ -7837,6 +8906,100 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       if (!r) carregarMarca().then(fotosReels).then((f) => quadroReels($("#rQuadro").getContext("2d"), 540, T_INTRO + 2.2, R, itensReels(), f));
     }
   }
+  /* ---------- Reels na mesma pegada do Postar: ordem → aprovar → criar e postar → e agora? ---------- */
+  function ordenarReels(k) {
+    const R = rr(), its = itensReels(), p = (x) => x.precoNovo || Infinity, off = (x) => x.precoAntigo && x.precoNovo ? (x.precoAntigo - x.precoNovo) / x.precoAntigo : 0;
+    const f = { menor: (a, b) => p(a) - p(b), maior: (a, b) => (b.precoNovo || 0) - (a.precoNovo || 0), desconto: (a, b) => off(b) - off(a), nome: (a, b) => limparNome(a.nome || "").localeCompare(limparNome(b.nome || ""), "pt-BR") }[k];
+    if (!f) return; its.sort(f); R.itens = its.map((x) => x.id); R.ordem = k; R.resultado = null;
+  }
+  function telaReelsNova(c, R) {
+    const l = itensReels(), n = l.length, pd = (cls) => `class="wz-rodape pr-rodape${cls ? " " + cls : ""}"`;
+    const cab = `<p class="rt-etapa">${R.carrossel ? "Carrossel" : "Reels"} · ${n} ${n === 1 ? "produto" : "produtos"}</p>`;
+    if (wz.passo === "rOrdem") {
+      const top = R.modelo === "top";
+      c.innerHTML = `${cab}<h2 class="wz-titulo">${top ? "Qual é o ranking?" : R.carrossel ? "Ordem no carrossel" : "Ordem no Reels"}</h2>
+        <div class="ed-chips rt-ordem-chips">${ORDENS_RT.map(([k, nm]) => `<button type="button" data-rr-ordem="${k}" class="${R.ordem === k ? "on" : ""}">${nm}</button>`).join("")}</div>
+        <ol class="rt-ordem-lista">${l.map((it, i) => `<li><i>${i + 1}</i>${fotoMini(it)}<span><b>${esc(limparNome(it.nome || "Sem nome"))}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small></span><button type="button" data-r-sobe="${i}" ${i === 0 ? "disabled" : ""} aria-label="Subir">↑</button><button type="button" data-r-desce="${i}" ${i === n - 1 ? "disabled" : ""} aria-label="Descer">↓</button></li>`).join("")}</ol>
+        <p class="nota">Até ${limiteReels()} produtos.${top ? " O 1º da lista é o Top 1 e aparece por último." : ""} <button type="button" class="link-sel rr-link" data-est="produtos">Trocar produtos</button></p>
+        ${botaoContinuar(n > 0).replace('class="wz-rodape"', pd())}`;
+      return true;
+    }
+    if (wz.passo === "rModelo") {
+      const Mx = MODELOS_REELS[R.modelo] || MODELOS_REELS.achadinho, mu = NOMES_MUSICA[musicaDe(R)] || ["Música"], C = CAMPANHAS[R.camp];
+      c.innerHTML = `${cab}<div class="rr-aprovar">
+        <div class="wz-previa rp-prev rr-prev"><canvas id="rQuadro" width="540" height="960"></canvas></div>
+        <button type="button" class="rr-ouvir3" id="rPrevia">▶ Ver prévia com música</button>
+        <button type="button" class="rp-modelo" id="rrTrocarModelo"><span><small>${C ? "Campanha" : R.titulo ? "Título" : R.rrEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(C ? C.nome : R.titulo || Mx.nome)}</b></span><i>Trocar</i></button>
+        <button type="button" class="rp-modelo" data-est="musica"><span><small>Música</small><b>${esc(mu[0])}</b></span><i>Trocar</i></button>
+        <div class="rp-cores rr-cores">${CORES_ESCOLHA.map((k) => `<button type="button" data-rr-cor="${k}" class="${R.cor === k ? "on" : ""}" style="background:${CORES_VIDEO[k].fundo}" aria-label="${CORES_NOME[k]}"></button>`).join("")}</div>
+        <label class="campo rr-cta"><span>Chamada no final (opcional)</span><input id="rCta" maxlength="40" value="${esc(R.cta == null ? "Link na bio" : R.cta)}" placeholder="Ex.: Link na bio"></label>
+      </div>${botaoContinuar(n > 0, R.resultado ? "Continuar" : `<svg class="rp-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>Aprovar e criar o vídeo`).replace('class="wz-rodape"', pd())}`;
+      carregarMarca().then(fotosReels).then((f) => { const cv = $("#rQuadro"); if (cv) quadroReels(cv.getContext("2d"), 540, T_INTRO + 2.6, R, itensReels(), f); });
+      return true;
+    }
+    if (wz.passo === "rPronto") {
+      const r = R.resultado; if (R.legenda == null) R.legenda = legendaReels();
+      const leg = `<textarea id="rrLeg" class="rr-leg" aria-label="Legenda (toque para editar)">${esc(R.legenda)}</textarea>`;
+      const midia = r ? `<div class="wz-previa rt-video rp-prev rr-pronto"><video src="${r.url}" playsinline loop autoplay muted controls></video></div>` : `<div class="wz-previa rp-prev rr-pronto"><canvas id="rQuadro" width="540" height="960"></canvas></div>`;
+      const bts = !r ? `<button type="button" class="btn btn--rosa wz-continuar" id="rGerar" data-rr-fill="1" disabled>Criando o vídeo… 0%</button><button type="button" class="rp-link" id="rrPular">Pular o Reels</button>`
+        : !R.postado ? `<button type="button" class="btn btn--rosa wz-continuar" id="rrPostar">Postar no Instagram</button><button type="button" class="rp-link" id="rrPular">Pular o Reels</button>`
+        : `<button type="button" class="btn btn--rosa wz-continuar" id="rrCont">Continuar</button><button type="button" class="rp-link" id="rrPostar">Postar de novo</button>`;
+      c.innerHTML = `${cab}${midia}${leg}<div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="rrCopLeg">Copiar legenda</button><button type="button" class="btn btn--branco rp-adesivo" id="rrBaixar"${r ? "" : " disabled"}>Baixar vídeo</button></div>
+        ${r && !r.mp4 ? '<p class="nota">Este celular grava em WebM: o WhatsApp aceita, mas o Instagram pode recusar.</p>' : ""}
+        <div class="wz-rodape pr-rodape rp-rod2">${bts}</div>`;
+      if (!r) { carregarMarca().then(fotosReels).then((f) => { const cv = $("#rQuadro"); if (cv) quadroReels(cv.getContext("2d"), 540, T_INTRO + 2.2, R, itensReels(), f); }); if (!R.tocando || !R.tocando.gravando) setTimeout(() => { if (wz.canal === "reels" && wz.passo === "rPronto" && !rr().resultado) rodarReels(true); }, 300); }
+      return true;
+    }
+    if (wz.passo === "rDepois") {
+      c.innerHTML = `${cab}<div class="rt-fim"><h2 class="wz-titulo">E agora?</h2><p class="nota wz-centro">Quer mandar esses mesmos produtos no WhatsApp, um por um, no fluxo do Postar?</p></div>
+        <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar wz-zap" id="rrWhats">Postar nos Grupos do WhatsApp</button><button type="button" class="btn btn--branco rp-outro" id="wzNovo">Voltar para a lista</button></div>`;
+      return true;
+    }
+    return false;
+  }
+  $("#wzCorpo").addEventListener("click", async (e) => {
+    if (wz.canal !== "reels") return; const R = rr(), t = e.target;
+    const o = t.closest("[data-rr-ordem]"); if (o) { ordenarReels(o.dataset.rrOrdem); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    const co = t.closest("[data-rr-cor]"); if (co) { R.cor = co.dataset.rrCor; R.resultado = null; R.postado = false; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#rrTrocarModelo")) { abrirFolhaModelo(); return; }
+    if (t.closest("#rrCopLeg")) { if (await copiarTexto(R.legenda)) toast("Legenda copiada"); return; }
+    if (t.closest("#rrEditLeg")) { R.rrEditLeg = !R.rrEditLeg; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#rrBaixar")) { if (R.resultado) { baixarBlob(R.resultado.blob, R.resultado.nome); toast("Vídeo salvo"); } return; }
+    if (t.closest("#rrPostar")) {
+      const r = R.resultado; if (!r) return; R.rrEditLeg = false; const arq = new File([r.blob], r.nome, { type: r.blob.type });
+      if (await copiarTexto(R.legenda || legendaReels())) toast("Legenda copiada: é só colar no Instagram");
+      const res = await compartilharArquivo(arq, "");
+      if (res === "cancelado") return;
+      if (res === "sem") { baixarBlob(r.blob, r.nome); toast("Vídeo salvo: abra o Instagram e escolha da galeria"); }
+      itensReels().forEach((it) => marcarPostado(it, "instagram", "Reels")); R.postado = true; const y = scrollY; mostrarPasso(); scrollTo(0, y); return;
+    }
+    if (t.closest("#rrCont") || t.closest("#rrPular")) { if (R.tocando) R.tocando.parar(); R.rrEditLeg = false; wz.passo = "rDepois"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#rrWhats")) { const l = itensReels(); if (!l.length) { toast("Esses produtos não estão mais na lista"); return; }
+      postarProdutosNoWhats(l.map((x) => x.id), { modelo: R.modelo, camp: R.camp, titulo: R.titulo, cor: R.cor });
+      wz.lugares = ["grupo"]; wz.passo = passosRoteiro().includes("mensagem") ? "mensagem" : "rodar"; wz.idx = 0; wz.res = {}; irPara("criar"); mostrarPasso(); scrollTo(0, 0); return; }
+  });
+  $("#wzCorpo").addEventListener("input", (e) => { if (wz.canal === "reels" && e.target.id === "rrLeg") rr().legenda = e.target.value; });
+  $("#folhaEst").addEventListener("close", () => { if (wz.canal === "reels" && wz.passo === "rOrdem") mostrarPasso(); });
+  /* ---------- Carrossel no padrão: aprovar (slides grandes, modelo, cor) → postar (legenda creme) → e agora? ---------- */
+  function telaCarrosselNova(c, R) {
+    const l = itensReels(), n = l.length, Mx = MODELOS_REELS[R.modelo] || MODELOS_REELS.achadinho, C = CAMPANHAS[R.camp];
+    const cab = `<p class="rt-etapa">Carrossel · ${n + 2} imagens</p>`;
+    const trilho = `<div class="car-trilho kk-trilho" id="kTrilho"><div class="car-vazio">Montando os slides...</div></div><p class="nota kk-nota">Capa, ${n} ${n === 1 ? "produto" : "produtos"} e o final · arraste para o lado.</p>`;
+    if (wz.passo === "kCarrossel") {
+      c.innerHTML = `${cab}${trilho}
+        <button type="button" class="rp-modelo" id="rrTrocarModelo"><span><small>${C ? "Campanha" : R.rrEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(C ? C.nome : R.titulo || Mx.nome)}</b></span><i>Trocar</i></button>
+        <div class="rp-cores rr-cores">${CORES_ESCOLHA.map((k) => `<button type="button" data-rr-cor="${k}" class="${R.cor === k ? "on" : ""}" style="background:${CORES_VIDEO[k].fundo}" aria-label="${CORES_NOME[k]}"></button>`).join("")}</div>
+        ${botaoContinuar(n > 0, "Aprovar o carrossel").replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
+    } else {
+      if (R.legenda == null) R.legenda = legendaReels();
+      c.innerHTML = `${cab}${trilho}
+        <textarea id="rrLeg" class="rr-leg" aria-label="Legenda (toque para editar)">${esc(R.legenda)}</textarea>
+        <div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="rrCopLeg">Copiar legenda</button><button type="button" class="btn btn--branco rp-adesivo" id="kBaixar">Baixar as ${n + 2} imagens</button></div>
+        <div class="wz-rodape pr-rodape rp-rod2">${!R.postado ? `<button type="button" class="btn btn--rosa wz-continuar" id="kPostar">Postar no Instagram</button><button type="button" class="rp-link" id="rrPular">Pular o carrossel</button>`
+          : `<button type="button" class="btn btn--rosa wz-continuar" id="rrCont">Continuar</button><button type="button" class="rp-link" id="kPostar">Postar de novo</button>`}</div>`;
+    }
+    slidesCarrossel().then((sl) => { const tr = $("#kTrilho"); if (!tr) return; tr.innerHTML = ""; sl.forEach((cv) => tr.appendChild(cv)); });
+  }
   /* ---------- Carrossel de preços: capa no tema, um slide por produto e o final ---------- */
   async function slidesCarrossel() {
     await carregarMarca(); const R = rr(), l = itensReels(), f = await fotosReels(), C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa;
@@ -7865,7 +9028,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     slidesCarrossel().then((s) => { const tr = $("#kTrilho"); if (!tr) return; tr.innerHTML = ""; s.forEach((cv) => tr.appendChild(cv)); });
   }
   $("#wzCorpo").addEventListener("click", async (e) => {
-    if (wz.canal !== "reels" || wz.passo !== "kCarrossel") return;
+    if (wz.canal !== "reels" || (wz.passo !== "kCarrossel" && wz.passo !== "kPronto")) return;
     const postar = e.target.closest("#kPostar"), baixar = e.target.closest("#kBaixar"); if (!postar && !baixar) return;
     const slides = [...document.querySelectorAll("#kTrilho canvas")]; if (!slides.length) { toast("Espere os slides ficarem prontos"); return; }
     const nome = (i) => `miga-carrossel-${String(i + 1).padStart(2, "0")}.jpg`;
@@ -7873,8 +9036,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (postar) {
       const arqs = blobs.map((b, i) => new File([b], nome(i), { type: "image/jpeg" })), legenda = rr().legenda || legendaReels();
       try { await navigator.clipboard.writeText(legenda); } catch (er) { /* segue */ }
-      if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs }); toast("Legenda copiada: é só colar"); return; } catch (er) { if (er && er.name === "AbortError") return; } }
+      const feito = () => { const R = rr(); R.postado = true; itensReels().forEach((it) => marcarPostado(it, "instagram", "Carrossel")); const y = scrollY; mostrarPasso(); scrollTo(0, y); };
+      if (navigator.canShare && navigator.canShare({ files: arqs })) { try { await navigator.share({ files: arqs }); toast("Legenda copiada: é só colar"); feito(); return; } catch (er) { if (er && er.name === "AbortError") return; } }
       toast("Este celular não compartilha várias imagens: vou baixar todas");
+      for (let i = 0; i < blobs.length; i++) { baixarBlob(blobs[i], nome(i)); await new Promise((ok) => setTimeout(ok, 350)); }
+      feito(); return;
     }
     for (let i = 0; i < blobs.length; i++) { baixarBlob(blobs[i], nome(i)); await new Promise((ok) => setTimeout(ok, 350)); }
     toast(`${blobs.length} imagens baixadas, na ordem do carrossel`);
@@ -8014,10 +9180,13 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function abrirConfig() {
     mostrarConta();
     $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados; pintarAjPrompts();
+    $("#ajVtLink").textContent = urlVitrine().replace(/^https?:\/\//, ""); $("#ajVtCanal").value = vitrineCfg.canal || ""; $("#ajVtGrupo").value = vitrineCfg.grupo || ""; $("#ajVtQtd").textContent = vitrineMap.size ? `${vitrineMap.size} ${vitrineMap.size === 1 ? "produto" : "produtos"} no site` : "Nenhum produto no site ainda";
     pintarAjustes();
     if (!dialogo.open) dialogo.showModal();
   }
   let ajInstaTimer;
+  $("#ajVtCopiar").addEventListener("click", async () => { if (await copiarTexto(urlVitrine())) toast("Link do site copiado"); });
+  $("#ajVtAbrir").addEventListener("click", () => window.open(urlVitrine(), "_blank", "noopener"));
   $("#ajInsta").addEventListener("input", () => {
     clearTimeout(ajInstaTimer);
     ajInstaTimer = setTimeout(() => { config.instagram = arroba($("#ajInsta").value); gravarConfig(); }, 600);

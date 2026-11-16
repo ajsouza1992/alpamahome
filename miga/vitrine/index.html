@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Miga Promo · Achadinhos com preço de amiga</title>
+  <meta name="description" content="Os achadinhos da Miga Promo: roupas, beleza, casa e muito mais, com preço de amiga no Mercado Livre e na Shopee.">
+  <meta name="theme-color" content="#e8336d">
+  <meta property="og:title" content="Miga Promo · Achadinhos com preço de amiga">
+  <meta property="og:description" content="Filtre, escolha e vá direto para a loja. Entre também no canal do WhatsApp.">
+  <meta property="og:image" content="../logo.png">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Vitrine da Miga Promo: página pública e separada do app (não carrega nada do app, só lê os produtos publicados) */
+    :root { --rosa: #e8336d; --rosa-claro: #fff5f8; --creme: #fff6dc; --fundo: #fff6dc; --texto: #1d1d1f; --cinza: #6b6460; --linha: #efe6d6; --branco: #fff; --verde: #1fa855; }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--fundo); color: var(--texto); }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    img { display: block; }
+    a { color: inherit; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    :focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+
+    .topo { position: sticky; top: 0; z-index: 10; background: var(--fundo); padding: 12px 16px 8px; }
+    .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .marca img { width: 46px; height: 46px; border-radius: 12px; }
+    .marca b { display: block; font-size: 17px; font-weight: 800; line-height: 1.15; }
+    .marca small { display: block; font-size: 12.5px; color: var(--cinza); font-weight: 500; }
+    .topo-linha { display: flex; align-items: center; gap: 12px; }
+    .zap-topo { display: none; margin-left: auto; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: var(--verde); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
+    .busca { position: relative; margin-top: 10px; }
+    #buscaDesk { display: none; }
+    .busca input { width: 100%; min-height: 46px; padding: 0 16px 0 42px; border: 2px solid var(--linha); border-radius: 999px; background: #fff; font: inherit; font-size: 15px; color: var(--texto); }
+    .busca svg { position: absolute; left: 15px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); stroke: var(--cinza); fill: none; stroke-width: 2.2; }
+
+    .para { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 10px 16px 0; padding: 4px; border: 2px solid var(--linha); border-radius: 999px; background: #fff; }
+    .para button { border: 0; border-radius: 999px; background: none; padding: 8px 2px; font-size: 13.5px; font-weight: 700; color: var(--cinza); }
+    .para button.on { background: var(--rosa); color: #fff; }
+    .atalhos { display: flex; gap: 6px; padding: 10px 16px 0; overflow-x: auto; scrollbar-width: none; }
+    .atalhos::-webkit-scrollbar { display: none; }
+    .chip { flex: none; border: 2px solid var(--linha); background: #fff; border-radius: 999px; padding: 6px 13px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .chip.on { background: var(--rosa); border-color: var(--rosa); color: #fff; }
+    .chip.escuro.on { background: var(--texto); border-color: var(--texto); }
+    .bt-filtros { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--texto); color: #fff; border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 700; }
+    .bt-filtros i { font-style: normal; background: var(--rosa); border-radius: 999px; padding: 0 7px; font-size: 11px; }
+    .bt-filtros i:empty { display: none; }
+    .barra-res { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px 0; font-size: 13px; color: var(--cinza); }
+    .barra-res select { border: 0; background: none; font: inherit; font-weight: 600; color: var(--texto); padding: 4px 0; }
+
+    .corpo { display: block; }
+    .lado { display: none; }
+    .grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px 16px 110px; }
+    .card { display: flex; flex-direction: column; background: #fff; border: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.07); text-align: left; padding: 0; }
+    .card .foto { position: relative; aspect-ratio: 1 / 1; background: #f6f3ee; }
+    .card .foto img { width: 100%; height: 100%; object-fit: contain; }
+    img.sem { opacity: .25; padding: 28%; }
+    .loja { position: absolute; left: 7px; top: 7px; font-size: 10.5px; font-weight: 800; border-radius: 7px; padding: 2px 7px; background: #ffe600; color: #1d1d1f; }
+    .loja.shopee { background: #ee4d2d; color: #fff; }
+    .loja.amazon { background: #232f3e; color: #fff; }
+    .loja.magalu { background: #0086ff; color: #fff; }
+    .off { position: absolute; right: 7px; top: 7px; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 8px; background: var(--rosa); color: #fff; }
+    .card .info { display: flex; flex-direction: column; gap: 2px; padding: 9px 10px 11px; flex: 1; }
+    .card .nome { font-size: 13px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card s { font-size: 11.5px; color: #8a817b; margin-top: 2px; }
+    .card .preco { font-size: 17px; font-weight: 800; color: var(--rosa); }
+    .card .cupom { align-self: flex-start; font-size: 11px; font-weight: 700; background: #fff3c4; border-radius: 7px; padding: 1px 7px; }
+    .card .ver { margin-top: auto; padding-top: 8px; }
+    .card .ver span { display: block; text-align: center; background: var(--rosa); color: #fff; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 8px; }
+    .vazio { grid-column: 1 / -1; text-align: center; color: var(--cinza); padding: 40px 10px; font-size: 15px; }
+    .vazio button { margin-top: 10px; border: 0; background: var(--rosa); color: #fff; font-weight: 700; border-radius: 999px; padding: 10px 18px; }
+    .esqueleto { aspect-ratio: 3 / 4; border-radius: 18px; background: linear-gradient(90deg, #f3ecdf 25%, #fbf6ec 50%, #f3ecdf 75%); background-size: 200% 100%; animation: brilho 1.2s infinite; }
+    @keyframes brilho { to { background-position: -200% 0; } }
+
+    .zap { position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 20; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .zap .rotulo { background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+    .zap .bola { width: 60px; height: 60px; border-radius: 50%; background: var(--verde); display: grid; place-items: center; box-shadow: 0 8px 22px rgba(31,168,85,.45); }
+    .zap svg, .zap-topo svg { width: 32px; height: 32px; fill: #fff; }
+    .zap-topo svg { width: 20px; height: 20px; }
+
+    .rodape { padding: 0 16px 110px; text-align: center; font-size: 12px; color: var(--cinza); line-height: 1.5; }
+    .rodape .links { display: flex; justify-content: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .rodape .links a { border: 2px solid var(--linha); background: #fff; border-radius: 999px; padding: 7px 14px; font-weight: 700; color: var(--texto); text-decoration: none; font-size: 13px; }
+
+    dialog { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; width: 100%; height: 100%; margin: 0; }
+    dialog::backdrop { background: rgba(40, 30, 20, .5); }
+    .folha { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92dvh; overflow: auto; background: #fff; border-radius: 26px 26px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+    .folha-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .folha-cab h2 { margin: 0; font-size: 20px; font-weight: 800; }
+    .fechar { width: 38px; height: 38px; border-radius: 50%; border: 0; background: #f5f0e6; font-size: 16px; font-weight: 700; flex: none; }
+    .limpar { border: 0; background: none; color: var(--rosa); font-weight: 700; font-size: 14px; }
+    .sec { font-size: 12.5px; font-weight: 800; color: var(--rosa); text-transform: uppercase; letter-spacing: .4px; margin-top: 4px; }
+    .ops { display: flex; flex-wrap: wrap; gap: 7px; }
+    .ver-n { margin-top: 8px; border: 0; background: var(--rosa); color: #fff; font-weight: 700; font-size: 16px; border-radius: 999px; padding: 14px; position: sticky; bottom: 0; box-shadow: 0 -10px 16px #fff; }
+
+    .prod .foto-g { aspect-ratio: 1 / 1; max-height: 46dvh; width: 100%; background: #f6f3ee; border-radius: 18px; overflow: hidden; }
+    .prod .foto-g img { width: 100%; height: 100%; object-fit: contain; }
+    .prod h2 { margin: 2px 0 0; font-size: 18px; font-weight: 700; line-height: 1.3; }
+    .prod .precos { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .prod .precos b { font-size: 26px; font-weight: 800; color: var(--rosa); }
+    .prod .precos s { color: #8a817b; font-size: 14px; }
+    .prod .precos em { font-style: normal; font-weight: 800; color: #16803c; font-size: 14px; }
+    .cupom-g { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 2px dashed var(--rosa); border-radius: 14px; padding: 9px 12px; font-size: 14px; }
+    .cupom-g button { border: 0; background: none; color: var(--rosa); font-weight: 700; }
+    .desc { background: #f8f4ec; border-radius: 14px; padding: 11px 13px; font-size: 13.5px; line-height: 1.55; color: #3d3a36; }
+    .desc b { display: block; color: var(--texto); font-size: 14px; margin-bottom: 3px; }
+    .desc p { margin: 0; white-space: pre-line; }
+    .desc.curta p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+    .desc button { border: 0; background: none; padding: 4px 0 0; color: var(--rosa); font-weight: 700; font-size: 13.5px; }
+    .comprar { display: block; text-align: center; text-decoration: none; font-weight: 800; font-size: 16px; border-radius: 999px; padding: 15px; background: #ffe600; color: #1d1d1f; }
+    .comprar.shopee { background: #ee4d2d; color: #fff; }
+    .comprar.amazon { background: #232f3e; color: #fff; }
+    .comprar.magalu { background: #0086ff; color: #fff; }
+    .comprar.outra { background: var(--rosa); color: #fff; }
+    .aviso { text-align: center; font-size: 12px; color: #8a817b; margin: 0; }
+    .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--texto); color: #fff; border-radius: 14px; padding: 10px 16px; font-size: 14px; z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; }
+    .toast.on { opacity: 1; }
+
+    @media (min-width: 900px) {
+      .topo { padding: 14px 28px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+      .topo-linha { gap: 18px; }
+      #buscaDesk { display: block; flex: 1; margin-top: 0; }
+      .zap-topo { display: inline-flex; margin-left: 0; }
+      .topo .busca-mob { display: none; }
+      .para, .atalhos { display: none; }
+      .barra-res { padding: 18px 28px 0 calc(28px + 270px + 24px); font-size: 14px; }
+      .corpo { display: flex; align-items: flex-start; gap: 24px; padding: 14px 28px 40px; max-width: 1500px; margin: 0 auto; }
+      .lado { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 92px; width: 270px; flex: none; background: #fff; border-radius: 20px; padding: 18px; }
+      .grade { flex: 1; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; padding: 0; }
+      .rodape { padding-bottom: 40px; }
+      .zap .rotulo { display: none; }
+      dialog .folha { left: 50%; right: auto; top: 50%; bottom: auto; transform: translate(-50%, -50%); width: min(560px, 92vw); border-radius: 26px; max-height: 90vh; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-linha">
+      <a class="marca" href="./" aria-label="Miga Promo, início"><img src="../logo.png" alt="" width="46" height="46"><span><b>Miga Promo</b><small>Achadinhos com preço de amiga</small></span></a>
+      <label class="busca" id="buscaDesk"><span class="sr">Buscar</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="buscaD" placeholder="Buscar achadinho…" autocomplete="off"></label>
+      <a class="zap-topo" id="zapTopo" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.8-4.4-3.9-.1-.2-1.1-1.4-1.1-2.7s.7-1.9.9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.8.9c.3.1.4.2.5.3.1.2.1.6-.1 1.2z"/></svg>Canal no WhatsApp</a>
+    </div>
+    <label class="busca busca-mob"><span class="sr">Buscar</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="buscaM" placeholder="Buscar achadinho…" autocomplete="off"></label>
+  </header>
+
+  <nav class="para" id="paraMob" aria-label="Para quem"></nav>
+  <div class="atalhos" id="atalhos"></div>
+  <div class="barra-res"><span id="contagem" aria-live="polite">Carregando…</span>
+    <label><span class="sr">Ordenar</span><select id="ordem"><option value="novos">Mais novos</option><option value="menor">Menor preço</option><option value="desconto">Maior desconto</option><option value="cupom">Com cupom primeiro</option></select></label></div>
+
+  <div class="corpo">
+    <aside class="lado" id="lado" aria-label="Filtros"></aside>
+    <main class="grade" id="grade" aria-busy="true"><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div></main>
+  </div>
+
+  <footer class="rodape">
+    <div class="links" id="links"></div>
+    <p>Os preços e os cupons podem mudar na loja. Como afiliada, a Miga Promo pode ganhar uma comissão pelas compras feitas pelos links, sem custo a mais para você.</p>
+  </footer>
+
+  <a class="zap" id="zap" href="#" target="_blank" rel="noopener" hidden aria-label="Entrar no canal do WhatsApp"><span class="rotulo">Canal no WhatsApp</span><span class="bola"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.8-4.4-3.9-.1-.2-1.1-1.4-1.1-2.7s.7-1.9.9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.8.9c.3.1.4.2.5.3.1.2.1.6-.1 1.2z"/></svg></span></a>
+
+  <dialog id="dlgFiltros" aria-labelledby="tFiltros"><div class="folha">
+    <div class="folha-cab"><h2 id="tFiltros">Filtros</h2><button type="button" class="limpar" data-limpar>Limpar</button></div>
+    <div id="filtrosMob"></div>
+    <button type="button" class="ver-n" id="verN">Ver achadinhos</button>
+  </div></dialog>
+
+  <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="../firebase-config.js"></script>
+  <script>
+  (() => {
+    "use strict";
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const brl = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const urlOk = (u) => /^https:\/\//i.test(String(u || "").trim());
+    const imgOk = (u) => /^https?:\/\//i.test(String(u || "")) || /^data:image\//i.test(String(u || ""));
+    const PARA = { mulher: "Mulher", crianca: "Criança", casa: "Casa" };
+    const TIPOS = { looks: "Roupas", fitness: "Fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
+    const LOJAS = { mercadolivre: "Mercado Livre", shopee: "Shopee", amazon: "Amazon", magalu: "Magalu" };
+    const PRECOS = { ate50: ["Até R$ 50", (p) => p <= 50], de50a100: ["R$ 50 a 100", (p) => p > 50 && p <= 100], mais100: ["Mais de R$ 100", (p) => p > 100] };
+    const est = { q: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", ordem: "novos" };
+    let produtos = [], cfg = {};
+
+    /* ---------- Dados: só a pasta pública "vitrine/miga" do Firestore (sem login) ---------- */
+    function valor(v) {
+      if (!v) return null;
+      if ("stringValue" in v) return v.stringValue;
+      if ("integerValue" in v) return Number(v.integerValue);
+      if ("doubleValue" in v) return Number(v.doubleValue);
+      if ("booleanValue" in v) return v.booleanValue;
+      if ("nullValue" in v) return null;
+      if ("timestampValue" in v) return Date.parse(v.timestampValue);
+      if ("mapValue" in v) return campos(v.mapValue.fields || {});
+      if ("arrayValue" in v) return (v.arrayValue.values || []).map(valor);
+      return null;
+    }
+    const campos = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, valor(v)]));
+    async function carregar() {
+      const fb = window.FIREBASE_CONFIG;
+      if (!fb || !fb.projectId) { // modo local (testes): o que o app guardou neste navegador
+        try { produtos = Object.values(JSON.parse(localStorage.getItem("miga_vitrine") || "{}")); cfg = JSON.parse(localStorage.getItem("miga_vitrine_cfg") || "{}"); } catch (e) { produtos = []; }
+        return;
+      }
+      const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(fb.projectId)}/databases/(default)/documents/vitrine/miga`, chave = fb.apiKey ? `key=${encodeURIComponent(fb.apiKey)}` : "";
+      const lista = []; let pagina = "";
+      for (let i = 0; i < 20; i++) {
+        const r = await fetch(`${base}/produtos?pageSize=300&${chave}${pagina ? "&pageToken=" + encodeURIComponent(pagina) : ""}`);
+        if (!r.ok) throw new Error("Erro " + r.status);
+        const d = await r.json(); (d.documents || []).forEach((doc) => lista.push(campos(doc.fields)));
+        if (!d.nextPageToken) break; pagina = d.nextPageToken;
+      }
+      produtos = lista;
+      try { const r = await fetch(`${base}?${chave}`); if (r.ok) cfg = campos((await r.json()).fields); } catch (e) { cfg = {}; }
+    }
+
+    /* ---------- Filtros ---------- */
+    const semAcento = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const desconto = (p) => (p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0);
+    function filtrar(ignorar) {
+      const q = semAcento(est.q).trim();
+      return produtos.filter((p) => {
+        if (q && !semAcento(`${p.nome} ${TIPOS[p.tipo] || ""} ${LOJAS[p.loja] || ""} ${p.descricao || ""}`).includes(q)) return false;
+        if (ignorar !== "para" && est.para && p.para !== est.para) return false;
+        if (ignorar !== "tipos" && est.tipos.size && !est.tipos.has(p.tipo)) return false;
+        if (ignorar !== "lojas" && est.lojas.size && !est.lojas.has(p.loja)) return false;
+        if (ignorar !== "preco" && est.preco && !(p.preco && PRECOS[est.preco][1](p.preco))) return false;
+        return true;
+      });
+    }
+    function ordenar(l) {
+      const o = est.ordem, por = { novos: (a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0), menor: (a, b) => (a.preco || 1e9) - (b.preco || 1e9), desconto: (a, b) => desconto(b) - desconto(a), cupom: (a, b) => (b.cupom ? 1 : 0) - (a.cupom ? 1 : 0) || (b.publicadoEm || 0) - (a.publicadoEm || 0) };
+      return l.slice().sort(por[o] || por.novos);
+    }
+    const nFiltros = () => (est.para ? 1 : 0) + est.tipos.size + est.lojas.size + (est.preco ? 1 : 0);
+    const presentes = (k) => [...new Set(produtos.map((p) => p[k]).filter(Boolean))];
+
+    function htmlFiltros() {
+      const tipos = presentes("tipo").sort((a, b) => (TIPOS[a] || a).localeCompare(TIPOS[b] || b, "pt-BR")), lojas = presentes("loja");
+      const chip = (attr, v, nome, on, escuro) => `<button type="button" class="chip${escuro ? " escuro" : ""}${on ? " on" : ""}" ${attr}="${esc(v)}" aria-pressed="${on}">${esc(nome)}</button>`;
+      return `<span class="sec">Para quem</span><div class="ops">${Object.entries(PARA).map(([k, n]) => chip("data-para", k, n, est.para === k)).join("")}</div>
+        ${tipos.length ? `<span class="sec">Tipo de produto</span><div class="ops">${tipos.map((k) => chip("data-tipo", k, TIPOS[k] || k, est.tipos.has(k))).join("")}</div>` : ""}
+        ${lojas.length > 1 ? `<span class="sec">Loja</span><div class="ops">${chip("data-loja", "", "Todas", !est.lojas.size, true)}${lojas.map((k) => chip("data-loja", k, LOJAS[k] || k, est.lojas.has(k), true)).join("")}</div>` : ""}
+        <span class="sec">Preço</span><div class="ops">${Object.entries(PRECOS).map(([k, [n]]) => chip("data-preco", k, n, est.preco === k)).join("")}</div>`;
+    }
+    function cardHtml(p) {
+      const d = desconto(p), lj = LOJAS[p.loja] ? p.loja : "";
+      return `<button type="button" class="card" data-id="${esc(p.id)}"><span class="foto">${imgOk(p.imagem) ? `<img src="${esc(p.imagem)}" alt="${esc(p.nome)}" loading="lazy" referrerpolicy="no-referrer">` : '<img class="sem" src="../logo.png" alt="">'}${lj ? `<span class="loja ${lj}">${esc(LOJAS[lj])}</span>` : ""}${d >= 5 ? `<span class="off">-${d}%</span>` : ""}</span>
+        <span class="info"><span class="nome">${esc(p.nome)}</span>${d >= 5 ? `<s>${brl(p.precoAntigo)}</s>` : ""}${p.preco ? `<span class="preco">${brl(p.preco)}</span>` : ""}${p.cupom ? `<span class="cupom">Cupom ${esc(p.cupom)}</span>` : ""}<span class="ver"><span>Ver na loja</span></span></span></button>`;
+    }
+    function pintar() {
+      const l = ordenar(filtrar()), n = nFiltros();
+      $("#paraMob").innerHTML = [["", "Tudo"], ...Object.entries(PARA)].map(([k, nome]) => `<button type="button" data-para="${k}" class="${est.para === k ? "on" : ""}" aria-pressed="${est.para === k}">${nome}</button>`).join("");
+      const tipos = presentes("tipo").sort((a, b) => (TIPOS[a] || a).localeCompare(TIPOS[b] || b, "pt-BR"));
+      $("#atalhos").innerHTML = `<button type="button" class="bt-filtros" id="abrirFiltros">Filtros <i>${n || ""}</i></button>` + tipos.map((k) => `<button type="button" class="chip${est.tipos.has(k) ? " on" : ""}" data-tipo="${esc(k)}" aria-pressed="${est.tipos.has(k)}">${esc(TIPOS[k] || k)}</button>`).join("");
+      $("#lado").innerHTML = `<div class="folha-cab"><h2 style="font-size:17px">Filtros</h2>${n ? '<button type="button" class="limpar" data-limpar>Limpar</button>' : ""}</div>` + htmlFiltros();
+      if ($("#dlgFiltros").open) $("#filtrosMob").innerHTML = htmlFiltros();
+      $("#verN").textContent = l.length ? `Ver ${l.length} ${l.length === 1 ? "achadinho" : "achadinhos"}` : "Nenhum achadinho com esses filtros";
+      $("#contagem").textContent = produtos.length ? `${l.length} ${l.length === 1 ? "achadinho" : "achadinhos"}` : "";
+      const g = $("#grade"); g.setAttribute("aria-busy", "false");
+      g.innerHTML = l.length ? l.map(cardHtml).join("") : `<p class="vazio">${produtos.length ? 'Nenhum achadinho com esses filtros.<br><button type="button" data-limpar>Limpar os filtros</button>' : "Em breve, achadinhos novos por aqui."}</p>`;
+    }
+
+    /* ---------- Produto aberto ---------- */
+    function abrirProduto(id, empurrar = true) {
+      const p = produtos.find((x) => x.id === id); if (!p) return;
+      const d = desconto(p), lj = LOJAS[p.loja] ? p.loja : "", link = urlOk(p.link) ? p.link : "";
+      $("#prod").innerHTML = `<div class="folha-cab"><span></span><button type="button" class="fechar" data-fechar aria-label="Fechar">✕</button></div>
+        <div class="foto-g">${imgOk(p.imagem) ? `<img src="${esc(p.imagem)}" alt="${esc(p.nome)}" referrerpolicy="no-referrer">` : '<img class="sem" src="../logo.png" alt="">'}</div>
+        <h2>${esc(p.nome)}</h2>
+        <div class="precos">${p.preco ? `<b>${brl(p.preco)}</b>` : ""}${d >= 5 ? `<s>${brl(p.precoAntigo)}</s><em>-${d}%</em>` : ""}</div>
+        ${p.cupom ? `<div class="cupom-g"><span>Cupom <b>${esc(p.cupom)}</b></span><button type="button" data-copiar="${esc(p.cupom)}">Copiar</button></div>` : ""}
+        ${p.descricao ? `<div class="desc curta"><b>Sobre o produto</b><p>${esc(p.descricao)}</p><button type="button" data-mais hidden>Ver mais</button></div>` : ""}
+        ${link ? `<a class="comprar ${lj || "outra"}" href="${esc(link)}" target="_blank" rel="noopener nofollow sponsored">${{ mercadolivre: "Comprar no Mercado Livre", shopee: "Comprar na Shopee", amazon: "Comprar na Amazon", magalu: "Comprar no Magalu" }[lj] || "Ir para a loja"}</a>` : ""}
+        <p class="aviso">O preço pode mudar na loja</p>`;
+      const dlg = $("#dlgProd"); if (!dlg.open) dlg.showModal();
+      const dp = $("#prod .desc p"), mais = $("#prod [data-mais]"); if (dp && mais && dp.scrollHeight > dp.clientHeight + 4) mais.hidden = false;
+      $("#prod").scrollTop = 0;
+      if (empurrar) history.pushState({ p: id }, "", "#p=" + encodeURIComponent(id));
+    }
+    function fecharProduto() { const dlg = $("#dlgProd"); if (dlg.open) dlg.close(); }
+    $("#dlgProd").addEventListener("close", () => { if (location.hash.startsWith("#p=")) history.replaceState(null, "", location.pathname + location.search); });
+    window.addEventListener("popstate", () => { const m = /^#p=(.+)$/.exec(location.hash); if (m) abrirProduto(decodeURIComponent(m[1]), false); else fecharProduto(); });
+
+    /* ---------- Toques ---------- */
+    let toastT = 0;
+    function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2200); }
+    document.addEventListener("click", async (e) => {
+      const t = e.target;
+      const card = t.closest(".card[data-id]"); if (card) { abrirProduto(card.dataset.id); return; }
+      if (t.closest("[data-fechar]")) { fecharProduto(); return; }
+      if (t.closest("#abrirFiltros")) { $("#filtrosMob").innerHTML = htmlFiltros(); $("#dlgFiltros").showModal(); return; }
+      if (t.closest("#verN")) { $("#dlgFiltros").close(); scrollTo({ top: 0, behavior: "smooth" }); return; }
+      if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; pintar(); return; }
+      const cp = t.closest("[data-copiar]"); if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copiar); toast("Cupom copiado"); } catch (err) { toast("Cupom: " + cp.dataset.copiar); } return; }
+      const mais = t.closest("[data-mais]"); if (mais) { mais.closest(".desc").classList.remove("curta"); mais.hidden = true; return; }
+      const pa = t.closest("[data-para]"); if (pa) { const v = pa.dataset.para; est.para = est.para === v && v ? "" : v; pintar(); return; }
+      const tp = t.closest("[data-tipo]"); if (tp) { const v = tp.dataset.tipo; est.tipos.has(v) ? est.tipos.delete(v) : est.tipos.add(v); pintar(); return; }
+      const lj = t.closest("[data-loja]"); if (lj) { const v = lj.dataset.loja; if (!v) est.lojas.clear(); else est.lojas.has(v) ? est.lojas.delete(v) : est.lojas.add(v); pintar(); return; }
+      const pr = t.closest("[data-preco]"); if (pr) { const v = pr.dataset.preco; est.preco = est.preco === v ? "" : v; pintar(); return; }
+    });
+    ["dlgFiltros", "dlgProd"].forEach((id) => $("#" + id).addEventListener("click", (e) => { if (e.target.id === id) e.target.close(); }));
+    let buscaT = 0;
+    ["#buscaM", "#buscaD"].forEach((s) => $(s).addEventListener("input", (e) => { est.q = e.target.value; ["#buscaM", "#buscaD"].forEach((o) => { if (o !== s) $(o).value = est.q; }); clearTimeout(buscaT); buscaT = setTimeout(pintar, 150); }));
+    $("#ordem").addEventListener("change", (e) => { est.ordem = e.target.value; pintar(); });
+
+    /* ---------- Canal, grupo e Instagram ---------- */
+    function pintarLinks() {
+      const canal = urlOk(cfg.canal) ? cfg.canal : "", grupo = urlOk(cfg.grupo) ? cfg.grupo : "", zap = canal || grupo;
+      const insta = String(cfg.instagram || "").replace(/^@+/, "").replace(/[^\w.]/g, "");
+      if (zap) { $("#zap").href = zap; $("#zap").hidden = false; $("#zapTopo").href = zap; $("#zapTopo").hidden = false; if (!canal) { $("#zap .rotulo").textContent = "Grupo no WhatsApp"; $("#zapTopo").lastChild.textContent = "Grupo no WhatsApp"; } }
+      $("#links").innerHTML = [canal && `<a href="${esc(canal)}" target="_blank" rel="noopener">Canal no WhatsApp</a>`, grupo && `<a href="${esc(grupo)}" target="_blank" rel="noopener">Grupo VIP</a>`, insta && `<a href="https://instagram.com/${esc(insta)}" target="_blank" rel="noopener">Instagram @${esc(insta)}</a>`].filter(Boolean).join("");
+    }
+
+    carregar().then(() => { pintar(); pintarLinks(); const m = /^#p=(.+)$/.exec(location.hash); if (m) abrirProduto(decodeURIComponent(m[1]), false); })
+      .catch(() => { $("#grade").setAttribute("aria-busy", "false"); $("#grade").innerHTML = '<p class="vazio">Não consegui carregar os achadinhos agora. Tente de novo em instantes.</p>'; $("#contagem").textContent = ""; });
+  })();
+  </script>
+</body>
+</html>

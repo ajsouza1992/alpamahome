@@ -1,0 +1,930 @@
+/**
+ * Miga Promo — _worker.js (servidor do app no Cloudflare Pages)
+ * Desenvolvido por Alpama Soluções.
+ *
+ * Este arquivo único atende as rotas /api/* e entrega o resto do site.
+ * Funciona tanto no envio por "arrastar e soltar" (zip) quanto pelo GitHub.
+ *
+ *   POST /api/produto  { url }      → foto, nome e preço (Mercado Livre / Shopee)
+ *   POST /api/gerar    { ...dados } → mensagem escrita pela IA (Gemini); com { ajuste, textoAtual } reescreve
+ *   GET  /api/imagem?url=...        → foto do produto (para enviar junto no WhatsApp)
+ *   GET  /api/status                → diz se a IA está configurada
+ *   POST /api/entrar   { codigo }   → confere o código de acesso (APP_SENHA)
+ *
+ *   POST /api/afiliado { url }      → troca um link da Shopee pelo seu link de afiliado
+ *   POST /api/descricao { url, nome, categoria } → descrição do produto para a vitrine (Mercado Livre pela API; senão a IA escreve)
+ *   GET  /api/catalogo?filtro=moda|beleza|casa|fitness&loja=todas|mercadolivre|shopee&ordem=vendidos|comissao|preco
+ *                                   → mais vendidos (APIs oficiais), lista limpa para o app
+ *
+ * Variáveis no Cloudflare (Configurações → Variáveis e segredos):
+ *   GEMINI_API_KEY (chave da IA)   APP_SENHA (código de acesso do app)   GEMINI_MODEL (opcional)
+ *   Catálogo (opcionais — cada loja só aparece quando as duas chaves dela existirem):
+ *     ML_APP_ID, ML_SECRET           → Mercado Livre Developers (Minhas aplicações)
+ *     SHOPEE_APP_ID, SHOPEE_SECRET   → Shopee Afiliados → Open API
+ */
+
+/* ======================= Leitura do produto ======================= */
+
+const DOMINIOS = {
+  mercadolivre: ["mercadolivre.com.br", "mercadolivre.com", "mercadolibre.com", "meli.la", "mlstatic.com"],
+  shopee: ["shopee.com.br", "shope.ee", "shp.ee", "susercontent.com", "shopee.com"],
+  amazon: ["amazon.com.br", "amazon.com", "amzn.to", "a.co", "media-amazon.com"],
+  magalu: ["magazineluiza.com.br", "magazinevoce.com.br", "magalu.com", "magalu.com.br", "mlcdn.com.br"]
+};
+const UA = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
+// Robô de prévia de links (o mesmo do Facebook/WhatsApp): as lojas entregam a página já com foto, nome e preço
+const UA_PREVIA = "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
+
+/** Diz de qual loja é a URL (ou null se não for permitida).
+ *  Só aceita https, sem porta e sem usuário/senha embutidos (proteção contra SSRF). */
+function lojaDaUrl(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:" || u.port !== "" || u.username || u.password) return null;
+    const h = u.hostname.toLowerCase();
+    for (const [loja, lista] of Object.entries(DOMINIOS)) {
+      if (lista.some((d) => h === d || h.endsWith("." + d))) return loja;
+    }
+  } catch (e) { /* URL inválida */ }
+  return null;
+}
+
+const decodificar = (t) => String(t || "")
+  .replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, "&")
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#x2F;/g, "/").trim();
+
+function meta(html, prop) {
+  const a = new RegExp(`<meta[^>]+(?:property|name|itemprop)=["']${prop}["'][^>]*content=["']([^"']*)["']`, "i");
+  const b = new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name|itemprop)=["']${prop}["']`, "i");
+  const m = html.match(a) || html.match(b);
+  return m ? decodificar(m[1]) : "";
+}
+
+function numero(v) {
+  if (v === null || v === undefined || v === "") return null;
+  let s = String(v).replace(/[^\d.,]/g, "");
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
+}
+
+function produtoJsonLd(html) {
+  for (const b of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const d = JSON.parse(b[1].trim());
+      const lista = Array.isArray(d) ? d : d["@graph"] || [d];
+      for (const x of lista) {
+        if (!x || !/Product/i.test(String(x["@type"]))) continue;
+        const of = Array.isArray(x.offers) ? x.offers[0] : x.offers || {};
+        return { nome: decodificar(x.name), imagem: Array.isArray(x.image) ? x.image[0] : x.image || "", preco: numero(of.price ?? of.lowPrice) };
+      }
+    } catch (e) { /* bloco inválido */ }
+  }
+  return {};
+}
+
+// Mercado Livre: "Antes: 199 reais com 90 centavos"
+function precoAntigoML(html) {
+  const m = html.match(/aria-label=["']Antes:\s*([\d.]+)\s*reais(?:\s*com\s*(\d{1,2})\s*centavos)?/i);
+  return m ? numero(m[1].replace(/\./g, "") + "," + (m[2] || "0").padStart(2, "0")) : null;
+}
+
+// Mercado Livre: preço atual ("49 reais com 90 centavos"), que vem depois do "Antes:"
+function precoAtualML(html) {
+  const re = /aria-label=["'](Antes:\s*|Agora:\s*)?([\d.]+)\s*reais(?:\s*com\s*(\d{1,2})\s*centavos)?/gi;
+  let m, passouAntes = false, primeiro = null;
+  while ((m = re.exec(html))) {
+    const v = numero(m[2].replace(/\./g, "") + "," + (m[3] || "0").padStart(2, "0"));
+    if (/Antes/i.test(m[1] || "")) { passouAntes = true; continue; }
+    if (/Agora/i.test(m[1] || "") || passouAntes) return v;
+    if (primeiro === null) primeiro = v;
+  }
+  return primeiro;
+}
+// Preço escrito no texto (ex.: descrição da prévia "R$ 49,90")
+function precoNoTexto(t) {
+  const m = String(t || "").match(/R\$\s?([\d.]+,\d{2})/);
+  return m ? numero(m[1]) : null;
+}
+
+// Tira do nome: "| Mercado Livre", "- R$ 49,90", "Frete grátis" etc. (a loja às vezes junta tudo no título)
+const limparTitulo = (t) => String(t || "")
+  .replace(/\s*[|\-–:]\s*(Mercado Livre|MercadoLivre|Shopee Brasil|Shopee|Amazon\.com\.br.*|Magazine Luiza|Magalu).*$/i, "")
+  .replace(/^Amazon\.com\.br\s*:\s*/i, "")
+  .replace(/\s*[|\-–:]?\s*(por\s+)?R\$\s*[\d.,]+.*$/i, "")
+  .replace(/\s*[|\-–]\s*(frete gr[aá]tis|em at[eé] \d+x.*|oferta.*)$/i, "")
+  .replace(/^Compre\s+/i, "")
+  .replace(/\s{2,}/g, " ").trim();
+
+/** Busca os dados do produto a partir do link de afiliado */
+async function extrairProduto(url) {
+  const loja = lojaDaUrl(url);
+  if (!loja) throw new Error("Use um link do Mercado Livre, Shopee, Amazon ou Magalu.");
+
+  // Segue os redirecionamentos um a um, conferindo se cada destino continua sendo da loja
+  async function baixar(inicio, ua) {
+    let atual = inicio, r = null;
+    for (let pulo = 0; pulo < 6; pulo++) {
+      r = await fetch(atual, { redirect: "manual", headers: { "user-agent": ua, "accept-language": "pt-BR,pt;q=0.9", accept: "text/html" } });
+      const destino = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
+      if (!destino) break;
+      atual = new URL(destino, atual).toString();
+      if (!lojaDaUrl(atual)) throw new Error("O link redirecionou para fora da loja.");
+    }
+    return { html: r && r.ok ? await r.text() : "", atual };
+  }
+  function ler(html) {
+    const ld = produtoJsonLd(html);
+    const desc = meta(html, "og:description") || meta(html, "description");
+    return {
+      nome: limparTitulo(ld.nome || meta(html, "og:title") || meta(html, "twitter:title")),
+      preco: ld.preco || numero(meta(html, "product:price:amount")) || numero(meta(html, "price")) || (loja === "mercadolivre" ? precoAtualML(html) : null) || precoNoTexto(desc),
+      precoAntigo: loja === "mercadolivre" ? precoAntigoML(html) : null,
+      imagem: ld.imagem || meta(html, "og:image") || meta(html, "twitter:image")
+    };
+  }
+
+  // Shopee só entrega foto e nome para o robô de prévia; nas outras lojas tenta o navegador primeiro
+  let pagina = await baixar(url, loja === "shopee" ? UA_PREVIA : UA);
+  let d = ler(pagina.html);
+  if (!(d.nome && d.preco && d.imagem)) {
+    const outra = await baixar(pagina.atual, loja === "shopee" ? UA : UA_PREVIA).catch(() => null);
+    if (outra) {
+      const d2 = ler(outra.html);
+      d = { nome: d.nome || d2.nome, preco: d.preco || d2.preco, precoAntigo: d.precoAntigo || d2.precoAntigo, imagem: d.imagem || d2.imagem };
+    }
+  }
+  // Página genérica da loja (sem o produto): não usa nome nem a logo da loja como se fossem do produto
+  if (/^(shopee|mercado livre|amazon|magalu|magazine luiza)\b/i.test(d.nome || "") || /ofertas incr[ií]veis|compre online|melhores pre[cç]os/i.test(d.nome || "")) { d.nome = ""; d.imagem = ""; }
+  const dados = { loja, ...d, urlFinal: pagina.atual };
+  if (loja === "shopee") dados.pista = (pagina.html.match(/-i\.\d{3,}\.\d{3,}/) || pagina.html.match(/shopid=\d+[^"'<]{0,60}itemid=\d+/i) || pagina.html.match(/itemid=\d+[^"'<]{0,60}shopid=\d+/i) || [])[0] || "";
+  if (dados.imagem && dados.imagem.startsWith("//")) dados.imagem = "https:" + dados.imagem;
+  if (dados.precoAntigo && dados.preco && dados.precoAntigo <= dados.preco) dados.precoAntigo = null;
+  dados.completo = !!(dados.nome && dados.preco && dados.imagem);
+  return dados;
+}
+
+/** Shopee: completa nome, preço e foto pela API de Afiliados (quando SHOPEE_APP_ID e SHOPEE_SECRET estão cadastrados) */
+function idsShopee(texto) {
+  let t = String(texto || ""); for (let i = 0; i < 3; i++) { try { const d = decodeURIComponent(t); if (d === t) break; t = d; } catch (e) { break; } }
+  const m = t.match(/-i\.(\d{3,})\.(\d{3,})/) || t.match(/\/product\/(\d{3,})\/(\d{3,})/) || t.match(/shopid=(\d{3,})[^\d]+itemid=(\d{3,})/i);
+  if (m) return { loja: m[1], item: m[2] };
+  const m2 = t.match(/itemid=(\d{3,})[^\d]+shopid=(\d{3,})/i) || t.match(/"itemid"\s*:\s*(\d{3,})[^}]{0,200}?"shopid"\s*:\s*(\d{3,})/i);
+  if (m2) return { loja: m2[2], item: m2[1] };
+  const m3 = t.match(/"shopid"\s*:\s*(\d{3,})[^}]{0,200}?"itemid"\s*:\s*(\d{3,})/i) || t.match(/\/(\d{4,})\/(\d{6,})(?:[/?#"]|$)/);
+  return m3 ? { loja: m3[1], item: m3[2] } : null;
+}
+/** Segue o link curto da Shopee só pelos redirecionamentos (sem abrir a página), guardando cada endereço */
+const UA_CELULAR = "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36";
+async function cadeiaShopee(url) {
+  const lista = [url];
+  // o link de afiliado (s.shopee.com.br) às vezes manda para o produto por redirecionamento, às vezes por um script na página
+  for (const ua of [UA_PREVIA, UA_CELULAR, UA]) {
+    let atual = url;
+    for (let pulo = 0; pulo < 8; pulo++) {
+      let r; try { r = await fetch(atual, { redirect: "manual", headers: { "user-agent": ua, accept: "text/html,application/xhtml+xml", "accept-language": "pt-BR,pt;q=0.9" } }); } catch (e) { break; }
+      const destino = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
+      if (destino) { atual = new URL(destino, atual).toString(); lista.push(atual); if (idsShopee(atual)) return lista; continue; }
+      const html = (await r.text().catch(() => "")).slice(0, 400000);
+      if (idsShopee(html)) { lista.push(html); return lista; }
+      const prox = (html.match(/http-equiv=["']?refresh["']?[^>]*url=([^"'>\s]+)/i) || html.match(/location(?:\.href)?\s*=\s*["']([^"']+)["']/i) || html.match(/"(?:redirect_?url|url|link)"\s*:\s*"(https?:[^"]+shopee[^"]+)"/i) || [])[1];
+      if (!prox) break;
+      atual = new URL(prox.replace(/\\\//g, "/"), atual).toString(); lista.push(atual); if (idsShopee(atual)) return lista;
+    }
+  }
+  return lista;
+}
+/** Chamada assinada à API de Afiliados da Shopee (GraphQL) */
+async function shopeeGQL(query, env) {
+  const corpo = JSON.stringify({ query });
+  const ts = Math.floor(Date.now() / 1000);
+  const assinatura = await sha256Hex(env.SHOPEE_APP_ID + ts + corpo + env.SHOPEE_SECRET);
+  const r = await fetch("https://open-api.affiliate.shopee.com.br/graphql", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `SHA256 Credential=${env.SHOPEE_APP_ID}, Timestamp=${ts}, Signature=${assinatura}` },
+    body: corpo
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || (d.errors && d.errors.length)) throw new Error("Shopee: " + ((d.errors && d.errors[0] && d.errors[0].message) || "erro " + r.status));
+  return d.data || {};
+}
+const CAMPOS_SHOPEE = "itemId shopId productName priceMin priceMax imageUrl offerLink productLink priceDiscountRate sales ratingStar commissionRate commission shopName shopType";
+/** Os números da Shopee num formato só (nota, vendidos, comissão, loja oficial) */
+function extrasShopee(n) {
+  const nota = Number(n.ratingStar) || 0, vendidos = Number(n.sales) || 0, com = Number(n.commissionRate) || 0, tipos = Array.isArray(n.shopType) ? n.shopType : [n.shopType];
+  return { nota: nota ? Math.round(nota * 10) / 10 : null, vendidos: vendidos || null, comissao: com ? Math.round(com * 1000) / 10 : null, comissaoValor: Number(n.commission) || null,
+    lojaOficial: tipos.some((t) => Number(t) === 1), lojaNome: n.shopName || "" };
+}
+/** Troca qualquer link da Shopee pelo link de afiliado (s.shopee.com.br/...) */
+async function linkAfiliadoShopee(url, env) {
+  const d = await shopeeGQL(`mutation { generateShortLink(input: { originUrl: ${JSON.stringify(url)}, subIds: ["miga"] }) { shortLink } }`, env);
+  return (d.generateShortLink && d.generateShortLink.shortLink) || "";
+}
+async function completarPelaApiShopee(dados, env, html, urlColado) {
+  if (dados.loja !== "shopee") return dados;
+  if (!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) { dados.diag = "chaves da Shopee não cadastradas no Cloudflare"; return dados; }
+  let ids = idsShopee(dados.urlFinal) || idsShopee(urlColado) || idsShopee(html);
+  if (!ids && urlColado) { const cad = await cadeiaShopee(urlColado); ids = idsShopee(cad.join(" ")); if (!ids) dados.diag = "não achei o código do produto no link (" + cad.filter((u) => /^https?:/.test(u)).map((u) => { try { const x = new URL(u); return x.hostname + x.pathname.slice(0, 30); } catch (e) { return ""; } }).join(" → ") + ")"; }
+  try { const l = await linkAfiliadoShopee(ids ? `https://shopee.com.br/product/${ids.loja}/${ids.item}` : (dados.urlFinal || urlColado || ""), env); if (l) dados.linkAfiliado = l; } catch (e) { dados.diag = (dados.diag ? dados.diag + "; " : "") + "link de afiliado: " + e.message; }
+  if (!ids) return dados;
+  try {
+    const d = await shopeeGQL(`{ productOfferV2(shopId: ${Number(ids.loja)}, itemId: ${Number(ids.item)}, page: 1, limit: 1) { nodes { ${CAMPOS_SHOPEE} } } }`, env);
+    const n = d.productOfferV2 && d.productOfferV2.nodes && d.productOfferV2.nodes[0];
+    if (!n) { dados.diag = "a Shopee não tem esse produto no programa de afiliados"; return dados; }
+    const preco = Number(n.priceMin) || null, desc = Number(n.priceDiscountRate) || 0;
+    const novo = { ...dados, ...extrasShopee(n), diag: undefined, nome: dados.nome || limparTitulo(n.productName || ""), preco: dados.preco || preco, imagem: dados.imagem || n.imageUrl || "" };
+    if (!novo.precoAntigo && preco && desc > 0 && desc < 95) novo.precoAntigo = Math.round(preco / (1 - desc / 100) * 100) / 100;
+    if (!novo.linkAfiliado && n.offerLink) novo.linkAfiliado = n.offerLink;
+    novo.completo = !!(novo.nome && novo.preco && novo.imagem);
+    return novo;
+  } catch (e) { dados.diag = e.message; return dados; }
+}
+
+/** Mercado Livre: completa preço e foto pela API oficial (quando as chaves estão cadastradas) */
+async function completarPelaApiML(dados, env) {
+  if (!(env.ML_APP_ID && env.ML_SECRET)) return dados;
+  const u = dados.urlFinal || "";
+  const norm = (s) => s ? s.toUpperCase().replace("-", "") : null;
+  const idProduto = norm((u.match(/\/p\/(MLB\d+)/i) || [])[1]);
+  const idItem = norm((u.match(/[?&#](?:item_id|wid)=(MLB-?\d+)/i) || [])[1] || (!idProduto && (u.match(/(MLB-?\d{6,})/i) || [])[1]));
+  try {
+    chamadasML = 0;
+    const token = await tokenML(env);
+    if (idItem) {
+      const v = await precoML(idItem, token);
+      if (v) { dados.preco = v.preco; if (v.precoAntigo && v.precoAntigo > v.preco) dados.precoAntigo = v.precoAntigo; }
+      const r = await getML(`/items/${idItem}`, token);
+      try { const de = await getML(`/items/${idItem}/description`, token); if (de.status === 200 && de.dados && de.dados.plain_text) dados.descricao = limparDescricao(de.dados.plain_text); } catch (e) { /* sem descrição */ }
+      if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); Object.assign(dados, extrasML(r.dados)); }
+      Object.assign(dados, await notaML(idItem, token));
+    } else if (idProduto) {
+      const r = await getML(`/products/${idProduto}`, token);
+      const b = r.dados || {};
+      let preco = (b.buy_box_winner || {}).price, antigo = (b.buy_box_winner || {}).original_price;
+      if (!preco) {
+        const it = await getML(`/products/${idProduto}/items?limit=1`, token);
+        const x = ((it.dados && it.dados.results) || [])[0];
+        if (x) { preco = x.price; antigo = x.original_price; }
+      }
+      if (preco) { dados.preco = preco; if (antigo && antigo > preco) dados.precoAntigo = antigo; }
+      if (!dados.nome && b.name) dados.nome = b.name;
+      if (!dados.descricao) { const sd = (b.short_description && b.short_description.content) || ""; const mf = (b.main_features || []).map((f) => f.text).filter(Boolean).join("\n"); if (sd || mf) dados.descricao = limparDescricao(sd || mf); }
+      if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url);
+      const bw = b.buy_box_winner || {};
+      if (bw.shipping && bw.shipping.free_shipping) dados.freteGratis = true;
+      if (bw.official_store_id) dados.lojaOficial = true;
+      if (bw.item_id) Object.assign(dados, await notaML(bw.item_id, token));
+    }
+  } catch (e) { /* fica com o que veio da página */ }
+  dados.completo = !!(dados.nome && dados.preco && dados.imagem);
+  return dados;
+}
+
+/** Descrição do vendedor sem excesso: sem linhas vazias repetidas, sem caixa alta gritando, até 1.200 letras */
+function limparDescricao(t) {
+  return String(t || "").replace(/\r/g, "").split("\n").map((l) => l.trim()).filter((l, i, a) => l || (i > 0 && a[i - 1])).join("\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 1200);
+}
+
+/* ======================= Descrição para a vitrine ======================= */
+const SISTEMA_DESCRICAO = "Você escreve descrições curtas de produtos para a vitrine de achadinhos da Miga Promo: português do Brasil, tom de amiga, claro e honesto. Não invente medidas, materiais ou números que não estejam nos dados. Não fale de preço, frete nem cupom. Sem emojis, sem hashtags, sem links.";
+async function rotaDescricao(request, env) {
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  let b; try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
+  const url = String(b.url || "").trim(), nome = String(b.nome || "").slice(0, 200), cat = String(b.categoria || "").slice(0, 40);
+  let descricao = "", fonte = "";
+  try {
+    if (lojaDaUrl(url) === "mercadolivre" && env.ML_APP_ID && env.ML_SECRET) {
+      let d = await lerCache("produto", url);
+      if (!d || !d.descricao) { d = await extrairProduto(url).catch(() => ({ loja: "mercadolivre", urlFinal: url })); d = await completarPelaApiML(d, env); }
+      if (d && d.descricao) { descricao = d.descricao; fonte = "loja"; }
+    }
+  } catch (e) { /* tenta a IA */ }
+  if (!descricao && nome && env.GEMINI_API_KEY) {
+    try {
+      const r = await chamarGemini([{ role: "user", parts: [{ text: `Produto: ${nome}${cat ? `\nTipo: ${cat}` : ""}\n\nEscreva a descrição deste produto para a vitrine em 2 ou 3 frases curtas (até 320 letras): o que é, para que serve e por que vale a pena. Responda só com a descrição.` }] }], env, SISTEMA_DESCRICAO);
+      descricao = String(r.texto || "").replace(/^["“]|["”]$/g, "").trim().slice(0, 600); fonte = "ia";
+    } catch (e) { return json({ descricao: "", erro: motivoIA(e) }); }
+  }
+  return json({ descricao, fonte });
+}
+
+/* ======================= Mensagem com IA (Gemini) ======================= */
+
+// Dicas de benefícios por categoria (ajudam a IA a falar com o público certo)
+const CATEGORIAS = {
+  moda: { nome: "Moda e Looks", foco: "caimento, conforto, versatilidade para montar looks e como valoriza o corpo" },
+  beleza: { nome: "Beleza e Skincare", foco: "resultado na pele/cabelo, praticidade na rotina de autocuidado e sensação de se sentir linda" },
+  casa: { nome: "Casa e Decoração", foco: "deixar a casa mais aconchegante e bonita, praticidade no dia a dia e o 'efeito uau' de quem visita" },
+  saude: { nome: "Saúde e Fitness", foco: "bem-estar, treino, energia, cuidado com o corpo e constância na rotina (sem prometer resultados de saúde)" },
+  outros: { nome: "Achadinhos em geral", foco: "utilidade no dia a dia, custo-benefício e por que vale a pena aproveitar agora" }
+};
+
+// Lojas aceitas (a mensagem cita onde comprar)
+const LOJAS = { mercadolivre: "Mercado Livre", shopee: "Shopee", amazon: "Amazon", magalu: "Magalu" };
+
+const brl = (v) => "R$ " + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function json(dados, status = 200) {
+  return new Response(JSON.stringify(dados), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
+  });
+}
+
+/* Instrução de sistema: papel e regras fixas da IA (separadas dos dados do produto) */
+const INSTRUCAO = [
+  "Você é a curadora do Miga Promo, um grupo VIP de WhatsApp de achadinhos e descontos focado no público feminino.",
+  "Você é a 'Miga': uma amiga de verdade, animada com compras, que compartilha achados para ajudar — acolhedora e direta, nunca agressiva nem com cara de anúncio.",
+  "Escreva mensagens curtas, amigáveis e em tom de confidência, como uma amiga dando uma dica incrível.",
+  "Regras obrigatórias:",
+  "1) Português do Brasil, formatação do WhatsApp: *negrito*, ~riscado~. Emojis delicados, sem exagero.",
+  "2) Estrutura: abertura que conversa com a leitora sobre a situação em que o produto ajuda (ex.: moda: 'Sabe aquele look pro fim de semana?'); nome do produto em *negrito*; linha de preço (com preço antigo: '~de R$ X~ por *R$ Y*'); cupom só se informado; 1 frase de benefício que combine com o produto; o link sozinho numa linha, exatamente como recebido; fechamento com convite suave e leve urgência (ex.: 'Dá uma olhada antes que acabe'), nunca 'COMPRE JÁ'.",
+  "3) Valores em R$ aparecem SOMENTE na linha de preço, uma única vez cada. Nunca repita o preço (nem o valor da economia) no nome, na frase de benefício, na abertura ou no fechamento.",
+  "4) Os benefícios precisam combinar com o produto de verdade (não fale de skincare para um suplemento, por exemplo).",
+  "5) Não invente informações: nada de frete grátis, parcelamento, avaliações, estoque exato ou promessas de saúde.",
+  "6) Sem hashtags. No máximo 600 caracteres. Responda SOMENTE com a mensagem, sem comentários."
+].join("\n");
+
+/* Exemplos de mensagem ideal (few-shot): a IA copia o formato */
+const EXEMPLOS = [
+  {
+    entrada: "Produto: Vestido Midi Canelado com Fenda\nLoja: Shopee\nCategoria: Moda e Looks (caimento, conforto, versatilidade)\nPreço antigo: R$ 129,90\nPreço novo: R$ 69,90\nCupom: MIGA10\nLink: https://s.shopee.com.br/exemplo1",
+    saida: "Miga, para tudo! 🤫💖\n\n✨ *Vestido Midi Canelado com Fenda*\n\n💸 ~de R$ 129,90~ por *R$ 69,90*\n🎟️ Usa o cupom *MIGA10*\n\nVeste super bem, é confortável e vai do dia pra noite só trocando o acessório 👗\n\nhttps://s.shopee.com.br/exemplo1\n\nCorre que esse preço não costuma durar ⏳🌸"
+  },
+  {
+    entrada: "Produto: Organizador de Gaveta Kit 6 Peças\nLoja: Mercado Livre\nCategoria: Casa e Decoração (casa aconchegante, praticidade)\nPreço antigo: não informado\nPreço novo: R$ 39,90\nCupom: nenhum\nLink: https://meli.la/exemplo2",
+    saida: "Achadinho pra casa, amiga 🏡✨\n\n*Organizador de Gaveta Kit 6 Peças*\n\n💸 Por apenas *R$ 39,90*\n\nAcaba com a bagunça das gavetas e deixa tudo à vista — aquela sensação de casa arrumada que a gente ama 💕\n\nhttps://meli.la/exemplo2\n\nAproveita enquanto está nesse valor ⏳"
+  }
+];
+
+EXEMPLOS.push(
+  {
+    entrada: "Produto: Sérum Facial Vitamina C 30ml\nLoja: Shopee\nCategoria: Beleza e Skincare (resultado na pele, praticidade na rotina)\nPreço antigo: R$ 59,90\nPreço novo: R$ 34,90\nCupom: nenhum\nLink: https://s.shopee.com.br/exemplo3",
+    saida: "Sabe aquela pele com cara de descansada, mesmo na correria? 💛\n\n✨ *Sérum Facial Vitamina C 30ml*\n\n💸 ~de R$ 59,90~ por *R$ 34,90*\n\nUma gotinha de manhã e a rotina de skincare fica completa, sem complicação 🌿\n\nhttps://s.shopee.com.br/exemplo3\n\nDá uma olhada antes que acabe, miga 💕"
+  },
+  {
+    entrada: "Produto: Garrafa Térmica Inox 1 Litro\nLoja: Mercado Livre\nCategoria: Saúde e Fitness (bem-estar, treino, constância na rotina)\nPreço antigo: não informado\nPreço novo: R$ 45,90\nCupom: MIGA5\nLink: https://meli.la/exemplo4",
+    saida: "Pra quem vive esquecendo de beber água no dia a dia 🙋‍♀️\n\n*Garrafa Térmica Inox 1 Litro*\n\n💸 Por *R$ 45,90*\n🎟️ Usa o cupom *MIGA5*\n\nMantém a água geladinha o dia todo e vai junto pro treino, pro trabalho e pra bolsa 💪\n\nhttps://meli.la/exemplo4\n\nVale a pena espiar enquanto está nesse valor ✨"
+  }
+);
+
+const AJUSTES = {
+  curto: "Deixe a mensagem bem mais curta (no máximo 4 linhas), mantendo nome, preço e link.",
+  emojis: "Use mais emojis delicados, sem poluir a mensagem.",
+  preco: "Dê mais destaque ao preço e à economia (quanto a pessoa economiza, se houver preço antigo), tudo na própria linha de preço.",
+  animada: "Deixe o tom mais animado e empolgado, sem perder o jeito de amiga."
+};
+
+/** Dados do produto no formato que a IA recebe */
+function dadosDoProduto(p) {
+  const cat = CATEGORIAS[p.categoria] || CATEGORIAS.outros;
+  const economia = p.precoAntigo && p.ajuste === "preco" ? ` (economia de ${brl(p.precoAntigo - p.precoNovo)})` : "";
+  return [
+    `Produto: ${p.nome}`,
+    `Loja: ${LOJAS[p.loja] || "Mercado Livre"}`,
+    `Categoria: ${cat.nome} (${cat.foco})`,
+    `Preço antigo: ${p.precoAntigo ? brl(p.precoAntigo) : "não informado"}`,
+    `Preço novo: ${brl(p.precoNovo)}${economia}`,
+    `Cupom: ${p.cupom || "nenhum"}`,
+    `Link: ${p.link}`
+  ].join("\n");
+}
+
+/** Monta a conversa enviada ao Gemini: exemplos + pedido atual (ou ajuste de um texto já gerado) */
+function montarConversa(p) {
+  const contents = [];
+  for (const ex of EXEMPLOS) {
+    contents.push({ role: "user", parts: [{ text: ex.entrada }] });
+    contents.push({ role: "model", parts: [{ text: ex.saida }] });
+  }
+  if (p.ajuste && p.textoAtual) {
+    contents.push({ role: "user", parts: [{ text: dadosDoProduto(p) }] });
+    contents.push({ role: "model", parts: [{ text: p.textoAtual }] });
+    contents.push({ role: "user", parts: [{ text: `Reescreva a mensagem acima. Ajuste pedido: ${AJUSTES[p.ajuste]} Mantenha todas as regras e o link exatamente igual.` }] });
+  } else {
+    contents.push({ role: "user", parts: [{ text: dadosDoProduto(p) }] });
+  }
+  return contents;
+}
+
+/** Deixa valores em R$ só na primeira linha de preço: tira repetições do resto do texto */
+function umPrecoSo(texto, link) {
+  const VALOR = /\s*(?:(?:de|por|só|apenas|a partir de|economia de|economize|economizando|pagando)\s+)*[~*_]*R\$\s?\d[\d.]*(?:,\d{2})?[~*_]*/gi;
+  let achou = false;
+  return texto.split("\n").filter((linha) => {
+    if (!/R\$\s?\d/.test(linha) || linha.includes(link)) return true;
+    if (!achou) { achou = true; return true; }
+    const resto = linha.replace(VALOR, "").replace(/[\s:!.,💸💰🤑🔥✨-]+/gu, "");
+    return resto.length >= 12; // linha que era só o preço repetido: some
+  }).map((linha, i, todas) => {
+    if (!/R\$\s?\d/.test(linha) || linha.includes(link)) return linha;
+    const primeira = todas.findIndex((l) => /R\$\s?\d/.test(l) && !l.includes(link));
+    if (i === primeira) return linha;
+    return linha.replace(VALOR, "").replace(/\(\s*\)/g, "").replace(/\s{2,}/g, " ").replace(/\s+([,.!])/g, "$1").trim().replace(/^([^\p{L}]*)(\p{Ll})/u, (m, x, l) => x + l.toUpperCase());
+  }).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/** Chama a API REST do Gemini (systemInstruction + conversa) e devolve o texto gerado */
+async function chamarGemini(contents, env, sistema) {
+  const modelo = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const chave = String(env.GEMINI_API_KEY || "").trim();
+  const corpo = JSON.stringify({
+    systemInstruction: { parts: [{ text: sistema || INSTRUCAO }] },
+    contents,
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 2048,
+      // O "pensamento" do Gemini 2.5 Flash gasta os mesmos tokens da resposta e podia deixar o texto vazio
+      ...(/2\.5-flash/.test(modelo) ? { thinkingConfig: { thinkingBudget: 0 } } : {})
+    }
+  });
+  // Chaves "AIza..." = Google AI Studio. Chaves "AQ...." podem ser do AI Studio (ligadas a uma conta de serviço)
+  // ou do Vertex AI: tenta os dois endereços.
+  const gl = (v) => `https://generativelanguage.googleapis.com/${v}/models/${encodeURIComponent(modelo)}:generateContent`;
+  const json = { "content-type": "application/json" };
+  // As chaves novas do Google ("AQ....") ainda não funcionam do mesmo jeito em todo lugar: tenta cada forma de enviar
+  const caminhos = chave.startsWith("AQ.") ? [
+    { url: gl("v1beta"), headers: { ...json, "x-goog-api-key": chave } },
+    { url: gl("v1beta") + "?key=" + encodeURIComponent(chave), headers: json },
+    { url: gl("v1beta"), headers: { ...json, authorization: "Bearer " + chave } },
+    { url: `https://aiplatform.googleapis.com/v1/publishers/google/models/${encodeURIComponent(modelo)}:generateContent?key=${encodeURIComponent(chave)}`, headers: json }
+  ] : [{ url: gl("v1beta"), headers: { ...json, "x-goog-api-key": chave } }];
+  let ultimoErro;
+  for (const c of caminhos) {
+    const r = await fetch(c.url, { method: "POST", headers: c.headers, body: corpo });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const nova = Object.assign(new Error(((d.error && (d.error.status ? d.error.status + ": " : "") + d.error.message) || "Erro " + r.status)), { status: r.status });
+      // guarda o erro mais útil (o que não é só "chave inválida")
+      if (!ultimoErro || (r.status !== 400 && r.status !== 401)) ultimoErro = nova;
+      if (r.status === 400 || r.status === 401 || r.status === 403 || r.status === 404) continue; // tenta o outro endereço
+      throw nova;
+    }
+    const partes = d.candidates?.[0]?.content?.parts || [];
+    const texto = partes.map((x) => x.text || "").join("").replace(/^```[a-z]*\s*|```$/gi, "").trim();
+    if (!texto) throw new Error("A IA não devolveu texto (" + (d.candidates?.[0]?.finishReason || "sem resposta") + "). Tente de novo.");
+    return { texto, modelo };
+  }
+  throw ultimoErro;
+}
+
+/** Traduz os erros mais comuns do Gemini para algo que dá para resolver */
+function motivoIA(e) {
+  const m = String(e.message || "");
+  if (/api key not valid|API_KEY_INVALID|invalid api key|UNAUTHENTICATED|ACCESS_TOKEN_TYPE_UNSUPPORTED/i.test(m)) return "o Google recusou a chave da IA. Google disse: " + m.slice(0, 240);
+  if (/permission|PERMISSION_DENIED|not been used|disabled/i.test(m)) return "a chave da IA não tem permissão para o Gemini. Google disse: " + m.slice(0, 220);
+  if (/not found|is not supported/i.test(m)) return "o modelo da IA não existe mais (" + m.slice(0, 80) + ")";
+  if (e.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(m)) return "o limite gratuito da IA acabou por agora — espere um pouco";
+  if (/SAFETY|blocked/i.test(m)) return "a IA bloqueou o texto por segurança — tente outro ajuste";
+  return m.slice(0, 160) || "a IA não respondeu";
+}
+
+async function rotaGerar(request, env) {
+  // Senha opcional para ninguém usar sua cota (variável APP_SENHA)
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  if (!env.GEMINI_API_KEY) return json({ erro: "Chave do Gemini não configurada no servidor.", codigo: "sem-chave" }, 503);
+
+  let b;
+  try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
+
+  if (Array.isArray(b.produtos)) {
+    const prods = b.produtos.slice(0, 8).map((x) => ({ nome: String(x.nome || "").trim().slice(0, 120), preco: Number(x.preco) > 0 ? Number(x.preco) : null, link: String(x.link || "").trim() }));
+    if (!prods.length) return json({ erro: "Adicione produtos." }, 400);
+    const tema = String(b.tema || "achadinhos").slice(0, 60);
+    const pedido = `Escreva UMA mensagem de WhatsApp apresentando estes achados (tema: ${tema}).\nEstrutura: abertura curta de amiga; cada produto numerado (1️⃣, 2️⃣...) com o nome em *negrito*, o preço na linha seguinte ('por *R$ X*') e o link sozinho na linha de baixo, exatamente como recebido; fechamento com leve urgência. Não repita preços fora do item. Responda SOMENTE com a mensagem.\n\n` +
+      prods.map((x, i) => `${i + 1}. ${x.nome || "Produto " + (i + 1)} | ${x.preco ? brl(x.preco) : "sem preço"} | ${x.link || "sem link"}`).join("\n");
+    try {
+      const r = await chamarGemini([{ role: "user", parts: [{ text: pedido }] }], env);
+      for (const x of prods) if (x.link && !r.texto.includes(x.link)) r.texto += `\n👉 ${x.link}`;
+      return json(r);
+    } catch (e) { return json({ erro: motivoIA(e), codigo: e.status === 429 ? "limite" : "ia" }, 502); }
+  }
+
+  const p = {
+    nome: String(b.nome || "").trim().slice(0, 200),
+    precoAntigo: Number(b.precoAntigo) > 0 ? Number(b.precoAntigo) : null,
+    precoNovo: Number(b.precoNovo),
+    link: String(b.link || "").trim(),
+    categoria: String(b.categoria || "moda"),
+    loja: LOJAS[b.loja] ? b.loja : "mercadolivre",
+    cupom: String(b.cupom || "").trim().slice(0, 40),
+    ajuste: AJUSTES[b.ajuste] ? b.ajuste : "",
+    textoAtual: String(b.textoAtual || "").slice(0, 2000)
+  };
+  if (!p.nome || !(p.precoNovo > 0) || !/^https?:\/\//i.test(p.link)) {
+    return json({ erro: "Preencha nome, preço novo e link." }, 400);
+  }
+  if (p.precoAntigo && p.precoAntigo <= p.precoNovo) p.precoAntigo = null;
+
+  try {
+    let r;
+    try {
+      r = await chamarGemini(montarConversa(p), env);
+    } catch (e) {
+      if (!p.ajuste || e.status === 429) throw e;
+      // Segunda tentativa do ajuste: tudo numa mensagem só
+      r = await chamarGemini([{ role: "user", parts: [{ text: `Dados do produto:\n${dadosDoProduto(p)}\n\nMensagem atual:\n${p.textoAtual}\n\nReescreva a mensagem atual. Ajuste pedido: ${AJUSTES[p.ajuste]} Mantenha todas as regras e o link exatamente igual.` }] }], env);
+    }
+    r.texto = umPrecoSo(r.texto, p.link);
+    // Garante que o link de afiliado está na mensagem
+    if (!r.texto.includes(p.link)) r.texto += "\n\n👉 " + p.link;
+    return json(r);
+  } catch (e) {
+    return json({ erro: motivoIA(e), codigo: e.status === 429 ? "limite" : "ia" }, 502);
+  }
+}
+
+/* ======================= Demais rotas ======================= */
+/* Acesso: só contas Google autorizadas (token do Firebase). O código antigo (APP_SENHA) ainda vale, se enviado. */
+const b64url = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+let chavesGoogle = { lista: null, ate: 0 };
+async function chavesFirebase() {
+  if (chavesGoogle.lista && Date.now() < chavesGoogle.ate) return chavesGoogle.lista;
+  const r = await fetch("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com");
+  const d = await r.json();
+  chavesGoogle = { lista: d.keys || [], ate: Date.now() + 3600e3 };
+  return chavesGoogle.lista;
+}
+async function contaGoogleOk(request, env) {
+  const m = /^Bearer\s+(.+)$/i.exec(request.headers.get("authorization") || "");
+  if (!m) return false;
+  try {
+    const [h, p, s] = m[1].split(".");
+    const cab = JSON.parse(new TextDecoder().decode(b64url(h)));
+    const dados = JSON.parse(new TextDecoder().decode(b64url(p)));
+    const projeto = env.FIREBASE_PROJECT_ID || "miga-372d3";
+    const agora = Date.now() / 1000;
+    if (cab.alg !== "RS256" || dados.aud !== projeto || dados.iss !== "https://securetoken.google.com/" + projeto) return false;
+    if (!(dados.exp > agora) || dados.iat > agora + 300 || !dados.email_verified) return false;
+    const permitidos = String(env.MIGA_EMAILS || "alpama.app@gmail.com").toLowerCase().split(/[\s,;]+/).filter(Boolean);
+    if (!permitidos.includes(String(dados.email || "").toLowerCase())) return false;
+    const jwk = (await chavesFirebase()).find((k) => k.kid === cab.kid);
+    if (!jwk) return false;
+    const chave = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    return await crypto.subtle.verify("RSASSA-PKCS1-v1_5", chave, b64url(s), new TextEncoder().encode(h + "." + p));
+  } catch (e) { return false; }
+}
+const senhaOk = async (request, env) =>
+  (await contaGoogleOk(request, env)) || (!!env.APP_SENHA && request.headers.get("x-app-senha") === env.APP_SENHA);
+
+/* Cache do Cloudflare (Cache API): guarda leituras e contadores por um tempo, sem banco de dados */
+const temCache = () => typeof caches !== "undefined" && caches.default;
+const chaveCache = (tipo, valor) => new Request("https://miga-cache.interno/" + tipo + "?v=" + encodeURIComponent(valor));
+async function lerCache(tipo, valor) {
+  if (!temCache()) return null;
+  const r = await caches.default.match(chaveCache(tipo, valor));
+  return r ? r.json() : null;
+}
+async function gravarCache(tipo, valor, dados, segundos) {
+  if (!temCache()) return;
+  await caches.default.put(chaveCache(tipo, valor), new Response(JSON.stringify(dados), {
+    headers: { "content-type": "application/json", "cache-control": `public, max-age=${segundos}` }
+  }));
+}
+async function apagarCache(tipo, valor) {
+  if (temCache()) await caches.default.delete(chaveCache(tipo, valor));
+}
+
+async function rotaProduto(request, env) {
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  let b;
+  try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
+  const url = String(b.url || "").trim();
+  try {
+    const guardado = await lerCache("produto", url);
+    if (guardado) return json({ ...guardado, doCache: true });
+    let dados;
+    try { dados = await extrairProduto(url); }
+    catch (e) { if (lojaDaUrl(url) !== "shopee") throw e; dados = { loja: "shopee", urlFinal: url, pista: "" }; } // a Shopee às vezes bloqueia a página: a API resolve
+    if (dados.loja === "mercadolivre") dados = await completarPelaApiML(dados, env);
+    if (dados.loja === "shopee") dados = await completarPelaApiShopee(dados, env, dados.pista, url);
+    delete dados.pista;
+    if (dados.nome) await gravarCache("produto", url, dados, 1800); // 30 minutos
+    return json(dados);
+  } catch (e) {
+    return json({ erro: e.message || "Não consegui ler o produto." }, 422);
+  }
+}
+
+async function rotaImagem(request) {
+  const alvo = new URL(request.url).searchParams.get("url") || "";
+  if (!lojaDaUrl(alvo)) return new Response("Imagem não permitida", { status: 400 });
+  const r = await fetch(alvo, { headers: { accept: "image/*" } });
+  const tipo = r.headers.get("content-type") || "";
+  if (!r.ok || !tipo.startsWith("image/")) return new Response("Imagem indisponível", { status: 502 });
+  return new Response(r.body, { headers: { "content-type": tipo, "cache-control": "public, max-age=86400" } });
+}
+
+/** Teste rápido da IA (só diz se respondeu e o motivo do erro; guardado 10 min para não gastar cota) */
+async function testarIA(env) {
+  if (!env.GEMINI_API_KEY) return "sem chave";
+  const guardado = await lerCache("teste-ia", "1");
+  if (guardado) return guardado.r;
+  let r;
+  try { const x = await chamarGemini([{ role: "user", parts: [{ text: "Responda só: ok" }] }], env); r = "ok (" + x.modelo + ")"; }
+  catch (e) { r = motivoIA(e); }
+  await gravarCache("teste-ia", "1", { r }, 120);
+  return r;
+}
+
+async function rotaStatus(request, env) {
+  const testar = new URL(request.url).searchParams.get("testar") === "ia";
+  return json({ ...(testar ? { testeIA: await testarIA(env) } : {}), ia: !!env.GEMINI_API_KEY, codigo: !!env.APP_SENHA, catalogo: { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) } });
+}
+
+/** Confere o código de acesso digitado na tela de entrada (é o valor de APP_SENHA). */
+const LIMITE_TENTATIVAS = 10, BLOQUEIO_SEGUNDOS = 900; // 10 erros → 15 minutos bloqueado
+
+async function rotaEntrar(request, env) {
+  if (!env.APP_SENHA) return json({ ok: false, codigo: "sem-codigo", erro: "Código de acesso não configurado (APP_SENHA)." }, 503);
+  const ip = request.headers.get("cf-connecting-ip") || "sem-ip";
+  const tentativas = (await lerCache("tentativas", ip)) || { n: 0 };
+  if (tentativas.n >= LIMITE_TENTATIVAS) {
+    return json({ ok: false, codigo: "bloqueado", erro: "Muitas tentativas erradas. Aguarde 15 minutos." }, 429);
+  }
+  let b;
+  try { b = await request.json(); } catch (e) { return json({ ok: false, erro: "Requisição inválida." }, 400); }
+  const digitado = new TextEncoder().encode(String(b.codigo || ""));
+  const certo = new TextEncoder().encode(String(env.APP_SENHA));
+  let diferenca = digitado.length ^ certo.length;
+  for (let i = 0; i < certo.length; i++) diferenca |= (digitado[i] || 0) ^ certo[i];
+  if (diferenca !== 0) {
+    await gravarCache("tentativas", ip, { n: tentativas.n + 1 }, BLOQUEIO_SEGUNDOS);
+    await new Promise((ok) => setTimeout(ok, 800)); // atrasa quem tenta adivinhar
+    return json({ ok: false, codigo: "errado", erro: "Código incorreto." }, 401);
+  }
+  await apagarCache("tentativas", ip);
+  return json({ ok: true });
+}
+
+/* ======================= Catálogo (mais vendidos) ======================= */
+const FILTROS_CATALOGO = {
+  moda: { categoria: "moda", ml: "MLB1430", busca: "vestido feminino", shopee: "moda feminina" },
+  beleza: { categoria: "beleza", ml: "MLB1246", busca: "skincare", shopee: "skincare maquiagem" },
+  perfumes: { categoria: "beleza", ml: "MLB1271", busca: "perfume feminino", shopee: "perfume feminino" },
+  acessorios: { categoria: "moda", ml: "MLB3937", busca: "relógio feminino", shopee: "bijuteria feminina" },
+  casa: { categoria: "casa", ml: "MLB1574", busca: "decoração casa", shopee: "decoração casa" },
+  fitness: { categoria: "saude", ml: "MLB1276", busca: "roupa fitness feminina", shopee: "roupa fitness feminina" },
+  saude: { categoria: "saude", ml: "MLB264586", busca: "suplemento vitamina", shopee: "suplemento vitamina" },
+  bebes: { categoria: "outros", ml: "MLB1384", busca: "enxoval bebê", shopee: "bebê enxoval" },
+  maquiagem: { categoria: "beleza", ml: "", busca: "maquiagem", shopee: "maquiagem" },
+  cabelo: { categoria: "beleza", ml: "", busca: "cuidados com o cabelo", shopee: "cabelo" },
+  calcados: { categoria: "moda", ml: "", busca: "tênis feminino", shopee: "tênis feminino" },
+  bolsas: { categoria: "moda", ml: "", busca: "bolsa feminina", shopee: "bolsa feminina" },
+  eletronicos: { categoria: "outros", ml: "", busca: "fone de ouvido bluetooth", shopee: "fone bluetooth" },
+  cozinha: { categoria: "casa", ml: "", busca: "utensílios de cozinha", shopee: "cozinha utensílios" }
+};
+const ML_API = "https://api.mercadolibre.com";
+const mlHttps = (u) => String(u || "").replace(/^http:/, "https:").replace(/-I\.(jpg|webp|png)$/i, "-O.$1");
+
+/** Token do Mercado Livre (client_credentials), guardado por ~5 horas */
+async function tokenML(env) {
+  const guardado = await lerCache("ml-token", env.ML_APP_ID);
+  if (guardado && guardado.token) return guardado.token;
+  const r = await fetch(ML_API + "/oauth/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
+    body: new URLSearchParams({ grant_type: "client_credentials", client_id: env.ML_APP_ID, client_secret: env.ML_SECRET })
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.access_token) throw new Error("Mercado Livre recusou as chaves (" + (d.message || d.error || r.status) + ")");
+  await gravarCache("ml-token", env.ML_APP_ID, { token: d.access_token }, Math.min(18000, (d.expires_in || 21600) - 600));
+  return d.access_token;
+}
+// O Cloudflare (plano grátis) permite ~50 chamadas por pedido: guardamos uma margem
+let chamadasML = 0;
+const LIMITE_ML = 42;
+async function getML(caminho, token) {
+  if (++chamadasML > LIMITE_ML) return { status: 0, dados: {} };
+  const r = await fetch(ML_API + caminho, { headers: { authorization: "Bearer " + token, accept: "application/json" } });
+  return { status: r.status, dados: await r.json().catch(() => ({})) };
+}
+/** IDs dos mais vendidos; se a categoria não tiver lista, tenta as subcategorias */
+async function destaquesML(categoria, token, diag) {
+  let r = await getML(`/highlights/MLB/category/${categoria}`, token);
+  diag.push("destaques " + r.status);
+  if (r.status === 200 && (r.dados.content || []).length) return r.dados.content;
+  const cat = await getML(`/categories/${categoria}`, token);
+  const filhas = (cat.dados.children_categories || []).slice(0, 6);
+  let lista = [];
+  for (const f of filhas) {
+    r = await getML(`/highlights/MLB/category/${f.id}`, token);
+    if (r.status === 200) lista = lista.concat((r.dados.content || []).slice(0, 5));
+    if (lista.length >= 20) break;
+  }
+  diag.push("subcategorias " + filhas.length + "/" + lista.length);
+  return lista;
+}
+/** Descobre a categoria certa pelo nome (quando o código da categoria não tem lista) */
+async function destaquesPorBusca(termo, token, diag) {
+  const r = await getML(`/sites/MLB/domain_discovery/search?limit=3&q=${encodeURIComponent(termo)}`, token);
+  const cats = [...new Set((Array.isArray(r.dados) ? r.dados : []).map((x) => x.category_id).filter(Boolean))];
+  diag.push("descoberta " + r.status + "/" + cats.length);
+  let lista = [];
+  for (const id of cats) {
+    const h = await getML(`/highlights/MLB/category/${id}`, token);
+    if (h.status === 200) lista = lista.concat(h.dados.content || []);
+    if (lista.length >= 20) break;
+  }
+  return lista;
+}
+/** Frete grátis, loja oficial e vendidos de um anúncio do Mercado Livre */
+function extrasML(b) {
+  const x = {};
+  if (b.shipping && b.shipping.free_shipping) x.freteGratis = true;
+  if (b.official_store_id) x.lojaOficial = true;
+  if (Number(b.sold_quantity) > 5) x.vendidos = Number(b.sold_quantity);
+  return x;
+}
+/** Nota média das avaliações (estrelas) */
+async function notaML(id, token) {
+  const r = await getML(`/reviews/item/${id}`, token);
+  const m = Number(r.dados && r.dados.rating_average) || 0, total = Number(r.dados && r.dados.paging && r.dados.paging.total) || 0;
+  return m && total >= 3 ? { nota: Math.round(m * 10) / 10, avaliacoes: total } : {};
+}
+function itemML(b, filtro) {
+  return { id: b.id, nome: b.title, preco: b.price || null, precoAntigo: b.original_price || null, imagem: mlHttps(b.thumbnail || ((b.pictures || [])[0] || {}).secure_url), link: b.permalink || `https://produto.mercadolivre.com.br/${String(b.id).replace(/^MLB/, "MLB-")}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false, ...extrasML(b) };
+}
+/** Preço atual de um anúncio (o Mercado Livre passou a separar o preço do anúncio) */
+async function precoML(id, token) {
+  const r = await getML(`/items/${id}/sale_price?context=channel_marketplace`, token);
+  if (r.status === 200 && r.dados.amount) { const t = String((r.dados.metadata && (r.dados.metadata.promotion_type || r.dados.metadata.campaign_type)) || "").toLowerCase();
+    const oferta = /dod|deal_of_the_day/.test(t) ? "Oferta do dia" : /lightning/.test(t) ? "Oferta relâmpago" : /deal|marketplace_campaign|campaign/.test(t) ? "Oferta especial ML" : "";
+    return { preco: r.dados.amount, precoAntigo: r.dados.regular_amount || null, ...(oferta ? { oferta } : {}) }; }
+  return null;
+}
+/** Lista grande de mais vendidos: a categoria + as subcategorias (guardada 30 min para as próximas páginas) */
+async function listaDestaquesML(filtro, token, diag) {
+  const chave = "v2-" + (filtro.ml || filtro.busca), guardada = await lerCache("ml-destaques", chave);
+  if (guardada && guardada.l && guardada.l.length) return guardada.l;
+  let l = [];
+  const junta = (c) => { for (const x of c || []) if (x && x.id && !l.some((y) => y.id === x.id)) l.push({ id: x.id, type: x.type, pos: Number(x.position) || null }); };
+  if (filtro.ml) {
+    const r = await getML(`/highlights/MLB/category/${filtro.ml}`, token); diag.push("destaques " + r.status); if (r.status === 200) junta(r.dados.content);
+    const cat = await getML(`/categories/${filtro.ml}`, token);
+    for (const f of (cat.dados.children_categories || []).slice(0, 8)) { const h = await getML(`/highlights/MLB/category/${f.id}`, token); if (h.status === 200) junta(h.dados.content); if (l.length >= 120) break; }
+  }
+  if (l.length < 20 && filtro.busca) junta(await destaquesPorBusca(filtro.busca, token, diag));
+  if (l.length) await gravarCache("ml-destaques", chave, { l }, 1800);
+  return l;
+}
+const POR_PAGINA_ML = 12; // cabe no limite de chamadas do Cloudflare
+async function catalogoML(filtro, env, pagina = 1) {
+  chamadasML = 0;
+  const token = await tokenML(env);
+  const diag = [];
+  const todos = await listaDestaquesML(filtro, token, diag);
+  let destaques = todos.slice((pagina - 1) * POR_PAGINA_ML, pagina * POR_PAGINA_ML);
+  const tipos = {};
+  for (const d of destaques) tipos[d.type] = (tipos[d.type] || 0) + 1;
+  diag.push("tipos " + (Object.entries(tipos).map(([t, n]) => t + ":" + n).join(",") || "nenhum"));
+  const ids = (tipo) => destaques.filter((d) => d.type === tipo).map((d) => d.id);
+  const saida = [];
+
+  // Anúncios (ITEM)
+  const itens = ids("ITEM");
+  if (itens.length) {
+    const r = await getML(`/items?ids=${itens.join(",")}`, token);
+    const codigos = {};
+    const lista = [];
+    for (const x of Array.isArray(r.dados) ? r.dados : []) {
+      codigos[x.code] = (codigos[x.code] || 0) + 1;
+      const b = x.body || {};
+      if (x.code === 200 && b.title) lista.push(itemML(b, filtro));
+    }
+    // preço atual + tipo de oferta (oferta do dia, relâmpago, campanha do ML)
+    await Promise.all(lista.map(async (p) => {
+      const v = await precoML(p.id, token).catch(() => null);
+      if (v) { const { oferta, ...pr } = v; if (!p.preco || pr.preco) Object.assign(p, pr); if (oferta) p.oferta = oferta; }
+    }));
+    saida.push(...lista);
+    diag.push("itens " + r.status + " " + Object.entries(codigos).map(([c, n]) => c + ":" + n).join(","));
+  }
+
+  // Produtos de catálogo (PRODUCT): preço vem do vencedor ou do primeiro anúncio
+  for (const id of ids("PRODUCT")) {
+    const r = await getML(`/products/${id}`, token);
+    const b = r.dados || {};
+    if (r.status !== 200 || !b.name) { if (r.status) diag.push("produto " + r.status); continue; }
+    let preco = (b.buy_box_winner || {}).price || null, antigo = (b.buy_box_winner || {}).original_price || null;
+    if (!preco) {
+      const it = await getML(`/products/${id}/items?limit=1`, token);
+      const x = ((it.dados && it.dados.results) || [])[0];
+      if (x) { preco = x.price || null; antigo = x.original_price || null; }
+    }
+    const bw = b.buy_box_winner || {};
+    saida.push({ id: b.id, nome: b.name, preco, precoAntigo: antigo, imagem: mlHttps(((b.pictures || [])[0] || {}).url), link: b.permalink || `https://www.mercadolivre.com.br/p/${b.id}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false, ...(bw.shipping && bw.shipping.free_shipping ? { freteGratis: true } : {}), ...(bw.official_store_id ? { lojaOficial: true } : {}) });
+  }
+
+  // Produtos de vendedor (USER_PRODUCT): a API não traz o preço deles, então ficam de fora (economiza chamadas)
+  for (const id of []) {
+    const r = await getML(`/user-products/${id}`, token);
+    const b = r.dados || {};
+    if (r.status !== 200 || !b.name) { if (r.status) diag.push("user-product " + r.status); continue; }
+    saida.push({ id: b.id || id, nome: b.name, preco: null, precoAntigo: null, imagem: mlHttps(((b.pictures || [])[0] || {}).url || ((b.pictures || [])[0] || {}).secure_url), link: b.permalink || `https://www.mercadolivre.com.br/up/${id}`, loja: "mercadolivre", categoria: filtro.categoria, afiliado: false });
+  }
+
+  // Plano B: busca da categoria ordenada por vendas
+  if (!saida.length && pagina === 1 && filtro.ml) {
+    const r = await getML(`/sites/MLB/search?category=${filtro.ml}&sort=sold_quantity_desc&limit=20`, token);
+    diag.push("busca " + r.status);
+    for (const b of (r.dados && r.dados.results) || []) if (b.title) saida.push(itemML(b, filtro));
+  }
+  if (!saida.length && pagina === 1) throw new Error("Mercado Livre não trouxe produtos (" + diag.join(" · ") + ")");
+  // posição na lista de mais vendidos da categoria
+  for (const p of saida) { const d = destaques.find((x) => x.id === p.id); if (d && d.pos && d.pos <= 20) p.maisVendido = d.pos; }
+  // Os com preço primeiro
+  // Sem preço não serve para postar: só entram os que vieram com preço
+  const lista = saida.filter((p) => p.preco);
+  lista.temMais = todos.length > pagina * POR_PAGINA_ML;
+  return lista;
+}
+
+/** Shopee Affiliate Open API (GraphQL, assinatura SHA256) — o link já vem como link de afiliado */
+async function sha256Hex(texto) {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+// Ordem da Shopee: 2 = mais vendidos, 5 = maior comissão, 4 = menor preço, 1 = relevância
+const ORDEM_SHOPEE = { vendidos: 2, comissao: 5, preco: 4, relevancia: 1, desconto: 2 }; // desconto: o app ordena pela % (a Shopee não ordena por desconto)
+async function catalogoShopee(filtro, env, ordem = "vendidos", pagina = 1) {
+  const d = await shopeeGQL(`{ productOfferV2(keyword: ${JSON.stringify(filtro.shopee)}, sortType: ${ORDEM_SHOPEE[ordem] || 2}, page: ${pagina}, limit: 50) { nodes { ${CAMPOS_SHOPEE} } } }`, env);
+  const nos = (d.productOfferV2 && d.productOfferV2.nodes) || [];
+  return nos.filter((n) => n.productName && n.offerLink).map((n) => {
+    const preco = Number(n.priceMin) || null, desc = Number(n.priceDiscountRate) || 0;
+    return { id: String(n.itemId), nome: n.productName, preco, precoAntigo: preco && desc > 0 && desc < 95 ? Math.round(preco / (1 - desc / 100) * 100) / 100 : null,
+      imagem: n.imageUrl, link: n.offerLink, loja: "shopee", categoria: filtro.categoria, afiliado: true, ...extrasShopee(n) };
+  });
+}
+
+async function rotaCatalogo(request, env) {
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  const q = new URL(request.url).searchParams;
+  const busca = String(q.get("busca") || "").replace(/[^\p{L}\p{N} %&.,-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 60);
+  const nomeFiltro = busca ? "busca:" + busca.toLowerCase() : FILTROS_CATALOGO[q.get("filtro")] ? q.get("filtro") : "moda";
+  const loja = ["mercadolivre", "shopee"].includes(q.get("loja")) ? q.get("loja") : "todas";
+  const ordem = ORDEM_SHOPEE[q.get("ordem")] ? q.get("ordem") : "vendidos";
+  const pagina = Math.max(1, Math.min(20, parseInt(q.get("pagina"), 10) || 1));
+  const configurado = { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) };
+  if (!configurado.mercadolivre && !configurado.shopee) return json({ configurado, produtos: [], avisos: [] });
+
+  const chave = `v3-${nomeFiltro}-${loja}-${ordem}-${pagina}-${configurado.mercadolivre}-${configurado.shopee}`;
+  const guardado = await lerCache("catalogo", chave);
+  if (guardado) return json({ ...guardado, doCache: true });
+
+  // Busca livre: a Shopee procura pela palavra; o Mercado Livre acha a categoria da palavra e traz os mais vendidos dela
+  const filtro = busca ? { categoria: "outros", ml: "", busca, shopee: busca } : FILTROS_CATALOGO[nomeFiltro];
+  const tarefas = [];
+  // Mercado Livre: mais vendidos da categoria e subcategorias, 12 por página; Shopee: 50 por página
+  if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env, pagina));
+  if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem, pagina));
+  const resultados = await Promise.allSettled(tarefas);
+  const produtos = [], avisos = []; let maisML = false;
+  for (const r of resultados) {
+    if (r.status === "fulfilled") { produtos.push(...r.value); if (r.value.temMais) maisML = true; }
+    else avisos.push(r.reason && r.reason.message ? r.reason.message : "Uma loja não respondeu.");
+  }
+  // Intercala as lojas para a grade não ficar com uma loja só no topo
+  const ml = produtos.filter((p) => p.loja === "mercadolivre"), sh = produtos.filter((p) => p.loja === "shopee");
+  const mistura = [];
+  for (let i = 0; i < Math.max(ml.length, sh.length); i++) { if (sh[i]) mistura.push(sh[i]); if (ml[i]) mistura.push(ml[i]); }
+  const resposta = { configurado, produtos: mistura, avisos, temMais: maisML || (configurado.shopee && loja !== "mercadolivre" && sh.length >= 40) };
+  if (mistura.length) await gravarCache("catalogo", chave, resposta, 1800); // 30 minutos
+  return json(resposta);
+}
+
+/** POST /api/afiliado { url } → o link de afiliado da Shopee para qualquer link da Shopee */
+async function rotaAfiliado(request, env) {
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  if (!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) return json({ erro: "Chaves da Shopee não cadastradas." }, 503);
+  let b; try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
+  const url = String(b.url || "").trim();
+  if (lojaDaUrl(url) !== "shopee") return json({ erro: "Só funciona com links da Shopee." }, 400);
+  try { const link = await linkAfiliadoShopee(url, env); return link ? json({ link }) : json({ erro: "A Shopee não gerou o link." }, 502); }
+  catch (e) { return json({ erro: e.message }, 502); }
+}
+
+/* ======================= Roteador ======================= */
+export default {
+  async fetch(request, env) {
+    const { pathname } = new URL(request.url);
+    const metodo = request.method;
+    // Aceita /miga/api/... (site alpama.app), /app/api/... (domínio próprio da Miga) e /api/...
+    const m = pathname.match(/^(?:\/miga|\/app)?\/api\/([a-z]+)$/);
+    try {
+      if (m && m[1] === "produto" && metodo === "POST") return await rotaProduto(request, env);
+      if (m && m[1] === "gerar" && metodo === "POST") return await rotaGerar(request, env);
+      if (m && m[1] === "imagem" && metodo === "GET") return await rotaImagem(request);
+      if (m && m[1] === "status" && metodo === "GET") return rotaStatus(request, env);
+      if (m && m[1] === "entrar" && metodo === "POST") return await rotaEntrar(request, env);
+      if (m && m[1] === "catalogo" && metodo === "GET") return await rotaCatalogo(request, env);
+      if (m && m[1] === "afiliado" && metodo === "POST") return await rotaAfiliado(request, env);
+      if (m && m[1] === "descricao" && metodo === "POST") return await rotaDescricao(request, env);
+      if (m) return json({ erro: "Rota não encontrada." }, 404);
+    } catch (e) {
+      return json({ erro: "Erro no servidor: " + (e.message || e) }, 500);
+    }
+    // Todo o resto: arquivos do site (index.html, app.js, ícones...)
+    return env.ASSETS.fetch(request);
+  }
+};
