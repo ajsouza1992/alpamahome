@@ -628,6 +628,7 @@
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
+    if (aba === "site") renderSite();
     if (aba === "postar" && !ppAtual) renderFila();
     if (aba === "inicio") renderInicio();
     document.body.dataset.aba = aba;
@@ -1021,7 +1022,7 @@
   function sairAcSite() { acSel = null; decorarAchados(); }
   $("#acSite").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); toast("Toque nos produtos que vão para o site"); });
   $("#acSiteCancelar").addEventListener("click", sairAcSite);
-  document.addEventListener("miga-aba", (e) => { if (acSel && e.detail !== "achados") sairAcSite(); });
+  document.addEventListener("miga-aba", (e) => { if (acSel && e.detail !== "achados") sairAcSite(); if (stEst && stEst.sel && e.detail !== "site") { stEst.sel = null; renderSite(); } });
   $("#catalogo").addEventListener("click", (e) => {
     if (!acSel) return; const b = e.target.closest("[data-achado], [data-ac-marcar]"); if (!b) return;
     e.stopImmediatePropagation(); const i = Number(b.dataset.achado ?? b.dataset.acMarcar);
@@ -1042,7 +1043,7 @@
         descricao: (antes && antes.descricao) || "", frete: !!p.freteGratis, oficial: !!p.lojaOficial, maisVendido: p.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
       try { await dados.vitrineSalvar(sp); vitrineMap.set(id, sp); ok++; } catch (err) { console.warn(err); }
     }
-    b.disabled = false; b.textContent = "Enviar para o site"; sairAcSite(); pintarAchados();
+    b.disabled = false; b.textContent = "Enviar para o site"; sairAcSite(); pintarAchados(); renderSite();
     const pulou = ml.length ? ` ${ml.length} do Mercado Livre ficaram de fora: preencha o seu código de afiliado em Ajustes.` : "";
     toast(ok ? `${ok} ${ok === 1 ? "produto enviado" : "produtos enviados"} para o site.${pulou}` : "Não consegui enviar. Confira as regras do Firestore (vitrine).");
   });
@@ -1140,6 +1141,68 @@
     irPara("criar");
     aviso($("#avisoBusca"), p.preco ? "Pronto! Confere o preço e é só gerar." : "Pronto! Digite o preço e é só gerar.", true);
     if (!p.preco) setTimeout(pedirPreco, 300);
+  });
+
+  /* =========================== Aba Site: gerenciar os produtos da vitrine =========================== */
+  var stEst = { cat: "", q: "", sel: null }; // var: pode ser lido antes desta linha rodar
+  const stLista = () => [...vitrineMap.values()].sort((a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0));
+  function renderSite() {
+    if (!stEst) return;
+    const todos = stLista(), n = todos.length, cont = $("#contSite");
+    if (cont) { cont.textContent = n; cont.hidden = !n; }
+    const aba = $("#aba-site"); if (!aba || aba.hidden) { const bs = $("#barraSite"); if (bs) bs.hidden = true; return; }
+    const cats = [...new Set(todos.map((p) => p.tipo || "outros"))]; if (stEst.cat && !cats.includes(stEst.cat)) stEst.cat = "";
+    $("#stResumo").textContent = n ? `${n} ${n === 1 ? "produto" : "produtos"} no site. Toque em ⋮ para mudar ou tirar.` : "Nenhum produto no site ainda. Envie dos Achados ou da sua Lista.";
+    $("#stFiltro").hidden = cats.length < 2;
+    $("#stFiltro").innerHTML = [["", "Todos"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" role="radio" data-st-cat="${k}" aria-checked="${stEst.cat === k}">${esc(nome)} <small>${k ? todos.filter((p) => (p.tipo || "outros") === k).length : n}</small></button>`).join("");
+    const t = semAcento(stEst.q.trim()), l = todos.filter((p) => (!stEst.cat || (p.tipo || "outros") === stEst.cat) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
+    const lista = $("#stLista"); lista.classList.toggle("st-sel", !!stEst.sel);
+    lista.innerHTML = l.length ? `<div class="pp-lista">${l.map((p) => { const on = stEst.sel && stEst.sel.has(p.id);
+      return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
+        <span><strong>${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
+        <span class="st-tags"><b>${esc(NOME_CAT[p.tipo] || "Outros")}</b><b class="st-para">${esc(PARA_SITE[p.para] || "Mulher")}</b></span></span>
+      </button>${stEst.sel ? `<button type="button" class="pp-marcar" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
+      : `<p class="vazio-lista">${n ? "Nenhum produto com essa busca." : "Seu site ainda está vazio. Toque em <b>Enviar dos Achados</b> para escolher vários de uma vez."}</p>`;
+    const bs = $("#barraSite"); bs.hidden = !stEst.sel;
+    if (stEst.sel) $("#stQtd").textContent = stEst.sel.size ? `${stEst.sel.size} ${stEst.sel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
+    document.body.classList.toggle("modo-selecao", !bs.hidden);
+    $("#stSelecionar").textContent = stEst.sel ? "Cancelar" : "Selecionar";
+  }
+  async function salvarNoSite(p) { await dados.vitrineSalvar(p); vitrineMap.set(p.id, p); }
+  async function tirarVariosDoSite(ids) {
+    let ok = 0; for (const id of ids) { try { await dados.vitrineApagar(id); vitrineMap.delete(id); ok++; } catch (e) { console.warn(e); } }
+    renderFila(); if (!$("#aba-achados").hidden) pintarAchados(); return ok;
+  }
+  $("#stAbrir").addEventListener("click", () => window.open(urlVitrine(), "_blank", "noopener"));
+  $("#stBusca").addEventListener("input", (e) => { stEst.q = e.target.value; renderSite(); });
+  $("#stFiltro").addEventListener("click", (e) => { const b = e.target.closest("[data-st-cat]"); if (!b) return; stEst.cat = b.dataset.stCat; renderSite(); });
+  $("#stSelecionar").addEventListener("click", () => { stEst.sel = stEst.sel ? null : new Set(); renderSite(); });
+  $("#stDosAchados").addEventListener("click", () => { irPara("achados"); acSel = new Set(); decorarAchados(); toast("Toque nos produtos que vão para o site"); });
+  $("#stDaLista").addEventListener("click", () => { irPara("postar"); entrarModoVarios(); acaoPendente = "site"; pintarMarcados(); toast("Toque nos produtos da Lista que vão para o site"); });
+  $("#stLista").addEventListener("click", async (e) => {
+    const mk = e.target.closest("[data-st-marcar]") || (stEst.sel && e.target.closest("[data-st-item]"));
+    if (mk) { const id = mk.dataset.stMarcar || mk.dataset.stItem; if (stEst.sel.has(id)) stEst.sel.delete(id); else stEst.sel.add(id); renderSite(); return; }
+    const b = e.target.closest("[data-st-menu], [data-st-item]"); if (!b) return;
+    const p = vitrineMap.get(b.dataset.stMenu || b.dataset.stItem); if (!p) return;
+    const op = await escolherOpcao(p.nome || "Produto", [["cat", "Mudar a categoria"], ["para", "Mudar para quem"], ["abrir", "Abrir o link da loja"], ["tirar", "Tirar do site"]], "");
+    if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
+    if (op === "tirar") { await tirarVariosDoSite([p.id]); toast("Saiu do site"); return; }
+    if (op === "cat") { const c = await escolherCategoria({ sugestao: p.tipo || "outros", nome: p.nome, titulo: "Categoria no site", acao: "Mudar para" }); if (!c) return;
+      try { await salvarNoSite({ ...p, tipo: c, atualizadoEm: Date.now() }); renderSite(); toast(`Agora em ${NOME_CAT[c]}`); } catch (err) { toast("Não consegui mudar"); } return; }
+    if (op === "para") { const v = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), p.para || "mulher"); if (!v) return;
+      try { await salvarNoSite({ ...p, para: v, atualizadoEm: Date.now() }); renderSite(); toast(`Agora em ${PARA_SITE[v]}`); } catch (err) { toast("Não consegui mudar"); } }
+  });
+  $("#stTirarVarios").addEventListener("click", async () => {
+    if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
+    const ids = [...stEst.sel], ok = await tirarVariosDoSite(ids); stEst.sel = null; renderSite();
+    toast(ok === ids.length ? `${ok} ${ok === 1 ? "produto saiu" : "produtos saíram"} do site` : "Alguns não saíram. Tente de novo.");
+  });
+  $("#stCatVarios").addEventListener("click", async () => {
+    if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
+    const l = [...stEst.sel].map((id) => vitrineMap.get(id)).filter(Boolean);
+    const c = await escolherCategoria({ sugestao: l[0].tipo || "outros", titulo: `Categoria no site · ${l.length}`, acao: "Mudar para" }); if (!c) return;
+    let ok = 0; for (const p of l) { try { await salvarNoSite({ ...p, tipo: c, atualizadoEm: Date.now() }); ok++; } catch (e) { console.warn(e); } }
+    stEst.sel = null; renderSite(); toast(`${ok} ${ok === 1 ? "produto foi" : "produtos foram"} para ${NOME_CAT[c]}`);
   });
 
   /* =========================== Aba Achados =========================== */
@@ -2009,6 +2072,7 @@
     : filtroResumo === "hoje" ? !!i.postadoEm && new Date(i.postadoEm).toDateString() === new Date().toDateString() : true);
   function filtrarResumo(k) { filtroResumo = k || ""; filtroLista = "todas"; limparBusca(); if (modoVarios) sairModoVarios(); irPara("postar"); renderFila(); window.scrollTo({ top: 0 }); }
   function renderFila() {
+    renderSite();
     migrarCategorias(); renderCatsLista(); pintarMarcados();
     const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && bateBusca(i) && passaResumo(i));
     { let fb = $("#ppFiltroRes"); if (!fb) { fb = document.createElement("div"); fb.id = "ppFiltroRes"; fb.className = "pp-filtro-res"; $("#ppLista").before(fb); }
@@ -2174,7 +2238,7 @@
     // Modo seleção: a barra de baixo vira os botões de criar
     document.body.classList.toggle("modo-selecao", !b.hidden);
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
-    { const nomes = { roteiro: "Postar", reels: "Criar Reels", carrossel: "Criar carrossel", livre: "Criar colagem", ia: "Abrir kit da IA" }; $("#oQueCriar").textContent = acaoPendente && nomes[acaoPendente] ? `${nomes[acaoPendente]}${n ? ` (${n})` : ""}` : "Continuar"; }
+    { const nomes = { roteiro: "Postar", reels: "Criar Reels", carrossel: "Criar carrossel", livre: "Criar colagem", ia: "Abrir kit da IA", site: "Pôr no site" }; $("#oQueCriar").textContent = acaoPendente && nomes[acaoPendente] ? `${nomes[acaoPendente]}${n ? ` (${n})` : ""}` : "Continuar"; }
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
     const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
@@ -2281,6 +2345,7 @@
     if (acaoPendente) {
       const k = acaoPendente, l = itensMarcados(), o = OPCOES_CRIAR.find((q) => q[0] === k);
       if (k === "ia") { acaoPendente = null; sairModoVarios(); abrirKitIA(l[0]); return; }
+      if (k === "site") { acaoPendente = null; abrirPorNoSite(l); return; }
       if (o && !o[3](l.length)) { toast(`${o[1]}: ${o[4]}`); return; }
       acaoPendente = null; criarAPartirDaLista(l.length === 1 && k === "livre" ? "instagram" : k, l); return;
     }
@@ -9249,7 +9314,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const l = [...vitrineMap.values()].sort((a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0));
     folhaEst(`Produtos no site · ${l.length}`, l.length ? `<div class="vt-lista">${l.map((p) => `<div class="vt-linha">${p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto"></span>'}<span><b>${esc(p.nome || "Produto")}</b><small>${esc(NOME_LOJA[p.loja] || "")}${p.preco ? " · " + brl(p.preco) : ""}${PARA_SITE[p.para] ? " · " + PARA_SITE[p.para] : ""}</small></span><button type="button" data-vt-tirar="${esc(p.id)}">Tirar</button></div>`).join("")}</div>` : '<p class="nota">Nenhum produto no site ainda.</p>');
   }
-  $("#ajVtProdutos").addEventListener("click", pintarProdutosSite);
+  $("#ajVtProdutos").addEventListener("click", () => { $("#config").close(); irPara("site"); });
   $("#folhaEst").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-vt-tirar]"); if (!b) return; b.disabled = true; b.textContent = "Tirando…";
     try { await dados.vitrineApagar(b.dataset.vtTirar); vitrineMap.delete(b.dataset.vtTirar); renderFila(); pintarProdutosSite(); toast("Saiu do site"); } catch (err) { b.disabled = false; b.textContent = "Tirar"; toast("Não consegui tirar do site"); }

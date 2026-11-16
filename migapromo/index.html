@@ -108,7 +108,7 @@
 
     /* ---------- Rodapé + WhatsApp fixo ---------- */
     .rodape { text-align: center; padding: 24px 20px 100px; font-size: 11.5px; line-height: 1.5; color: var(--claro); border-top: 1px solid var(--linha); }
-    .rodape .redes { justify-content: center; margin: 0 0 12px; }
+    .rodape .confia { display: block; color: var(--preto); font-size: 13px; font-weight: 600; margin-bottom: 4px; }
     .zap { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 8px; text-decoration: none; }
     .zap span { display: none; background: #fff; color: var(--preto); border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 6px 18px -6px rgba(0, 0, 0, .25); }
     .zap img { width: 58px; height: 58px; border-radius: 50%; box-shadow: 0 10px 24px -8px rgba(37, 211, 102, .8); }
@@ -206,8 +206,8 @@
   </main>
 
   <footer class="rodape">
-    <nav class="redes" id="redesRodape" aria-label="Siga a Miga"></nav>
-    Os preços e os cupons podem mudar na loja. Como afiliada, a Miga Promo pode ganhar uma comissão pelas compras feitas pelos links, sem custo a mais para você.
+    <b class="confia">Produtos de confiança, vendidos e entregues direto pelo Mercado Livre e pela Shopee.</b>
+    Você compra com toda a segurança da loja. Os preços e os cupons podem mudar na loja.
   </footer>
 
   <a class="zap" id="zap" href="#" target="_blank" rel="noopener" hidden aria-label="Canal da Miga no WhatsApp"><span>Canal no WhatsApp</span><img src="app/rede-whatsapp.png" alt=""></a>
@@ -375,7 +375,6 @@
       const rede = (href, img, nome) => `<a class="rede" href="${esc(href)}" target="_blank" rel="noopener" aria-label="${nome}"><img src="${img}" alt=""></a>`;
       const topo = [ig && rede(ig, "app/rede-instagram.png", "Instagram"), tt && rede(tt, "app/rede-tiktok.png", "TikTok")].filter(Boolean).join("");
       $("#redesTopo").innerHTML = topo;
-      $("#redesRodape").innerHTML = [zap && rede(zap, "app/rede-whatsapp.png", "WhatsApp"), topo].filter(Boolean).join("");
       if (zap) { $("#zap").href = zap; $("#zap").hidden = false; if (!urlOk(cfg.canal)) $("#zap span").textContent = "Grupo no WhatsApp"; }
     }
 

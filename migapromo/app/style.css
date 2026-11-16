@@ -157,7 +157,7 @@ textarea { height: auto; padding: 14px 16px; line-height: 1.55; resize: vertical
   background: linear-gradient(to top, var(--fundo) 55%, rgba(255, 248, 228, 0)); }
 .barra > * { pointer-events: auto; }
 .barra__gerar { max-width: 496px; margin: 0 auto; padding: 16px 0 10px; }
-.abas { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 496px; margin: 0 auto; padding: 6px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
+.abas { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 496px; margin: 0 auto; padding: 6px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
 .abas button { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; height: 46px; border: 0; border-radius: 999px; background: none; font-size: 13.5px; font-weight: 600; color: var(--cinza); cursor: pointer; transition: background .2s, color .2s; }
 .abas button svg { width: 21px; height: 21px; }
 .abas button[aria-current="page"] { background: var(--rosa-claro); color: var(--rosa); }
@@ -1465,7 +1465,7 @@ body.modo-selecao main { padding-bottom: 200px; }
 /* Computador: categorias da Lista quebram em linhas (sem precisar rolar de lado) */
 @media (min-width: 960px) { .pp-chips { flex-wrap: wrap; overflow: visible; } }
 /* Celular: menu de baixo com as 3 abas numa linha só */
-@media (max-width: 959px) { .abas { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; } }
+@media (max-width: 959px) { .abas { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; } }
 /* Lista: categoria num botão bem visível (celular) e chips em linhas (computador) */
 #ppCats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; overflow: visible; }
 .cat-sel { flex: 1; display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 0 14px; border: 0; border-radius: 16px; background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); font: inherit; font-size: 14.5px; color: var(--preto); cursor: pointer; text-align: left; }
@@ -2349,3 +2349,16 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .vt-linha b { display: block; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-linha small { color: var(--cinza); font-size: 12px; }
 .vt-linha button { border: 1.5px solid var(--linha); background: var(--branco); border-radius: 999px; padding: 7px 12px; font: 600 13px var(--sans); color: var(--preto); cursor: pointer; }
+
+/* ===== Aba Site ===== */
+.st-enviar { margin: 4px 0 12px; }
+.st-enviar .btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.st-enviar .ic-mono { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#stFiltro { margin-bottom: 12px; }
+.st-sel .pp-pontos { display: none; }
+.st-sel .pp-item { padding-right: 52px; }
+.st-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.st-tags b { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 8px; background: var(--rosa-claro); color: var(--rosa); }
+.st-tags b.st-para { background: #f3eee2; color: var(--preto); }
+.st-bts button svg { width: 18px; height: 18px; }
+#stLista { display: block; }
