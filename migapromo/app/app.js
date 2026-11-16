@@ -632,7 +632,7 @@
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
-    if (aba === "site") { renderSite(); if (!$("#stTelaAcessos").hidden) carregarAcessos(); }
+    if (aba === "site") { renderSite(); carregarCliquesSite(); if (!$("#stTelaAcessos").hidden) carregarAcessos(); }
     if (aba === "postar" && !ppAtual) renderFila();
     if (aba === "inicio") renderInicio();
     document.body.dataset.aba = aba;
@@ -1193,7 +1193,7 @@
   });
 
   /* =========================== Aba Site: gerenciar os produtos da vitrine =========================== */
-  var stEst = { cat: "", q: "", sel: null }; // var: pode ser lido antes desta linha rodar
+  var stEst = { cat: "", q: "", sel: null, ordem: "recentes" }; // var: pode ser lido antes desta linha rodar
   const stLista = () => [...vitrineMap.values()].sort((a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0));
   function renderSite() {
     if (!stEst) return;
@@ -1204,12 +1204,14 @@
     $("#stResumo").textContent = n ? `${n} ${n === 1 ? "produto" : "produtos"} no site. Toque em ⋮ para mudar ou tirar.` : "Nenhum produto no site ainda. Envie dos Achados ou da sua Lista.";
     $("#stFiltro").hidden = cats.length < 2;
     $("#stFiltro").innerHTML = [["", "Todos"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" role="radio" data-st-cat="${k}" aria-checked="${stEst.cat === k}">${esc(nome)} <small>${k ? todos.filter((p) => (p.tipo || "outros") === k).length : n}</small></button>`).join("");
-    const t = semAcento(stEst.q.trim()), l = todos.filter((p) => (!stEst.cat || (p.tipo || "outros") === stEst.cat) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
+    const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (!stEst.cat || (p.tipo || "outros") === stEst.cat) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
+    if (stEst.ordem === "cliques") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }; l = l.slice().sort((a, b) => k(b).loja - k(a).loja || k(b).abrir - k(a).abrir); }
+    $("#stOrdem").textContent = stEst.ordem === "cliques" ? "Mais clicados" : "Recentes"; $("#stOrdem").hidden = !!stEst.sel || !n;
     const lista = $("#stLista"); lista.classList.toggle("st-sel", !!stEst.sel);
     lista.innerHTML = l.length ? `<div class="pp-lista">${l.map((p) => { const on = stEst.sel && stEst.sel.has(p.id);
       return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
-        <span class="st-tags"><b>${esc(NOME_CAT[p.tipo] || "Outros")}</b><b class="st-para">${esc(PARA_SITE[p.para] || "Mulher")}</b></span></span>
+        <span class="st-tags">${(() => { const k = cliquesSite.mapa.get(p.id); return k ? `${k.loja ? `<b class="st-cliques">${k.loja} na loja</b>` : ""}${k.abrir ? `<b class="st-abriu">${k.abrir} ${k.abrir === 1 ? "abriu" : "abriram"}</b>` : ""}` : ""; })()}<b>${esc(NOME_CAT[p.tipo] || "Outros")}</b><b class="st-para">${esc(PARA_SITE[p.para] || "Mulher")}</b></span></span>
       </button>${stEst.sel ? `<button type="button" class="pp-marcar" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
       : `<p class="vazio-lista">${n ? "Nenhum produto com essa busca." : "Seu site ainda está vazio. Toque em <b>Enviar dos Achados</b> para escolher vários de uma vez."}</p>`;
     const bs = $("#barraSite"); bs.hidden = !stEst.sel;
@@ -1229,6 +1231,7 @@
   $("#stAbrir").addEventListener("click", () => window.open(urlVitrine(), "_blank", "noopener"));
   $("#stBusca").addEventListener("input", (e) => { stEst.q = e.target.value; renderSite(); });
   $("#stFiltro").addEventListener("click", (e) => { const b = e.target.closest("[data-st-cat]"); if (!b) return; stEst.cat = b.dataset.stCat; renderSite(); });
+  $("#stOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar os produtos", [["recentes", "Mais recentes"], ["cliques", "Mais clicados (últimos 30 dias)"]], stEst.ordem); if (!v) return; stEst.ordem = v; renderSite(); if (v === "cliques") carregarCliquesSite(true); });
   $("#stSelecionar").addEventListener("click", () => { stEst.sel = stEst.sel ? null : new Set(); renderSite(); });
   $("#stTodos").addEventListener("click", () => { if (!stEst.sel) return; if (stVisiveis.every((id) => stEst.sel.has(id))) stVisiveis.forEach((id) => stEst.sel.delete(id)); else stVisiveis.forEach((id) => stEst.sel.add(id)); renderSite(); });
 
@@ -1240,37 +1243,66 @@
     const d = new Date(ms), hoje = new Date(); hoje.setHours(0, 0, 0, 0); const h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     return d >= hoje ? `hoje ${h}` : d >= hoje - 864e5 ? `ontem ${h}` : `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${h}`;
   }
+  /* Cliques por produto (últimos 30 dias) para o selo na lista do Site */
+  let cliquesSite = { em: 0, mapa: new Map(), carregando: false };
+  async function carregarCliquesSite(forcar) {
+    if (cliquesSite.carregando || (!forcar && Date.now() - cliquesSite.em < 60000)) return;
+    cliquesSite.carregando = true;
+    try { const l = await dados.acessosListar(Date.now() - 30 * 864e5); const m = new Map();
+      l.forEach((e) => { if (!e.produto) return; const x = m.get(e.produto) || { abrir: 0, loja: 0 }; if (e.tipo === "abrir") x.abrir++; else if (e.tipo === "loja") x.loja++; m.set(e.produto, x); });
+      cliquesSite = { em: Date.now(), mapa: m, carregando: false }; renderSite(); }
+    catch (e) { cliquesSite.carregando = false; }
+  }
   async function carregarAcessos(forcar) {
     const corpo = $("#acesCorpo"); if (!corpo) return;
-    const desde = inicioPeriodo(acesPeriodo), chave = acesPeriodo + ":" + desde;
-    if (!forcar && acesCache.chave === chave && Date.now() - acesCache.em < 60000) { pintarAcessos(acesCache.l, desde); return; }
+    const desde = inicioPeriodo(acesPeriodo), dur = acesPeriodo === "hoje" ? 864e5 : Number(acesPeriodo) * 864e5, antes = desde - dur, chave = acesPeriodo + ":" + desde;
+    if (!forcar && acesCache.chave === chave && Date.now() - acesCache.em < 60000) { pintarAcessos(acesCache.l, desde, antes); return; }
     corpo.innerHTML = '<p class="nota">Carregando…</p>';
-    try { const l = await dados.acessosListar(desde); acesCache = { chave, em: Date.now(), l }; pintarAcessos(l, desde); }
+    try { const l = await dados.acessosListar(antes); acesCache = { chave, em: Date.now(), l }; pintarAcessos(l, desde, antes); }
     catch (e) { console.warn(e); corpo.innerHTML = '<p class="nota">Não consegui ler os acessos. Confira se as regras novas do Firestore (acessos) foram publicadas.</p>'; }
   }
-  function pintarAcessos(l, desde) {
-    const conta = (t) => l.filter((e) => e.tipo === t).length, vis = conta("visita"), loja = conta("loja"), abrir = conta("abrir"), cupom = conta("cupom"), comp = conta("compartilhar");
-    if (!l.length) { $("#acesCorpo").innerHTML = '<p class="nota">Nenhum acesso nesse período ainda. Quando alguém entrar no site, aparece aqui.</p>'; return; }
-    // barras: por hora (hoje) ou por dia
-    const porHora = acesPeriodo === "hoje", n = porHora ? 24 : Number(acesPeriodo), baldes = Array(n).fill(0);
-    l.forEach((e) => { if (e.tipo !== "visita") return; const i = porHora ? new Date(e.em).getHours() : Math.floor((e.em - desde) / 864e5); if (i >= 0 && i < n) baldes[i]++; });
-    const max = Math.max(1, ...baldes);
+  function pintarAcessos(todos, desde, antes) {
+    const l = todos.filter((e) => e.em >= desde), lp = todos.filter((e) => e.em >= antes && e.em < desde);
+    const conta = (lista, t) => lista.filter((e) => e.tipo === t).length;
+    const vis = conta(l, "visita"), loja = conta(l, "loja"), abrir = conta(l, "abrir"), cupom = conta(l, "cupom"), comp = conta(l, "compartilhar");
+    if (!l.length) { $("#acesCorpo").innerHTML = `<p class="nota">Nenhum acesso nesse período ainda. Quando alguém entrar no site, aparece aqui.${lp.length ? ` No período anterior foram ${conta(lp, "visita")} visitas.` : ""}</p>`; return; }
+    const nomeAnt = acesPeriodo === "hoje" ? "ontem" : `${acesPeriodo} dias anteriores`;
+    const variacao = (t, v) => { const a = conta(lp, t); if (!a && !v) return ""; if (!a) return '<em class="ac-var sobe">novo</em>'; const d = Math.round(((v - a) / a) * 100); return `<em class="ac-var ${d > 0 ? "sobe" : d < 0 ? "desce" : ""}" title="${a} ${nomeAnt}">${d > 0 ? "▲ " : d < 0 ? "▼ " : ""}${Math.abs(d)}%</em>`; };
+    const tile = (n, rot, t, rosa) => `<div class="ac-num${rosa ? " rosa" : ""}"><b>${n}</b><span>${rot}</span>${variacao(t, n)}</div>`;
+    // barras: por hora (hoje) ou por dia — visitas e cliques na loja
+    const porHora = acesPeriodo === "hoje", n = porHora ? 24 : Number(acesPeriodo), bv = Array(n).fill(0), bl = Array(n).fill(0);
+    l.forEach((e) => { const i = porHora ? new Date(e.em).getHours() : Math.floor((e.em - desde) / 864e5); if (i < 0 || i >= n) return; if (e.tipo === "visita") bv[i]++; else if (e.tipo === "loja") bl[i]++; });
+    const max = Math.max(1, ...bv, ...bl);
     const rotulo = (i) => (porHora ? `${i}h` : new Date(desde + i * 864e5).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }));
-    // produtos mais procurados
-    const prods = new Map(); l.forEach((e) => { if (!e.produto || !["abrir", "loja", "cupom", "compartilhar"].includes(e.tipo)) return; const x = prods.get(e.produto) || { nome: e.nome || (vitrineMap.get(e.produto) || {}).nome || "Produto", loja: e.loja, abrir: 0, cliques: 0, outros: 0 }; if (e.tipo === "abrir") x.abrir++; else if (e.tipo === "loja") x.cliques++; else x.outros++; prods.set(e.produto, x); });
-    const top = [...prods.values()].sort((a, b) => b.cliques - a.cliques || b.abrir - a.abrir).slice(0, 8), topMax = Math.max(1, ...top.map((x) => x.cliques + x.abrir));
-    // de onde vieram e aparelho
+    // produtos: abriram x foram para a loja
+    const prods = new Map(); l.forEach((e) => { if (!e.produto || !["abrir", "loja", "cupom", "compartilhar"].includes(e.tipo)) return; const v = vitrineMap.get(e.produto) || {}; const x = prods.get(e.produto) || { nome: e.nome || v.nome || "Produto", tipo: v.tipo, loja: e.loja || v.loja, abrir: 0, cliques: 0, cupom: 0, comp: 0 }; if (e.tipo === "abrir") x.abrir++; else if (e.tipo === "loja") x.cliques++; else if (e.tipo === "cupom") x.cupom++; else x.comp++; prods.set(e.produto, x); });
+    const top = [...prods.values()].sort((a, b) => b.cliques - a.cliques || b.abrir - a.abrir).slice(0, 10), topMax = Math.max(1, ...top.map((x) => x.cliques + x.abrir));
+    const soma = (chave) => { const m = {}; prods.forEach((x) => { const k = chave(x); if (!k) return; m[k] = (m[k] || 0) + x.cliques; }); return Object.entries(m).filter(([, v]) => v).sort((a, b) => b[1] - a[1]); };
+    const cats = soma((x) => NOME_CAT[x.tipo] || "Outros"), lojas = soma((x) => NOME_LOJA[x.loja] || "");
     const grupo = (k) => { const m = {}; l.filter((e) => e.tipo === "visita").forEach((e) => { const v = e[k] || "Direto"; m[v] = (m[v] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
     const barraH = ([nome, v], tot) => `<div class="ac-linha"><span>${esc(nome)}</span><small>${v} · ${Math.round((v / Math.max(1, tot)) * 100)}%</small><span class="ac-barra-h"><i style="width:${Math.round((v / Math.max(1, tot)) * 100)}%"></i></span></div>`;
+    // melhor horário e melhor dia da semana (pelas visitas)
+    const hs = Array(24).fill(0), ds = Array(7).fill(0); l.filter((e) => e.tipo === "visita").forEach((e) => { const d = new Date(e.em); hs[d.getHours()]++; ds[d.getDay()]++; });
+    const hMax = hs.indexOf(Math.max(...hs)), dMax = ds.indexOf(Math.max(...ds)), DIAS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+    const dicas = [vis && `<li>Mais visitas por volta das <b>${hMax}h</b>${acesPeriodo === "30" ? ` e no dia de <b>${DIAS[dMax]}</b>` : ""}: bom horário para postar.</li>`,
+      vis && `<li>Cada visita gera em média <b>${(loja / vis).toFixed(1).replace(".", ",")}</b> ${loja / vis >= 1.95 ? "cliques" : "clique"} para comprar.</li>`,
+      abrir >= 3 && loja <= abrir && `<li>De cada 10 produtos abertos, <b>${Math.round((loja / abrir) * 10)}</b> viram clique para comprar.</li>`,
+      top[0] && top[0].cliques && `<li>Campeão: <b>${esc(top[0].nome)}</b>, com ${top[0].cliques} ${top[0].cliques === 1 ? "clique" : "cliques"} para comprar.</li>`].filter(Boolean).join("");
     const ultimos = l.slice(0, 25);
     $("#acesCorpo").innerHTML = `<div class="ac-nums">
-        <div class="ac-num rosa"><b>${vis}</b><span>${vis === 1 ? "visita" : "visitas"}</span></div>
-        <div class="ac-num rosa"><b>${loja}</b><span>cliques para comprar</span></div>
-        <div class="ac-num"><b>${abrir}</b><span>produtos abertos</span></div>
-        <div class="ac-num"><b>${cupom + comp}</b><span>cupons copiados e compartilhados</span></div></div>
-      <div><p class="ac-sub">Visitas ${porHora ? "por hora" : "por dia"}</p><div class="ac-barras">${baldes.map((v, i) => `<i style="height:${Math.round((v / max) * 100)}%" data-n="${v}" title="${rotulo(i)}: ${v}"></i>`).join("")}</div>
+        ${tile(vis, vis === 1 ? "visita" : "visitas", "visita", true)}
+        ${tile(loja, "cliques na loja (compra)", "loja", true)}
+        ${tile(abrir, "abriram o produto", "abrir")}
+        ${tile(cupom, "copiaram o cupom", "cupom")}
+        ${tile(comp, "compartilharam", "compartilhar")}
+        ${tile(conta(l, "whatsapp") + conta(l, "instagram") + conta(l, "tiktok"), "tocaram nas redes", "")}</div>
+      <p class="nota ac-comp">As setinhas comparam com ${nomeAnt === "ontem" ? "ontem" : `os ${nomeAnt}`}.</p>
+      ${dicas ? `<ul class="ac-dicas">${dicas}</ul>` : ""}
+      <div><p class="ac-sub">${porHora ? "Por hora" : "Por dia"} <span class="ac-leg"><i class="v"></i>visitas <i class="c"></i>cliques na loja</span></p><div class="ac-barras">${bv.map((v, i) => `<span class="ac-par" title="${rotulo(i)}: ${v} visitas, ${bl[i]} cliques"><i class="v" style="height:${Math.round((v / max) * 100)}%" data-n="${v}"></i><i class="c" style="height:${Math.round((bl[i] / max) * 100)}%" data-n="${bl[i]}"></i></span>`).join("")}</div>
         <div class="ac-eixo"><span>${rotulo(0)}</span><span>${rotulo(Math.floor((n - 1) / 2))}</span><span>${rotulo(n - 1)}</span></div></div>
-      ${top.length ? `<div><p class="ac-sub">Produtos mais clicados</p><div class="ac-linhas">${top.map((x) => `<div class="ac-linha"><span>${esc(x.nome)}</span><small>${x.cliques} ${x.cliques === 1 ? "clique" : "cliques"} · ${x.abrir} ${x.abrir === 1 ? "aberto" : "abertos"}</small><span class="ac-barra-h"><i style="width:${Math.round(((x.cliques + x.abrir) / topMax) * 100)}%"></i></span></div>`).join("")}</div></div>` : ""}
+      ${top.length ? `<div><p class="ac-sub">Produtos mais clicados</p><div class="ac-linhas">${top.map((x) => `<div class="ac-linha"><span>${esc(x.nome)}</span><small>${x.cliques ? `<b class="ac-tag c">${x.cliques} na loja</b>` : ""}${x.abrir ? ` <b class="ac-tag">${x.abrir} ${x.abrir === 1 ? "abriu" : "abriram"}</b>` : ""}${x.cupom ? ` <b class="ac-tag">${x.cupom} cupom</b>` : ""}</small><span class="ac-barra-h"><i style="width:${Math.round(((x.cliques + x.abrir) / topMax) * 100)}%"></i></span></div>`).join("")}</div></div>` : ""}
+      ${cats.length ? `<div><p class="ac-sub">Categorias que mais vendem (cliques na loja)</p><div class="ac-linhas">${cats.map((g) => barraH(g, loja)).join("")}</div></div>` : ""}
+      ${lojas.length > 1 ? `<div><p class="ac-sub">Cliques por loja</p><div class="ac-linhas">${lojas.map((g) => barraH(g, loja)).join("")}</div></div>` : ""}
       ${vis ? `<div><p class="ac-sub">De onde vieram</p><div class="ac-linhas">${grupo("origem").map((g) => barraH(g, vis)).join("")}</div></div>
       <div><p class="ac-sub">Aparelho</p><div class="ac-linhas">${grupo("disp").map((g) => barraH(g, vis)).join("")}</div></div>` : ""}
       <div><p class="ac-sub">Últimos toques</p>${ultimos.map((e) => `<div class="ac-ev"><time>${quando(e.em)}</time><span><b>${NOME_EV[e.tipo] || esc(e.tipo)}</b>${e.nome && e.tipo !== "visita" ? `: ${esc(e.nome)}` : ""}${e.tipo === "visita" ? ` · ${esc(e.origem || "Direto")}, ${esc(e.disp || "")}` : ""}</span></div>`).join("")}</div>`;
