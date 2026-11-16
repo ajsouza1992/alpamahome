@@ -1033,13 +1033,16 @@
     const l = [...acSel].map((i) => catalogoAtual[i]).filter(Boolean);
     const ml = l.filter((p) => !p.afiliado && !linkAfiliadoAuto(p));
     if (ml.length === l.length) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
-    const c = await escolherCategoria({ sugestao: adivinharCategoria(l[0].nome), titulo: `Categoria no site · ${l.length}`, acao: "Enviar para" }); if (!c) return;
-    const para = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), paraQuemDe({ nome: l[0].nome, categoria: c })); if (!para) return;
+    const modo = l.length === 1 ? "uma" : await escolherOpcao(`Categoria de ${l.length} produtos`, [["auto", "Automática: o app escolhe a de cada um"], ["uma", "Escolher uma categoria para todos"]], "auto"); if (!modo) return;
+    let c = "", para = "";
+    if (modo === "uma") { c = await escolherCategoria({ sugestao: adivinharCategoria(l[0].nome, l[0].categoria), nome: l.length === 1 ? l[0].nome : "", titulo: `Categoria no site · ${l.length}`, acao: "Enviar para" }); if (!c) return;
+      para = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), paraQuemDe({ nome: l[0].nome, categoria: c })); if (!para) return; }
     const b = $("#acSiteEnviar"); b.disabled = true; b.textContent = "Enviando…"; let ok = 0;
     for (const p of l) {
       const link = linkAfiliadoAuto(p); if (!link) continue;
       const id = idSiteAchado(p), antes = vitrineMap.get(id);
-      const sp = { id, nome: limparNome(p.nome || ""), preco: p.preco || null, precoAntigo: p.precoAntigo && p.preco && p.precoAntigo > p.preco ? p.precoAntigo : null, cupom: "", loja: p.loja || detectarLoja(link) || "", link, imagem: p.imagem || "", tipo: c, para,
+      const tipo = c || adivinharCategoria(p.nome, p.categoria), pq = para || paraQuemDe({ nome: p.nome, categoria: tipo });
+      const sp = { id, nome: limparNome(p.nome || ""), preco: p.preco || null, precoAntigo: p.precoAntigo && p.preco && p.precoAntigo > p.preco ? p.precoAntigo : null, cupom: "", loja: p.loja || detectarLoja(link) || "", link, imagem: p.imagem || "", tipo, para: pq,
         descricao: (antes && antes.descricao) || "", frete: !!p.freteGratis, oficial: !!p.lojaOficial, maisVendido: p.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
       try { await dados.vitrineSalvar(sp); vitrineMap.set(id, sp); ok++; } catch (err) { console.warn(err); }
     }
@@ -1113,7 +1116,7 @@
       if (op !== "adicionar") return;
       let link = p.link; if (!p.afiliado) { link = linkAfiliadoAuto(p) || await pedirLinkAfiliado(p); if (!link) return; }
       const ja = fila().find((i) => mesmoProduto(i, link)); if (ja) { toast("Esse produto já está na sua lista"); return; }
-      const sug = adivinharCategoria(p.nome), c = await escolherCategoria({ sugestao: sug, nome: p.nome }); if (!c) return;
+      const sug = adivinharCategoria(p.nome, p.categoria), c = await escolherCategoria({ sugestao: sug, nome: p.nome }); if (!c) return;
       const it = { ...extrasDe(p), id: novoId(), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "", categoria: c, catV2: true, texto: "", feito: {}, criadoEm: Date.now() };
       fila().unshift(it); salvarFila(true); contarFila();
       toastAcao(`Adicionado em ${NOME_CAT[c]}`, "Ver na lista", () => { filtroLista = c; irPara("postar"); });
@@ -1952,20 +1955,38 @@
   const diasDesde = (ms) => ms ? Math.floor((Date.now() - ms) / 864e5) : 0;
   try { ocultarComp = localStorage.getItem("miga_ocultar_comp") === "1"; } catch (e) { /* segue */ }
   const foiCompartilhado = (i) => Object.values(i.feito || {}).some(Boolean);
-  function adivinharCategoria(nome) {
-    const n = String(nome || "").toLowerCase();
-    if (/perfume|col[oô]nia|eau de|body splash|deo parfum|fragr[aâ]ncia/.test(n)) return "perfumes";
-    if (/shampoo|condicionador|cabelo|capilar|chapinha|prancha|secador|escova (alisadora|secadora|rotativa)|babyliss|modelador|leave.?in|tintura|mega hair/.test(n)) return "cabelo";
-    if (/batom|\bbase\b|maquiag|r[ií]mel|m[aá]scara de c[ií]lios|sombra|pincel|blush|corretivo|delineador|gloss|p[oó] compacto|iluminador|paleta|primer|esmalte|unha|bronzer|contorno/.test(n)) return "maquiagem";
-    if (/skin ?care|s[eé]rum|hidratante|protetor solar|creme|facial|sabonete|t[oô]nico|[aá]cido|niacinamida|retinol|esfoliante|demaquilante|[aá]gua micelar|olheiras|antissinais/.test(n)) return "skincare";
-    if (/creatina|whey|suplement|vitamina|col[aá]geno|pr[eé].?treino|bcaa|prote[ií]na|[oô]mega|termog[eê]nico|multivitam|c[aá]psulas|magn[eé]sio|melatonina|glutamina|albumina/.test(n)) return "suplementos";
-    if (/t[eê]nis|sand[aá]lia|sapato|chinelo|\bbota|sapatilha|rasteirinha|scarpin|salto alto|\bmule\b|papete|crocs|tamanco|mocassim/.test(n)) return "calcados";
-    if (/bolsa|mochila|carteira|rel[oó]gio|brinco|colar|anel|pulseira|[oó]culos|bijuteria|joia|semijoia|cinto|chap[eé]u|bon[eé]|necessaire|tiara|piranha|presilha|len[cç]o/.test(n)) return "acessorios";
-    if (/academia|fitness|legging|top fitness|garrafa|squeeze|halter|yoga|treino|bicicleta|corda de pular|el[aá]stico|caneleira|balan[cç]a|massageador/.test(n)) return "fitness";
-    if (/vestido|blusa|cal[cç]a|saia|conjunto|short|camisa|camiseta|jaqueta|casaco|biqu[ií]ni|mai[oô]|lingerie|suti[aã]|calcinha|pijama|moda|look|cropped|\bbody\b|jeans|macac[aã]o|kimono|cardigan|moletom|regata/.test(n)) return "looks";
-    if (/fone|celular|smartphone|carregador|cabo usb|caixa de som|smartwatch|notebook|tablet|c[aâ]mera|ring light|power ?bank|mouse|teclado|\btv\b|alexa|echo dot|airpods|headset|kindle|bluetooth|ssd|pendrive/.test(n)) return "eletronicos";
-    if (/cozinha|panela|organizador|decora|almofada|cortina|tapete|lumin|l[aâ]mpada|cadeira|mesa|sof[aá]|cama|len[cç]ol|toalha|pote|airfryer|liquidificador|cafeteira|prateleira|vaso|lixeira|casa/.test(n)) return "casa";
-    return "outros";
+  /* Categoria pelo nome do produto: cada palavra soma pontos para uma categoria (peso 1 a 3) e
+     as palavras do começo do nome valem mais, porque é ali que fica o que o produto é ("Vestido midi cor creme" é roupa, não skincare).
+     Só conta palavra inteira ("panela" não vira "anel"). A dica é a categoria em que o achado veio da loja. */
+  const PALAVRAS_CAT = {
+    perfumes: "perfume*:3 colonia*:3 eau de:3 body splash:3 body mist:3 deo parfum:3 parfum:2 fragranc*:2 edp:2 edt:2",
+    cabelo: "shampoo*:3 xampu:3 condicionador*:3 cabelo*:2 capila*:3 chapinha:3 prancha:2 secador*:3 escova alisadora:3 escova secadora:3 escova rotativa:3 babyliss:3 modelador*:2 leave in:3 tintura:2 mega hair:3 cachos:2 ativador:2 finalizador:2 progressiva:3 touca:1",
+    maquiagem: "maquiag*:3 batom*:3 base liquida:3 base matte:3 rimel:3 mascara de cilios:3 cilios:2 sombra*:2 pincel:2 pinceis:3 blush:3 corretivo*:3 delineador*:3 gloss:3 po compacto:3 po facial:2 iluminador*:2 paleta*:2 primer:2 esmalte*:3 unha*:2 bronzer:3 contorno:1 lip tint:3 lapis de olho:3 fixador de maquiagem:3 esponja:1",
+    skincare: "skincare:3 skin care:3 serum:3 hidratante*:2 protetor solar:3 filtro solar:3 creme*:1 facial:2 sabonete*:2 tonico:2 acido*:2 niacinamida:3 retinol:3 esfoliante*:2 demaquilante*:3 agua micelar:3 olheira*:3 antissinais:3 anti idade:3 mascara facial:3 locao:1 hidratacao:1 dermo*:2 hialuronico:3",
+    suplementos: "creatina:3 whey:3 suplement*:3 vitamina*:2 colageno:2 pre treino:3 bcaa:3 proteina:2 omega:2 termogenic*:3 multivitamin*:3 capsulas:2 magnesio:2 melatonina:3 glutamina:3 albumina:3 hipercalorico:3 cafeina:2",
+    calcados: "tenis:3 sandalia*:3 sapato*:3 chinelo*:3 bota:3 botas:3 sapatilha*:3 rasteirinha*:3 scarpin*:3 salto alto:2 salto:1 mule:2 papete*:3 crocs:3 tamanco*:3 mocassim:3 slide:2 babuche:3 coturno*:3 sapatenis:3 meia pata:2 anabela:3",
+    acessorios: "bolsa*:3 mochila*:3 carteira*:3 relogio*:3 brinco*:3 colar:2 colares:2 anel:2 aneis:2 pulseira*:3 oculos:3 bijuteria*:3 joia*:3 semijoia*:3 cinto*:2 chapeu*:2 bone*:2 necessaire*:3 tiara*:2 piranha*:2 presilha*:2 lenco*:2 choker:3 pingente*:3 tornozeleira*:3 bracelete*:3 argola*:2 folheado:2 prata 925:3 banhado:2 clutch:3 pochete:3",
+    fitness: "academia:2 fitness:3 legging*:3 top fitness:3 garrafa*:1 squeeze:2 halter*:3 yoga:3 treino:1 bicicleta:2 corda de pular:3 elastico:1 caneleira*:3 massageador:1 suplex:3 cotton:1 dry fit:3 short fitness:3 macaquinho fitness:3 tapete de yoga:3 kettlebell:3 anilha*:3",
+    looks: "vestido*:3 blusa*:3 blusinha*:3 calca*:3 saia*:3 conjunto*:1 short:2 shorts:2 camisa*:3 camiseta*:3 jaqueta*:3 casaco*:3 biquini*:3 maio:3 lingerie:3 sutia*:3 calcinha*:3 pijama*:3 moda:1 look*:1 cropped:3 body:2 jeans:2 macacao:3 macaquinho:3 kimono:3 cardigan:3 moletom:3 regata*:3 blazer*:3 saida de praia:3 camisola*:3 trico:2 tricot:2 bermuda*:3 colete:2 sobretudo:3 alfaiataria:2 tomara que caia:3 feminina:0.5 feminino:0.5",
+    eletronicos: "fone*:3 celular:2 smartphone:3 carregador*:3 cabo usb:3 caixa de som:3 smartwatch:3 notebook:3 tablet:3 camera:2 ring light:3 power bank:3 powerbank:3 mouse:3 teclado:3 tv:2 smart tv:3 alexa:3 echo dot:3 airpods:3 headset:3 kindle:3 bluetooth:1 ssd:3 pendrive:3 capinha*:2 pelicula*:2 iphone:2 samsung:1 xiaomi:1 projetor:3 microfone:3",
+    casa: "cozinha:2 panela*:3 organizador*:2 decora*:2 almofada*:3 cortina*:3 tapete*:2 luminaria*:3 lampada*:2 cadeira*:2 mesa:2 sofa:2 cama:2 lencol:3 lencois:3 toalha*:2 pote*:2 airfryer:3 air fryer:3 liquidificador:3 cafeteira:3 prateleira*:3 vaso*:2 lixeira*:3 casa:1 edredom:3 travesseiro*:3 jogo de cama:3 faqueiro:3 talher*:3 copo*:2 xicara*:3 aspirador:3 mop:3 porta temperos:3 escorredor:3 tabua:2 forma de bolo:3 garrafa termica:3 ventilador:3 umidificador:3 difusor:2 vela*:1 quadro*:2 espelho*:2 cabide*:3"
+  };
+  const semAcentoCat = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const REGRAS_CAT = Object.entries(PALAVRAS_CAT).map(([cat, txt]) => [cat, [...txt.matchAll(/\s*([^:]+?):([\d.]+)/g)].map(([, palavra, peso]) => {
+    const prefixo = palavra.endsWith("*"), w = palavra.replace("*", "").trim();
+    return [new RegExp(`(?:^| )${w.replace(/ /g, " ")}${prefixo ? "[a-z]*" : "(?:s|es)?"}(?= |$)`), Number(peso)];
+  })]);
+  const DICA_CAT = { moda: "looks", beleza: "skincare", perfumes: "perfumes", maquiagem: "maquiagem", cabelo: "cabelo", acessorios: "acessorios", bolsas: "acessorios", calcados: "calcados", fitness: "fitness", saude: "suplementos", casa: "casa", cozinha: "casa", eletronicos: "eletronicos" };
+  function adivinharCategoria(nome, dica) {
+    const n = semAcentoCat(nome); const pontos = {};
+    for (const [cat, regras] of REGRAS_CAT) for (const [re, peso] of regras) {
+      const m = re.exec(n); if (!m) continue;
+      const pos = n.slice(0, m.index).split(" ").filter(Boolean).length; // quantas palavras antes
+      pontos[cat] = (pontos[cat] || 0) + peso * (pos < 2 ? 2.2 : pos < 4 ? 1.5 : pos < 7 ? 1.1 : 0.8);
+    }
+    const d = DICA_CAT[dica] || (NOME_CAT[dica] && dica !== "outros" ? dica : ""); if (d) pontos[d] = (pontos[d] || 0) + 1.5;
+    const melhor = Object.entries(pontos).sort((a, b) => b[1] - a[1])[0];
+    return melhor && melhor[1] >= 1.5 ? melhor[0] : "outros";
   }
   /** Categorias antigas (Moda, Beleza, Saúde) passam para as novas, pelo nome do produto */
   function migrarCategorias() {
