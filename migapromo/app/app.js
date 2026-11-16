@@ -1925,7 +1925,7 @@
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value);
-    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: config.instagram || "" }; if (JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
+    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: $("#ajVtInsta").value.trim() || config.instagram || "" }; if (JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
   /* Prompts editáveis (Ajustes) */
   function pintarAjPrompts() {
     $("#ajPrompts").innerHTML = Object.entries(PROMPTS_PADRAO).map(([k, d]) => { const v = modeloPrompt(k), mudou = (config.prompts || {})[k] != null;
@@ -9180,7 +9180,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function abrirConfig() {
     mostrarConta();
     $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados; pintarAjPrompts();
-    $("#ajVtLink").textContent = urlVitrine().replace(/^https?:\/\//, ""); $("#ajVtCanal").value = vitrineCfg.canal || ""; $("#ajVtGrupo").value = vitrineCfg.grupo || ""; $("#ajVtTiktok").value = vitrineCfg.tiktok || ""; $("#ajVtQtd").textContent = vitrineMap.size ? `${vitrineMap.size} ${vitrineMap.size === 1 ? "produto" : "produtos"} no site` : "Nenhum produto no site ainda";
+    $("#ajVtLink").textContent = urlVitrine().replace(/^https?:\/\//, ""); $("#ajVtCanal").value = vitrineCfg.canal || ""; $("#ajVtGrupo").value = vitrineCfg.grupo || ""; $("#ajVtTiktok").value = vitrineCfg.tiktok || ""; $("#ajVtInsta").value = /^https?:/i.test(vitrineCfg.instagram || "") ? vitrineCfg.instagram : ""; $("#ajVtQtd").textContent = vitrineMap.size ? `${vitrineMap.size} ${vitrineMap.size === 1 ? "produto" : "produtos"} no site` : "Nenhum produto no site ainda";
     pintarAjustes();
     if (!dialogo.open) dialogo.showModal();
   }
