@@ -2367,3 +2367,29 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .pp-nosite-ac.na-lista { background: #f3eee2; color: var(--preto); }
 /* Nome inteiro do produto (sem cortar em "...") na Lista, nos Achados e no Site */
 .pp-item strong, .pp-linha .pp-item strong { display: block; -webkit-line-clamp: unset; overflow: visible; overflow-wrap: anywhere; }
+
+/* Nome do produto menor nas listas (cartão mais baixo) */
+.pp-item strong, .pp-linha .pp-item strong { font-size: 13px !important; line-height: 1.3 !important; font-weight: 600; }
+/* ===== Acessos do site ===== */
+.st-acessos { display: grid; gap: 12px; }
+.ac-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ac-num { background: var(--campo); border-radius: 18px; padding: 12px 14px; }
+.ac-num b { display: block; font-size: 24px; font-weight: 800; line-height: 1.1; }
+.ac-num span { font-size: 12.5px; color: var(--cinza); }
+.ac-num.rosa { background: var(--rosa-claro); } .ac-num.rosa b { color: var(--rosa); }
+.ac-sub { font-size: 13px; font-weight: 700; margin: 6px 0 2px; }
+.ac-barras { display: flex; align-items: flex-end; gap: 3px; height: 90px; padding-top: 14px; }
+.ac-barras i { position: relative; flex: 1; min-width: 0; background: var(--rosa); border-radius: 4px 4px 0 0; min-height: 2px; opacity: .9; }
+.ac-barras i[data-n="0"] { background: var(--linha); }
+.ac-barras i::after { content: attr(data-n); position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 9.5px; font-style: normal; color: var(--cinza); }
+.ac-barras i[data-n="0"]::after { content: ""; }
+.ac-eixo { display: flex; justify-content: space-between; font-size: 11px; color: var(--cinza); }
+.ac-linhas { display: grid; gap: 6px; }
+.ac-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; font-size: 13px; }
+.ac-linha small { color: var(--cinza); font-size: 12px; }
+.ac-linha .ac-barra-h { grid-column: 1 / -1; height: 6px; border-radius: 9px; background: var(--campo); overflow: hidden; }
+.ac-linha .ac-barra-h i { display: block; height: 100%; background: var(--rosa); border-radius: 9px; }
+.ac-ev { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 8px; font-size: 12.5px; padding: 7px 0; border-bottom: 1px solid var(--linha); }
+.ac-ev:last-child { border: 0; }
+.ac-ev time { color: var(--cinza); }
+.ac-ev b { font-weight: 600; }

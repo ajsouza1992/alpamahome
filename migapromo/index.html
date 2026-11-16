@@ -89,7 +89,7 @@
     .compart { position: absolute; right: 8px; top: 8px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .94); display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, .1); }
     .compart .ic { width: 15px; height: 15px; }
     .info { display: flex; flex-direction: column; gap: 2px; padding: 9px 10px 10px; flex: 1; }
-    .nome { font-size: 12.5px; line-height: 1.3; min-height: 32px; overflow-wrap: anywhere; }
+    .nome { font-size: 12.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 32px; }
     .preco { font-size: 17px; font-weight: 800; margin-top: 3px; line-height: 1.2; }
     .preco s { display: block; font-size: 11px; color: var(--claro); font-weight: 400; }
     .cupom { align-self: flex-start; margin-top: 5px; border: 1.2px dashed var(--rosa); background: var(--rosa-claro); color: var(--rosa); border-radius: 7px; padding: 2px 7px; font-size: 10.5px; font-weight: 700; }
@@ -281,6 +281,31 @@
       try { const r = await fetch(`${base}?${chave}`); if (r.ok) cfg = campos((await r.json()).fields); } catch (e) { cfg = {}; }
     }
 
+    /* ---------- Contador de acessos: só o tipo do toque, o produto, de onde veio e quando (nada pessoal) ---------- */
+    const origem = (() => {
+      try { const o = sessionStorage.getItem("mp_origem"); if (o) return o; } catch (e) { /* segue */ }
+      const ua = navigator.userAgent, ref = (document.referrer || "").toLowerCase(), utm = (new URLSearchParams(location.search).get("utm_source") || "").toLowerCase();
+      const o = /instagram/.test(utm) || /Instagram/.test(ua) || /instagram\./.test(ref) ? "Instagram" : /whats|wa\.me/.test(utm + ref) || /WhatsApp/.test(ua) ? "WhatsApp" : /tiktok/.test(utm + ref) || /TikTok|musical_ly|Bytedance/.test(ua) ? "TikTok"
+        : /facebook|fb/.test(utm) || /FBAN|FBAV/.test(ua) || /facebook\./.test(ref) ? "Facebook" : /google\./.test(ref) ? "Google" : ref && !ref.includes(location.host) ? "Outro site" : "Direto";
+      try { sessionStorage.setItem("mp_origem", o); } catch (e) { /* segue */ }
+      return o;
+    })();
+    function registrar(tipo, p) {
+      const ev = { tipo, produto: p ? String(p.id || "").slice(0, 80) : "", nome: p ? String(p.nome || "").slice(0, 140) : "", loja: p ? String(p.loja || "").slice(0, 20) : "", origem, disp: matchMedia("(min-width: 900px)").matches ? "Computador" : "Celular" };
+      const fb = window.FIREBASE_CONFIG;
+      if (!fb || !fb.projectId) { try { const l = JSON.parse(localStorage.getItem("miga_acessos") || "[]"); l.push({ ...ev, em: Date.now() }); localStorage.setItem("miga_acessos", JSON.stringify(l.slice(-3000))); } catch (e) { /* segue */ } return; }
+      const fields = Object.fromEntries(Object.entries(ev).map(([k, v]) => [k, { stringValue: v }])); fields.em = { timestampValue: new Date().toISOString() };
+      fetch(`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(fb.projectId)}/databases/(default)/documents/acessos/miga/eventos${fb.apiKey ? "?key=" + encodeURIComponent(fb.apiKey) : ""}`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fields }), keepalive: true }).catch(() => {});
+    }
+    (() => { try { if (sessionStorage.getItem("mp_visita")) return; sessionStorage.setItem("mp_visita", "1"); } catch (e) { /* conta mesmo assim */ } registrar("visita"); })();
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest("a"); if (!a) return;
+      if (a.classList.contains("bt-loja")) { const card = a.closest(".card"), id = card ? (card.querySelector("[data-id]") || {}).dataset?.id : (location.hash.match(/^#p=(.+)$/) || [])[1]; registrar("loja", produtos.find((x) => x.id === decodeURIComponent(id || "")) || { id: "", nome: "" }); return; }
+      if (a.id === "zap") { registrar("whatsapp"); return; }
+      if (a.classList.contains("rede")) registrar(String(a.getAttribute("aria-label") || "rede").toLowerCase());
+    }, true);
+
     /* ---------- Filtros ---------- */
     const semAcento = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     function filtrar() {
@@ -341,7 +366,7 @@
 
     /* ---------- Compartilhar ---------- */
     async function compartilhar(id) {
-      const p = produtos.find((x) => x.id === id); if (!p) return;
+      const p = produtos.find((x) => x.id === id); if (!p) return; registrar("compartilhar", p);
       const url = location.origin + location.pathname + "#p=" + encodeURIComponent(id), d = desconto(p),
         texto = [`Olha esse achadinho que eu encontrei na Miga Promo 💖`, ``, `🛍️ ${p.nome}`, p.preco ? `💰 ${d >= 5 ? `De ${brl(p.precoAntigo)} por ` : "Por "}${brl(p.preco)}${d >= 5 ? ` (-${d}%)` : ""}` : "", p.cupom ? `🎟️ Cupom: ${p.cupom}` : "", ``, `👉 Veja aqui:`].filter((x, i, a) => x || (i && a[i - 1])).join("\n");
       if (navigator.share) { try { await navigator.share({ title: p.nome, text: texto, url }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
@@ -350,7 +375,7 @@
 
     /* ---------- Produto aberto ---------- */
     function abrirProduto(id, empurrar = true) {
-      const p = produtos.find((x) => x.id === id); if (!p) return;
+      const p = produtos.find((x) => x.id === id); if (!p) return; registrar("abrir", p);
       const d = desconto(p);
       $("#prod").innerHTML = `<div class="alca"></div><div class="folha-cab"><small>${esc(LOJAS[p.loja] || "")}</small><button type="button" class="fechar" data-fechar aria-label="Fechar">✕</button></div>
         <div class="foto-g">${imgOk(p.imagem) ? `<img src="${esc(p.imagem)}" alt="${esc(p.nome)}" referrerpolicy="no-referrer">` : '<img class="sem" src="app/logo.png" alt="">'}</div>
@@ -387,7 +412,7 @@
     const alterna = (set, v) => (set.has(v) ? set.delete(v) : set.add(v));
     document.addEventListener("click", async (e) => {
       const t = e.target;
-      const cop = t.closest("[data-copiar]"); if (cop) { try { await navigator.clipboard.writeText(cop.dataset.copiar); toast(`Cupom ${cop.dataset.copiar} copiado`); } catch (err) { toast("Cupom: " + cop.dataset.copiar); } return; }
+      const cop = t.closest("[data-copiar]"); if (cop) { { const c = cop.closest(".card"), b = c && c.querySelector("[data-id]"), m = location.hash.match(/^#p=(.+)$/), pid = b ? b.dataset.id : m ? decodeURIComponent(m[1]) : ""; registrar("cupom", produtos.find((x) => x.id === pid) || { id: "", nome: cop.dataset.copiar }); } try { await navigator.clipboard.writeText(cop.dataset.copiar); toast(`Cupom ${cop.dataset.copiar} copiado`); } catch (err) { toast("Cupom: " + cop.dataset.copiar); } return; }
       const cp = t.closest("[data-compart]"); if (cp) { compartilhar(cp.dataset.compart); return; }
       const ab = t.closest("[data-id]"); if (ab) { abrirProduto(ab.dataset.id); return; }
       if (t.closest("[data-fechar]")) { fecharProduto(); return; }

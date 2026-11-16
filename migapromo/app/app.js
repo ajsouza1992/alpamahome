@@ -353,6 +353,7 @@
       vitrineListar: async () => Object.values(ls.lerJson("miga_vitrine", {})),
       vitrineSalvar: async (p) => { const m = ls.lerJson("miga_vitrine", {}); m[p.id] = p; ls.gravar("miga_vitrine", JSON.stringify(m)); },
       vitrineApagar: async (id) => { const m = ls.lerJson("miga_vitrine", {}); delete m[id]; ls.gravar("miga_vitrine", JSON.stringify(m)); },
+      acessosListar: async (desde) => ls.lerJson("miga_acessos", []).filter((e) => e.em >= desde).sort((a, b) => b.em - a.em),
       vitrineLerConfig: async () => ls.lerJson("miga_vitrine_cfg", {}),
       vitrineGravarConfig: async (c) => { ls.gravar("miga_vitrine_cfg", JSON.stringify(c)); }
     };
@@ -408,6 +409,9 @@
       vitrineListar: async () => (await fs.getDocs(fs.collection(db, "vitrine", "miga", "produtos"))).docs.map((d) => d.data()),
       vitrineSalvar: (p) => fs.setDoc(fs.doc(db, "vitrine", "miga", "produtos", p.id), p),
       vitrineApagar: (id) => fs.deleteDoc(fs.doc(db, "vitrine", "miga", "produtos", id)),
+      // Contador do site: acessos/miga/eventos (o site só cria; aqui só lê)
+      acessosListar: async (desde) => (await fs.getDocs(fs.query(fs.collection(db, "acessos", "miga", "eventos"), fs.where("em", ">=", new Date(desde)), fs.orderBy("em", "desc"), fs.limit(5000))))
+        .docs.map((d) => { const x = d.data(); return { ...x, em: x.em && x.em.toMillis ? x.em.toMillis() : Number(x.em) || 0 }; }),
       vitrineLerConfig: async () => { const d = await fs.getDoc(fs.doc(db, "vitrine", "miga")); return d.exists() ? d.data() : {}; },
       vitrineGravarConfig: (c) => fs.setDoc(fs.doc(db, "vitrine", "miga"), { ...c, atualizadoEm: Date.now() }, { merge: true })
     };
@@ -628,7 +632,7 @@
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
-    if (aba === "site") renderSite();
+    if (aba === "site") { renderSite(); carregarAcessos(); }
     if (aba === "postar" && !ppAtual) renderFila();
     if (aba === "inicio") renderInicio();
     document.body.dataset.aba = aba;
@@ -1211,8 +1215,12 @@
     const bs = $("#barraSite"); bs.hidden = !stEst.sel;
     if (stEst.sel) $("#stQtd").textContent = stEst.sel.size ? `${stEst.sel.size} ${stEst.sel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     document.body.classList.toggle("modo-selecao", !bs.hidden);
-    $("#stSelecionar").textContent = stEst.sel ? "Cancelar" : "Selecionar";
+    $("#stSelecionar").textContent = stEst.sel ? "Cancelar" : "Selecionar"; $("#stSelecionar").hidden = !n;
+    $("#stTodos").hidden = !stEst.sel; $("#stTotal").hidden = !!stEst.sel; $("#stTotal").textContent = l.length === n ? `${n} ${n === 1 ? "produto" : "produtos"}` : `${l.length} de ${n}`;
+    $("#stTodosCx").classList.toggle("on", !!stEst.sel && !!l.length && l.every((p) => stEst.sel.has(p.id)));
+    stVisiveis = l.map((p) => p.id);
   }
+  let stVisiveis = [];
   async function salvarNoSite(p) { await dados.vitrineSalvar(p); vitrineMap.set(p.id, p); }
   async function tirarVariosDoSite(ids) {
     let ok = 0; for (const id of ids) { try { await dados.vitrineApagar(id); vitrineMap.delete(id); ok++; } catch (e) { console.warn(e); } }
@@ -1222,6 +1230,53 @@
   $("#stBusca").addEventListener("input", (e) => { stEst.q = e.target.value; renderSite(); });
   $("#stFiltro").addEventListener("click", (e) => { const b = e.target.closest("[data-st-cat]"); if (!b) return; stEst.cat = b.dataset.stCat; renderSite(); });
   $("#stSelecionar").addEventListener("click", () => { stEst.sel = stEst.sel ? null : new Set(); renderSite(); });
+  $("#stTodos").addEventListener("click", () => { if (!stEst.sel) return; if (stVisiveis.every((id) => stEst.sel.has(id))) stVisiveis.forEach((id) => stEst.sel.delete(id)); else stVisiveis.forEach((id) => stEst.sel.add(id)); renderSite(); });
+
+  /* ---------- Acessos do site: visitas, onde clicaram e quando ---------- */
+  let acesPeriodo = "7", acesCache = { chave: "", em: 0, l: [] };
+  const NOME_EV = { visita: "Entrou no site", abrir: "Abriu o produto", loja: "Clicou para comprar", cupom: "Copiou o cupom", compartilhar: "Compartilhou", whatsapp: "Tocou no WhatsApp", instagram: "Tocou no Instagram", tiktok: "Tocou no TikTok" };
+  function inicioPeriodo(v) { const d = new Date(); d.setHours(0, 0, 0, 0); if (v !== "hoje") d.setDate(d.getDate() - (Number(v) - 1)); return d.getTime(); }
+  function quando(ms) {
+    const d = new Date(ms), hoje = new Date(); hoje.setHours(0, 0, 0, 0); const h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    return d >= hoje ? `hoje ${h}` : d >= hoje - 864e5 ? `ontem ${h}` : `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${h}`;
+  }
+  async function carregarAcessos(forcar) {
+    const corpo = $("#acesCorpo"); if (!corpo) return;
+    const desde = inicioPeriodo(acesPeriodo), chave = acesPeriodo + ":" + desde;
+    if (!forcar && acesCache.chave === chave && Date.now() - acesCache.em < 60000) { pintarAcessos(acesCache.l, desde); return; }
+    corpo.innerHTML = '<p class="nota">Carregando…</p>';
+    try { const l = await dados.acessosListar(desde); acesCache = { chave, em: Date.now(), l }; pintarAcessos(l, desde); }
+    catch (e) { console.warn(e); corpo.innerHTML = '<p class="nota">Não consegui ler os acessos. Confira se as regras novas do Firestore (acessos) foram publicadas.</p>'; }
+  }
+  function pintarAcessos(l, desde) {
+    const conta = (t) => l.filter((e) => e.tipo === t).length, vis = conta("visita"), loja = conta("loja"), abrir = conta("abrir"), cupom = conta("cupom"), comp = conta("compartilhar");
+    if (!l.length) { $("#acesCorpo").innerHTML = '<p class="nota">Nenhum acesso nesse período ainda. Quando alguém entrar no site, aparece aqui.</p>'; return; }
+    // barras: por hora (hoje) ou por dia
+    const porHora = acesPeriodo === "hoje", n = porHora ? 24 : Number(acesPeriodo), baldes = Array(n).fill(0);
+    l.forEach((e) => { if (e.tipo !== "visita") return; const i = porHora ? new Date(e.em).getHours() : Math.floor((e.em - desde) / 864e5); if (i >= 0 && i < n) baldes[i]++; });
+    const max = Math.max(1, ...baldes);
+    const rotulo = (i) => (porHora ? `${i}h` : new Date(desde + i * 864e5).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }));
+    // produtos mais procurados
+    const prods = new Map(); l.forEach((e) => { if (!e.produto || !["abrir", "loja", "cupom", "compartilhar"].includes(e.tipo)) return; const x = prods.get(e.produto) || { nome: e.nome || (vitrineMap.get(e.produto) || {}).nome || "Produto", loja: e.loja, abrir: 0, cliques: 0, outros: 0 }; if (e.tipo === "abrir") x.abrir++; else if (e.tipo === "loja") x.cliques++; else x.outros++; prods.set(e.produto, x); });
+    const top = [...prods.values()].sort((a, b) => b.cliques - a.cliques || b.abrir - a.abrir).slice(0, 8), topMax = Math.max(1, ...top.map((x) => x.cliques + x.abrir));
+    // de onde vieram e aparelho
+    const grupo = (k) => { const m = {}; l.filter((e) => e.tipo === "visita").forEach((e) => { const v = e[k] || "Direto"; m[v] = (m[v] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+    const barraH = ([nome, v], tot) => `<div class="ac-linha"><span>${esc(nome)}</span><small>${v} · ${Math.round((v / Math.max(1, tot)) * 100)}%</small><span class="ac-barra-h"><i style="width:${Math.round((v / Math.max(1, tot)) * 100)}%"></i></span></div>`;
+    const ultimos = l.slice(0, 25);
+    $("#acesCorpo").innerHTML = `<div class="ac-nums">
+        <div class="ac-num rosa"><b>${vis}</b><span>${vis === 1 ? "visita" : "visitas"}</span></div>
+        <div class="ac-num rosa"><b>${loja}</b><span>cliques para comprar</span></div>
+        <div class="ac-num"><b>${abrir}</b><span>produtos abertos</span></div>
+        <div class="ac-num"><b>${cupom + comp}</b><span>cupons copiados e compartilhados</span></div></div>
+      <div><p class="ac-sub">Visitas ${porHora ? "por hora" : "por dia"}</p><div class="ac-barras">${baldes.map((v, i) => `<i style="height:${Math.round((v / max) * 100)}%" data-n="${v}" title="${rotulo(i)}: ${v}"></i>`).join("")}</div>
+        <div class="ac-eixo"><span>${rotulo(0)}</span><span>${rotulo(Math.floor((n - 1) / 2))}</span><span>${rotulo(n - 1)}</span></div></div>
+      ${top.length ? `<div><p class="ac-sub">Produtos mais clicados</p><div class="ac-linhas">${top.map((x) => `<div class="ac-linha"><span>${esc(x.nome)}</span><small>${x.cliques} ${x.cliques === 1 ? "clique" : "cliques"} · ${x.abrir} ${x.abrir === 1 ? "aberto" : "abertos"}</small><span class="ac-barra-h"><i style="width:${Math.round(((x.cliques + x.abrir) / topMax) * 100)}%"></i></span></div>`).join("")}</div></div>` : ""}
+      ${vis ? `<div><p class="ac-sub">De onde vieram</p><div class="ac-linhas">${grupo("origem").map((g) => barraH(g, vis)).join("")}</div></div>
+      <div><p class="ac-sub">Aparelho</p><div class="ac-linhas">${grupo("disp").map((g) => barraH(g, vis)).join("")}</div></div>` : ""}
+      <div><p class="ac-sub">Últimos toques</p>${ultimos.map((e) => `<div class="ac-ev"><time>${quando(e.em)}</time><span><b>${NOME_EV[e.tipo] || esc(e.tipo)}</b>${e.nome && e.tipo !== "visita" ? `: ${esc(e.nome)}` : ""}${e.tipo === "visita" ? ` · ${esc(e.origem || "Direto")}, ${esc(e.disp || "")}` : ""}</span></div>`).join("")}</div>`;
+  }
+  $("#acesPeriodo").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (!b) return; acesPeriodo = b.dataset.v; $("#acesPeriodo").querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b))); carregarAcessos(); });
+  $("#acesAtualizar").addEventListener("click", () => carregarAcessos(true));
   $("#stDosAchados").addEventListener("click", () => { irPara("achados"); acSel = new Set(); decorarAchados(); toast("Toque nos produtos que vão para o site"); });
   $("#stDaLista").addEventListener("click", () => { irPara("postar"); entrarModoVarios(); acaoPendente = "site"; pintarMarcados(); toast("Toque nos produtos da Lista que vão para o site"); });
   $("#stLista").addEventListener("click", async (e) => {

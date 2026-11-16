@@ -28,6 +28,20 @@ service cloud.firestore {
       allow write: if autorizada();
     }
 
+    // Contador de acessos do site: qualquer visitante só CRIA um registro pequeno (o tipo do toque, o produto, de onde veio e quando).
+    // Ninguém de fora lê. Só as contas autorizadas leem e apagam.
+    match /acessos/miga/eventos/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['tipo', 'produto', 'nome', 'loja', 'origem', 'disp', 'em'])
+        && request.resource.data.tipo in ['visita', 'abrir', 'loja', 'cupom', 'compartilhar', 'whatsapp', 'instagram', 'tiktok']
+        && request.resource.data.produto is string && request.resource.data.produto.size() <= 80
+        && request.resource.data.nome is string && request.resource.data.nome.size() <= 140
+        && request.resource.data.loja is string && request.resource.data.loja.size() <= 20
+        && request.resource.data.origem is string && request.resource.data.origem.size() <= 20
+        && request.resource.data.disp is string && request.resource.data.disp.size() <= 20
+        && request.resource.data.em is timestamp;
+      allow read, delete: if autorizada();
+    }
+
     // Pasta antiga de cada conta (só para o app levar os dados para o espaço único)
     match /usuarios/{uid}/{documento=**} {
       allow read, write: if autorizada() && request.auth.uid == uid;

@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=338">
+  <link rel="manifest" href="manifest.json?v=339">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&family=Roboto+Condensed:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=338">
+  <link rel="stylesheet" href="style.css?v=339">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -68,7 +68,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=338" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=339" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -94,7 +94,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=338" alt="">
+    <img src="logo.png?v=339" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -354,7 +354,7 @@
     <section class="bloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Site</h2>
-        <span class="ac-topo-bts"><button type="button" class="link" id="stSelecionar">Selecionar</button><button type="button" class="link" id="stAbrir">Abrir o site</button></span>
+        <button type="button" class="link" id="stAbrir">Abrir o site</button>
       </div>
       <p class="nota" id="stResumo">Os produtos que estão na sua vitrine.</p>
       <div class="duas st-enviar">
@@ -366,7 +366,25 @@
         <input id="stBusca" type="search" placeholder="Buscar no site…" autocomplete="off" aria-label="Buscar nos produtos do site">
       </div>
       <div class="abas-cat" id="stFiltro" role="tablist" aria-label="Categoria"></div>
+      <div class="barra-filtro ac-barra">
+        <button type="button" class="sel-todos" id="stTodos" hidden><span class="pp-caixa-mini" id="stTodosCx"></span>Selecionar todos</button>
+        <span class="nota" id="stTotal"></span>
+        <button type="button" class="link-sel" id="stSelecionar">Selecionar</button>
+      </div>
       <div class="catalogo" id="stLista"></div>
+    </section>
+
+    <section class="bloco st-acessos">
+      <div class="cabecalho-aba">
+        <h2 class="passo">Acessos do site</h2>
+        <button type="button" class="link" id="acesAtualizar">Atualizar</button>
+      </div>
+      <div class="alternar" id="acesPeriodo" role="radiogroup" aria-label="Período">
+        <button type="button" role="radio" data-v="hoje" aria-checked="false">Hoje</button>
+        <button type="button" role="radio" data-v="7" aria-checked="true">7 dias</button>
+        <button type="button" role="radio" data-v="30" aria-checked="false">30 dias</button>
+      </div>
+      <div id="acesCorpo"><p class="nota">Carregando…</p></div>
     </section>
   </div>
 
@@ -396,7 +414,7 @@
         <button type="button" role="radio" data-v="shopee" aria-checked="false">Shopee</button>
       </div>
       <div class="alternar alternar--loja alternar--ordem" id="catOrdem" role="radiogroup" aria-label="Ordem dos achados">
-        <button type="button" role="radio" data-v="melhores" aria-checked="true" class="ord-todos">Melhores (tudo junto)</button>
+        <button type="button" role="radio" data-v="melhores" aria-checked="true" class="ord-todos">Melhor combinação</button>
         <button type="button" role="radio" data-v="comissao" aria-checked="false">Maior comissão</button>
         <button type="button" role="radio" data-v="preco" aria-checked="false">Menor preço</button>
         <button type="button" role="radio" data-v="vendidos" aria-checked="false">Mais vendidos</button>
@@ -489,7 +507,7 @@
   <div class="barra-selecao" id="barraSite" hidden>
     <b id="stQtd">Toque nos produtos</b>
     <div class="bs-duas st-bts">
-      <button type="button" class="bs-excluir" id="stTirarVarios"><svg><use href="#i-lixo"/></svg>Tirar</button>
+      <button type="button" class="bs-excluir" id="stTirarVarios"><svg><use href="#i-lixo"/></svg>Excluir</button>
       <button type="button" class="bs-continuar" id="stCatVarios">Mudar categoria</button>
     </div>
   </div>
@@ -843,7 +861,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=338"></script>
-  <script src="app.js?v=338"></script>
+  <script src="firebase-config.js?v=339"></script>
+  <script src="app.js?v=339"></script>
 </body>
 </html>
