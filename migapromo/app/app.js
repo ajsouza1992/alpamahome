@@ -632,7 +632,7 @@
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
-    if (aba === "site") { renderSite(); carregarAcessos(); }
+    if (aba === "site") { renderSite(); if (!$("#stTelaAcessos").hidden) carregarAcessos(); }
     if (aba === "postar" && !ppAtual) renderFila();
     if (aba === "inicio") renderInicio();
     document.body.dataset.aba = aba;
@@ -1277,6 +1277,15 @@
   }
   $("#acesPeriodo").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (!b) return; acesPeriodo = b.dataset.v; $("#acesPeriodo").querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b))); carregarAcessos(); });
   $("#acesAtualizar").addEventListener("click", () => carregarAcessos(true));
+  // Duas telas dentro de Site: Produtos e Acessos
+  let stTela = "produtos";
+  function mostrarTelaSite(v) {
+    stTela = v; $("#stTela").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.v === v)));
+    $("#stTelaProdutos").hidden = v !== "produtos"; $("#stTelaAcessos").hidden = v !== "acessos";
+    if (v === "acessos") { if (stEst.sel) { stEst.sel = null; renderSite(); } carregarAcessos(); }
+    scrollTo(0, 0);
+  }
+  $("#stTela").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (b) mostrarTelaSite(b.dataset.v); });
   $("#stDosAchados").addEventListener("click", () => { irPara("achados"); acSel = new Set(); decorarAchados(); toast("Toque nos produtos que vão para o site"); });
   $("#stDaLista").addEventListener("click", () => { irPara("postar"); entrarModoVarios(); acaoPendente = "site"; pintarMarcados(); toast("Toque nos produtos da Lista que vão para o site"); });
   $("#stLista").addEventListener("click", async (e) => {

@@ -2393,3 +2393,5 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .ac-ev:last-child { border: 0; }
 .ac-ev time { color: var(--cinza); }
 .ac-ev b { font-weight: 600; }
+.st-telas { margin: 0 0 12px; background: var(--branco); box-shadow: var(--sombra); }
+.st-telas button[aria-checked="true"] { background: var(--rosa); color: #fff; }
