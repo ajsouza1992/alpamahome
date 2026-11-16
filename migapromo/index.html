@@ -13,167 +13,226 @@
   <link rel="icon" href="app/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    /* Vitrine da Miga Promo: página pública e separada do app (não carrega nada do app, só lê os produtos publicados) */
-    :root { --rosa: #e8336d; --rosa-claro: #fff5f8; --creme: #fff6dc; --fundo: #fff6dc; --texto: #1d1d1f; --cinza: #6b6460; --linha: #efe6d6; --branco: #fff; --verde: #1fa855; }
+    /* Vitrine da Miga Promo: página pública, separada do app (só lê os produtos publicados) */
+    :root { --rosa: #e8336d; --creme: #fff6dc; --preto: #1d1d1f; --amarelo: #ffd23f; --cinza: #6b6460; --claro: #a59e95; --linha: #eadfca; --verde: #1fa855; }
     * { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; }
-    body { margin: 0; font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--fundo); color: var(--texto); }
+    body { margin: 0; font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--creme); color: var(--preto); }
     button { font: inherit; color: inherit; cursor: pointer; }
     img { display: block; }
     a { color: inherit; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     :focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
-    .topo { position: sticky; top: 0; z-index: 10; background: var(--fundo); padding: 12px 16px 8px; }
-    .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .marca img { width: 46px; height: 46px; border-radius: 12px; }
-    .marca b { display: block; font-size: 17px; font-weight: 800; line-height: 1.15; }
-    .marca small { display: block; font-size: 12.5px; color: var(--cinza); font-weight: 500; }
-    .topo-linha { display: flex; align-items: center; gap: 12px; }
-    .zap-topo { display: none; margin-left: auto; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: var(--verde); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; }
-    .busca { position: relative; margin-top: 10px; }
-    #buscaDesk { display: none; }
-    .busca input { width: 100%; min-height: 46px; padding: 0 16px 0 42px; border: 2px solid var(--linha); border-radius: 999px; background: #fff; font: inherit; font-size: 15px; color: var(--texto); }
-    .busca svg { position: absolute; left: 15px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); stroke: var(--cinza); fill: none; stroke-width: 2.2; }
+    /* ---------- Capa ---------- */
+    .capa { position: relative; overflow: hidden; text-align: center; padding: 34px 22px 30px; }
+    .capa > *:not(.forma) { position: relative; z-index: 2; }
+    .forma { position: absolute; z-index: 1; pointer-events: none; }
+    .f-circ { right: -70px; top: -70px; width: 200px; height: 200px; border-radius: 50%; background: var(--rosa); animation: f-circ 14s ease-in-out infinite; }
+    .f-aro { display: none; right: 18px; top: 150px; width: 40px; height: 40px; border-radius: 50%; border: 1.6px solid var(--preto); animation: f-aro 10s ease-in-out infinite; }
+    .f-linhas { left: 24px; top: 36px; width: 60px; height: 2px; background: var(--preto); animation: f-lin 6s ease-in-out infinite; }
+    .f-linhas::after { content: ""; position: absolute; left: 0; top: 10px; width: 36px; height: 2px; background: var(--preto); }
+    @keyframes f-circ { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-12px, 14px); } }
+    @keyframes f-aro { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-16px, 22px); } }
+    @keyframes f-lin { 0%, 100% { width: 60px; } 50% { width: 84px; } }
+    .logo { width: 72px; height: 72px; border-radius: 20px; margin: 0 auto; box-shadow: 0 12px 26px -14px rgba(232, 51, 109, .8); }
+    .marca { margin-top: 12px; font-size: 12px; font-weight: 700; letter-spacing: 4px; color: var(--cinza); }
+    h1 { font-weight: 800; letter-spacing: -1.2px; line-height: 1.08; font-size: 36px; margin: 20px auto 12px; max-width: 340px; }
+    .pal { display: inline-grid; color: var(--rosa); vertical-align: bottom; }
+    .pal span { grid-area: 1 / 1; opacity: 0; animation: pal 9s infinite; }
+    .pal span:nth-child(2) { animation-delay: 3s; } .pal span:nth-child(3) { animation-delay: 6s; }
+    @keyframes pal { 0% { opacity: 0; transform: translateY(.35em); } 6%, 30% { opacity: 1; transform: none; } 36%, 100% { opacity: 0; transform: translateY(-.35em); } }
+    .sub { font-size: 14px; line-height: 1.5; color: var(--cinza); margin: 0 auto 20px; max-width: 300px; }
+    .redes { display: flex; justify-content: center; gap: 12px; }
+    .redes[hidden] { display: none; }
+    .rd { width: 48px; height: 48px; border-radius: 50%; border: 1.6px solid var(--preto); display: grid; place-items: center; background: var(--creme); position: relative; text-decoration: none; transition: background .2s; }
+    .rd:hover { background: #fff; }
+    .rd svg { width: 20px; height: 20px; fill: none; stroke: var(--preto); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .rd .pt { fill: var(--preto); stroke: none; }
+    .rd.zap::after { content: ""; position: absolute; inset: -1.6px; border-radius: 50%; border: 1.6px solid var(--rosa); animation: onda 2.6s ease-out infinite; }
+    @keyframes onda { 0% { transform: scale(1); opacity: .9; } 80%, 100% { transform: scale(1.5); opacity: 0; } }
+    .busca { margin: 22px auto 0; max-width: 520px; display: flex; align-items: center; gap: 10px; background: #fff; border: 1.6px solid var(--preto); border-radius: 999px; padding: 0 18px; text-align: left; }
+    .busca svg { width: 17px; height: 17px; stroke: var(--preto); fill: none; stroke-width: 1.8; flex: none; }
+    .busca input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 15px; padding: 13px 0; color: var(--preto); }
 
-    .para { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 10px 16px 0; padding: 4px; border: 2px solid var(--linha); border-radius: 999px; background: #fff; }
-    .para button { border: 0; border-radius: 999px; background: none; padding: 8px 2px; font-size: 13.5px; font-weight: 700; color: var(--cinza); }
-    .para button.on { background: var(--rosa); color: #fff; }
-    .atalhos { display: flex; gap: 6px; padding: 10px 16px 0; overflow-x: auto; scrollbar-width: none; }
+    /* ---------- Faixa ---------- */
+    .faixa { border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); font-weight: 600; font-size: 11.5px; letter-spacing: 3px; white-space: nowrap; overflow: hidden; padding: 12px 0; }
+    .faixa div { display: inline-block; animation: corre 30s linear infinite; }
+    .faixa i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--rosa); margin: 0 18px; vertical-align: middle; }
+    @keyframes corre { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* ---------- Filtros ---------- */
+    .para { display: flex; justify-content: center; gap: 6px; padding: 18px 16px 2px; flex-wrap: wrap; }
+    .para button { border: 0; background: none; border-radius: 999px; padding: 7px 15px; font-weight: 600; font-size: 13.5px; color: var(--cinza); }
+    .para button.on { background: var(--preto); color: #fff; }
+    .atalhos { display: flex; gap: 8px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
     .atalhos::-webkit-scrollbar { display: none; }
-    .chip { flex: none; border: 2px solid var(--linha); background: #fff; border-radius: 999px; padding: 6px 13px; font-size: 13px; font-weight: 600; white-space: nowrap; }
-    .chip.on { background: var(--rosa); border-color: var(--rosa); color: #fff; }
-    .chip.escuro.on { background: var(--texto); border-color: var(--texto); }
-    .bt-filtros { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--texto); color: #fff; border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 700; }
-    .bt-filtros i { font-style: normal; background: var(--rosa); border-radius: 999px; padding: 0 7px; font-size: 11px; }
-    .bt-filtros i:empty { display: none; }
-    .barra-res { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px 0; font-size: 13px; color: var(--cinza); }
-    .barra-res select { border: 0; background: none; font: inherit; font-weight: 600; color: var(--texto); padding: 4px 0; }
-
+    .ch { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1.4px solid #e2d8c4; background: var(--creme); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: #4b4541; white-space: nowrap; }
+    .ch.on { background: var(--preto); border-color: var(--preto); color: #fff; }
+    .ch.rosa.on { background: var(--rosa); border-color: var(--rosa); }
+    .ch svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+    .ch b { font-weight: 700; } .ch b:empty { display: none; }
+    .ch .pt-loja { width: 8px; height: 8px; border-radius: 50%; }
+    .barra { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 0; font-size: 13px; color: var(--cinza); }
+    .barra b { color: var(--preto); }
+    .barra select { border: 0; border-bottom: 1.4px solid var(--preto); background: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--preto); padding: 2px 0; border-radius: 0; }
+    .ativos { display: none; }
     .corpo { display: block; }
     .lado { display: none; }
-    .grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px 16px 110px; }
-    .card { display: flex; flex-direction: column; background: #fff; border: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.07); text-align: left; padding: 0; }
-    .card .foto { position: relative; aspect-ratio: 1 / 1; background: #f6f3ee; }
+
+    /* ---------- Cartões ---------- */
+    .grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 16px 30px; }
+    .card { position: relative; display: flex; flex-direction: column; background: #fff; border-radius: 20px; overflow: hidden; }
+    .card .abrir { display: block; border: 0; background: none; padding: 0; text-align: left; }
+    .card .foto { position: relative; display: block; aspect-ratio: 1 / 1; background: #f5efe3; }
     .card .foto img { width: 100%; height: 100%; object-fit: contain; }
     img.sem { opacity: .25; padding: 28%; }
-    .loja { position: absolute; left: 7px; top: 7px; font-size: 10.5px; font-weight: 800; border-radius: 7px; padding: 2px 7px; background: #ffe600; color: #1d1d1f; }
-    .loja.shopee { background: #ee4d2d; color: #fff; }
-    .loja.amazon { background: #232f3e; color: #fff; }
-    .loja.magalu { background: #0086ff; color: #fff; }
-    .off { position: absolute; right: 7px; top: 7px; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 8px; background: var(--rosa); color: #fff; }
-    .card .info { display: flex; flex-direction: column; gap: 2px; padding: 9px 10px 11px; flex: 1; }
-    .card .nome { font-size: 13px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .card s { font-size: 11.5px; color: #8a817b; margin-top: 2px; }
-    .card .preco { font-size: 17px; font-weight: 800; color: var(--rosa); }
-    .card .cupom { align-self: flex-start; font-size: 11px; font-weight: 700; background: #fff3c4; border-radius: 7px; padding: 1px 7px; }
-    .card .ver { margin-top: auto; padding-top: 8px; }
-    .card .ver span { display: block; text-align: center; background: var(--rosa); color: #fff; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 8px; }
+    .selo { position: absolute; left: 8px; top: 8px; background: #fff; border-radius: 999px; font-size: 10.5px; font-weight: 700; padding: 3px 8px; }
+    .selo.off { background: var(--rosa); color: #fff; }
+    .compart { position: absolute; right: 8px; top: 8px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .92); display: grid; place-items: center; z-index: 2; }
+    .compart svg { width: 16px; height: 16px; stroke: var(--preto); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .info { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px 12px; flex: 1; }
+    .info small { font-size: 10px; letter-spacing: 1px; color: var(--claro); font-weight: 600; text-transform: uppercase; }
+    .nome { font-size: 12.5px; line-height: 1.32; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 33px; }
+    .preco { font-size: 17px; font-weight: 700; margin-top: 4px; }
+    .preco s { font-size: 11px; color: var(--claro); font-weight: 400; margin-left: 5px; }
+    .cupom { align-self: flex-start; margin-top: 5px; font-size: 10.5px; font-weight: 700; color: var(--rosa); border: 1.2px dashed var(--rosa); border-radius: 6px; padding: 1px 6px; }
+    .ir { margin-top: auto; padding-top: 10px; }
+    .bt-loja { display: flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; border-radius: 999px; padding: 6px 10px 6px 6px; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--rosa); }
+    .bt-loja img { width: 24px; height: 24px; border-radius: 50%; background: #fff; padding: 3px; }
+    .bt-loja.shopee { background: #ee4d2d; }
+    .bt-loja.mercadolivre { background: #ffe600; color: #2d3277; }
+    .bt-loja.amazon { background: #232f3e; }
+    .bt-loja.magalu { background: #0086ff; }
     .vazio { grid-column: 1 / -1; text-align: center; color: var(--cinza); padding: 40px 10px; font-size: 15px; }
     .vazio button { margin-top: 10px; border: 0; background: var(--rosa); color: #fff; font-weight: 700; border-radius: 999px; padding: 10px 18px; }
-    .esqueleto { aspect-ratio: 3 / 4; border-radius: 18px; background: linear-gradient(90deg, #f3ecdf 25%, #fbf6ec 50%, #f3ecdf 75%); background-size: 200% 100%; animation: brilho 1.2s infinite; }
+    .esqueleto { aspect-ratio: 3 / 4; border-radius: 20px; background: linear-gradient(90deg, #f3ecdf 25%, #fbf6ec 50%, #f3ecdf 75%); background-size: 200% 100%; animation: brilho 1.2s infinite; }
     @keyframes brilho { to { background-position: -200% 0; } }
 
-    .zap { position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 20; display: flex; align-items: center; gap: 8px; text-decoration: none; }
-    .zap .rotulo { background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
-    .zap .bola { width: 60px; height: 60px; border-radius: 50%; background: var(--verde); display: grid; place-items: center; box-shadow: 0 8px 22px rgba(31,168,85,.45); }
-    .zap svg, .zap-topo svg { width: 32px; height: 32px; fill: #fff; }
-    .zap-topo svg { width: 20px; height: 20px; }
+    /* ---------- Rodapé ---------- */
+    .rodape { text-align: center; padding: 26px 20px 100px; font-size: 11.5px; line-height: 1.5; color: var(--claro); border-top: 1px solid var(--linha); }
+    .rodape .redes { gap: 10px; margin-bottom: 12px; }
+    .rodape .rd { width: 38px; height: 38px; } .rodape .rd svg { width: 16px; height: 16px; } .rodape .rd::after { display: none; }
+    .zap-fixo { position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 20; width: 56px; height: 56px; border-radius: 50%; background: var(--verde); display: grid; place-items: center; box-shadow: 0 10px 24px -8px rgba(31, 168, 85, .7); }
+    .zap-fixo svg { width: 28px; height: 28px; fill: #fff; }
+    .zap-fixo[hidden] { display: none; }
 
-    .rodape { padding: 0 16px 110px; text-align: center; font-size: 12px; color: var(--cinza); line-height: 1.5; }
-    .rodape .links { display: flex; justify-content: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-    .rodape .links a { border: 2px solid var(--linha); background: #fff; border-radius: 999px; padding: 7px 14px; font-weight: 700; color: var(--texto); text-decoration: none; font-size: 13px; }
-
+    /* ---------- Janelas ---------- */
     dialog { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; width: 100%; height: 100%; margin: 0; }
-    dialog::backdrop { background: rgba(40, 30, 20, .5); }
-    .folha { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92dvh; overflow: auto; background: #fff; border-radius: 26px 26px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+    dialog::backdrop { background: rgba(40, 30, 20, .45); }
+    .folha { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92dvh; overflow: auto; background: #fff; border-radius: 26px 26px 0 0; padding: 14px 18px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+    .alca { width: 40px; height: 4px; border-radius: 9px; background: #e2d8c4; margin: 0 auto 2px; }
     .folha-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .folha-cab h2 { margin: 0; font-size: 20px; font-weight: 800; }
-    .fechar { width: 38px; height: 38px; border-radius: 50%; border: 0; background: #f5f0e6; font-size: 16px; font-weight: 700; flex: none; }
-    .limpar { border: 0; background: none; color: var(--rosa); font-weight: 700; font-size: 14px; }
-    .sec { font-size: 12.5px; font-weight: 800; color: var(--rosa); text-transform: uppercase; letter-spacing: .4px; margin-top: 4px; }
+    .folha-cab h2 { margin: 0; font-size: 18px; font-weight: 800; }
+    .fechar { width: 38px; height: 38px; border-radius: 50%; border: 0; background: #f5f0e6; font-size: 15px; font-weight: 700; flex: none; }
+    .limpar { border: 0; background: none; color: var(--rosa); font-weight: 700; font-size: 13.5px; }
+    .grupo { padding: 10px 0; border-bottom: 1px solid #f1eadb; }
+    .grupo:last-of-type { border: 0; }
+    .lbl { display: block; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--claro); margin: 0 0 8px; text-transform: uppercase; }
     .ops { display: flex; flex-wrap: wrap; gap: 7px; }
-    .ver-n { margin-top: 8px; border: 0; background: var(--rosa); color: #fff; font-weight: 700; font-size: 16px; border-radius: 999px; padding: 14px; position: sticky; bottom: 0; box-shadow: 0 -10px 16px #fff; }
-
-    .prod .foto-g { aspect-ratio: 1 / 1; max-height: 46dvh; width: 100%; background: #f6f3ee; border-radius: 18px; overflow: hidden; }
+    .bts { display: flex; gap: 10px; position: sticky; bottom: -18px; background: #fff; padding: 10px 0 0; }
+    .bts button { flex: 1; border-radius: 999px; padding: 13px; font-weight: 700; font-size: 14px; border: 1.4px solid var(--preto); background: #fff; }
+    .bts .ver-n { background: var(--rosa); border-color: var(--rosa); color: #fff; }
+    .prod .foto-g { position: relative; aspect-ratio: 1 / 1; max-height: 46dvh; width: 100%; background: #f5efe3; border-radius: 18px; overflow: hidden; }
     .prod .foto-g img { width: 100%; height: 100%; object-fit: contain; }
-    .prod h2 { margin: 2px 0 0; font-size: 18px; font-weight: 700; line-height: 1.3; }
+    .prod small { font-size: 10.5px; letter-spacing: 1px; color: var(--claro); font-weight: 600; text-transform: uppercase; }
+    .prod h2 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; }
     .prod .precos { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-    .prod .precos b { font-size: 26px; font-weight: 800; color: var(--rosa); }
-    .prod .precos s { color: #8a817b; font-size: 14px; }
-    .prod .precos em { font-style: normal; font-weight: 800; color: #16803c; font-size: 14px; }
-    .cupom-g { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 2px dashed var(--rosa); border-radius: 14px; padding: 9px 12px; font-size: 14px; }
-    .cupom-g button { border: 0; background: none; color: var(--rosa); font-weight: 700; }
+    .prod .precos b { font-size: 26px; font-weight: 800; }
+    .prod .precos s { color: var(--claro); font-size: 14px; }
+    .prod .precos em { font-style: normal; font-weight: 700; color: #fff; background: var(--rosa); border-radius: 999px; padding: 1px 8px; font-size: 12.5px; }
+    .cupom-g { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1.6px dashed var(--rosa); border-radius: 14px; padding: 9px 12px; font-size: 14px; }
+    .cupom-g button { border: 0; background: var(--rosa); color: #fff; font-weight: 700; border-radius: 999px; padding: 6px 14px; font-size: 13px; }
     .desc { background: #f8f4ec; border-radius: 14px; padding: 11px 13px; font-size: 13.5px; line-height: 1.55; color: #3d3a36; }
-    .desc b { display: block; color: var(--texto); font-size: 14px; margin-bottom: 3px; }
+    .desc b { display: block; color: var(--preto); font-size: 14px; margin-bottom: 3px; }
     .desc p { margin: 0; white-space: pre-line; }
     .desc.curta p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
     .desc button { border: 0; background: none; padding: 4px 0 0; color: var(--rosa); font-weight: 700; font-size: 13.5px; }
-    .comprar { display: block; text-align: center; text-decoration: none; font-weight: 800; font-size: 16px; border-radius: 999px; padding: 15px; background: #ffe600; color: #1d1d1f; }
-    .comprar.shopee { background: #ee4d2d; color: #fff; }
-    .comprar.amazon { background: #232f3e; color: #fff; }
-    .comprar.magalu { background: #0086ff; color: #fff; }
-    .comprar.outra { background: var(--rosa); color: #fff; }
-    .aviso { text-align: center; font-size: 12px; color: #8a817b; margin: 0; }
-    .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--texto); color: #fff; border-radius: 14px; padding: 10px 16px; font-size: 14px; z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; }
+    .prod .acoes { display: flex; gap: 10px; align-items: stretch; }
+    .prod .acoes .bt-loja { flex: 1; font-size: 15px; padding: 9px 14px 9px 9px; }
+    .prod .acoes .bt-loja img { width: 32px; height: 32px; padding: 4px; }
+    .prod .acoes .compart-g { flex: none; width: 52px; border-radius: 50%; border: 1.6px solid var(--preto); background: #fff; display: grid; place-items: center; }
+    .prod .acoes .compart-g svg { width: 20px; height: 20px; stroke: var(--preto); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .aviso { text-align: center; font-size: 12px; color: var(--claro); margin: 0; }
+    .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--preto); color: #fff; border-radius: 14px; padding: 10px 16px; font-size: 14px; z-index: 60; opacity: 0; transition: opacity .2s; pointer-events: none; text-align: center; }
     .toast.on { opacity: 1; }
 
+    /* ---------- Computador ---------- */
     @media (min-width: 900px) {
-      .topo { padding: 14px 28px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
-      .topo-linha { gap: 18px; }
-      #buscaDesk { display: block; flex: 1; margin-top: 0; }
-      .zap-topo { display: inline-flex; margin-left: 0; }
-      .topo .busca-mob { display: none; }
+      .capa { padding: 60px 60px 54px; }
+      .f-circ { width: 420px; height: 420px; right: -120px; top: -160px; }
+      .f-aro { display: block; width: 90px; height: 90px; right: 180px; top: 330px; }
+      .f-linhas { left: 60px; top: 60px; width: 120px; }
+      @keyframes f-lin { 0%, 100% { width: 120px; } 50% { width: 160px; } }
+      h1 { font-size: 64px; max-width: 800px; letter-spacing: -2px; }
+      .sub { max-width: 460px; font-size: 15px; }
       .para, .atalhos { display: none; }
-      .barra-res { padding: 18px 28px 0 calc(28px + 270px + 24px); font-size: 14px; }
-      .corpo { display: flex; align-items: flex-start; gap: 24px; padding: 14px 28px 40px; max-width: 1500px; margin: 0 auto; }
-      .lado { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 92px; width: 270px; flex: none; background: #fff; border-radius: 20px; padding: 18px; }
-      .grade { flex: 1; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; padding: 0; }
+      .corpo { display: grid; grid-template-columns: 260px 1fr; gap: 26px; padding: 26px 50px 40px; max-width: 1480px; margin: 0 auto; align-items: start; }
+      .lado { display: block; position: sticky; top: 16px; background: #fff; border-radius: 22px; padding: 18px; max-height: calc(100vh - 32px); overflow: auto; }
+      .lado h4 { margin: 0 0 6px; font-size: 13px; }
+      .ck { display: flex; align-items: center; gap: 9px; width: 100%; border: 0; background: none; padding: 5px 0; font-size: 13px; text-align: left; }
+      .ck i { width: 17px; height: 17px; border-radius: 5px; border: 1.4px solid #cfc5b2; flex: none; }
+      .ck.on i { background: var(--rosa); border-color: var(--rosa); box-shadow: inset 0 0 0 3px #fff; }
+      .ck em { margin-left: auto; font-style: normal; color: var(--claro); font-size: 11.5px; }
+      .barra { padding: 0; }
+      .ativos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+      .ativos:empty { display: none; }
+      .ativos button { border: 0; font-size: 12px; font-weight: 600; background: var(--preto); color: #fff; border-radius: 999px; padding: 5px 11px; }
+      .ativos .limpar { background: none; color: var(--rosa); padding: 5px; }
+      .grade { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; padding: 14px 0 0; }
       .rodape { padding-bottom: 40px; }
-      .zap .rotulo { display: none; }
       dialog .folha { left: 50%; right: auto; top: 50%; bottom: auto; transform: translate(-50%, -50%); width: min(560px, 92vw); border-radius: 26px; max-height: 90vh; }
+      .alca { display: none; }
     }
   </style>
 </head>
 <body>
-  <header class="topo">
-    <div class="topo-linha">
-      <a class="marca" href="./" aria-label="Miga Promo, início"><img src="app/logo.png" alt="" width="46" height="46"><span><b>Miga Promo</b><small>Achadinhos com preço de amiga</small></span></a>
-      <label class="busca" id="buscaDesk"><span class="sr">Buscar</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="buscaD" placeholder="Buscar achadinho…" autocomplete="off"></label>
-      <a class="zap-topo" id="zapTopo" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.8-4.4-3.9-.1-.2-1.1-1.4-1.1-2.7s.7-1.9.9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.8.9c.3.1.4.2.5.3.1.2.1.6-.1 1.2z"/></svg>Canal no WhatsApp</a>
-    </div>
-    <label class="busca busca-mob"><span class="sr">Buscar</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="buscaM" placeholder="Buscar achadinho…" autocomplete="off"></label>
+  <header class="capa">
+    <span class="forma f-circ"></span><span class="forma f-aro"></span><span class="forma f-linhas"></span>
+    <img class="logo" src="app/logo.png" alt="Miga Promo" width="72" height="72">
+    <div class="marca">MIGA PROMO</div>
+    <h1>Achados de <span class="pal"><span>moda</span><span>beleza</span><span>casa</span></span><br>com preço de amiga</h1>
+    <p class="sub">Promoções e cupons do Mercado Livre e da Shopee, escolhidos todo dia.</p>
+    <nav class="redes" id="redesTopo" aria-label="Siga a Miga" hidden></nav>
+    <label class="busca"><span class="sr">Buscar</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" id="busca" placeholder="Buscar achadinho…" autocomplete="off"></label>
   </header>
 
-  <nav class="para" id="paraMob" aria-label="Para quem"></nav>
+  <div class="faixa" aria-hidden="true"><div>NOVOS ACHADOS TODO DIA<i></i>CUPONS ATUALIZADOS<i></i>PREÇO DE AMIGA<i></i>NOVOS ACHADOS TODO DIA<i></i>CUPONS ATUALIZADOS<i></i>PREÇO DE AMIGA<i></i></div></div>
+
+  <nav class="para" id="para" aria-label="Para quem"></nav>
   <div class="atalhos" id="atalhos"></div>
-  <div class="barra-res"><span id="contagem" aria-live="polite">Carregando…</span>
-    <label><span class="sr">Ordenar</span><select id="ordem"><option value="novos">Mais novos</option><option value="menor">Menor preço</option><option value="desconto">Maior desconto</option><option value="cupom">Com cupom primeiro</option></select></label></div>
 
   <div class="corpo">
     <aside class="lado" id="lado" aria-label="Filtros"></aside>
-    <main class="grade" id="grade" aria-busy="true"><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div></main>
+    <section>
+      <div class="barra"><span id="contagem" aria-live="polite">Carregando…</span>
+        <label><span class="sr">Ordenar</span><select id="ordem"></select></label></div>
+      <div class="ativos" id="ativos"></div>
+      <main class="grade" id="grade" aria-busy="true"><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div></main>
+    </section>
   </div>
 
   <footer class="rodape">
-    <div class="links" id="links"></div>
-    <p>Os preços e os cupons podem mudar na loja. Como afiliada, a Miga Promo pode ganhar uma comissão pelas compras feitas pelos links, sem custo a mais para você.</p>
+    <nav class="redes" id="redesRodape" aria-label="Siga a Miga" hidden></nav>
+    Os preços e os cupons podem mudar na loja. Como afiliada, a Miga Promo pode ganhar uma comissão pelas compras feitas pelos links, sem custo a mais para você.
   </footer>
 
-  <a class="zap" id="zap" href="#" target="_blank" rel="noopener" hidden aria-label="Entrar no canal do WhatsApp"><span class="rotulo">Canal no WhatsApp</span><span class="bola"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.8-4.4-3.9-.1-.2-1.1-1.4-1.1-2.7s.7-1.9.9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.8.9c.3.1.4.2.5.3.1.2.1.6-.1 1.2z"/></svg></span></a>
+  <a class="zap-fixo" id="zapFixo" href="#" target="_blank" rel="noopener" hidden aria-label="Entrar no canal do WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.8-4.4-3.9-.1-.2-1.1-1.4-1.1-2.7s.7-1.9.9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.8.9c.3.1.4.2.5.3.1.2.1.6-.1 1.2z"/></svg></a>
 
   <dialog id="dlgFiltros" aria-labelledby="tFiltros"><div class="folha">
-    <div class="folha-cab"><h2 id="tFiltros">Filtros</h2><button type="button" class="limpar" data-limpar>Limpar</button></div>
+    <div class="alca"></div>
+    <div class="folha-cab"><h2 id="tFiltros">Filtros</h2><button type="button" class="fechar" data-fechar-f aria-label="Fechar">✕</button></div>
     <div id="filtrosMob"></div>
-    <button type="button" class="ver-n" id="verN">Ver achadinhos</button>
+    <div class="bts"><button type="button" data-limpar>Limpar</button><button type="button" class="ver-n" id="verN">Ver achadinhos</button></div>
   </div></dialog>
 
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=331"></script>
+  <script src="app/firebase-config.js?v=332"></script>
   <script>
   (() => {
     "use strict";
@@ -183,10 +242,15 @@
     const urlOk = (u) => /^https:\/\//i.test(String(u || "").trim());
     const imgOk = (u) => /^https?:\/\//i.test(String(u || "")) || /^data:image\//i.test(String(u || ""));
     const PARA = { mulher: "Mulher", crianca: "Criança", casa: "Casa" };
-    const TIPOS = { looks: "Roupas", fitness: "Fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
-    const LOJAS = { mercadolivre: "Mercado Livre", shopee: "Shopee", amazon: "Amazon", magalu: "Magalu" };
-    const PRECOS = { ate50: ["Até R$ 50", (p) => p <= 50], de50a100: ["R$ 50 a 100", (p) => p > 50 && p <= 100], mais100: ["Mais de R$ 100", (p) => p > 100] };
-    const est = { q: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", ordem: "novos" };
+    const TIPOS = { looks: "Roupas", fitness: "Fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", bebes: "Infantil", outros: "Outros" };
+    const LOJAS = { shopee: "Shopee", mercadolivre: "Mercado Livre", amazon: "Amazon", magalu: "Magalu" };
+    const COR_LOJA = { shopee: "#ee4d2d", mercadolivre: "#ffe600", amazon: "#232f3e", magalu: "#0086ff" };
+    const LOGO = { shopee: "app/loja-shopee.png", mercadolivre: "app/loja-mercadolivre.png", amazon: "app/loja-amazon.png" };
+    const PRECOS = { ate20: ["Até R$ 20", (p) => p <= 20], ate50: ["Até R$ 50", (p) => p <= 50], ate100: ["Até R$ 100", (p) => p <= 100], mais100: ["Acima de R$ 100", (p) => p > 100] };
+    const desconto = (p) => (p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0);
+    const VANT = { cupom: ["Com cupom", (p) => !!p.cupom], frete: ["Frete grátis", (p) => !!p.frete], desc30: ["Desconto 30%+", (p) => desconto(p) >= 30], oficial: ["Loja oficial", (p) => !!p.oficial], top: ["Mais vendido", (p) => !!p.maisVendido] };
+    const ORDENS = { novos: "Mais novos", desconto: "Mais desconto", menor: "Menor preço", maior: "Maior preço", vendidos: "Mais vendidos" };
+    const est = { q: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", vant: new Set(), ordem: "novos" };
     let produtos = [], cfg = {};
 
     /* ---------- Dados: só a pasta pública "vitrine/miga" do Firestore (sem login) ---------- */
@@ -223,62 +287,100 @@
 
     /* ---------- Filtros ---------- */
     const semAcento = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-    const desconto = (p) => (p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0);
     function filtrar(ignorar) {
       const q = semAcento(est.q).trim();
       return produtos.filter((p) => {
-        if (q && !semAcento(`${p.nome} ${TIPOS[p.tipo] || ""} ${LOJAS[p.loja] || ""} ${p.descricao || ""}`).includes(q)) return false;
+        if (q && !semAcento(`${p.nome} ${TIPOS[p.tipo] || ""} ${LOJAS[p.loja] || ""} ${p.cupom || ""} ${p.descricao || ""}`).includes(q)) return false;
         if (ignorar !== "para" && est.para && p.para !== est.para) return false;
         if (ignorar !== "tipos" && est.tipos.size && !est.tipos.has(p.tipo)) return false;
         if (ignorar !== "lojas" && est.lojas.size && !est.lojas.has(p.loja)) return false;
         if (ignorar !== "preco" && est.preco && !(p.preco && PRECOS[est.preco][1](p.preco))) return false;
+        if (ignorar !== "vant" && est.vant.size && ![...est.vant].every((k) => VANT[k][1](p))) return false;
         return true;
       });
     }
     function ordenar(l) {
-      const o = est.ordem, por = { novos: (a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0), menor: (a, b) => (a.preco || 1e9) - (b.preco || 1e9), desconto: (a, b) => desconto(b) - desconto(a), cupom: (a, b) => (b.cupom ? 1 : 0) - (a.cupom ? 1 : 0) || (b.publicadoEm || 0) - (a.publicadoEm || 0) };
-      return l.slice().sort(por[o] || por.novos);
+      const por = { novos: (a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0), menor: (a, b) => (a.preco || 1e9) - (b.preco || 1e9), maior: (a, b) => (b.preco || 0) - (a.preco || 0),
+        desconto: (a, b) => desconto(b) - desconto(a), vendidos: (a, b) => (a.maisVendido || 999) - (b.maisVendido || 999) || (b.publicadoEm || 0) - (a.publicadoEm || 0) };
+      return l.slice().sort(por[est.ordem] || por.novos);
     }
-    const nFiltros = () => (est.para ? 1 : 0) + est.tipos.size + est.lojas.size + (est.preco ? 1 : 0);
+    const nFiltros = () => est.tipos.size + est.lojas.size + (est.preco ? 1 : 0) + est.vant.size;
     const presentes = (k) => [...new Set(produtos.map((p) => p[k]).filter(Boolean))];
-
-    function htmlFiltros() {
+    const conta = (ignorar, f) => filtrar(ignorar).filter(f).length;
+    const chip = (attr, v, nome, on, extra = "") => `<button type="button" class="ch${extra}${on ? " on" : ""}" ${attr}="${esc(v)}" aria-pressed="${on}">${nome}</button>`;
+    const pontoLoja = (k) => `<i class="pt-loja" style="background:${COR_LOJA[k] || "#ccc"}"></i>`;
+    function grupos() { // o que existe nos produtos publicados
       const tipos = presentes("tipo").sort((a, b) => (TIPOS[a] || a).localeCompare(TIPOS[b] || b, "pt-BR")), lojas = presentes("loja");
-      const chip = (attr, v, nome, on, escuro) => `<button type="button" class="chip${escuro ? " escuro" : ""}${on ? " on" : ""}" ${attr}="${esc(v)}" aria-pressed="${on}">${esc(nome)}</button>`;
-      return `<span class="sec">Para quem</span><div class="ops">${Object.entries(PARA).map(([k, n]) => chip("data-para", k, n, est.para === k)).join("")}</div>
-        ${tipos.length ? `<span class="sec">Tipo de produto</span><div class="ops">${tipos.map((k) => chip("data-tipo", k, TIPOS[k] || k, est.tipos.has(k))).join("")}</div>` : ""}
-        ${lojas.length > 1 ? `<span class="sec">Loja</span><div class="ops">${chip("data-loja", "", "Todas", !est.lojas.size, true)}${lojas.map((k) => chip("data-loja", k, LOJAS[k] || k, est.lojas.has(k), true)).join("")}</div>` : ""}
-        <span class="sec">Preço</span><div class="ops">${Object.entries(PRECOS).map(([k, [n]]) => chip("data-preco", k, n, est.preco === k)).join("")}</div>`;
+      const vant = Object.keys(VANT).filter((k) => produtos.some(VANT[k][1]));
+      return { tipos, lojas, vant };
     }
+    function htmlFiltrosMob() {
+      const g = grupos();
+      return `${g.tipos.length > 1 ? `<div class="grupo"><span class="lbl">Categoria</span><div class="ops">${g.tipos.map((k) => chip("data-tipo", k, esc(TIPOS[k] || k), est.tipos.has(k))).join("")}</div></div>` : ""}
+        ${g.lojas.length > 1 ? `<div class="grupo"><span class="lbl">Loja</span><div class="ops">${g.lojas.map((k) => chip("data-loja", k, pontoLoja(k) + esc(LOJAS[k] || k), est.lojas.has(k))).join("")}</div></div>` : ""}
+        <div class="grupo"><span class="lbl">Preço</span><div class="ops">${Object.entries(PRECOS).map(([k, [n]]) => chip("data-preco", k, n, est.preco === k)).join("")}</div></div>
+        ${g.vant.length ? `<div class="grupo"><span class="lbl">Vantagens</span><div class="ops">${g.vant.map((k) => chip("data-vant", k, VANT[k][0], est.vant.has(k), " rosa")).join("")}</div></div>` : ""}
+        <div class="grupo"><span class="lbl">Ordenar por</span><div class="ops">${Object.entries(ORDENS).filter(([k]) => k !== "vendidos" || produtos.some((p) => p.maisVendido)).map(([k, n]) => chip("data-ordem", k, n, est.ordem === k)).join("")}</div></div>`;
+    }
+    function htmlLado() {
+      const g = grupos(), ck = (attr, v, nome, on, n) => `<button type="button" class="ck${on ? " on" : ""}" ${attr}="${esc(v)}" aria-pressed="${on}"><i></i>${nome}<em>${n}</em></button>`;
+      return `<div class="folha-cab"><h2 style="font-size:16px">Filtros</h2>${nFiltros() || est.para ? '<button type="button" class="limpar" data-limpar>Limpar</button>' : ""}</div>
+        <div class="grupo"><h4>Para quem</h4>${Object.entries(PARA).map(([k, n]) => ck("data-para", k, n, est.para === k, conta("para", (p) => p.para === k))).join("")}</div>
+        ${g.tipos.length > 1 ? `<div class="grupo"><h4>Categoria</h4>${g.tipos.map((k) => ck("data-tipo", k, esc(TIPOS[k] || k), est.tipos.has(k), conta("tipos", (p) => p.tipo === k))).join("")}</div>` : ""}
+        ${g.lojas.length > 1 ? `<div class="grupo"><h4>Loja</h4>${g.lojas.map((k) => ck("data-loja", k, esc(LOJAS[k] || k), est.lojas.has(k), conta("lojas", (p) => p.loja === k))).join("")}</div>` : ""}
+        <div class="grupo"><h4>Preço</h4><div class="ops">${Object.entries(PRECOS).map(([k, [n]]) => chip("data-preco", k, n, est.preco === k)).join("")}</div></div>
+        ${g.vant.length ? `<div class="grupo"><h4>Vantagens</h4>${g.vant.map((k) => ck("data-vant", k, VANT[k][0], est.vant.has(k), conta("vant", VANT[k][1]))).join("")}</div>` : ""}`;
+    }
+    const ICO_COMP = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>';
+    const botaoLoja = (p, grande) => {
+      const lj = LOJAS[p.loja] ? p.loja : "", link = urlOk(p.link) ? p.link : "";
+      if (!link) return "";
+      const txt = grande ? ({ shopee: "Comprar na Shopee", mercadolivre: "Comprar no Mercado Livre", amazon: "Comprar na Amazon", magalu: "Comprar no Magalu" }[lj] || "Ir para a loja") : "Ver oferta";
+      return `<a class="bt-loja ${lj}" href="${esc(link)}" target="_blank" rel="noopener nofollow sponsored">${LOGO[lj] ? `<img src="${LOGO[lj]}" alt="" width="24" height="24">` : ""}${txt}</a>`;
+    };
     function cardHtml(p) {
-      const d = desconto(p), lj = LOJAS[p.loja] ? p.loja : "";
-      return `<button type="button" class="card" data-id="${esc(p.id)}"><span class="foto">${imgOk(p.imagem) ? `<img src="${esc(p.imagem)}" alt="${esc(p.nome)}" loading="lazy" referrerpolicy="no-referrer">` : '<img class="sem" src="app/logo.png" alt="">'}${lj ? `<span class="loja ${lj}">${esc(LOJAS[lj])}</span>` : ""}${d >= 5 ? `<span class="off">-${d}%</span>` : ""}</span>
-        <span class="info"><span class="nome">${esc(p.nome)}</span>${d >= 5 ? `<s>${brl(p.precoAntigo)}</s>` : ""}${p.preco ? `<span class="preco">${brl(p.preco)}</span>` : ""}${p.cupom ? `<span class="cupom">Cupom ${esc(p.cupom)}</span>` : ""}<span class="ver"><span>Ver na loja</span></span></span></button>`;
+      const d = desconto(p), selo = d >= 5 ? `<span class="selo off">-${d}%</span>` : p.frete ? '<span class="selo">Frete grátis</span>' : "";
+      return `<article class="card"><button type="button" class="abrir" data-id="${esc(p.id)}" aria-label="${esc(p.nome)}"><span class="foto">${imgOk(p.imagem) ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<img class="sem" src="app/logo.png" alt="">'}${selo}</span></button>
+        <button type="button" class="compart" data-compart="${esc(p.id)}" aria-label="Compartilhar">${ICO_COMP}</button>
+        <div class="info"><small>${esc(LOJAS[p.loja] || "")}</small><span class="nome">${esc(p.nome)}</span>${p.preco ? `<span class="preco">${brl(p.preco)}${d >= 5 ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}${p.cupom ? `<span class="cupom">CUPOM ${esc(p.cupom)}</span>` : ""}<div class="ir">${botaoLoja(p)}</div></div></article>`;
     }
     function pintar() {
-      const l = ordenar(filtrar()), n = nFiltros();
-      $("#paraMob").innerHTML = [["", "Tudo"], ...Object.entries(PARA)].map(([k, nome]) => `<button type="button" data-para="${k}" class="${est.para === k ? "on" : ""}" aria-pressed="${est.para === k}">${nome}</button>`).join("");
-      const tipos = presentes("tipo").sort((a, b) => (TIPOS[a] || a).localeCompare(TIPOS[b] || b, "pt-BR"));
-      $("#atalhos").innerHTML = `<button type="button" class="bt-filtros" id="abrirFiltros">Filtros <i>${n || ""}</i></button>` + tipos.map((k) => `<button type="button" class="chip${est.tipos.has(k) ? " on" : ""}" data-tipo="${esc(k)}" aria-pressed="${est.tipos.has(k)}">${esc(TIPOS[k] || k)}</button>`).join("");
-      $("#lado").innerHTML = `<div class="folha-cab"><h2 style="font-size:17px">Filtros</h2>${n ? '<button type="button" class="limpar" data-limpar>Limpar</button>' : ""}</div>` + htmlFiltros();
-      if ($("#dlgFiltros").open) $("#filtrosMob").innerHTML = htmlFiltros();
-      $("#verN").textContent = l.length ? `Ver ${l.length} ${l.length === 1 ? "achadinho" : "achadinhos"}` : "Nenhum achadinho com esses filtros";
-      $("#contagem").textContent = produtos.length ? `${l.length} ${l.length === 1 ? "achadinho" : "achadinhos"}` : "";
-      const g = $("#grade"); g.setAttribute("aria-busy", "false");
-      g.innerHTML = l.length ? l.map(cardHtml).join("") : `<p class="vazio">${produtos.length ? 'Nenhum achadinho com esses filtros.<br><button type="button" data-limpar>Limpar os filtros</button>' : "Em breve, achadinhos novos por aqui."}</p>`;
+      const l = ordenar(filtrar()), n = nFiltros(), g = grupos();
+      $("#para").innerHTML = [["", "Tudo"], ...Object.entries(PARA)].map(([k, nome]) => `<button type="button" data-para="${k}" class="${est.para === k ? "on" : ""}" aria-pressed="${est.para === k}">${nome}</button>`).join("");
+      $("#atalhos").innerHTML = `<button type="button" class="ch on" id="abrirFiltros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtros <b>${n || ""}</b></button>`
+        + g.vant.filter((k) => k === "cupom" || k === "frete").map((k) => chip("data-vant", k, VANT[k][0], est.vant.has(k), " rosa")).join("")
+        + chip("data-preco", "ate50", "Até R$ 50", est.preco === "ate50") + chip("data-ordem", "desconto", "Mais desconto", est.ordem === "desconto");
+      $("#lado").innerHTML = htmlLado();
+      if ($("#dlgFiltros").open) $("#filtrosMob").innerHTML = htmlFiltrosMob();
+      $("#ordem").innerHTML = Object.entries(ORDENS).filter(([k]) => k !== "vendidos" || produtos.some((p) => p.maisVendido)).map(([k, nome]) => `<option value="${k}"${est.ordem === k ? " selected" : ""}>${nome}</option>`).join("");
+      const at = [...(est.para ? [["para", est.para, PARA[est.para]]] : []), ...[...est.tipos].map((k) => ["tipo", k, TIPOS[k] || k]), ...[...est.lojas].map((k) => ["loja", k, LOJAS[k] || k]), ...(est.preco ? [["preco", est.preco, PRECOS[est.preco][0]]] : []), ...[...est.vant].map((k) => ["vant", k, VANT[k][0]])];
+      $("#ativos").innerHTML = at.length ? at.map(([t, k, nome]) => `<button type="button" data-${t}="${esc(k)}">${esc(nome)} ✕</button>`).join("") + '<button type="button" class="limpar" data-limpar>Limpar tudo</button>' : "";
+      $("#verN").textContent = l.length ? `Ver ${l.length} ${l.length === 1 ? "achado" : "achados"}` : "Nenhum achado";
+      $("#contagem").innerHTML = produtos.length ? `<b>${l.length}</b> ${l.length === 1 ? "achado" : "achados"}` : "";
+      const gr = $("#grade"); gr.setAttribute("aria-busy", "false");
+      gr.innerHTML = l.length ? l.map(cardHtml).join("") : `<p class="vazio">${produtos.length ? 'Nenhum achado com esses filtros.<br><button type="button" data-limpar>Limpar os filtros</button>' : "Em breve, achadinhos novos por aqui."}</p>`;
+    }
+
+    /* ---------- Compartilhar ---------- */
+    const linkProduto = (id) => location.origin + location.pathname + "#p=" + encodeURIComponent(id);
+    async function compartilhar(id) {
+      const p = produtos.find((x) => x.id === id); if (!p) return;
+      const url = linkProduto(id), texto = `${p.nome}${p.preco ? " por " + brl(p.preco) : ""}${p.cupom ? " com o cupom " + p.cupom : ""} 💖 Achadinho da Miga Promo`;
+      if (navigator.share) { try { await navigator.share({ title: p.nome, text: texto, url }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+      try { await navigator.clipboard.writeText(texto + "\n" + url); toast("Link copiado: é só colar e mandar"); } catch (e) { toast(url); }
     }
 
     /* ---------- Produto aberto ---------- */
     function abrirProduto(id, empurrar = true) {
       const p = produtos.find((x) => x.id === id); if (!p) return;
-      const d = desconto(p), lj = LOJAS[p.loja] ? p.loja : "", link = urlOk(p.link) ? p.link : "";
-      $("#prod").innerHTML = `<div class="folha-cab"><span></span><button type="button" class="fechar" data-fechar aria-label="Fechar">✕</button></div>
+      const d = desconto(p);
+      $("#prod").innerHTML = `<div class="alca"></div><div class="folha-cab"><small>${esc(LOJAS[p.loja] || "")}</small><button type="button" class="fechar" data-fechar aria-label="Fechar">✕</button></div>
         <div class="foto-g">${imgOk(p.imagem) ? `<img src="${esc(p.imagem)}" alt="${esc(p.nome)}" referrerpolicy="no-referrer">` : '<img class="sem" src="app/logo.png" alt="">'}</div>
         <h2>${esc(p.nome)}</h2>
         <div class="precos">${p.preco ? `<b>${brl(p.preco)}</b>` : ""}${d >= 5 ? `<s>${brl(p.precoAntigo)}</s><em>-${d}%</em>` : ""}</div>
         ${p.cupom ? `<div class="cupom-g"><span>Cupom <b>${esc(p.cupom)}</b></span><button type="button" data-copiar="${esc(p.cupom)}">Copiar</button></div>` : ""}
         ${p.descricao ? `<div class="desc curta"><b>Sobre o produto</b><p>${esc(p.descricao)}</p><button type="button" data-mais hidden>Ver mais</button></div>` : ""}
-        ${link ? `<a class="comprar ${lj || "outra"}" href="${esc(link)}" target="_blank" rel="noopener nofollow sponsored">${{ mercadolivre: "Comprar no Mercado Livre", shopee: "Comprar na Shopee", amazon: "Comprar na Amazon", magalu: "Comprar no Magalu" }[lj] || "Ir para a loja"}</a>` : ""}
+        <div class="acoes">${botaoLoja(p, true)}<button type="button" class="compart-g" data-compart="${esc(p.id)}" aria-label="Compartilhar">${ICO_COMP}</button></div>
         <p class="aviso">O preço pode mudar na loja</p>`;
       const dlg = $("#dlgProd"); if (!dlg.open) dlg.showModal();
       const dp = $("#prod .desc p"), mais = $("#prod [data-mais]"); if (dp && mais && dp.scrollHeight > dp.clientHeight + 4) mais.hidden = false;
@@ -291,35 +393,47 @@
 
     /* ---------- Toques ---------- */
     let toastT = 0;
-    function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2200); }
+    function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2400); }
+    const alterna = (set, v) => (set.has(v) ? set.delete(v) : set.add(v));
     document.addEventListener("click", async (e) => {
       const t = e.target;
-      const card = t.closest(".card[data-id]"); if (card) { abrirProduto(card.dataset.id); return; }
+      const cp = t.closest("[data-compart]"); if (cp) { compartilhar(cp.dataset.compart); return; }
+      const ab = t.closest(".abrir[data-id]"); if (ab) { abrirProduto(ab.dataset.id); return; }
       if (t.closest("[data-fechar]")) { fecharProduto(); return; }
-      if (t.closest("#abrirFiltros")) { $("#filtrosMob").innerHTML = htmlFiltros(); $("#dlgFiltros").showModal(); return; }
-      if (t.closest("#verN")) { $("#dlgFiltros").close(); scrollTo({ top: 0, behavior: "smooth" }); return; }
-      if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; pintar(); return; }
-      const cp = t.closest("[data-copiar]"); if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copiar); toast("Cupom copiado"); } catch (err) { toast("Cupom: " + cp.dataset.copiar); } return; }
+      if (t.closest("[data-fechar-f]")) { $("#dlgFiltros").close(); return; }
+      if (t.closest("#abrirFiltros")) { $("#filtrosMob").innerHTML = htmlFiltrosMob(); $("#dlgFiltros").showModal(); return; }
+      if (t.closest("#verN")) { $("#dlgFiltros").close(); $("#para").scrollIntoView({ behavior: "smooth" }); return; }
+      if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; est.vant.clear(); pintar(); return; }
+      const cop = t.closest("[data-copiar]"); if (cop) { try { await navigator.clipboard.writeText(cop.dataset.copiar); toast("Cupom copiado"); } catch (err) { toast("Cupom: " + cop.dataset.copiar); } return; }
       const mais = t.closest("[data-mais]"); if (mais) { mais.closest(".desc").classList.remove("curta"); mais.hidden = true; return; }
-      const pa = t.closest("[data-para]"); if (pa) { const v = pa.dataset.para; est.para = est.para === v && v ? "" : v; pintar(); return; }
-      const tp = t.closest("[data-tipo]"); if (tp) { const v = tp.dataset.tipo; est.tipos.has(v) ? est.tipos.delete(v) : est.tipos.add(v); pintar(); return; }
-      const lj = t.closest("[data-loja]"); if (lj) { const v = lj.dataset.loja; if (!v) est.lojas.clear(); else est.lojas.has(v) ? est.lojas.delete(v) : est.lojas.add(v); pintar(); return; }
+      const pa = t.closest("[data-para]"); if (pa) { const v = pa.dataset.para; est.para = est.para === v ? "" : v; pintar(); return; }
+      const tp = t.closest("[data-tipo]"); if (tp) { alterna(est.tipos, tp.dataset.tipo); pintar(); return; }
+      const lj = t.closest("[data-loja]"); if (lj) { alterna(est.lojas, lj.dataset.loja); pintar(); return; }
       const pr = t.closest("[data-preco]"); if (pr) { const v = pr.dataset.preco; est.preco = est.preco === v ? "" : v; pintar(); return; }
+      const vt = t.closest("[data-vant]"); if (vt) { alterna(est.vant, vt.dataset.vant); pintar(); return; }
+      const od = t.closest("[data-ordem]"); if (od) { const v = od.dataset.ordem; est.ordem = est.ordem === v && v !== "novos" ? "novos" : v; pintar(); return; }
     });
     ["dlgFiltros", "dlgProd"].forEach((id) => $("#" + id).addEventListener("click", (e) => { if (e.target.id === id) e.target.close(); }));
     let buscaT = 0;
-    ["#buscaM", "#buscaD"].forEach((s) => $(s).addEventListener("input", (e) => { est.q = e.target.value; ["#buscaM", "#buscaD"].forEach((o) => { if (o !== s) $(o).value = est.q; }); clearTimeout(buscaT); buscaT = setTimeout(pintar, 150); }));
+    $("#busca").addEventListener("input", (e) => { est.q = e.target.value; clearTimeout(buscaT); buscaT = setTimeout(pintar, 150); });
     $("#ordem").addEventListener("change", (e) => { est.ordem = e.target.value; pintar(); });
 
-    /* ---------- Canal, grupo e Instagram ---------- */
-    function pintarLinks() {
-      const canal = urlOk(cfg.canal) ? cfg.canal : "", grupo = urlOk(cfg.grupo) ? cfg.grupo : "", zap = canal || grupo;
+    /* ---------- Redes: canal (ou grupo) do WhatsApp, Instagram e TikTok ---------- */
+    function pintarRedes() {
+      const zap = urlOk(cfg.canal) ? cfg.canal : urlOk(cfg.grupo) ? cfg.grupo : "";
       const insta = String(cfg.instagram || "").replace(/^@+/, "").replace(/[^\w.]/g, "");
-      if (zap) { $("#zap").href = zap; $("#zap").hidden = false; $("#zapTopo").href = zap; $("#zapTopo").hidden = false; if (!canal) { $("#zap .rotulo").textContent = "Grupo no WhatsApp"; $("#zapTopo").lastChild.textContent = "Grupo no WhatsApp"; } }
-      $("#links").innerHTML = [canal && `<a href="${esc(canal)}" target="_blank" rel="noopener">Canal no WhatsApp</a>`, grupo && `<a href="${esc(grupo)}" target="_blank" rel="noopener">Grupo VIP</a>`, insta && `<a href="https://instagram.com/${esc(insta)}" target="_blank" rel="noopener">Instagram @${esc(insta)}</a>`].filter(Boolean).join("");
+      let tt = String(cfg.tiktok || "").trim(); if (tt && !urlOk(tt)) tt = /^@?[\w.]+$/.test(tt) ? "https://www.tiktok.com/@" + tt.replace(/^@/, "") : "";
+      const icZap = '<svg viewBox="0 0 24 24"><path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.4z"/><path d="M9.2 8.6c.2-.4.5-.6.8-.6h.4c.2 0 .4.1.5.4l.6 1.5c.1.2 0 .5-.1.7l-.5.6c-.1.2-.1.4 0 .5.5.9 1.3 1.7 2.3 2.2.2.1.4.1.5-.1l.6-.6c.2-.2.4-.2.7-.1l1.4.7c.3.1.4.3.4.6v.3c0 .6-.4 1.1-1 1.3-.8.2-2.3.1-4.2-1.5-1.7-1.4-2.5-3-2.7-3.9-.1-.8.1-1.6.4-2z"/></svg>';
+      const icIg = '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".8" class="pt"/></svg>';
+      const icTt = '<svg viewBox="0 0 24 24"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.4 2.6 2.2 4.4 5 4.6"/></svg>';
+      const l = [zap && `<a class="rd zap" href="${esc(zap)}" target="_blank" rel="noopener" aria-label="WhatsApp: entrar no canal">${icZap}</a>`,
+        insta && `<a class="rd" href="https://instagram.com/${esc(insta)}" target="_blank" rel="noopener" aria-label="Instagram @${esc(insta)}">${icIg}</a>`,
+        tt && `<a class="rd" href="${esc(tt)}" target="_blank" rel="noopener" aria-label="TikTok">${icTt}</a>`].filter(Boolean).join("");
+      ["#redesTopo", "#redesRodape"].forEach((s) => { $(s).innerHTML = l; $(s).hidden = !l; });
+      if (zap) { $("#zapFixo").href = zap; $("#zapFixo").hidden = false; }
     }
 
-    carregar().then(() => { pintar(); pintarLinks(); const m = /^#p=(.+)$/.exec(location.hash); if (m) abrirProduto(decodeURIComponent(m[1]), false); })
+    carregar().then(() => { pintar(); pintarRedes(); const m = /^#p=(.+)$/.exec(location.hash); if (m) abrirProduto(decodeURIComponent(m[1]), false); })
       .catch(() => { $("#grade").setAttribute("aria-busy", "false"); $("#grade").innerHTML = '<p class="vazio">Não consegui carregar os achadinhos agora. Tente de novo em instantes.</p>'; $("#contagem").textContent = ""; });
   })();
   </script>

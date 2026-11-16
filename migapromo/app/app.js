@@ -1925,7 +1925,7 @@
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value);
-    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), instagram: config.instagram || "" }; if (JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
+    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: config.instagram || "" }; if (JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
   /* Prompts editáveis (Ajustes) */
   function pintarAjPrompts() {
     $("#ajPrompts").innerHTML = Object.entries(PROMPTS_PADRAO).map(([k, d]) => { const v = modeloPrompt(k), mudou = (config.prompts || {})[k] != null;
@@ -2315,7 +2315,7 @@
     const img = String(it.imagem || ""), imgOk = img && (!img.startsWith("data:") || img.length < 600000) ? img : "";
     return { id: it.id, nome: limparNome(it.nome || ""), preco: it.precoNovo || null, precoAntigo: it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? it.precoAntigo : null,
       cupom: it.cupom ? String(it.cupom).toUpperCase() : "", loja: it.loja || "", link: it.link || "", imagem: imgOk, tipo: it.categoria || "outros", para: PARA_SITE[para] ? para : "mulher",
-      descricao: String(descricao || "").slice(0, 1200), publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
+      descricao: String(descricao || "").slice(0, 1200), frete: !!it.freteGratis, oficial: !!it.lojaOficial, maisVendido: it.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
   }
   async function carregarVitrine() {
     try { const l = await dados.vitrineListar(); vitrineMap = new Map(l.map((p) => [p.id, p])); } catch (e) { /* segue */ }
@@ -9180,7 +9180,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function abrirConfig() {
     mostrarConta();
     $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados; pintarAjPrompts();
-    $("#ajVtLink").textContent = urlVitrine().replace(/^https?:\/\//, ""); $("#ajVtCanal").value = vitrineCfg.canal || ""; $("#ajVtGrupo").value = vitrineCfg.grupo || ""; $("#ajVtQtd").textContent = vitrineMap.size ? `${vitrineMap.size} ${vitrineMap.size === 1 ? "produto" : "produtos"} no site` : "Nenhum produto no site ainda";
+    $("#ajVtLink").textContent = urlVitrine().replace(/^https?:\/\//, ""); $("#ajVtCanal").value = vitrineCfg.canal || ""; $("#ajVtGrupo").value = vitrineCfg.grupo || ""; $("#ajVtTiktok").value = vitrineCfg.tiktok || ""; $("#ajVtQtd").textContent = vitrineMap.size ? `${vitrineMap.size} ${vitrineMap.size === 1 ? "produto" : "produtos"} no site` : "Nenhum produto no site ainda";
     pintarAjustes();
     if (!dialogo.open) dialogo.showModal();
   }
