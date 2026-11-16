@@ -108,7 +108,9 @@
 
     /* ---------- Rodapé + WhatsApp fixo ---------- */
     .rodape { text-align: center; padding: 24px 20px 100px; font-size: 11.5px; line-height: 1.5; color: var(--claro); border-top: 1px solid var(--linha); }
-    .rodape .confia { display: block; color: var(--preto); font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .rodape .confia { margin: 0 auto 12px; max-width: 420px; color: var(--cinza); font-size: 12.5px; line-height: 1.55; }
+    .selo-seg { display: inline-flex; align-items: center; gap: 6px; border: 1.4px solid var(--linha); border-radius: 999px; padding: 6px 13px; font-size: 11.5px; font-weight: 600; color: var(--cinza); }
+    .selo-seg .ic { width: 16px; height: 16px; }
     .zap { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 8px; text-decoration: none; }
     .zap span { display: none; background: #fff; color: var(--preto); border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 6px 18px -6px rgba(0, 0, 0, .25); }
     .zap img { width: 58px; height: 58px; border-radius: 50%; box-shadow: 0 10px 24px -8px rgba(37, 211, 102, .8); }
@@ -178,6 +180,7 @@
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
     <symbol id="i-comp" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></symbol>
+    <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="m9 12 2 2 4-4"/></symbol>
     <symbol id="i-filtro" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
   </svg>
 
@@ -206,8 +209,8 @@
   </main>
 
   <footer class="rodape">
-    <b class="confia">Produtos de confiança, vendidos e entregues direto pelo Mercado Livre e pela Shopee.</b>
-    Você compra com toda a segurança da loja. Os preços e os cupons podem mudar na loja.
+    <p class="confia">Produtos de confiança, vendidos e entregues direto pelo Mercado Livre e pela Shopee.<br>Você compra com toda a segurança da loja.</p>
+    <span class="selo-seg"><svg class="ic" aria-hidden="true"><use href="#i-escudo"/></svg>Compra segura</span>
   </footer>
 
   <a class="zap" id="zap" href="#" target="_blank" rel="noopener" hidden aria-label="Canal da Miga no WhatsApp"><span>Canal no WhatsApp</span><img src="app/rede-whatsapp.png" alt=""></a>
