@@ -2365,3 +2365,5 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .ac-barra { margin: 4px 0 10px; }
 #acPorLista svg { fill: none; stroke: var(--rosa); stroke-width: 2; stroke-linecap: round; }
 .pp-nosite-ac.na-lista { background: #f3eee2; color: var(--preto); }
+/* Nome inteiro do produto (sem cortar em "...") na Lista, nos Achados e no Site */
+.pp-item strong, .pp-linha .pp-item strong { display: block; -webkit-line-clamp: unset; overflow: visible; overflow-wrap: anywhere; }

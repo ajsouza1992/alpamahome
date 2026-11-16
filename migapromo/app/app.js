@@ -1057,6 +1057,16 @@
     if (itens.length) { salvarFila(true); contarFila(); }
     return { itens, novos, pulados };
   }
+  /** Busca a descrição completa de cada produto na loja e põe no site (sem travar a tela) */
+  async function descreverNoSite(itens) {
+    for (const it of itens) {
+      const v = vitrineMap.get(it.id); if (!v || v.descricao) continue;
+      try { const d = it.descricao ? { descricao: it.descricao } : await api("descricao", { url: it.link, nome: limparNome(it.nome || ""), categoria: NOME_CAT[it.categoria] || "" });
+        if (!d || !d.descricao) continue; it.descricao = d.descricao; const nv = { ...vitrineMap.get(it.id), descricao: String(d.descricao).slice(0, 1200), atualizadoEm: Date.now() };
+        await dados.vitrineSalvar(nv); vitrineMap.set(it.id, nv); } catch (e) { /* fica sem descrição */ }
+    }
+    salvarFila(true);
+  }
   const avisoPulados = (n) => (n ? ` ${n} do Mercado Livre ficaram de fora: preencha o seu código de afiliado em Ajustes.` : "");
   $("#acPorLista").addEventListener("click", async () => {
     if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
@@ -1078,6 +1088,7 @@
     const r = trazerParaLista(l, c); let ok = 0;
     for (const it of r.itens) { const sp = produtoSite(it, para || paraQuemDe(it), it.descricao || "", vitrineMap.get(it.id)); try { await dados.vitrineSalvar(sp); vitrineMap.set(it.id, sp); ok++; } catch (err) { console.warn(err); } }
     for (const id of velhos) { try { await dados.vitrineApagar(id); vitrineMap.delete(id); } catch (err) { /* segue */ } }
+    descreverNoSite(r.itens);
     b.disabled = false; b.textContent = "Enviar para o site"; sairAcSite(); pintarAchados(); renderFila();
     toast(ok ? `${ok} ${ok === 1 ? "produto enviado" : "produtos enviados"} para o site e para a sua Lista.${avisoPulados(r.pulados)}` : "Não consegui enviar. Confira as regras do Firestore (vitrine).");
   });
