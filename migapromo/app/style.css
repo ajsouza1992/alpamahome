@@ -2362,3 +2362,6 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .st-tags b.st-para { background: #f3eee2; color: var(--preto); }
 .st-bts button svg { width: 18px; height: 18px; }
 #stLista { display: block; }
+.ac-barra { margin: 4px 0 10px; }
+#acPorLista svg { fill: none; stroke: var(--rosa); stroke-width: 2; stroke-linecap: round; }
+.pp-nosite-ac.na-lista { background: #f3eee2; color: var(--preto); }

@@ -1004,11 +1004,15 @@
     try { const u = new URL(p.link); u.searchParams.set("matt_word", config.mlMattWord); u.searchParams.set("matt_tool", config.mlMattTool); return u.href; } catch (e) { return ""; }
   }
   const idSiteAchado = (p) => "ac-" + (p.loja || "loja") + "-" + (String(p.id || "").replace(/[^\w-]/g, "") || Array.from(String(p.link)).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36));
+  /** O achado já está na Lista? (pelo link de afiliado ou pelo link da loja) */
+  const itemDoAchado = (p) => { const l = linkAfiliadoAuto(p); return fila().find((i) => !i.carregando && ((l && mesmoProduto(i, l)) || (p.link && mesmoProduto(i, p.link)))); };
+  const achadoNoSite = (p) => { const it = itemDoAchado(p); return vitrineMap.has(idSiteAchado(p)) || (it && vitrineMap.has(it.id)); };
   function decorarAchados() {
     const cat = $("#catalogo"); cat.classList.toggle("ac-sel", !!acSel);
+    const vis = [];
     cat.querySelectorAll(".pp-linha").forEach((ln) => {
-      const b = ln.querySelector("[data-achado]"); if (!b) return; const i = Number(b.dataset.achado), p = catalogoAtual[i]; if (!p) return;
-      if (vitrineMap.has(idSiteAchado(p)) && !ln.querySelector(".pp-nosite-ac")) { const m = ln.querySelector(".meta"); if (m) m.insertAdjacentHTML("afterend", '<b class="pp-nosite-ac">No site</b>'); }
+      const b = ln.querySelector("[data-achado]"); if (!b) return; const i = Number(b.dataset.achado), p = catalogoAtual[i]; if (!p) return; vis.push(i);
+      if (!ln.querySelector(".pp-nosite-ac")) { const tags = [achadoNoSite(p) && "No site", itemDoAchado(p) && "Na Lista"].filter(Boolean); const m = ln.querySelector(".meta"); if (m && tags.length) m.insertAdjacentHTML("afterend", `<span class="st-tags">${tags.map((t) => `<b class="pp-nosite-ac${t === "Na Lista" ? " na-lista" : ""}">${t}</b>`).join("")}</span>`); }
       ln.classList.toggle("marcado", !!acSel && acSel.has(i));
       let mk = ln.querySelector(".pp-marcar");
       if (acSel && !mk) { ln.insertAdjacentHTML("beforeend", `<button type="button" class="pp-marcar" data-ac-marcar="${i}" aria-label="Marcar"></button>`); mk = ln.querySelector(".pp-marcar"); }
@@ -1016,39 +1020,66 @@
     });
     const bar = $("#barraAcSite"); bar.hidden = !acSel || $("#aba-achados").hidden;
     document.body.classList.toggle("modo-selecao", !bar.hidden || !$("#barraMarcados").hidden);
-    if (acSel) $("#acSiteQtd").textContent = acSel.size ? `${acSel.size} ${acSel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos que vão para o site";
-    $("#acSite").textContent = acSel ? "Cancelar" : "Enviar para o site";
+    if (acSel) $("#acSiteQtd").textContent = acSel.size ? `${acSel.size} ${acSel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
+    $("#acSelecionar").textContent = acSel ? "Cancelar" : "Selecionar";
+    $("#acTodos").hidden = !acSel; $("#acTotal").hidden = !!acSel;
+    $("#acTodosCx").classList.toggle("on", !!acSel && !!vis.length && vis.every((i) => acSel.has(i)));
   }
   function sairAcSite() { acSel = null; decorarAchados(); }
-  $("#acSite").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); toast("Toque nos produtos que vão para o site"); });
-  $("#acSiteCancelar").addEventListener("click", sairAcSite);
-  document.addEventListener("miga-aba", (e) => { if (acSel && e.detail !== "achados") sairAcSite(); if (stEst && stEst.sel && e.detail !== "site") { stEst.sel = null; renderSite(); } });
+  $("#acSelecionar").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); });
+  $("#acTodos").addEventListener("click", () => {
+    if (!acSel) return; const vis = [...document.querySelectorAll("#catalogo [data-achado]")].map((b) => Number(b.dataset.achado));
+    if (vis.every((i) => acSel.has(i))) vis.forEach((i) => acSel.delete(i)); else vis.forEach((i) => acSel.add(i)); decorarAchados();
+  });
   $("#catalogo").addEventListener("click", (e) => {
     if (!acSel) return; const b = e.target.closest("[data-achado], [data-ac-marcar]"); if (!b) return;
-    e.stopImmediatePropagation(); const i = Number(b.dataset.achado ?? b.dataset.acMarcar);
+    e.stopImmediatePropagation(); e.preventDefault(); const i = Number(b.dataset.achado ?? b.dataset.acMarcar);
     if (acSel.has(i)) acSel.delete(i); else acSel.add(i); decorarAchados();
   }, true);
+  document.addEventListener("miga-aba", (e) => { if (acSel && e.detail !== "achados") sairAcSite(); if (stEst && stEst.sel && e.detail !== "site") { stEst.sel = null; renderSite(); } });
+  /** Pergunta a categoria: automática (cada um a sua) ou uma para todos. Devolve "" (automática), a categoria, ou null (desistiu) */
+  async function categoriaDosAchados(l, acao) {
+    const modo = l.length === 1 ? "uma" : await escolherOpcao(`Categoria de ${l.length} produtos`, [["auto", "Automática: o app escolhe a de cada um"], ["uma", "Escolher uma categoria para todos"]], "auto"); if (!modo) return null;
+    if (modo === "auto") return "";
+    return await escolherCategoria({ sugestao: adivinharCategoria(l[0].nome, l[0].categoria), nome: l.length === 1 ? l[0].nome : "", titulo: `Categoria · ${l.length}`, acao }) || null;
+  }
+  /** Traz os achados para a Lista com tudo (preço, foto, comissão, nota, vendidos, frete, loja oficial), já com o seu link de afiliado */
+  function trazerParaLista(l, cat) {
+    const itens = []; let novos = 0, pulados = 0;
+    for (const p of l) {
+      const link = linkAfiliadoAuto(p); if (!link) { pulados++; continue; }
+      let it = itemDoAchado(p);
+      if (it) { Object.assign(it, extrasDe(p)); if (p.preco) it.precoNovo = p.preco; if (p.precoAntigo) it.precoAntigo = p.precoAntigo; if (!it.imagem && p.imagem) it.imagem = p.imagem; if (cat) it.categoria = cat; }
+      else { it = { ...extrasDe(p), id: novoId(), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "",
+        categoria: cat || adivinharCategoria(p.nome, p.categoria), catV2: true, texto: "", feito: {}, criadoEm: Date.now() }; fila().unshift(it); novos++; }
+      itens.push(it);
+    }
+    if (itens.length) { salvarFila(true); contarFila(); }
+    return { itens, novos, pulados };
+  }
+  const avisoPulados = (n) => (n ? ` ${n} do Mercado Livre ficaram de fora: preencha o seu código de afiliado em Ajustes.` : "");
+  $("#acPorLista").addEventListener("click", async () => {
+    if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
+    const l = [...acSel].map((i) => catalogoAtual[i]).filter(Boolean);
+    if (!l.some(linkAfiliadoAuto)) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
+    const c = await categoriaDosAchados(l, "Pôr em"); if (c === null) return;
+    const r = trazerParaLista(l, c); sairAcSite(); pintarAchados(); renderFila();
+    toastAcao(`${r.itens.length} ${r.itens.length === 1 ? "produto" : "produtos"} na Lista${r.novos < r.itens.length ? ` (${r.itens.length - r.novos} já estavam)` : ""}.${avisoPulados(r.pulados)}`, "Ver na Lista", () => { filtroLista = "todas"; irPara("postar"); });
+  });
   $("#acSiteEnviar").addEventListener("click", async () => {
     if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
     const l = [...acSel].map((i) => catalogoAtual[i]).filter(Boolean);
-    const ml = l.filter((p) => !p.afiliado && !linkAfiliadoAuto(p));
-    if (ml.length === l.length) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
-    const modo = l.length === 1 ? "uma" : await escolherOpcao(`Categoria de ${l.length} produtos`, [["auto", "Automática: o app escolhe a de cada um"], ["uma", "Escolher uma categoria para todos"]], "auto"); if (!modo) return;
-    let c = "", para = "";
-    if (modo === "uma") { c = await escolherCategoria({ sugestao: adivinharCategoria(l[0].nome, l[0].categoria), nome: l.length === 1 ? l[0].nome : "", titulo: `Categoria no site · ${l.length}`, acao: "Enviar para" }); if (!c) return;
-      para = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), paraQuemDe({ nome: l[0].nome, categoria: c })); if (!para) return; }
-    const b = $("#acSiteEnviar"); b.disabled = true; b.textContent = "Enviando…"; let ok = 0;
-    for (const p of l) {
-      const link = linkAfiliadoAuto(p); if (!link) continue;
-      const id = idSiteAchado(p), antes = vitrineMap.get(id);
-      const tipo = c || adivinharCategoria(p.nome, p.categoria), pq = para || paraQuemDe({ nome: p.nome, categoria: tipo });
-      const sp = { id, nome: limparNome(p.nome || ""), preco: p.preco || null, precoAntigo: p.precoAntigo && p.preco && p.precoAntigo > p.preco ? p.precoAntigo : null, cupom: "", loja: p.loja || detectarLoja(link) || "", link, imagem: p.imagem || "", tipo, para: pq,
-        descricao: (antes && antes.descricao) || "", frete: !!p.freteGratis, oficial: !!p.lojaOficial, maisVendido: p.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
-      try { await dados.vitrineSalvar(sp); vitrineMap.set(id, sp); ok++; } catch (err) { console.warn(err); }
-    }
-    b.disabled = false; b.textContent = "Enviar para o site"; sairAcSite(); pintarAchados(); renderSite();
-    const pulou = ml.length ? ` ${ml.length} do Mercado Livre ficaram de fora: preencha o seu código de afiliado em Ajustes.` : "";
-    toast(ok ? `${ok} ${ok === 1 ? "produto enviado" : "produtos enviados"} para o site.${pulou}` : "Não consegui enviar. Confira as regras do Firestore (vitrine).");
+    if (!l.some(linkAfiliadoAuto)) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
+    const c = await categoriaDosAchados(l, "Enviar para"); if (c === null) return;
+    let para = ""; if (c) { para = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), paraQuemDe({ nome: l[0].nome, categoria: c })); if (!para) return; }
+    const b = $("#acSiteEnviar"); b.disabled = true; b.textContent = "Enviando…";
+    // vão também para a Lista, com todas as informações; o site acompanha o produto da Lista
+    const velhos = l.map(idSiteAchado).filter((id) => vitrineMap.has(id));
+    const r = trazerParaLista(l, c); let ok = 0;
+    for (const it of r.itens) { const sp = produtoSite(it, para || paraQuemDe(it), it.descricao || "", vitrineMap.get(it.id)); try { await dados.vitrineSalvar(sp); vitrineMap.set(it.id, sp); ok++; } catch (err) { console.warn(err); } }
+    for (const id of velhos) { try { await dados.vitrineApagar(id); vitrineMap.delete(id); } catch (err) { /* segue */ } }
+    b.disabled = false; b.textContent = "Enviar para o site"; sairAcSite(); pintarAchados(); renderFila();
+    toast(ok ? `${ok} ${ok === 1 ? "produto enviado" : "produtos enviados"} para o site e para a sua Lista.${avisoPulados(r.pulados)}` : "Não consegui enviar. Confira as regras do Firestore (vitrine).");
   });
   $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(() => { if (catBusca && !$("#acBusca").value.trim()) { carregarCatalogo(); return; } pintarAchados(); }, 150); });
   $("#acBusca").addEventListener("keydown", (e) => { if (e.key === "Enter" && $("#acBusca").value.trim().length >= 2) { e.preventDefault(); buscarNasLojas($("#acBusca").value.trim()); } });
