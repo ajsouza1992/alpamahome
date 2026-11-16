@@ -552,11 +552,11 @@ async function contaGoogleOk(request, env) {
     const [h, p, s] = m[1].split(".");
     const cab = JSON.parse(new TextDecoder().decode(b64url(h)));
     const dados = JSON.parse(new TextDecoder().decode(b64url(p)));
-    const projeto = env.FIREBASE_PROJECT_ID || "miga-372d3";
+    const projeto = env.FIREBASE_PROJECT_ID || "miga-promo-d4f51";
     const agora = Date.now() / 1000;
     if (cab.alg !== "RS256" || dados.aud !== projeto || dados.iss !== "https://securetoken.google.com/" + projeto) return false;
     if (!(dados.exp > agora) || dados.iat > agora + 300 || !dados.email_verified) return false;
-    const permitidos = String(env.MIGA_EMAILS || "alpama.app@gmail.com").toLowerCase().split(/[\s,;]+/).filter(Boolean);
+    const permitidos = String(env.MIGA_EMAILS || "").toLowerCase().split(/[\s,;]+/).filter(Boolean);
     if (!permitidos.includes(String(dados.email || "").toLowerCase())) return false;
     const jwk = (await chavesFirebase()).find((k) => k.kid === cab.kid);
     if (!jwk) return false;

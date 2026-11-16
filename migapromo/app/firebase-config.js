@@ -12,12 +12,12 @@
  * neste navegador), útil para testar.
  */
 window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDDR_7eles8Sq__UQ9wJD3PpQFBiG2Pa48",
-  authDomain: "miga-372d3.firebaseapp.com",
-  projectId: "miga-372d3",
-  storageBucket: "miga-372d3.firebasestorage.app",
-  messagingSenderId: "130311271043",
-  appId: "1:130311271043:web:b1414021525b2233e821b6"
+  apiKey: "AIzaSyCTltrkdaOYFPwtU04ZVXngqA7J_T_RTPg",
+  authDomain: "miga-promo-d4f51.firebaseapp.com",
+  projectId: "miga-promo-d4f51",
+  storageBucket: "miga-promo-d4f51.firebasestorage.app",
+  messagingSenderId: "142511788738",
+  appId: "1:142511788738:web:3a24bce9ab5da39c2fa15b"
 };
 
 /* (modelo) Exemplo depois de preenchido:
