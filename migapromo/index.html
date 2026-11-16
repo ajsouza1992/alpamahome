@@ -16,13 +16,13 @@
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     /* Vitrine da Miga Promo: site público e limpo (só lê os produtos publicados pelo app) */
     :root { --rosa: #e8336d; --rosa-claro: #ffe8f0; --creme: #fff6dc; --creme2: #fbefd6; --preto: #1d1d1f; --amarelo: #ffd23f; --cinza: #6b6460; --claro: #a59e95; --linha: #eadfca; }
     * { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; }
-    body { margin: 0; font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--creme); color: var(--preto); -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #fff; color: var(--preto); -webkit-tap-highlight-color: transparent; }
     button { font: inherit; color: inherit; cursor: pointer; }
     img { display: block; }
     a { color: inherit; }
@@ -30,46 +30,39 @@
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     :focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
     .sem-barra { scrollbar-width: none; } .sem-barra::-webkit-scrollbar { display: none; }
-    @media (prefers-reduced-motion: reduce) { .forma, .pal span { animation: none !important; } .pal span:first-child { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .bola, .faixa-in { animation: none !important; } }
     .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
     .larg { max-width: 1280px; margin: 0 auto; padding-left: 14px; padding-right: 14px; }
 
-    /* ---------- Cabeçalho (sobe junto com a página) ---------- */
-    .cab { display: flex; align-items: center; gap: 10px; padding-top: 12px; padding-bottom: 6px; }
-    .marca { display: flex; align-items: center; gap: 9px; text-decoration: none; }
-    .marca img { width: 40px; height: 40px; border-radius: 12px; box-shadow: 0 6px 14px -8px rgba(232, 51, 109, .8); }
-    .marca b { font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
-    .redes { margin-left: auto; display: flex; gap: 8px; }
-    .rede { width: 36px; height: 36px; border-radius: 50%; display: block; transition: transform .15s; }
+    /* ---------- Capa (topo da página, sobe ao rolar) ---------- */
+    .capa { position: relative; overflow: hidden; background: #fff; padding-top: 16px; padding-bottom: 14px; }
+    .bola { position: absolute; z-index: 0; left: -70px; top: -110px; width: 280px; height: 270px; border-radius: 50%; background: var(--creme); pointer-events: none; animation: bola 12s ease-in-out infinite; }
+    @keyframes bola { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(6px, 8px); } }
+    .capa-in { position: relative; z-index: 1; }
+    .capa-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+    .marca { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--preto); }
+    .marca__miga { display: inline-block; padding: 0 12px 4px; background: var(--rosa); color: #fff; border: 2px solid var(--preto); border-radius: 12px; box-shadow: 2px 2px 0 var(--preto); transform: rotate(-4deg); font: 700 24px/1.15 "Dancing Script", cursive; }
+    .marca__promo { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 14px; letter-spacing: .08em; }
+    .marca__promo b { display: inline-grid; place-items: center; width: 22px; height: 22px; background: var(--amarelo); border-radius: 50%; font-size: 11px; }
+    .redes { display: flex; gap: 8px; }
+    .rede { width: 36px; height: 36px; border-radius: 50%; display: block; border: 2.5px solid #fff; box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .3); transition: transform .15s; }
     .rede:hover { transform: scale(1.08); }
-    .rede img { width: 100%; height: 100%; }
-
-    /* ---------- Capa ---------- */
-    .capa { position: relative; overflow: hidden; background: #fff; border-radius: 26px; padding: 20px 20px 22px; margin-top: 6px; }
-    .capa > *:not(.forma) { position: relative; z-index: 2; }
-    .forma { position: absolute; z-index: 1; pointer-events: none; }
-    .f-circ { right: -60px; top: -60px; width: 160px; height: 160px; border-radius: 50%; background: var(--rosa); animation: f-circ 14s ease-in-out infinite; }
-    .f-aro { display: none; border-radius: 50%; border: 1.6px solid rgba(29, 29, 31, .3); animation: f-aro 10s ease-in-out infinite; }
-    @keyframes f-circ { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-10px, 12px); } }
-    @keyframes f-aro { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-14px, 16px); } }
-    h1 { font-weight: 800; letter-spacing: -1px; line-height: 1.1; font-size: 26px; margin: 0 0 6px; max-width: 520px; }
-    .pal { display: inline-grid; color: var(--rosa); vertical-align: bottom; }
-    .pal span { grid-area: 1 / 1; opacity: 0; animation: pal 9s infinite; }
-    .pal span:nth-child(2) { animation-delay: 3s; } .pal span:nth-child(3) { animation-delay: 6s; }
-    @keyframes pal { 0% { opacity: 0; transform: translateY(.35em); } 6%, 30% { opacity: 1; transform: none; } 36%, 100% { opacity: 0; transform: translateY(-.35em); } }
-    .sub { font-size: 13px; line-height: 1.5; color: var(--cinza); margin: 0; max-width: 300px; }
+    .rede img { width: 100%; height: 100%; border-radius: 50%; }
+    h1 { font-weight: 800; letter-spacing: -1px; line-height: 1.1; font-size: 25px; margin: 18px 0 4px; max-width: 560px; }
+    h1 em { font-style: normal; color: var(--rosa); }
+    .sub { font-size: 12.5px; line-height: 1.5; color: var(--cinza); margin: 0; max-width: 290px; }
 
     /* ---------- Faixa (creme, letras rosa, sem parar) ---------- */
-    .faixa { margin-top: 14px; border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); background: var(--creme); color: var(--rosa); font-weight: 800; font-size: 11px; letter-spacing: 2.5px; white-space: nowrap; overflow: hidden; padding: 10px 0; }
+    .faixa { background: var(--rosa); color: #fff; font-weight: 800; font-size: 11.5px; letter-spacing: 2.5px; white-space: nowrap; overflow: hidden; padding: 10px 0; }
     .faixa-in { display: inline-flex; animation: corre 60s linear infinite; will-change: transform; }
     .faixa-in span { flex: none; }
-    .faixa-in span::after { content: "•"; margin: 0 14px; color: var(--preto); opacity: .35; }
+    .faixa-in span::after { content: "✦"; margin: 0 14px; opacity: .7; }
     @keyframes corre { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
     /* ---------- Busca + filtro (gruda no topo ao descer) ---------- */
-    .busca-bar { position: sticky; top: 0; z-index: 20; background: rgba(255, 246, 220, .95); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+    .busca-bar { position: sticky; top: 0; z-index: 20; background: rgba(255, 255, 255, .96); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
     .busca-in { display: flex; align-items: center; gap: 8px; padding-top: 10px; padding-bottom: 8px; }
-    .busca { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; background: #fff; border: 1.4px solid var(--linha); border-radius: 999px; padding: 0 14px; transition: border-color .2s, box-shadow .2s; }
+    .busca { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; background: #fffdf8; border: 1.4px solid var(--linha); border-radius: 999px; padding: 0 14px; transition: border-color .2s, box-shadow .2s; }
     .busca:focus-within { border-color: var(--rosa); box-shadow: 0 0 0 3px rgba(232, 51, 109, .14); }
     .busca .ic { color: var(--rosa); width: 17px; height: 17px; }
     .busca input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 14.5px; padding: 11px 0; color: var(--preto); }
@@ -85,9 +78,9 @@
     .res b { color: var(--preto); }
     .res .limpar { border: 0; background: none; color: var(--rosa); font-weight: 700; font-size: 12.5px; padding: 0; }
     .grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-top: 10px; padding-bottom: 30px; }
-    .card { position: relative; display: flex; flex-direction: column; background: #fff; border-radius: 20px; overflow: hidden; }
+    .card { position: relative; display: flex; flex-direction: column; background: #fff; border: 1.4px solid #f0e8d8; border-radius: 20px; overflow: hidden; }
     .card .abrir { display: block; border: 0; background: none; padding: 0; text-align: left; }
-    .card .foto { position: relative; display: block; aspect-ratio: 4 / 5; background: #fff; }
+    .card .foto { position: relative; display: block; aspect-ratio: 1 / 1; background: #fff; }
     .card .foto img { width: 100%; height: 100%; object-fit: cover; }
     .card .foto img.inteira { object-fit: contain; background: #f7f2e8; }
     img.sem { opacity: .25; padding: 28%; object-fit: contain !important; }
@@ -107,7 +100,7 @@
     .bt-loja.mercadolivre { background: #ffe600; color: #2d3277; }
     .bt-loja.amazon { background: #232f3e; }
     .bt-loja.magalu { background: #0086ff; }
-    .vazio { grid-column: 1 / -1; text-align: center; color: var(--cinza); padding: 40px 14px; font-size: 14.5px; background: #fff; border-radius: 24px; }
+    .vazio { grid-column: 1 / -1; text-align: center; color: var(--cinza); padding: 40px 14px; font-size: 14.5px; background: var(--creme); border-radius: 24px; }
     .vazio b { display: block; color: var(--preto); font-size: 16px; margin-bottom: 4px; }
     .vazio button { margin-top: 12px; border: 0; background: var(--rosa); color: #fff; font-weight: 700; border-radius: 999px; padding: 10px 18px; }
     .esqueleto { aspect-ratio: 3 / 4.4; border-radius: 20px; background: linear-gradient(90deg, #f3ecdf 25%, #fbf6ec 50%, #f3ecdf 75%); background-size: 200% 100%; animation: brilho 1.2s infinite; }
@@ -165,13 +158,11 @@
     /* ---------- Computador ---------- */
     @media (min-width: 900px) {
       .larg { padding-left: 32px; padding-right: 32px; }
-      .cab { padding-top: 18px; }
-      .marca img { width: 46px; height: 46px; } .marca b { font-size: 18px; }
-      .rede { width: 40px; height: 40px; }
-      .capa { padding: 34px 40px; }
-      .f-circ { width: 300px; height: 300px; right: -80px; top: -110px; }
-      .f-aro { display: block; width: 60px; height: 60px; right: 230px; top: 80px; }
-      h1 { font-size: 42px; letter-spacing: -1.5px; }
+      .capa { padding-top: 22px; padding-bottom: 26px; }
+      .bola { width: 420px; height: 400px; left: -90px; top: -170px; }
+      .marca__miga { font-size: 28px; } .marca__promo { font-size: 16px; }
+      .rede { width: 42px; height: 42px; }
+      h1 { font-size: 40px; letter-spacing: -1.5px; margin-top: 26px; }
       .sub { font-size: 14.5px; max-width: 460px; }
       .busca-in { max-width: 820px; }
       .grade { grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 16px; }
@@ -190,16 +181,14 @@
     <symbol id="i-filtro" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
   </svg>
 
-  <header class="larg cab">
-    <a class="marca" href="./" aria-label="Miga Promo, início"><img src="app/logo.png" alt="" width="40" height="40"><b>Miga Promo</b></a>
-    <nav class="redes" id="redesTopo" aria-label="Siga a Miga"></nav>
-  </header>
-
-  <section class="larg"><div class="capa">
-    <span class="forma f-circ"></span><span class="forma f-aro"></span>
-    <h1>Achados de <span class="pal"><span>moda</span><span>beleza</span><span>casa</span></span><br>com preço de amiga</h1>
+  <header class="capa"><span class="bola" aria-hidden="true"></span><div class="larg capa-in">
+    <div class="capa-topo">
+      <a class="marca" href="./" aria-label="Miga Promo, início"><span class="marca__miga">Miga</span><span class="marca__promo">PROMO <b>%</b></span></a>
+      <nav class="redes" id="redesTopo" aria-label="Siga a Miga"></nav>
+    </div>
+    <h1>Achados de moda<br>com <em>preço de amiga</em></h1>
     <p class="sub">Promoções e cupons do Mercado Livre e da Shopee, escolhidos todo dia.</p>
-  </div></section>
+  </div></header>
 
   <div class="faixa" aria-hidden="true"><div class="faixa-in" id="faixa"></div></div>
 
@@ -232,7 +221,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=333"></script>
+  <script src="app/firebase-config.js?v=334"></script>
   <script>
   (() => {
     "use strict";
@@ -330,7 +319,7 @@
     };
     function cardHtml(p) {
       const d = desconto(p), selo = d >= 5 ? `<span class="selo off">-${d}%</span>` : p.frete ? '<span class="selo">Frete grátis</span>' : "";
-      return `<article class="card"><button type="button" class="abrir" data-id="${esc(p.id)}" aria-label="${esc(p.nome)}"><span class="foto">${imgOk(p.imagem) ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer" onload="if(Math.abs(this.naturalWidth/this.naturalHeight-.8)>.25)this.classList.add('inteira')">` : '<img class="sem" src="app/logo.png" alt="">'}${selo}</span></button>
+      return `<article class="card"><button type="button" class="abrir" data-id="${esc(p.id)}" aria-label="${esc(p.nome)}"><span class="foto">${imgOk(p.imagem) ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer" onload="if(Math.abs(this.naturalWidth/this.naturalHeight-1)>.25)this.classList.add('inteira')">` : '<img class="sem" src="app/logo.png" alt="">'}${selo}</span></button>
         <button type="button" class="compart" data-compart="${esc(p.id)}" aria-label="Compartilhar">${ic("comp")}</button>
         <div class="info"><span class="nome">${esc(p.nome)}</span>${p.preco ? `<span class="preco">${d >= 5 ? `<s>${brl(p.precoAntigo)}</s>` : ""}${brl(p.preco)}</span>` : ""}${p.cupom ? `<button type="button" class="cupom" data-copiar="${esc(p.cupom)}" aria-label="Copiar o cupom ${esc(p.cupom)}">CUPOM ${esc(p.cupom)}</button>` : ""}<div class="ir">${botaoLoja(p)}</div></div></article>`;
     }
@@ -350,7 +339,8 @@
     /* ---------- Compartilhar ---------- */
     async function compartilhar(id) {
       const p = produtos.find((x) => x.id === id); if (!p) return;
-      const url = location.origin + location.pathname + "#p=" + encodeURIComponent(id), texto = `${p.nome}${p.preco ? " por " + brl(p.preco) : ""}${p.cupom ? " com o cupom " + p.cupom : ""} 💖 Achadinho da Miga Promo`;
+      const url = location.origin + location.pathname + "#p=" + encodeURIComponent(id), d = desconto(p),
+        texto = [`Olha esse achadinho que eu encontrei na Miga Promo 💖`, ``, `🛍️ ${p.nome}`, p.preco ? `💰 ${d >= 5 ? `De ${brl(p.precoAntigo)} por ` : "Por "}${brl(p.preco)}${d >= 5 ? ` (-${d}%)` : ""}` : "", p.cupom ? `🎟️ Cupom: ${p.cupom}` : "", ``, `👉 Veja aqui:`].filter((x, i, a) => x || (i && a[i - 1])).join("\n");
       if (navigator.share) { try { await navigator.share({ title: p.nome, text: texto, url }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
       try { await navigator.clipboard.writeText(texto + "\n" + url); toast("Link copiado: é só colar e mandar"); } catch (e) { toast(url); }
     }
