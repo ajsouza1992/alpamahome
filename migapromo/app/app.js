@@ -624,6 +624,7 @@
       if (b.dataset.aba === aba) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
     $("#barraGerar").hidden = true;
+    document.dispatchEvent(new CustomEvent("miga-aba", { detail: aba }));
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
@@ -982,7 +983,8 @@
     pintarAchados();
   }
   /** Achados no mesmo jeito da Lista (foto, nome, preço, loja) com o ⋮ */
-  function pintarAchados() {
+  function pintarAchados() { pintarAchadosBase(); decorarAchados(); }
+  function pintarAchadosBase() {
     const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t));
     const botaoBusca = bruto.length >= 3 && !daBusca ? `<button type="button" class="btn btn--rosa ac-buscar" id="acBuscarLojas"><svg class="ic-mono"><use href="#i-busca"/></svg>Buscar “${esc(bruto)}” nas lojas</button>` : "";
     $("#acTotal").textContent = `${l.length} ${l.length === 1 ? "achado" : "achados"}`;
@@ -991,6 +993,59 @@
         <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
       </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${catTemMais && !t ? `<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais ${daBusca ? `de “${esc(catBusca)}”` : "achados"}</button>` : ""}` : `<p class="vazio-lista">${bruto && !daBusca ? "Nada com essa palavra nos achados carregados: toque em Buscar nas lojas." : "Nada encontrado nos achados."}</p>`);
   }
+  /* ---------- Enviar vários achados para o site, já com o seu link de afiliado ---------- */
+  let acSel = null; // Set com os índices marcados (null = fora do modo)
+  /** Mercado Livre: põe a sua etiqueta de afiliado (matt_word e matt_tool) no link do produto. Shopee já vem com o seu link. */
+  function linkAfiliadoAuto(p) {
+    if (!p || !p.link) return "";
+    if (p.afiliado) return p.link;
+    if ((p.loja || detectarLoja(p.link)) !== "mercadolivre" || !config.mlMattWord || !config.mlMattTool) return "";
+    try { const u = new URL(p.link); u.searchParams.set("matt_word", config.mlMattWord); u.searchParams.set("matt_tool", config.mlMattTool); return u.href; } catch (e) { return ""; }
+  }
+  const idSiteAchado = (p) => "ac-" + (p.loja || "loja") + "-" + (String(p.id || "").replace(/[^\w-]/g, "") || Array.from(String(p.link)).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36));
+  function decorarAchados() {
+    const cat = $("#catalogo"); cat.classList.toggle("ac-sel", !!acSel);
+    cat.querySelectorAll(".pp-linha").forEach((ln) => {
+      const b = ln.querySelector("[data-achado]"); if (!b) return; const i = Number(b.dataset.achado), p = catalogoAtual[i]; if (!p) return;
+      if (vitrineMap.has(idSiteAchado(p)) && !ln.querySelector(".pp-nosite-ac")) { const m = ln.querySelector(".meta"); if (m) m.insertAdjacentHTML("afterend", '<b class="pp-nosite-ac">No site</b>'); }
+      ln.classList.toggle("marcado", !!acSel && acSel.has(i));
+      let mk = ln.querySelector(".pp-marcar");
+      if (acSel && !mk) { ln.insertAdjacentHTML("beforeend", `<button type="button" class="pp-marcar" data-ac-marcar="${i}" aria-label="Marcar"></button>`); mk = ln.querySelector(".pp-marcar"); }
+      if (!acSel && mk) mk.remove(); else if (mk) mk.setAttribute("aria-pressed", String(acSel.has(i)));
+    });
+    const bar = $("#barraAcSite"); bar.hidden = !acSel || $("#aba-achados").hidden;
+    document.body.classList.toggle("modo-selecao", !bar.hidden || !$("#barraMarcados").hidden);
+    if (acSel) $("#acSiteQtd").textContent = acSel.size ? `${acSel.size} ${acSel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos que vão para o site";
+    $("#acSite").textContent = acSel ? "Cancelar" : "Enviar para o site";
+  }
+  function sairAcSite() { acSel = null; decorarAchados(); }
+  $("#acSite").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); toast("Toque nos produtos que vão para o site"); });
+  $("#acSiteCancelar").addEventListener("click", sairAcSite);
+  document.addEventListener("miga-aba", (e) => { if (acSel && e.detail !== "achados") sairAcSite(); });
+  $("#catalogo").addEventListener("click", (e) => {
+    if (!acSel) return; const b = e.target.closest("[data-achado], [data-ac-marcar]"); if (!b) return;
+    e.stopImmediatePropagation(); const i = Number(b.dataset.achado ?? b.dataset.acMarcar);
+    if (acSel.has(i)) acSel.delete(i); else acSel.add(i); decorarAchados();
+  }, true);
+  $("#acSiteEnviar").addEventListener("click", async () => {
+    if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
+    const l = [...acSel].map((i) => catalogoAtual[i]).filter(Boolean);
+    const ml = l.filter((p) => !p.afiliado && !linkAfiliadoAuto(p));
+    if (ml.length === l.length) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
+    const c = await escolherCategoria({ sugestao: adivinharCategoria(l[0].nome), titulo: `Categoria no site · ${l.length}`, acao: "Enviar para" }); if (!c) return;
+    const para = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), paraQuemDe({ nome: l[0].nome, categoria: c })); if (!para) return;
+    const b = $("#acSiteEnviar"); b.disabled = true; b.textContent = "Enviando…"; let ok = 0;
+    for (const p of l) {
+      const link = linkAfiliadoAuto(p); if (!link) continue;
+      const id = idSiteAchado(p), antes = vitrineMap.get(id);
+      const sp = { id, nome: limparNome(p.nome || ""), preco: p.preco || null, precoAntigo: p.precoAntigo && p.preco && p.precoAntigo > p.preco ? p.precoAntigo : null, cupom: "", loja: p.loja || detectarLoja(link) || "", link, imagem: p.imagem || "", tipo: c, para,
+        descricao: (antes && antes.descricao) || "", frete: !!p.freteGratis, oficial: !!p.lojaOficial, maisVendido: p.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
+      try { await dados.vitrineSalvar(sp); vitrineMap.set(id, sp); ok++; } catch (err) { console.warn(err); }
+    }
+    b.disabled = false; b.textContent = "Enviar para o site"; sairAcSite(); pintarAchados();
+    const pulou = ml.length ? ` ${ml.length} do Mercado Livre ficaram de fora: preencha o seu código de afiliado em Ajustes.` : "";
+    toast(ok ? `${ok} ${ok === 1 ? "produto enviado" : "produtos enviados"} para o site.${pulou}` : "Não consegui enviar. Confira as regras do Firestore (vitrine).");
+  });
   $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(() => { if (catBusca && !$("#acBusca").value.trim()) { carregarCatalogo(); return; } pintarAchados(); }, 150); });
   $("#acBusca").addEventListener("keydown", (e) => { if (e.key === "Enter" && $("#acBusca").value.trim().length >= 2) { e.preventDefault(); buscarNasLojas($("#acBusca").value.trim()); } });
   /** Busca a palavra direto nas lojas (Shopee pela palavra, Mercado Livre pelos mais vendidos da categoria dela) */
@@ -1055,7 +1110,7 @@
       const op = await escolherOpcao(limparNome(p.nome), [["adicionar", "Adicionar na lista"], ["abrir", "Abrir na loja"]], "");
       if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
       if (op !== "adicionar") return;
-      let link = p.link; if (!p.afiliado) { link = await pedirLinkAfiliado(p); if (!link) return; }
+      let link = p.link; if (!p.afiliado) { link = linkAfiliadoAuto(p) || await pedirLinkAfiliado(p); if (!link) return; }
       const ja = fila().find((i) => mesmoProduto(i, link)); if (ja) { toast("Esse produto já está na sua lista"); return; }
       const sug = adivinharCategoria(p.nome), c = await escolherCategoria({ sugestao: sug, nome: p.nome }); if (!c) return;
       const it = { ...extrasDe(p), id: novoId(), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "", categoria: c, catV2: true, texto: "", feito: {}, criadoEm: Date.now() };
@@ -1069,7 +1124,7 @@
     if (!p) return;
     let link = p.link;
     if (!p.afiliado) {
-      link = await pedirLinkAfiliado(p);
+      link = linkAfiliadoAuto(p) || await pedirLinkAfiliado(p);
       if (!link) return;
     }
     // Preenche a aba Criar com o produto escolhido
@@ -1925,7 +1980,7 @@
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value);
-    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: $("#ajVtInsta").value.trim() || config.instagram || "" }; if (JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
+    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: $("#ajVtInsta").value.trim() || config.instagram || "" }; if (JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; { const mw = $("#ajMlWord").value.trim(), mt = $("#ajMlTool").value.trim(); config.mlMattWord = mw.slice(0, 120); config.mlMattTool = mt.replace(/\D/g, "").slice(0, 20); } gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
   /* Prompts editáveis (Ajustes) */
   function pintarAjPrompts() {
     $("#ajPrompts").innerHTML = Object.entries(PROMPTS_PADRAO).map(([k, d]) => { const v = modeloPrompt(k), mudou = (config.prompts || {})[k] != null;
@@ -9179,12 +9234,26 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function abrirConfig() {
     mostrarConta();
-    $("#ajInsta").value = config.instagram || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados; pintarAjPrompts();
+    $("#ajInsta").value = config.instagram || ""; $("#ajMlWord").value = config.mlMattWord || ""; $("#ajMlTool").value = config.mlMattTool || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados; pintarAjPrompts();
     $("#ajVtLink").textContent = urlVitrine().replace(/^https?:\/\//, ""); $("#ajVtCanal").value = vitrineCfg.canal || ""; $("#ajVtGrupo").value = vitrineCfg.grupo || ""; $("#ajVtTiktok").value = vitrineCfg.tiktok || ""; $("#ajVtInsta").value = /^https?:/i.test(vitrineCfg.instagram || "") ? vitrineCfg.instagram : ""; $("#ajVtQtd").textContent = vitrineMap.size ? `${vitrineMap.size} ${vitrineMap.size === 1 ? "produto" : "produtos"} no site` : "Nenhum produto no site ainda";
     pintarAjustes();
     if (!dialogo.open) dialogo.showModal();
   }
   let ajInstaTimer;
+  // Colou o link longo do Mercado Livre: pega os dois códigos sozinho
+  $("#ajMlWord").addEventListener("input", (e) => { const v = e.target.value; if (!/matt_/.test(v)) return;
+    const w = /[?&]matt_word=([^&#\s]+)/.exec(v), t = /[?&]matt_tool=(\d+)/.exec(v);
+    if (w) e.target.value = decodeURIComponent(w[1]); if (t) $("#ajMlTool").value = t[1]; if (w || t) toast("Peguei os códigos do link"); });
+  // Produtos que estão no site, para tirar algum
+  function pintarProdutosSite() {
+    const l = [...vitrineMap.values()].sort((a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0));
+    folhaEst(`Produtos no site · ${l.length}`, l.length ? `<div class="vt-lista">${l.map((p) => `<div class="vt-linha">${p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto"></span>'}<span><b>${esc(p.nome || "Produto")}</b><small>${esc(NOME_LOJA[p.loja] || "")}${p.preco ? " · " + brl(p.preco) : ""}${PARA_SITE[p.para] ? " · " + PARA_SITE[p.para] : ""}</small></span><button type="button" data-vt-tirar="${esc(p.id)}">Tirar</button></div>`).join("")}</div>` : '<p class="nota">Nenhum produto no site ainda.</p>');
+  }
+  $("#ajVtProdutos").addEventListener("click", pintarProdutosSite);
+  $("#folhaEst").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-vt-tirar]"); if (!b) return; b.disabled = true; b.textContent = "Tirando…";
+    try { await dados.vitrineApagar(b.dataset.vtTirar); vitrineMap.delete(b.dataset.vtTirar); renderFila(); pintarProdutosSite(); toast("Saiu do site"); } catch (err) { b.disabled = false; b.textContent = "Tirar"; toast("Não consegui tirar do site"); }
+  });
   $("#ajVtCopiar").addEventListener("click", async () => { if (await copiarTexto(urlVitrine())) toast("Link do site copiado"); });
   $("#ajVtAbrir").addEventListener("click", () => window.open(urlVitrine(), "_blank", "noopener"));
   $("#ajInsta").addEventListener("input", () => {

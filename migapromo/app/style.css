@@ -2336,3 +2336,16 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .vs-cab small { font-size: 11.5px; color: var(--cinza, #6b6460); }
 .vs-para { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .pp-nosite { display: inline-block; padding: 1px 7px; border-radius: 999px; background: #e7f7ec; color: #16803c; font-size: 10.5px; font-weight: 800; }
+
+/* ===== Achados: enviar vários para o site ===== */
+.ac-topo-bts { display: inline-flex; gap: 14px; align-items: center; }
+#acSite { color: var(--rosa); font-weight: 700; }
+.ac-sel .pp-pontos { display: none; }
+.ac-sel .pp-item { padding-right: 52px; }
+.pp-nosite-ac { display: block; width: max-content; margin-top: 4px; font-size: 11px; font-weight: 700; color: #fff; background: var(--rosa); border-radius: 999px; padding: 1px 8px; }
+.vt-lista { display: grid; gap: 8px; }
+.vt-linha { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--branco); border: 1.5px solid var(--linha); border-radius: 16px; padding: 8px; }
+.vt-linha img, .vt-linha .sem-foto { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: #f5efe2; }
+.vt-linha b { display: block; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-linha small { color: var(--cinza); font-size: 12px; }
+.vt-linha button { border: 1.5px solid var(--linha); background: var(--branco); border-radius: 999px; padding: 7px 12px; font: 600 13px var(--sans); color: var(--preto); cursor: pointer; }

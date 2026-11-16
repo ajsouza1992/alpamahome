@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=333">
+  <link rel="manifest" href="manifest.json?v=334">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&family=Roboto+Condensed:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=333">
+  <link rel="stylesheet" href="style.css?v=334">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -67,7 +67,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=333" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=334" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -93,7 +93,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=333" alt="">
+    <img src="logo.png?v=334" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -353,7 +353,7 @@
     <section class="bloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Achados</h2>
-        <button type="button" class="link" id="atualizarCatalogo">Atualizar</button>
+        <span class="ac-topo-bts"><button type="button" class="link" id="acSite">Enviar para o site</button><button type="button" class="link" id="atualizarCatalogo">Atualizar</button></span>
       </div>
       <div class="colar">
         <svg class="colar__lupa" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-busca"/></svg>
@@ -460,6 +460,14 @@
     <b id="contGrupos" hidden></b>
 </main>
 
+  <!-- Achados marcados para enviar ao site -->
+  <div class="barra-selecao" id="barraAcSite" hidden>
+    <b id="acSiteQtd">Toque nos produtos</b>
+    <div class="bs-duas">
+      <button type="button" class="bs-excluir" id="acSiteCancelar">Cancelar</button>
+      <button type="button" class="bs-continuar" id="acSiteEnviar">Enviar para o site</button>
+    </div>
+  </div>
   <!-- Produtos marcados na Lista -->
   <div class="barra-selecao" id="barraMarcados" hidden>
     <b id="qtdMarcados">1 selecionado</b>
@@ -543,7 +551,15 @@
         <label class="aj-campo"><span>Link do canal do WhatsApp</span><input id="ajVtCanal" type="url" inputmode="url" maxlength="200" placeholder="https://whatsapp.com/channel/..." autocomplete="off"></label>
         <label class="aj-campo"><span>Link do Instagram</span><input id="ajVtInsta" type="url" inputmode="url" maxlength="200" placeholder="https://instagram.com/migapromo.oficial" autocomplete="off"></label>
         <label class="aj-campo"><span>Link do TikTok (opcional)</span><input id="ajVtTiktok" type="url" inputmode="url" maxlength="200" placeholder="https://www.tiktok.com/@..." autocomplete="off"></label>
+        <button type="button" class="btn btn--branco" id="ajVtProdutos">Ver os produtos do site</button>
         <label class="aj-campo"><span>Link do grupo VIP (opcional)</span><input id="ajVtGrupo" type="url" inputmode="url" maxlength="200" placeholder="https://chat.whatsapp.com/..." autocomplete="off"></label>
+      </section>
+
+      <section class="aj-bloco">
+        <h3>Afiliado do Mercado Livre</h3>
+        <p class="nota">Com isso, os achados do Mercado Livre já vão com o seu link de afiliado. Gere um link seu no Mercado Livre, abra ele no navegador e cole aqui o link longo: o app pega os dois códigos sozinho.</p>
+        <label class="aj-campo"><span>Etiqueta (matt_word)</span><input id="ajMlWord" maxlength="300" placeholder="Ex.: migapromo" autocomplete="off"></label>
+        <label class="aj-campo"><span>Código (matt_tool)</span><input id="ajMlTool" maxlength="40" inputmode="numeric" placeholder="Ex.: 12345678" autocomplete="off"></label>
       </section>
 
       <section class="aj-bloco">
@@ -793,7 +809,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=333"></script>
-  <script src="app.js?v=333"></script>
+  <script src="firebase-config.js?v=334"></script>
+  <script src="app.js?v=334"></script>
 </body>
 </html>
