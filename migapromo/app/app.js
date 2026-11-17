@@ -7051,13 +7051,13 @@
     textosVideo: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
     estiloVideo: '<rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8 6h8M8 17h5"/><path d="M10.5 10v4l3.5-2z"/>',
     ajustesVideo: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
-    formato: '<rect x="7" y="3" width="10" height="18" rx="2"/><rect x="3" y="7" width="6" height="8" rx="1.5"/>',
+    formato: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
     grade: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
     enquadrar: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
     produtos: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>'
   };
   ICONE_EST.produtosLivre = ICONE_EST.produtos; ICONE_EST.produtosRt = ICONE_EST.produtos;
-  Object.assign(ICONE_EST, { chAssunto: '<path d="M4 6h16M4 12h10M4 18h7"/>', chCor: ICONE_EST.cor, chModo: ICONE_EST.formato, chMusica: ICONE_EST.musica, peProduto: ICONE_EST.produtos, peFormato: ICONE_EST.formato, peCenario: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/>', peTipo: ICONE_EST.estilo });
+  Object.assign(ICONE_EST, { chAssunto: '<path d="M4 6h16M4 12h10M4 18h7"/>', chCor: ICONE_EST.cor, chModo: ICONE_EST.formato, chMusica: ICONE_EST.musica, peProduto: ICONE_EST.produtos, peFormato: ICONE_EST.formato, peCenario: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/>', peTipo: '<path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M19 14l.9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9z"/>' });
   const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k] || ""}</svg><b>${esc(nome)}</b><small>${esc(String(valor || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " "))}</small></button>`;
   let amostra = null, amostraK = "", amostraT = 0;
   const ICO_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>', ICO_PAUSA = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1"/><rect x="13.5" y="5.5" width="4" height="13" rx="1"/></svg>';
@@ -7765,8 +7765,8 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     if (wz.passo === "peEscolher") {
       const comProd = P.tipo !== "chamada";
       c.innerHTML = `<div class="pe-tela">
-        <div class="est-ctrl">${botaoEst("peTipo", "Criar", { imagem: "Imagem", video: "Vídeo", chamada: "Sem produto" }[P.tipo] || "Imagem")}${comProd ? botaoEst("peProduto", "Produto", it ? limparNome(it.nome || "") : "Escolher") : ""}${botaoEst("peFormato", "Formato", fmtPers(P) === "quadrado" ? "Quadrado 1:1" : "Em pé 9:16")}${comProd ? botaoEst("peCenario", "Cenário", nomeCenario(P)) : ""}</div>
-        ${P.tipo === "chamada" ? '<p class="nota">Vídeo dela chamando a galera (canal, grupo, stories…), sem produto.</p>' : ""}
+        <div class="est-ctrl${comProd ? "" : " est-ctrl--3"}">${botaoEst("peTipo", "Criar", { imagem: "Imagem", video: "Vídeo", chamada: "Vídeo" }[P.tipo] || "Imagem")}${botaoEst("peProduto", "Produto", !comProd ? "Sem produto" : it ? limparNome(it.nome || "") : "Escolher")}${botaoEst("peFormato", "Formato", fmtPers(P) === "quadrado" ? "Quadrado 1:1" : "Em pé 9:16")}${comProd ? botaoEst("peCenario", "Cenário", nomeCenario(P)) : ""}</div>
+        ${P.tipo === "chamada" ? '<p class="nota">Vídeo sem produto: ela chama a galera (canal, grupo, stories…). Você só copia o prompt.</p>' : P.tipo === "video" && !it ? '<p class="nota">Sem produto escolhido, o vídeo fica só com ela chamando a galera.</p>' : ""}
 
 
         ${P.tipo === "imagem" ? `<b class="ch-rot">Quantas fotos?</b><div class="pe-seg">${[1, 2, 3].map((q) => `<button type="button" data-pe-qtd="${q}" class="${qtdPers(P) === q ? "on" : ""}">${q} ${q === 1 ? "foto" : "fotos"}</button>`).join("")}</div>` : ""}
@@ -7786,14 +7786,14 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
         c.innerHTML = `<h2 class="wz-titulo">Vídeo sem produto</h2>
           <p class="nota">Ela chama a galera. Começa com "Oi, miga!" e termina com "Segue a Miga Promo pra mais promoções!".</p>
           <div class="pe-roupa"><span><b>Assunto:</b> ${esc(a[1])}</span><button type="button" class="btn btn--branco" id="peAssunto">Trocar</button></div>
-          <div class="campo"><span>O que ela fala no meio (pode editar)</span><textarea id="peFalaMeio" rows="2" maxlength="140">${esc(P.falaMeio != null ? P.falaMeio : a[2])}</textarea></div>
+          <div class="campo"><span>Sobre o que ela vai falar?</span><textarea id="peFalaMeio" rows="2" maxlength="140">${esc(P.falaMeio != null ? P.falaMeio : a[2])}</textarea></div>
           <b class="ch-rot">Enquadramento</b><div class="ed-chips pe-fundos">${Object.entries(ENQUAD_PERS).map(([k, [n]]) => `<button type="button" data-pe-enquad="${k}" class="${enquadDe(P, null) === k ? "on" : ""}">${n}</button>`).join("")}</div>
           <b class="ch-rot">Fundo do estúdio</b>
           <div class="ed-chips pe-fundos">${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="${(P.fundo === "auto" || !P.fundo ? "rosa" : P.fundo) === k ? "on" : ""}"><i style="background:${x[1]}"></i>${x[0]}</button>`).join("")}</div>
           <p class="nota pe-roupa-nota">Roupa: a IA escolhe um look que combina com o fundo.</p>
           <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/${LIMITE_PROMPT})</span><textarea id="pePrompt" rows="9" maxlength="${LIMITE_PROMPT}">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
           <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt</button>
-          <p class="nota">Envie o prompt para a IA com as fotos da modelo.</p>
+          <p class="nota">Cole o prompt na IA de vídeo. Não precisa de foto de produto.</p>
           ${nav("peJaCriei", "Continuar")}`;
         return;
       }
@@ -8433,14 +8433,14 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "personagem") return; const t = e.target, P = pe(), it = wzItem();
     const tp = t.closest("[data-pe-tipo]"); if (tp) { P.tipo = tp.dataset.peTipo; P.tx = null; P.promptEd = null; P.livre = null; mostrarPasso(); return; }
-    if (t.closest("#peIr2")) { if (semProduto()) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; } if (!it) { toast("Escolha o produto"); return; } wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#peIr2")) { if (semProduto()) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; } if (!it) { if (P.tipo === "video") { P.tipo = "chamada"; P.tx = null; P.promptEd = null; P.livre = null; wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; } toast("Escolha o produto"); return; } wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peVoltar")) { const l = passosDe("personagem"), i = l.indexOf(wz.passo); if (i > 0) { wz.passo = l[i - 1]; mostrarPasso(); scrollTo(0, 0); } else irPara("inicio"); return; }
     if (t.closest("#peIr3")) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
     { const eb = t.closest('[data-est="peTipo"], [data-est="peFormato"]'); if (eb) { const P = pe();
-      if (eb.dataset.est === "peTipo") { const v = await escolherOpcao("Criar", [["imagem", "Imagem"], ["video", "Vídeo"], ["chamada", "Sem produto · ela chama a galera"]], P.tipo); if (v && v !== P.tipo) { P.tipo = v; P.tx = null; P.promptEd = null; P.livre = null; mostrarPasso(); } return; }
+      if (eb.dataset.est === "peTipo") { const v0 = await escolherOpcao("Criar", [["imagem", "Imagem"], ["video", "Vídeo"]], P.tipo === "chamada" ? "video" : P.tipo); const v = v0 === "video" && P.tipo === "chamada" ? null : v0; if (v && v !== P.tipo) { P.tipo = v; P.tx = null; P.promptEd = null; P.livre = null; mostrarPasso(); } return; }
       const v = await escolherOpcao("Formato", [["vertical", "Em pé 9:16"], ["quadrado", "Quadrado 1:1"]], fmtPers(P)); if (v) { P.formato = v; P.promptEd = null; P.livre = null; P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; } }
-    if (t.closest("#peEscolherProd") || t.closest('[data-est="peProduto"]')) { const l = fila().filter((x) => !x.carregando && x.nome); if (!l.length) { toast("Adicione um produto na Lista primeiro"); return; }
-      folhaEst("Escolha o produto", `<div class="lista-prod">${l.map((x) => `<button type="button" class="lp-item pe-esc" data-pe-prod="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span>${esc(limparNome(x.nome))}</span></button>`).join("")}</div>`); return; }
+    if (t.closest("#peEscolherProd") || t.closest('[data-est="peProduto"]')) { const l = fila().filter((x) => !x.carregando && x.nome);
+      folhaEst("Escolha o produto", `<div class="lista-prod"><button type="button" class="lp-item pe-esc pe-sem" data-pe-sem-prod="1"><span class="pe-sem-ic"><svg viewBox="0 0 24 24"><path d="M3 11l15-6v14L3 13z"/><path d="M7 13v5h3v-4"/></svg></span><span><b>Sem produto</b> · vídeo dela chamando a galera</span></button>${l.map((x) => `<button type="button" class="lp-item pe-esc" data-pe-prod="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span>${esc(limparNome(x.nome))}</span></button>`).join("")}</div>`); return; }
     if (t.closest("#peAssunto")) { const v = await escolherOpcao("Assunto do vídeo", ASSUNTOS_PERS.map(([k, n, f]) => [k, `${n} · “${f}”`]), P.assunto || "canal"); if (v) { P.assunto = v; P.falaMeio = null; P.promptEd = null; const a = assuntoDe(P); P.tx = { chamada: a[3], nome: "", de: "", por: "", cupom: "", selo: "" }; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
     if (t.closest("#peRoupa")) { sortearRoupa(P); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const selRoupa = async (id) => {
@@ -9061,7 +9061,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   $("#folhaEst").addEventListener("click", (e) => {
     if (wz.canal === "personagem") { const em = e.target.closest("[data-pe-escolhe-mus]"); if (em) { tocarAmostra(""); wz.pe.musica = em.dataset.peEscolheMus; lsPers.gravar("musica", wz.pe.musica); wz.pe.resultado = null; $("#folhaEst").close(); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
       const ou = e.target.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; } }
-    if (wz.canal === "personagem") { const b = e.target.closest("[data-pe-prod]"); if (b) { wz.itemId = b.dataset.peProd; wz.pe.tx = null; wz.pe.promptEd = null; wz.pe.limparTxt = null; wz.pe.legenda = null; wz.pe.fundoAuto = null; calcFundoAuto(wzItem()); $("#folhaEst").close(); mostrarPasso(); } return; }
+    if (wz.canal === "personagem") { if (e.target.closest("[data-pe-sem-prod]")) { const P = wz.pe; wz.itemId = null; if (P.tipo !== "chamada") { P.tipo = "chamada"; P.tx = null; P.promptEd = null; P.livre = null; } $("#folhaEst").close(); mostrarPasso(); return; } const b = e.target.closest("[data-pe-prod]"); if (b) { if (wz.pe.tipo === "chamada") wz.pe.tipo = "video"; wz.itemId = b.dataset.peProd; wz.pe.tx = null; wz.pe.promptEd = null; wz.pe.limparTxt = null; wz.pe.legenda = null; wz.pe.fundoAuto = null; calcFundoAuto(wzItem()); $("#folhaEst").close(); mostrarPasso(); } return; }
     if (wz.canal === "chamada") { const em = e.target.closest("[data-ch-escolhe-mus]"); if (em) { tocarAmostra(""); ch().musica = em.dataset.chEscolheMus; ch().resultado = null; $("#folhaEst").close(); mostrarPasso(); return; } }
     if (wz.canal !== "chamada") return; const CH = ch();
     if (e.target.closest("#chPadrao")) { CH.tx = null; folhaTextosChamada(); toast(CH.tipo === "seg" ? "Textos padrão de volta" : "Textos do nicho de volta"); return; }

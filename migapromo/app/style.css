@@ -2710,3 +2710,8 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .leg-rot { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 6px; font-size: 14.5px; }
 .leg-rot small { font-weight: 500; color: var(--cinza); font-size: 12px; }
 textarea.leg-caixa { width: 100%; min-height: 150px; border: 1.5px solid var(--linha) !important; border-radius: 16px !important; background: #fffdf8 !important; padding: 12px 14px !important; font: 400 14px/1.5 var(--sans) !important; color: var(--preto) !important; resize: vertical; }
+.pe-sem { display: flex; align-items: center; gap: 10px; }
+.pe-sem-ic { width: 44px; height: 44px; border-radius: 10px; background: var(--rosa-claro, #f9dfe7); display: grid; place-items: center; flex: none; }
+.pe-sem-ic svg { width: 22px; height: 22px; fill: none; stroke: var(--rosa, #d6426e); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.lp-item.pe-sem > .pe-sem-ic { width: 44px; flex: 0 0 44px; padding: 0; }
+.lp-item.pe-sem > span:last-child { flex: 1; min-width: 0; text-align: left; }
