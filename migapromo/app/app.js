@@ -2588,21 +2588,29 @@
   const guardarCaixa = () => { try { localStorage.setItem("miga_caixa", JSON.stringify(caixa.map(({ lendo, ...x }) => x))); } catch (e) { /* segue */ } pintarBotaoCaixa(); };
   function pintarBotaoCaixa() { const b = $("#cxAbrir"); if (!b) return; b.hidden = !caixa.length; const n = $("#cxQtd"); if (n) n.textContent = caixa.length; }
   function paraCaixa(texto) {
-    const links = [...new Set(String(texto || "").match(/https?:\/\/[^\s<>"']+/g) || [])].map((u) => u.replace(/[).,;]+$/, ""));
+    // A extensão manda [{l: link, n: nome, i: foto, p: preço, a: preço antigo}] (uma linha por envio); o resto são links soltos
+    const pre = {}, soltos = [];
+    String(texto || "").split(/\n/).forEach((linha) => { const t = linha.trim(); if (!t) return;
+      if (t[0] === "[") { try { JSON.parse(t).forEach((x) => { if (x && x.l) pre[x.l] = x; }); return; } catch (e) { /* não era JSON */ } }
+      soltos.push(t); });
+    const links = [...new Set([...Object.keys(pre), ...(soltos.join(" ").match(/https?:\/\/[^\s<>"']+/g) || []).map((u) => u.replace(/[).,;]+$/, ""))])];
     let novos = 0, ja = 0;
     for (const u of links) { if (caixa.some((x) => x.link === u || mesmoProduto({ link: x.link, urlFinal: x.urlFinal }, u))) continue; if (fila().some((i) => mesmoProduto(i, u))) { ja++; continue; }
-      caixa.push({ link: u, loja: detectarLoja(u) || "", nome: "", preco: null, imagem: "", marcado: true }); novos++; }
+      const d = pre[u] || {};
+      caixa.push({ link: u, loja: detectarLoja(u) || "", nome: d.n ? limparNome(d.n) : "", preco: d.p || null, precoAntigo: d.a || null, imagem: d.i || "", marcado: true, ...(d.n && d.p ? { lido: true, daPagina: true } : {}) }); novos++; }
     guardarCaixa(); irPara("postar"); abrirCaixa(); lerCaixa();
     if (ja) toast(`${ja} ${ja === 1 ? "já estava" : "já estavam"} na Minha lista`); else if (!novos && links.length) toast("Esses links já estão na caixa");
   }
   let lendoCaixa = false;
   async function lerCaixa() {
     if (lendoCaixa) return; lendoCaixa = true;
-    try { for (let k = 0; k < caixa.length; k++) { const x = caixa[k]; if (x.erro || (x.lido && (x.nome || (x.tentativas || 0) >= 3))) continue; x.tentativas = (x.tentativas || 0) + 1; x.lendo = true; pintarCaixa();
+    try { for (let k = 0; k < caixa.length; k++) { const x = caixa[k]; if (x.erro || (x.lido && x.nome)) continue; x.tentativas = (x.tentativas || 0) + 1; x.lendo = true; pintarCaixa();
         try { const d = await api("produto", { url: x.link }); x.nome = limparNome(d.nome || x.nome || ""); x.preco = d.preco || x.preco || null; x.precoAntigo = d.precoAntigo || x.precoAntigo || null; x.imagem = d.imagem || x.imagem || ""; x.loja = d.loja || x.loja; x.urlFinal = d.urlFinal || ""; x.extras = extrasDe(d); if (d.descricao) x.descricao = d.descricao; if (d.linkAfiliado) x.linkAfiliado = d.linkAfiliado; x.lido = true;
           if (fila().some((i) => mesmoProduto(i, x.urlFinal || x.link))) { x.naLista = true; x.marcado = false; } }
         catch (e) { x.erro = true; x.marcado = false; }
-        delete x.lendo; guardarCaixa(); pintarCaixa(); } }
+        delete x.lendo; guardarCaixa(); pintarCaixa(); }
+      const antes = caixa.length; caixa = caixa.filter((x) => !(x.erro || (x.lido && !x.nome)));
+      if (caixa.length !== antes) { guardarCaixa(); pintarCaixa(); } }
     finally { lendoCaixa = false; }
   }
   function abrirCaixa() {
@@ -2616,9 +2624,15 @@
   function pintarCaixa() {
     const box = $("#cxLista"); if (!box) return;
     if (cxApertado) { cxPendente = true; return; }
-    const nMarc = caixa.filter((x) => x.marcado).length, lendo = caixa.some((x) => !x.lido && !x.erro);
-    box.innerHTML = caixa.length ? `<div class="cx-topo"><button type="button" class="link" id="cxTodos">${caixa.every((x) => x.marcado || x.erro || x.naLista) ? "Desmarcar todos" : "Marcar todos"}</button><span class="nota">${caixa.length} ${caixa.length === 1 ? "produto" : "produtos"}${lendo ? " · lendo…" : ""}</span></div>
-      <div class="cx-lista">${caixa.map((x, i) => `<button type="button" class="cx-item${x.marcado ? " on" : ""}${x.erro || x.naLista ? " off" : ""}" data-cx="${i}">
+    const rolagem = (box.querySelector(".cx-lista") || {}).scrollTop || 0;
+    pintarCaixaJa(box);
+    const nova = box.querySelector(".cx-lista"); if (nova) nova.scrollTop = rolagem;
+  }
+  function pintarCaixaJa(box) {
+    const visiveis = caixa.map((x, i) => [x, i]).filter(([x]) => x.nome && !x.erro), lendoN = caixa.filter((x) => !x.erro && !x.nome).length;
+    const nMarc = visiveis.filter(([x]) => x.marcado && !x.naLista).length;
+    box.innerHTML = caixa.length ? `<div class="cx-topo"><button type="button" class="link" id="cxTodos"${visiveis.length ? "" : " hidden"}>${visiveis.every(([x]) => x.marcado || x.naLista) ? "Desmarcar todos" : "Marcar todos"}</button><span class="nota">${visiveis.length} ${visiveis.length === 1 ? "produto" : "produtos"}${lendoN ? ` · lendo ${lendoN}…` : ""}</span></div>
+      <div class="cx-lista">${visiveis.map(([x, i]) => `<button type="button" class="cx-item${x.marcado ? " on" : ""}${x.erro || x.naLista ? " off" : ""}" data-cx="${i}">
         <span class="cx-foto">${x.imagem ? `<img src="${esc(x.imagem)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : `<img class="cx-loja" src="${x.loja === "shopee" ? "loja-shopee.png" : "loja-mercadolivre.png"}" alt="">`}</span>
         <span class="cx-txt"><b>${esc(x.nome || (x.lendo || !x.lido && !x.erro ? "Lendo o produto…" : "Produto " + ((x.link.match(/MLBU?-?\d{6,}/i) || [""])[0].replace("-", "") || "")))}</b><small>${x.erro ? "Não consegui ler este link" : x.naLista ? "Já está na Minha lista" : [x.preco ? brl(x.preco) : "", NOME_LOJA[x.loja] || ""].filter(Boolean).join(" · ")}</small></span>
         <span class="pp-caixa" aria-pressed="${!!x.marcado}"></span></button>`).join("")}</div>
@@ -2630,10 +2644,10 @@
     if (!e.target.closest("#cxLista")) return;
     const tira = e.target.closest("[data-cx-tirar]"); if (tira) { caixa.splice(+tira.dataset.cxTirar, 1); guardarCaixa(); pintarCaixa(); return; }
     const it = e.target.closest("[data-cx]"); if (it) { const x = caixa[+it.dataset.cx]; if (x && !x.erro && !x.naLista) { x.marcado = !x.marcado; guardarCaixa(); pintarCaixa(); } return; }
-    if (e.target.closest("#cxTodos")) { const todos = caixa.every((x) => x.marcado || x.erro || x.naLista); caixa.forEach((x) => { if (!x.erro && !x.naLista) x.marcado = !todos; }); guardarCaixa(); pintarCaixa(); return; }
+    if (e.target.closest("#cxTodos")) { const vis = caixa.filter((x) => x.nome && !x.erro && !x.naLista), todos = vis.every((x) => x.marcado); vis.forEach((x) => { x.marcado = !todos; }); guardarCaixa(); pintarCaixa(); return; }
     if (e.target.closest("#cxLimpar")) { caixa = []; guardarCaixa(); pintarCaixa(); return; }
     if (e.target.closest("#cxAdicionar")) {
-      const sel = caixa.filter((x) => x.marcado && !x.erro && !x.naLista); if (!sel.length) return;
+      const sel = caixa.filter((x) => x.marcado && x.nome && !x.erro && !x.naLista); if (!sel.length) return;
       for (const x of sel) {
         const c = adivinharCategoria(x.nome || "", x.categoria) || "outros";
         const link = x.linkAfiliado || comCodigoML(x.link);

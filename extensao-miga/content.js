@@ -9,12 +9,38 @@
   "use strict";
   // Endereço do app (troque aqui se o app mudar de endereço)
   const APP = "https://www.migapromo.com/app/";
-  const CHAVE = "miga_marcados";
+  const CHAVE = "miga_marcados", CHAVE_DADOS = "miga_dados";
   const ehML = /mercadolivre\.com/.test(location.hostname);
 
-  let marcados = [];
-  const ler = () => new Promise((ok) => chrome.storage.local.get(CHAVE, (d) => ok(Array.isArray(d[CHAVE]) ? d[CHAVE] : [])));
-  const gravar = () => new Promise((ok) => chrome.storage.local.set({ [CHAVE]: marcados }, ok));
+  let marcados = [], dados = {};
+  const ler = () => new Promise((ok) => chrome.storage.local.get([CHAVE, CHAVE_DADOS], (d) => { dados = d[CHAVE_DADOS] || {}; ok(Array.isArray(d[CHAVE]) ? d[CHAVE] : []); }));
+  const gravar = () => { Object.keys(dados).forEach((k) => { if (!marcados.includes(k)) delete dados[k]; }); return new Promise((ok) => chrome.storage.local.set({ [CHAVE]: marcados, [CHAVE_DADOS]: dados }, ok)); };
+
+  /* Copia da própria página (aberta no seu Chrome) o nome, a foto e o preço do produto */
+  const numero = (t) => { const m = String(t || "").replace(/\s+/g, " ").match(/R\$\s?([\d.]+)(?:,(\d{1,2}))?/); return m ? Number(m[1].replace(/\./g, "")) + (m[2] ? Number(m[2].padEnd(2, "0")) / 100 : 0) : null; };
+  function precoAndes(el) { if (!el) return null; const f = el.querySelector(".andes-money-amount__fraction"), c = el.querySelector(".andes-money-amount__cents"); if (f) return Number(f.textContent.replace(/\D/g, "")) + (c ? Number(c.textContent.replace(/\D/g, "").padEnd(2, "0")) / 100 : 0); const al = el.getAttribute && el.getAttribute("aria-label"); return al ? numero("R$ " + al.replace(/reais?\s*com\s*/i, ",").replace(/[^\d,.]/g, "")) : numero(el.textContent); }
+  function dadosDoCartao(card) {
+    if (!card) return {};
+    const img = [...card.querySelectorAll("img")].map((i) => i.currentSrc || i.getAttribute("data-src") || i.src || "").find((u) => /^https?:/.test(u) && !/\.svg|data:image|placeholder|logo/i.test(u)) || "";
+    const tit = card.querySelector("[class*='title'], h2, h3, [class*='name']");
+    let nome = (tit && tit.textContent || "").trim();
+    if (!nome) nome = ([...card.querySelectorAll("img")].map((i) => i.alt || "").sort((a, b) => b.length - a.length)[0] || "").trim();
+    if (!nome) nome = ([...card.querySelectorAll("a")].map((a) => (a.textContent || "").trim()).sort((a, b) => b.length - a.length)[0] || "");
+    let preco = null, antes = null;
+    const atuais = [...card.querySelectorAll(".andes-money-amount")].filter((e) => !e.closest("s, del") && !/previous/.test(e.className));
+    const velhos = [...card.querySelectorAll(".andes-money-amount--previous, s .andes-money-amount, del .andes-money-amount, s, del")];
+    if (atuais.length) preco = precoAndes(atuais[0]);
+    if (velhos.length) antes = precoAndes(velhos[0]);
+    if (!preco) { const txt = [...card.querySelectorAll("*")].filter((e) => !e.children.length && /R\$/.test(e.textContent) && !e.closest("s, del")).map((e) => e.parentElement ? e.parentElement.textContent : e.textContent); preco = numero(txt[0] || card.textContent); }
+    return { n: nome.replace(/\s+/g, " ").slice(0, 200), i: img, p: preco || null, a: antes && preco && antes > preco ? antes : null };
+  }
+  function dadosDaPagina() {
+    const nome = (document.querySelector("h1") || {}).textContent || "";
+    const img = (document.querySelector("meta[property='og:image']") || {}).content || ((document.querySelector("figure img, .ui-pdp-image") || {}).src || "");
+    const preco = precoAndes(document.querySelector(".ui-pdp-price__second-line .andes-money-amount, .andes-money-amount:not(.andes-money-amount--previous)"));
+    const antes = precoAndes(document.querySelector(".andes-money-amount--previous"));
+    return { n: nome.trim().slice(0, 200), i: img, p: preco || null, a: antes && preco && antes > preco ? antes : null };
+  }
 
   /** Link limpo do produto (sem rastreio), ou "" se não for página de produto */
   function linkProduto(href) {
@@ -49,7 +75,8 @@
     bt.title = on ? "Desmarcar (tirar da Miga)" : "Marcar para mandar para a Miga Promo";
   }
 
-  async function alternar(link) {
+  async function alternar(link, card) {
+    if (!marcados.includes(link)) { try { const d = card ? dadosDoCartao(card) : dadosDaPagina(); if (d && (d.n || d.i || d.p)) dados[link] = d; } catch (e) { /* segue sem os dados */ } }
     marcados = marcados.includes(link) ? marcados.filter((x) => x !== link) : [...marcados, link];
     await gravar(); atualizarTudo();
   }
@@ -78,7 +105,7 @@
     const bt = e.target.closest && e.target.closest(".miga-bt"); if (!bt) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
     const k = bt.dataset.migaLink; if (ultimo && ultimo.k === k && Date.now() - ultimo.t < 300) return; ultimo = { k, t: Date.now() };
-    alternar(k);
+    alternar(k, bt.parentElement);
   }, true);
   ["mousedown", "mouseup", "pointerup", "click", "touchstart"].forEach((ev) => window.addEventListener(ev, (e) => { if (e.target.closest && e.target.closest(".miga-bt")) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } }, true));
 
@@ -92,10 +119,11 @@
     <button type="button" class="miga-enviar">Enviar para a Miga</button>`;
   document.documentElement.appendChild(barra);
 
-  barra.querySelector(".miga-este").addEventListener("click", () => { const l = produtoDaPagina(); if (l) alternar(l); });
+  barra.querySelector(".miga-este").addEventListener("click", () => { const l = produtoDaPagina(); if (l) alternar(l, null); });
   barra.querySelector(".miga-todos").addEventListener("click", async () => {
-    const l = [...document.querySelectorAll("[data-miga]")].map((c) => c.dataset.miga);
+    const cards = [...document.querySelectorAll(".miga-bt")].map((b) => [b.dataset.migaLink, b.parentElement]), l = cards.map(([k]) => k);
     const tudo = l.length && l.every((x) => marcados.includes(x));
+    if (!tudo) cards.forEach(([k, c]) => { if (!marcados.includes(k)) { try { const d = dadosDoCartao(c); if (d.n || d.i || d.p) dados[k] = d; } catch (e) { /* segue */ } } });
     marcados = tudo ? marcados.filter((x) => !l.includes(x)) : [...new Set([...marcados, ...l])];
     await gravar(); atualizarTudo();
   });
@@ -103,7 +131,9 @@
   barra.querySelector(".miga-limpar").addEventListener("click", async () => { if (!marcados.length) return; if (!confirm(`Tirar os ${marcados.length} produtos marcados?`)) return; marcados = []; await gravar(); atualizarTudo(); });
   barra.querySelector(".miga-enviar").addEventListener("click", async () => {
     if (!marcados.length) { alert("Marque no quadradinho os produtos que você quer mandar."); return; }
-    window.open(APP + "#importar=" + encodeURIComponent(marcados.join("\n")), "_blank");
+    // Vai o link e, junto, o nome, a foto e o preço copiados da página
+    const pacote = marcados.map((l) => ({ l, ...(dados[l] || {}) }));
+    window.open(APP + "#importar=" + encodeURIComponent(JSON.stringify(pacote)), "_blank");
     // Os marcados ficam guardados até você tocar em Limpar (se o app não abrir, nada se perde; a Miga não repete produtos)
   });
 
