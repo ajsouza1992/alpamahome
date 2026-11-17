@@ -1005,7 +1005,7 @@
     let d;
     try {
       // Sem categorias: junta os mais vendidos de todas, só filtrando pela loja
-      catPagina = 1; catBusca = ""; acLimite = 100;
+      catPagina = 1; catBusca = ""; acLimite = 100; pintarBuscaLojas();
       const rs = await Promise.allSettled(FILTROS_CAT.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`)));
       catTemMais = rs.some((r) => r.status === "fulfilled" && r.value.temMais);
       const ok = rs.filter((r) => r.status === "fulfilled").map((r) => r.value);
@@ -1219,13 +1219,19 @@
   $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(() => { if (catBusca && !$("#acBusca").value.trim()) { carregarCatalogo(); return; } pintarAchados(); }, 150); });
   $("#acBusca").addEventListener("keydown", (e) => { if (e.key === "Enter" && $("#acBusca").value.trim().length >= 2) { e.preventDefault(); buscarNasLojas($("#acBusca").value.trim()); } });
   /** Busca a palavra direto nas lojas (Shopee pela palavra, Mercado Livre pelos mais vendidos da categoria dela) */
+  function pintarBuscaLojas() { const r = $("#buscaLojasRes"); if (!r) return; r.hidden = !catBusca; $("#buscaLojasTermo").textContent = catBusca || ""; if (catBusca && $("#buscaLojas").value !== catBusca && document.activeElement !== $("#buscaLojas")) $("#buscaLojas").value = catBusca; }
+  $("#buscaLojasForm").addEventListener("submit", (e) => { e.preventDefault(); const t = $("#buscaLojas").value.trim(); if (t.length < 2) { toast("Escreva o que você procura"); return; } $("#buscaLojas").blur(); buscarNasLojas(t); });
+  $("#buscaLojasSair").addEventListener("click", () => { $("#buscaLojas").value = ""; catBusca = ""; pintarBuscaLojas(); carregarCatalogo(); });
   async function buscarNasLojas(termo) {
-    catBusca = termo; catPagina = 1; acLimite = 100; esqueletoCatalogo(); $("#acBusca").blur();
+    catBusca = termo; setTimeout(pintarBuscaLojas, 0); catPagina = 1; acLimite = 100; esqueletoCatalogo(); $("#acBusca").blur();
     try {
       const d = await api(`catalogo?busca=${encodeURIComponent(termo)}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`);
       catalogoAtual = (d.produtos || []).filter((p) => p.preco); catTemMais = !!d.temMais;
       ordenarAchados();
       pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
+      { const av = $("#avisoCatalogo"), temML = catalogoAtual.some((p) => p.loja === "mercadolivre"), lj = catLoja.valor();
+        const msg = lj !== "shopee" && !temML ? `O Mercado Livre não trouxe resultados agora${d.avisos && d.avisos.length ? " (" + d.avisos.join(" · ").slice(0, 160) + ")" : ""}.` : "";
+        if (av) { av.textContent = msg; av.hidden = !msg; } }
     } catch (e) { if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; } toast("Não consegui buscar nas lojas agora"); catBusca = ""; carregarCatalogo(); }
   }
   [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(() => (catBusca ? buscarNasLojas(catBusca) : carregarCatalogo()), 0); }));
@@ -2547,6 +2553,23 @@
   }
   const pintarBotaoColar = () => { $("#ppColar").hidden = !$("#ppLink").value; };
   const limparBusca = () => { termoBusca = ""; abaBusca = null; $("#ppLink").value = ""; pintarBotaoColar(); };
+  /* Colar vários links de uma vez (um por linha, ou do jeito que vier: o app acha todos os links) */
+  const linksDoTexto = (t) => [...new Set(String(t || "").match(/https?:\/\/[^\s<>"']+/g) || [])];
+  function pintarVarios() { const ta = $("#vlTexto"); if (!ta) return; const l = linksDoTexto(ta.value), novos = l.filter((u) => !fila().some((i) => mesmoProduto(i, u)));
+    $("#vlConta").textContent = l.length ? `${l.length} ${l.length === 1 ? "link" : "links"}${l.length > novos.length ? ` · ${l.length - novos.length} já ${l.length - novos.length === 1 ? "está" : "estão"} na Lista` : ""}` : "Nenhum link ainda";
+    const b = $("#vlAdicionar"); b.disabled = !novos.length; b.textContent = novos.length ? `Adicionar ${novos.length} ${novos.length === 1 ? "produto" : "produtos"}` : "Adicionar"; }
+  $("#vlAbrir").addEventListener("click", () => {
+    folhaEst("Colar vários links", `<p class="nota">Cole aqui os links dos produtos (Mercado Livre, Shopee…), um embaixo do outro. O seu código de afiliado entra sozinho.</p>
+      <textarea id="vlTexto" class="vl-texto" rows="7" placeholder="https://...&#10;https://...&#10;https://..."></textarea>
+      <div class="vl-linha"><span class="nota" id="vlConta">Nenhum link ainda</span><button type="button" class="btn btn--branco" id="vlColar">Colar do celular</button></div>
+      <button type="button" class="btn btn--rosa" id="vlAdicionar" disabled>Adicionar</button>`);
+    pintarVarios();
+  });
+  document.addEventListener("input", (e) => { if (e.target && e.target.id === "vlTexto") pintarVarios(); });
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("#vlColar")) { try { const t = await navigator.clipboard.readText(); const ta = $("#vlTexto"); ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + t.trim(); pintarVarios(); } catch (er) { toast("Toque e segure na caixa para colar"); } return; }
+    if (e.target.closest("#vlAdicionar")) { const t = $("#vlTexto").value, l = linksDoTexto(t); if (!l.length) return; $("#folhaEst").close(); irPara("postar"); await adicionarTexto(l.join("\n")); renderFila(); }
+  });
   async function adicionarDaBusca() { const t = $("#ppLink").value; limparBusca(); renderFila(); await adicionarTexto(t); renderFila(); }
   $("#ppLink").addEventListener("input", () => { termoBusca = $("#ppLink").value; if (!termoBusca.trim()) abaBusca = null; pintarBotaoColar(); clearTimeout(renderFila.t); renderFila.t = setTimeout(renderFila, 120); });
   $("#ppLink").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (!$("#ppNovoLink").hidden) adicionarDaBusca(); else $("#ppLink").blur(); } });

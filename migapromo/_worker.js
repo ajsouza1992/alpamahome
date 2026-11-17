@@ -857,6 +857,51 @@ async function catalogoShopee(filtro, env, ordem = "vendidos", pagina = 1) {
   });
 }
 
+/* ---------- Busca de verdade no Mercado Livre (a palavra que você digitou) ----------
+   1º a busca oficial (com as chaves do ML); se não vier nada, lê a página de resultados do site do ML. */
+const desfazHtml = (t) => String(t || "").replace(/<[^>]+>/g, " ").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+function precoDoBloco(html) {
+  const al = html.match(/aria-label="(?:(?:Agora|Antes):\s*)?([\d.]+)\s*reais(?:\s*com\s*(\d+)\s*centavos)?"/i);
+  if (al) return Number(al[1].replace(/\./g, "")) + (al[2] ? Number(al[2]) / 100 : 0);
+  const fr = html.match(/andes-money-amount__fraction[^>]*>([\d.]+)</), ct = html.match(/andes-money-amount__cents[^>]*>(\d+)</);
+  return fr ? Number(fr[1].replace(/\./g, "")) + (ct ? Number(ct[1]) / 100 : 0) : null;
+}
+function lerPaginaBuscaML(html) {
+  const out = [], vistos = new Set();
+  const blocos = html.split(/<li[^>]+ui-search-layout__item|<div[^>]+class="[^"]*poly-card[ "]/).slice(1);
+  for (const b of blocos) {
+    const bloco = b.slice(0, 9000);
+    let link = (bloco.match(/href="(https:\/\/(?:produto|www)\.mercadolivre\.com\.br\/[^"#?]+)/) || [])[1];
+    if (!link) continue;
+    const id = (link.match(/MLB-?(\d{6,})/i) || [])[1]; if (!id || vistos.has(id)) continue;
+    const tit = desfazHtml((bloco.match(/class="[^"]*(?:poly-component__title|ui-search-item__title)[^"]*"[^>]*>([\s\S]*?)<\/(?:a|h2|h3)>/) || [])[1]);
+    const img = (bloco.match(/(?:data-src|src)="(https:\/\/http2\.mlstatic\.com\/[^"]+\.(?:webp|jpg|jpeg|png))"/) || [])[1];
+    const antesHtml = (bloco.match(/andes-money-amount--previous[\s\S]{0,600}?<\/s>/) || [""])[0];
+    const atualHtml = (bloco.match(/poly-price__current[\s\S]{0,900}/) || [bloco.replace(antesHtml, "")])[0];
+    const preco = precoDoBloco(atualHtml), antes = antesHtml ? precoDoBloco(antesHtml) : null;
+    if (!tit || !preco) continue;
+    vistos.add(id);
+    out.push({ id: "MLB" + id, nome: tit, preco, precoAntigo: antes && antes > preco ? antes : null, imagem: img ? img.replace(/^http:/, "https:") : "", link: link.replace(/\/$/, ""), loja: "mercadolivre", categoria: "outros", ...( /frete gr[áa]tis/i.test(bloco) ? { freteGratis: true } : {}), ...(/loja oficial/i.test(bloco) ? { lojaOficial: true } : {}) });
+  }
+  return out;
+}
+async function buscaML(termo, env, pagina = 1) {
+  chamadasML = 0; const diag = []; let saida = [];
+  if (env.ML_APP_ID && env.ML_SECRET) {
+    try { const token = await tokenML(env); const r = await getML(`/sites/MLB/search?q=${encodeURIComponent(termo)}&limit=48&offset=${(pagina - 1) * 48}`, token); diag.push("busca oficial " + r.status);
+      for (const b of (r.dados && r.dados.results) || []) if (b.title && b.price) saida.push(itemML(b, { categoria: "outros" })); } catch (e) { diag.push("busca oficial falhou"); }
+  }
+  if (!saida.length) {
+    const slug = termo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const url = `https://lista.mercadolivre.com.br/${slug}${pagina > 1 ? `_Desde_${(pagina - 1) * 48 + 1}` : ""}_NoIndex_True`;
+    try { const r = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36", "accept": "text/html", "accept-language": "pt-BR,pt;q=0.9" }, redirect: "follow" });
+      diag.push("página " + r.status); if (r.ok) saida = lerPaginaBuscaML(await r.text()); diag.push("lidos " + saida.length); } catch (e) { diag.push("página falhou"); }
+  }
+  if (!saida.length && pagina === 1) throw new Error("Mercado Livre não trouxe resultados (" + diag.join(" · ") + ")");
+  saida.temMais = saida.length >= 30;
+  return saida;
+}
+
 async function rotaCatalogo(request, env) {
   if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
   const q = new URL(request.url).searchParams;
@@ -866,7 +911,7 @@ async function rotaCatalogo(request, env) {
   const ordem = ORDEM_SHOPEE[q.get("ordem")] ? q.get("ordem") : "vendidos";
   const pagina = Math.max(1, Math.min(20, parseInt(q.get("pagina"), 10) || 1));
   const configurado = { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) };
-  if (!configurado.mercadolivre && !configurado.shopee) return json({ configurado, produtos: [], avisos: [] });
+  if (!configurado.mercadolivre && !configurado.shopee && !busca) return json({ configurado, produtos: [], avisos: [] });
 
   const chave = `v3-${nomeFiltro}-${loja}-${ordem}-${pagina}-${configurado.mercadolivre}-${configurado.shopee}`;
   const guardado = await lerCache("catalogo", chave);
@@ -876,7 +921,8 @@ async function rotaCatalogo(request, env) {
   const filtro = busca ? { categoria: "outros", ml: "", busca, shopee: busca } : FILTROS_CATALOGO[nomeFiltro];
   const tarefas = [];
   // Mercado Livre: mais vendidos da categoria e subcategorias, 12 por página; Shopee: 50 por página
-  if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env, pagina));
+  if (busca && loja !== "shopee") tarefas.push(buscaML(busca, env, pagina)); // busca: a palavra de verdade no Mercado Livre
+  else if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env, pagina));
   if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem, pagina));
   const resultados = await Promise.allSettled(tarefas);
   const produtos = [], avisos = []; let maisML = false;
@@ -888,7 +934,7 @@ async function rotaCatalogo(request, env) {
   const ml = produtos.filter((p) => p.loja === "mercadolivre"), sh = produtos.filter((p) => p.loja === "shopee");
   const mistura = [];
   for (let i = 0; i < Math.max(ml.length, sh.length); i++) { if (sh[i]) mistura.push(sh[i]); if (ml[i]) mistura.push(ml[i]); }
-  const resposta = { configurado, produtos: mistura, avisos, temMais: maisML || (configurado.shopee && loja !== "mercadolivre" && sh.length >= 40) };
+  const resposta = { configurado: busca ? { ...configurado, mercadolivre: true } : configurado, produtos: mistura, avisos, temMais: maisML || (configurado.shopee && loja !== "mercadolivre" && sh.length >= 40) };
   if (mistura.length) await gravarCache("catalogo", chave, resposta, 1800); // 30 minutos
   return json(resposta);
 }

@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=395">
+  <link rel="manifest" href="manifest.json?v=396">
   <link rel="icon" type="image/png" href="favicon-redondo.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&family=Roboto+Condensed:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=395">
+  <link rel="stylesheet" href="style.css?v=396">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -68,7 +68,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=395" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=396" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -94,7 +94,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=395" alt="">
+    <img src="logo.png?v=396" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -261,6 +261,7 @@
         <input id="inLink" type="url" inputmode="url" enterkeyhint="go" placeholder="Colar link do produto…" autocomplete="off" aria-label="Link do produto">
         <button type="button" id="inColar" class="colar__btn colar__btn--rosa">Colar</button>
       </div>
+      <button type="button" class="link vl-abrir" id="vlAbrir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z"/><path d="M8 6H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-2"/><path d="M9 12h6M9 16h4"/></svg>Colar vários links de uma vez</button>
       <div class="colar">
         <svg class="colar__lupa" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="ppLink" type="search" enterkeyhint="search" placeholder="Buscar produto, link, loja, cupom…" autocomplete="off" aria-label="Buscar produto">
@@ -410,6 +411,8 @@
     <div class="colar prod-busca"><svg class="colar__lupa" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-busca"/></svg><input class="prod-busca-in" type="search" enterkeyhint="search" placeholder="Buscar nos produtos…" autocomplete="off" aria-label="Buscar nos produtos"></div>
     <div class="prod-seg" role="tablist" aria-label="Produtos"><button type="button" data-prod="postar"><svg><use href="#i-lista"/></svg>Minha lista<small data-cont="postar"></small></button><button type="button" data-prod="achados"><svg><use href="#i-etiqueta"/></svg>Achados<small data-cont="achados"></small></button><button type="button" data-prod="site"><svg><use href="#i-site"/></svg>No site<small data-cont="site"></small></button></div>
     <section class="bloco">
+      <form class="busca-lojas" id="buscaLojasForm" role="search"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-busca"/></svg><input id="buscaLojas" type="search" enterkeyhint="search" placeholder="Buscar nas lojas: calça jeans, presilha…" autocomplete="off" aria-label="Buscar nas lojas"><button class="btn btn--rosa" type="submit">Buscar</button></form>
+      <div class="busca-lojas-res" id="buscaLojasRes" hidden><span>Resultados de “<b id="buscaLojasTermo"></b>” no Mercado Livre e na Shopee</span><button type="button" class="link" id="buscaLojasSair">Voltar aos achados</button></div>
       <div class="cabecalho-aba">
         <h2 class="passo">Achados</h2>
         <button type="button" class="link" id="atualizarCatalogo">Atualizar</button>
@@ -900,7 +903,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=395"></script>
-  <script src="app.js?v=395"></script>
+  <script src="firebase-config.js?v=396"></script>
+  <script src="app.js?v=396"></script>
 </body>
 </html>

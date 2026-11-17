@@ -2763,3 +2763,19 @@ body.modo-selecao .lojas-seg { display: none; }
 .bs-um { grid-template-columns: 1fr !important; }
 .bs-duas > [hidden] { display: none !important; }
 #barraMarcados .bs-tres { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)) !important; }
+/* Busca nas lojas (Achados) */
+.busca-lojas { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; margin: 0 0 10px; background: var(--campo); border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--linha); }
+.busca-lojas:focus-within { background: #fff; box-shadow: 0 0 0 3px rgba(232, 51, 109, .22); }
+.busca-lojas > svg { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--cinza); stroke-width: 2; stroke-linecap: round; }
+.busca-lojas input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 15px; outline: none; padding: 8px 0; }
+.busca-lojas .btn { flex: none; width: auto; min-height: 40px; padding: 0 18px; margin: 0; font-size: 14px; }
+.busca-lojas-res { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: -2px 2px 8px; font-size: 13px; color: var(--cinza); }
+.busca-lojas-res[hidden] { display: none; }
+.busca-lojas-res b { color: var(--preto); }
+/* Colar vários links */
+.vl-abrir { display: inline-flex; align-items: center; gap: 6px; margin: 2px 2px 8px; font-size: 13.5px; background: none; border: 0; cursor: pointer; padding: 4px 0; }
+.vl-abrir svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.vl-texto { width: 100%; box-sizing: border-box; min-height: 150px; border: 0; border-radius: 16px; background: var(--campo); padding: 12px 14px; font: inherit; font-size: 14px; resize: vertical; }
+.vl-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0 10px; }
+.vl-linha .nota { margin: 0; }
+#vlAdicionar { width: 100%; }

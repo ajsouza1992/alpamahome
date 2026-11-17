@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=395` → próxima `?v=396`
-- `app/sw.js`: `VERSAO = "miga-promo-v398"` → próxima `v399`
-- Comando usado: `sed -i 's/?v=395/?v=396/g' app/index.html app/sw.js && sed -i 's/miga-promo-v398/miga-promo-v399/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=396` → próxima `?v=397`
+- `app/sw.js`: `VERSAO = "miga-promo-v399"` → próxima `v400`
+- Comando usado: `sed -i 's/?v=396/?v=397/g' app/index.html app/sw.js && sed -i 's/miga-promo-v399/miga-promo-v400/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -129,7 +129,8 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 
 ## 7. Pendências e ideias em aberto
 1. **Mercado Livre nos Achados**: confirmar se as chaves `ML_APP_ID`/`ML_SECRET` estão no projeto migapromo. O app mostra um aviso acima dos Achados explicando o motivo quando o ML não traz nada — pedir para ela dizer o que o aviso mostra.
-2. **Sugestões do painel de afiliados do ML**: não há API pública. Foi oferecido: **colar vários links de uma vez** (um por linha) na Minha lista. Aguardando ela aceitar.
+2. **Busca nas lojas (Achados)**: barra "Buscar nas lojas" no topo dos Achados. Shopee busca pela palavra (API de afiliados). Mercado Livre: `buscaML` no `_worker.js` tenta a busca oficial e, se falhar, lê a página `lista.mercadolivre.com.br/<termo>` (`lerPaginaBuscaML`). **Ainda não testada no ar** — se o ML bloquear ou mudar a página, o aviso acima dos Achados mostra o motivo (ex.: "página 403"). Ajustar o leitor se precisar.
+   **Colar vários links**: botão "Colar vários links de uma vez" na Minha lista (caixa de texto; usa `adicionarTexto`).
 3. **Logo de abertura (splash) do app/site no Android**: ícones refeitos em alta (192/384/512/1024). Se continuar borrado, ela precisa **remover e instalar de novo** o atalho.
 4. **Desempenho**: voltar para a Minha lista com ~300 produtos leva ~0,6 s (`renderFila`). Se ela reclamar de travada, otimizar.
 5. Logo de Natal criado (perfil e post, com e sem "Feliz Natal") — arquivos ficaram no chat anterior; se precisar, refazer (quadro rosa "Miga", gorro de Papai Noel, azevinho, bolinha amarela %, fundo creme com neve).
