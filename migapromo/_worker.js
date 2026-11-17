@@ -903,15 +903,18 @@ async function buscaML(termo, env, pagina = 1, tokenConta = "") {
       const r = await getML(`/products/search?status=active&site_id=MLB&q=${encodeURIComponent(termo)}&limit=30&offset=${(pagina - 1) * 30}`, tokenConta);
       const lista = ((r.dados && r.dados.results) || []).filter((x) => x && x.id && x.name).slice(0, 8);
       diag.push("catálogo " + r.status + " · " + lista.length + (r.dados && r.dados.message ? " " + String(r.dados.message).slice(0, 50) : ""));
+      const pistas = {};
       const prontos = await Promise.all(lista.map(async (x) => {
         let preco = null, antes = null, itemId = "", extra = {};
         const bb = x.buy_box_winner || null;
         if (bb && bb.price) { preco = bb.price; antes = bb.original_price || null; itemId = bb.item_id || ""; }
+        if (!preco) { const d = await getML(`/products/${x.id}/items?limit=1`, tokenConta); const it = ((d.dados && d.dados.results) || [])[0]; pistas[d.status] = (pistas[d.status] || 0) + 1;
+          if (it && it.price) { preco = it.price; antes = it.original_price || null; itemId = it.item_id || ""; if (it.shipping && it.shipping.free_shipping) extra.freteGratis = true; } }
         if (!preco) { const d = await getML(`/products/${x.id}`, tokenConta); const w = d.dados && d.dados.buy_box_winner; if (w && w.price) { preco = w.price; antes = w.original_price || null; itemId = w.item_id || ""; if (w.shipping && w.shipping.free_shipping) extra.freteGratis = true; } }
         const foto = ((x.pictures || [])[0] || {}).url || ((x.pictures || [])[0] || {}).secure_url || "";
-        return preco ? { id: itemId || x.id, nome: x.name, preco, precoAntigo: antes && antes > preco ? antes : null, imagem: mlHttps(foto), link: x.permalink || `https://www.mercadolivre.com.br/p/${x.id}`, loja: "mercadolivre", categoria: "outros", ...extra } : null;
+        return preco ? { id: itemId || x.id, nome: x.name, preco, precoAntigo: antes && antes > preco ? antes : null, imagem: mlHttps(foto), link: x.permalink || `https://www.mercadolivre.com.br/p/${x.id}`, loja: "mercadolivre", categoria: "outros", ...extra } : { id: x.id, nome: x.name, preco: null, semPreco: true, precoAntigo: null, imagem: mlHttps(foto), link: x.permalink || `https://www.mercadolivre.com.br/p/${x.id}`, loja: "mercadolivre", categoria: "outros" };
       }));
-      saida = prontos.filter(Boolean); diag.push("com preço " + saida.length);
+      saida = prontos.filter(Boolean); diag.push("com preço " + saida.filter((p) => p.preco).length + " · anúncios " + Object.entries(pistas).map(([k, n]) => k + "×" + n).join(","));
     } catch (e) { diag.push("catálogo falhou"); }
   }
   if (!saida.length && env.ML_APP_ID && env.ML_SECRET) {

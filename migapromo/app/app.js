@@ -1043,7 +1043,7 @@
       return;
     }
     if (d.avisos && d.avisos.length) console.info("Catálogo:", d.avisos.join(" | "));
-    catalogoAtual = (d.produtos || []).filter((p) => p.preco);
+    catalogoAtual = (d.produtos || []).filter((p) => p.preco || p.semPreco);
     { const lj = catLoja.valor(), temML = catalogoAtual.some((p) => p.loja === "mercadolivre"), av = $("#avisoCatalogo");
       const msg = lj !== "shopee" && !conf.mercadolivre ? "O Mercado Livre não está conectado: cadastre ML_APP_ID e ML_SECRET no Cloudflare (Variáveis e segredos) e faça uma nova implantação."
         : lj !== "shopee" && !temML ? `O Mercado Livre não trouxe produtos agora${d.avisos && d.avisos.length ? " (" + d.avisos.join(" · ").slice(0, 140) + ")" : ""}. Toque em Atualizar daqui a pouco.` : "";
@@ -1089,7 +1089,7 @@
     $("#acTotal").textContent = total > l.length ? `${l.length} de ${total} achados` : `${total} ${total === 1 ? "achado" : "achados"}`;
     $("#catalogo").innerHTML = botaoBusca + (daBusca ? `<p class="nota ac-busca-info">Resultados das lojas para “${esc(catBusca)}”. Apague a busca para voltar aos achados.</p>` : "") + (l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
       return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
-        <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
+        <span><strong>${esc(limparNome(p.nome))}</strong>${p.semPreco ? '<span class="pp-preco pp-sem-preco">Preço na loja</span>' : ""}${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
       </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${total > l.length || (catTemMais && !t) ? `<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais 100 ${daBusca ? `de “${esc(catBusca)}”` : "achados"}</button>` : ""}` : `<p class="vazio-lista">${bruto && !daBusca ? "Nada com essa palavra nos achados carregados: toque em Buscar nas lojas." : "Nada encontrado nos achados."}</p>`);
   }
   /* ---------- Enviar vários achados para o site, já com o seu link de afiliado ---------- */
@@ -1245,7 +1245,7 @@
     catBusca = termo; setTimeout(pintarBuscaLojas, 0); catPagina = 1; acLimite = 100; esqueletoCatalogo(); $("#acBusca").blur();
     try {
       const d = await api(`catalogo?busca=${encodeURIComponent(termo)}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`);
-      catalogoAtual = (d.produtos || []).filter((p) => p.preco); catTemMais = !!d.temMais;
+      catalogoAtual = (d.produtos || []).filter((p) => p.preco || p.semPreco); catTemMais = !!d.temMais;
       ordenarAchados();
       pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
       { const av = $("#avisoCatalogo"), temML = catalogoAtual.some((p) => p.loja === "mercadolivre"), lj = catLoja.valor();

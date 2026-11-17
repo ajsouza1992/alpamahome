@@ -2785,3 +2785,5 @@ body.modo-selecao .lojas-seg { display: none; }
 
 /* Uma barra de busca só (a de cima): a barra extra dos Achados fica escondida */
 #buscaLojasForm, #buscaLojasRes { display: none !important; }
+
+.pp-sem-preco { color: var(--cinza) !important; font-size: 13px; }
