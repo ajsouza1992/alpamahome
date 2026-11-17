@@ -7,8 +7,13 @@
   <meta name="description" content="Os achadinhos da Miga Promo: roupas, beleza, casa e muito mais, com preço de amiga no Mercado Livre e na Shopee.">
   <meta name="theme-color" content="#e8336d">
   <meta property="og:title" content="Miga Promo · Achadinhos com preço de amiga">
-  <meta property="og:description" content="Filtre, escolha e vá direto para a loja. Entre também no canal do WhatsApp.">
-  <meta property="og:image" content="app/logo.png">
+  <meta property="og:description" content="Promoções e cupons do Mercado Livre e da Shopee, escolhidos todo dia.">
+  <meta property="og:image" content="https://www.migapromo.com/og-miga.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://www.migapromo.com/">
+  <meta property="og:site_name" content="Miga Promo">
+  <meta name="twitter:card" content="summary_large_image">
   <meta property="og:type" content="website">
   <link rel="icon" href="site-icone-192.png">
   <link rel="apple-touch-icon" href="site-apple-touch-icon.png">
@@ -253,7 +258,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=340"></script>
+  <script src="app/firebase-config.js?v=341"></script>
   <script>
   (() => {
     "use strict";
@@ -357,6 +362,7 @@
     function ordenar(l) {
       const por = { novos: (a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0), menor: (a, b) => (a.preco || 1e9) - (b.preco || 1e9), maior: (a, b) => (b.preco || 0) - (a.preco || 0),
         desconto: (a, b) => desconto(b) - desconto(a), vendidos: (a, b) => (a.maisVendido || 999) - (b.maisVendido || 999) || (b.publicadoEm || 0) - (a.publicadoEm || 0) };
+      if (est.ordem === "destaque" && est.vant.has("ofertas")) return l.slice().sort(por.desconto); // Ofertas: maior desconto primeiro
       if (est.ordem === "destaque" || !por[est.ordem]) return embaralhar(l);
       return l.slice().sort(por[est.ordem]);
     }
@@ -364,7 +370,7 @@
     const semente = Math.floor(Date.now() / 36e5);
     const pesoHora = (id) => { let h = 2166136261 ^ semente; for (const c of String(id)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); return (h ^ (h >>> 15)) >>> 0; };
     const embaralhar = (l) => l.slice().sort((a, b) => pesoHora(a.id) - pesoHora(b.id));
-    const nFiltros = () => (est.para ? 1 : 0) + est.tipos.size + est.lojas.size + (est.preco ? 1 : 0) + est.vant.size + (est.ordem !== "destaque" ? 1 : 0);
+    const nFiltros = () => (est.para ? 1 : 0) + est.tipos.size + est.lojas.size + (est.preco ? 1 : 0) + [...est.vant].filter((k) => k !== "ofertas" && k !== "cupom").length + (est.ordem !== "destaque" ? 1 : 0); // Ofertas e Com cupom já aparecem marcados em cima
     const presentes = (k) => [...new Set(produtos.map((p) => p[k]).filter(Boolean))];
     const chip = (attr, v, nome, on, extra = "") => `<button type="button" class="ch${extra}${on ? " on" : ""}" ${attr}="${esc(v)}" aria-pressed="${on}">${nome}</button>`;
     function htmlFiltros() {
@@ -460,7 +466,7 @@
       if (t.closest("#verN")) { $("#dlgFiltros").close(); $(".busca-bar").scrollIntoView({ behavior: "smooth" }); return; }
       if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; est.vant.clear(); est.grupo = ""; est.ordem = "destaque"; pintar(); return; }
       const mais = t.closest("[data-mais]"); if (mais) { mais.closest(".desc").classList.remove("curta"); mais.hidden = true; return; }
-      const rp = t.closest("[data-rap]"); if (rp) { const k = rp.dataset.rap; if (!k) { est.grupo = ""; est.vant.delete("ofertas"); est.vant.delete("cupom"); } else if (k === "@ofertas") { alterna(est.vant, "ofertas"); if (est.vant.has("ofertas")) est.ordem = "desconto"; } else if (k === "@cupom") alterna(est.vant, "cupom"); else est.grupo = est.grupo === k ? "" : k; pintar(); return; }
+      const rp = t.closest("[data-rap]"); if (rp) { const k = rp.dataset.rap; if (!k) { est.grupo = ""; est.vant.delete("ofertas"); est.vant.delete("cupom"); } else if (k === "@ofertas") { alterna(est.vant, "ofertas"); } else if (k === "@cupom") alterna(est.vant, "cupom"); else est.grupo = est.grupo === k ? "" : k; pintar(); return; }
       const pa = t.closest("[data-para]"); if (pa) { const v = pa.dataset.para; est.para = est.para === v ? "" : v; pintar(); return; }
       const tp = t.closest("[data-tipo]"); if (tp) { alterna(est.tipos, tp.dataset.tipo); pintar(); return; }
       const lj = t.closest("[data-loja]"); if (lj) { alterna(est.lojas, lj.dataset.loja); pintar(); return; }
