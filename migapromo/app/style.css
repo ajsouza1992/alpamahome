@@ -2426,3 +2426,6 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .ac-tag.c { background: var(--rosa); color: #fff; }
 .st-tags b.st-cliques { background: var(--rosa); color: #fff; }
 .st-tags b.st-abriu { background: #fff3c4; color: var(--preto); }
+/* Bolinha com o número de cliques (30 dias) na foto do produto do Site */
+#stLista .pp-item { position: relative; }
+.st-bola { position: absolute; z-index: 2; left: 66px; top: 6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--rosa); color: #fff; font: 700 11.5px/22px var(--sans); font-style: normal; text-align: center; box-shadow: 0 0 0 2px var(--branco); }

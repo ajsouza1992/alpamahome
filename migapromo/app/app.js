@@ -1209,9 +1209,10 @@
     $("#stOrdem").textContent = stEst.ordem === "cliques" ? "Mais clicados" : "Recentes"; $("#stOrdem").hidden = !!stEst.sel || !n;
     const lista = $("#stLista"); lista.classList.toggle("st-sel", !!stEst.sel);
     lista.innerHTML = l.length ? `<div class="pp-lista">${l.map((p) => { const on = stEst.sel && stEst.sel.has(p.id);
-      return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
+      const k = cliquesSite.mapa.get(p.id), nCl = k ? k.loja + k.abrir : 0;
+      return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${nCl ? `<i class="st-bola" title="${k.loja} na loja, ${k.abrir} abriram (30 dias)" aria-label="${nCl} cliques">${nCl > 99 ? "99+" : nCl}</i>` : ""}${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
-        <span class="st-tags">${(() => { const k = cliquesSite.mapa.get(p.id); return k ? `${k.loja ? `<b class="st-cliques">${k.loja} na loja</b>` : ""}${k.abrir ? `<b class="st-abriu">${k.abrir} ${k.abrir === 1 ? "abriu" : "abriram"}</b>` : ""}` : ""; })()}<b>${esc(NOME_CAT[p.tipo] || "Outros")}</b><b class="st-para">${esc(PARA_SITE[p.para] || "Mulher")}</b></span></span>
+        <span class="st-tags"><b>${esc(NOME_CAT[p.tipo] || "Outros")}</b><b class="st-para">${esc(PARA_SITE[p.para] || "Mulher")}</b></span></span>
       </button>${stEst.sel ? `<button type="button" class="pp-marcar" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
       : `<p class="vazio-lista">${n ? "Nenhum produto com essa busca." : "Seu site ainda está vazio. Toque em <b>Enviar dos Achados</b> para escolher vários de uma vez."}</p>`;
     const bs = $("#barraSite"); bs.hidden = !stEst.sel;
