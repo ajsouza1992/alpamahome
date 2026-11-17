@@ -866,6 +866,23 @@ function precoDoBloco(html) {
   const fr = html.match(/andes-money-amount__fraction[^>]*>([\d.]+)</), ct = html.match(/andes-money-amount__cents[^>]*>(\d+)</);
   return fr ? Number(fr[1].replace(/\./g, "")) + (ct ? Number(ct[1]) / 100 : 0) : null;
 }
+/** Plano B do leitor: a página traz os produtos num JSON (estado da página) — acha cada link MLB e lê nome, preço e foto perto dele */
+function lerJsonBuscaML(html) {
+  const t = html.replace(/\\u002F/gi, "/").replace(/\\\//g, "/").replace(/\\u0026/gi, "&"), out = [], vistos = new Set();
+  const re = /https:\/\/(?:produto|www)\.mercadolivre\.com\.br\/[^"'\s<>\\]*?MLB-?(\d{6,})[^"'\s<>\\]*/g; let m;
+  while ((m = re.exec(t)) && out.length < 60) {
+    const id = m[1]; if (vistos.has(id)) continue;
+    const ini = Math.max(0, m.index - 2500), janela = t.slice(ini, m.index + 2500), perto = t.slice(m.index, m.index + 2500);
+    const tit = desfazHtml(((perto.match(/"(?:title|text)"\s*:\s*"([^"]{8,200})"/) || janela.match(/"(?:title|text)"\s*:\s*"([^"]{8,200})"/) || [])[1] || "").replace(/\\"/g, '"'));
+    const pr = perto.match(/"(?:value|amount|price)"\s*:\s*(\d+(?:\.\d+)?)/) || janela.match(/"(?:value|amount|price)"\s*:\s*(\d+(?:\.\d+)?)/);
+    const ant = perto.match(/"(?:original_price|previous_price|regular_amount)"\s*:\s*\{?[^}]{0,80}?(\d+(?:\.\d+)?)/);
+    const img = (janela.match(/https:\/\/http2\.mlstatic\.com\/[^"'\s\\]+?\.(?:webp|jpg|jpeg|png)/) || [])[0];
+    const preco = pr ? Number(pr[1]) : null; if (!tit || !preco || /^https?:/.test(tit)) continue;
+    vistos.add(id);
+    out.push({ id: "MLB" + id, nome: tit, preco, precoAntigo: ant && Number(ant[1]) > preco ? Number(ant[1]) : null, imagem: img || "", link: m[0].split(/[#?]/)[0], loja: "mercadolivre", categoria: "outros" });
+  }
+  return out;
+}
 function lerPaginaBuscaML(html) {
   const out = [], vistos = new Set();
   const blocos = html.split(/<li[^>]+ui-search-layout__item|<div[^>]+class="[^"]*poly-card[ "]/).slice(1);
@@ -883,7 +900,7 @@ function lerPaginaBuscaML(html) {
     vistos.add(id);
     out.push({ id: "MLB" + id, nome: tit, preco, precoAntigo: antes && antes > preco ? antes : null, imagem: img ? img.replace(/^http:/, "https:") : "", link: link.replace(/\/$/, ""), loja: "mercadolivre", categoria: "outros", ...( /frete gr[áa]tis/i.test(bloco) ? { freteGratis: true } : {}), ...(/loja oficial/i.test(bloco) ? { lojaOficial: true } : {}) });
   }
-  return out;
+  return out.length ? out : lerJsonBuscaML(html);
 }
 async function buscaML(termo, env, pagina = 1) {
   chamadasML = 0; const diag = []; let saida = [];
@@ -894,8 +911,15 @@ async function buscaML(termo, env, pagina = 1) {
   if (!saida.length) {
     const slug = termo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const url = `https://lista.mercadolivre.com.br/${slug}${pagina > 1 ? `_Desde_${(pagina - 1) * 48 + 1}` : ""}_NoIndex_True`;
-    try { const r = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36", "accept": "text/html", "accept-language": "pt-BR,pt;q=0.9" }, redirect: "follow" });
-      diag.push("página " + r.status); if (r.ok) saida = lerPaginaBuscaML(await r.text()); diag.push("lidos " + saida.length); } catch (e) { diag.push("página falhou"); }
+    const agentes = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"];
+    for (const ua of agentes) {
+      try { const r = await fetch(url, { headers: { "user-agent": ua, "accept": "text/html,application/xhtml+xml", "accept-language": "pt-BR,pt;q=0.9" }, redirect: "follow" });
+        const html = r.ok ? await r.text() : ""; saida = html ? lerPaginaBuscaML(html) : [];
+        const tit = desfazHtml((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "").slice(0, 60);
+        diag.push(`página ${r.status} · ${Math.round(html.length / 1024)} KB · "${tit}" · cards ${(html.match(/poly-card|ui-search-layout__item/g) || []).length} · MLB ${(html.match(/MLB-?\d{6,}/g) || []).length} · lidos ${saida.length}${r.url && r.url !== url ? " · foi para " + r.url.slice(0, 60) : ""}`);
+        if (saida.length) break;
+      } catch (e) { diag.push("página falhou"); }
+    }
   }
   if (!saida.length && pagina === 1) throw new Error("Mercado Livre não trouxe resultados (" + diag.join(" · ") + ")");
   saida.temMais = saida.length >= 30;

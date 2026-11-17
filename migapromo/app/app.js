@@ -1230,7 +1230,8 @@
       ordenarAchados();
       pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
       { const av = $("#avisoCatalogo"), temML = catalogoAtual.some((p) => p.loja === "mercadolivre"), lj = catLoja.valor();
-        const msg = lj !== "shopee" && !temML ? `O Mercado Livre não trouxe resultados agora${d.avisos && d.avisos.length ? " (" + d.avisos.join(" · ").slice(0, 160) + ")" : ""}.` : "";
+        const det = (d.avisos || []).map((x) => String(x).replace(/^Mercado Livre não trouxe resultados \(|\)$/g, "")).join(" · ").slice(0, 420);
+        const msg = lj !== "shopee" && !temML ? `O Mercado Livre não trouxe resultados agora.${det ? " Detalhe para a Miga Promo: " + det : ""}` : "";
         if (av) { av.textContent = msg; av.hidden = !msg; } }
     } catch (e) { if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; } toast("Não consegui buscar nas lojas agora"); catBusca = ""; carregarCatalogo(); }
   }
