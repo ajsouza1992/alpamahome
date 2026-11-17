@@ -2616,7 +2616,7 @@
   $("#ppLista").addEventListener("click", async (e) => {
     if (e.target.closest("[data-completar]")) { const p = incompletos()[0]; if (p) { modoCompletar = true; abrirItemFila(p, true); } else toast("Todos os produtos estão completos"); return; }
     if (e.target.closest("[data-continuar]")) { continuarProgresso(); return; }
-    if (e.target.closest("[data-ir-inicio]")) { irPara("inicio"); setTimeout(() => $("#inLink").focus(), 150); return; }
+    if (e.target.closest("[data-ir-inicio]")) { irPara("postar"); setTimeout(() => $("#inLink").focus(), 150); return; }
     const ph = e.target.closest("[data-ph]");
     if (ph) {
       filtrarResumo(filtroResumo === ph.dataset.ph ? "" : ph.dataset.ph); return;

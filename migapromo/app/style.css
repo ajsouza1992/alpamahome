@@ -2498,3 +2498,4 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .aba-prod .cabecalho-aba:not(:has(button:not([hidden]))) { display: none; }
 .prod-seg small.alerta { display: block; width: max-content; margin: 2px auto 0; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #d92d20; color: #fff; opacity: 1; font-weight: 800; }
 #stResumo .st-alerta { display: block; margin-top: 6px; color: #d92d20; font-weight: 700; }
+.pp-cadastro { margin-bottom: 10px; }
