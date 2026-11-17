@@ -159,7 +159,7 @@
     .desc p { margin: 0; white-space: pre-line; }
     .desc.curta p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
     .desc button { border: 0; background: none; padding: 4px 0 0; color: var(--rosa); font-weight: 700; font-size: 13.5px; }
-    .prod .acoes { display: flex; gap: 8px; align-items: stretch; }
+    .prod .acoes { display: flex; gap: 8px; align-items: stretch; position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom)); z-index: 2; background: #fff; margin: 0 -18px calc(-18px - env(safe-area-inset-bottom)); padding: 10px 18px calc(18px + env(safe-area-inset-bottom)); box-shadow: 0 -12px 16px -14px rgba(29,29,31,.3); }
     .prod .acoes .bt-loja { flex: 1; font-size: 15px; padding: 9px 14px 9px 9px; }
     .prod .acoes .bt-loja img { width: 32px; height: 32px; padding: 4px; }
     .prod .acoes .redondo { flex: none; width: 52px; border-radius: 50%; border: 1.6px solid var(--linha); background: #fff; display: grid; place-items: center; }
@@ -434,8 +434,8 @@
         <div class="precos">${p.preco ? `<b>${brl(p.preco)}</b>` : ""}${d >= 5 ? `<s>${brl(p.precoAntigo)}</s><em>-${d}%</em>` : ""}</div>
         ${p.cupom ? `<div class="cupom-g"><span>Cupom <b>${esc(p.cupom)}</b></span><button type="button" data-copiar="${esc(p.cupom)}">Copiar</button></div>` : ""}
         ${p.descricao ? `<div class="desc curta"><b>Sobre o produto</b><p>${esc(p.descricao)}</p><button type="button" data-mais hidden>Ver mais</button></div>` : ""}
-        <div class="acoes">${botaoLoja(p, true)}<button type="button" class="redondo" data-compart="${esc(p.id)}" aria-label="Compartilhar">${ic("comp")}</button></div>
-        <p class="aviso">O preço pode mudar na loja</p>`;
+        <p class="aviso">O preço pode mudar na loja</p>
+        <div class="acoes">${botaoLoja(p, true)}<button type="button" class="redondo" data-compart="${esc(p.id)}" aria-label="Compartilhar">${ic("comp")}</button></div>`;
       const dlg = $("#dlgProd"); if (!dlg.open) dlg.showModal();
       const dp = $("#prod .desc p"), mais = $("#prod [data-mais]"); if (dp && mais && dp.scrollHeight > dp.clientHeight + 4) mais.hidden = false;
       $("#prod").scrollTop = 0;

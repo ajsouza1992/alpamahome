@@ -11,6 +11,28 @@
  */
 (function () {
   "use strict";
+  /* Popups: o teclado só abre quando a pessoa toca no campo (o navegador focava o 1º campo sozinho) */
+  /* Popups: Fechar, Cancelar, Salvar e Confirmar ficam presos no fim da tela (sem rolar até o fim) */
+  const ehBotao = (el) => el && el.matches && (el.matches("button.btn, a.btn") || (el.children.length > 0 && [...el.children].every((c) => c.matches("button, a.btn, input[type=hidden]"))));
+  function fixarRodape(d) {
+    if (!d.classList.contains("dialogo") || d.querySelector(":scope > form > .folha-pe, :scope > .folha-pe")) return;
+    const f = d.querySelector(":scope > form") || d; const fim = [];
+    for (let el = f.lastElementChild; el && ehBotao(el); el = el.previousElementSibling) fim.unshift(el);
+    if (!fim.length || fim.length === f.children.length) return;
+    const pe = document.createElement("div"); pe.className = "folha-pe"; f.insertBefore(pe, fim[0]); fim.forEach((el) => pe.appendChild(el));
+  }
+  if (window.HTMLDialogElement && HTMLDialogElement.prototype.showModal) {
+    const abrirModal = HTMLDialogElement.prototype.showModal;
+    HTMLDialogElement.prototype.showModal = function () {
+      fixarRodape(this);
+      abrirModal.call(this);
+      const a = document.activeElement;
+      if (a && a !== this && this.contains(a) && a.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), textarea, select")) {
+        if (!this.hasAttribute("tabindex")) this.setAttribute("tabindex", "-1");
+        this.focus({ preventScroll: true });
+      }
+    };
+  }
 
   /* =========================== Utilidades =========================== */
   const $ = (s) => document.querySelector(s);

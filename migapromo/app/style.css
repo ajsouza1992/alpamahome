@@ -135,9 +135,9 @@ textarea { height: auto; padding: 14px 16px; line-height: 1.55; resize: vertical
 .btn:active { transform: scale(.98); }
 .btn[disabled] { opacity: .7; cursor: wait; }
 .btn--rosa { background: var(--rosa); color: #fff; box-shadow: var(--sombra-rosa); }
-.btn--rosa:hover { background: var(--rosa-escuro); }
+@media (hover: hover) and (pointer: fine) { .btn--rosa:hover { background: var(--rosa-escuro); } }
 .btn--branco { background: var(--branco); color: var(--preto); box-shadow: inset 0 0 0 1.5px var(--linha); }
-.btn--branco:hover { background: var(--campo); }
+@media (hover: hover) and (pointer: fine) { .btn--branco:hover { background: var(--campo); } }
 .btn--mini { min-height: 50px; padding: 0 16px; font-size: 14px; }
 .btn--gerar { width: 100%; min-height: 56px; font-size: 16.5px; font-weight: 700; }
 .giro { display: none; width: 20px; height: 20px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .45); border-top-color: #fff; animation: girar .8s linear infinite; }
@@ -175,7 +175,7 @@ textarea { height: auto; padding: 14px 16px; line-height: 1.55; resize: vertical
 .ajustes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ajustes span { font-size: 13px; font-weight: 600; color: var(--cinza); }
 .ajustes button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--rosa-claro); color: var(--rosa-escuro); font-weight: 600; font-size: 13px; cursor: pointer; }
-.ajustes button:active { background: #f9cfdd; }
+
 .ajustes button[disabled] { opacity: .5; cursor: wait; }
 
 /* ---------- Grupos ---------- */
@@ -580,7 +580,7 @@ body.travado { overflow: hidden; }
 /* Folha de escolha (lista simples, sem ícones) */
 .lista-escolha { display: grid; gap: 2px; max-height: 60dvh; overflow-y: auto; }
 .lista-escolha button { display: flex; align-items: center; justify-content: space-between; min-height: 54px; padding: 0 16px; border: 0; border-radius: 14px; background: none; font-size: 16px; font-weight: 500; color: var(--preto); text-align: left; cursor: pointer; }
-.lista-escolha button:hover { background: var(--campo); }
+@media (hover: hover) and (pointer: fine) { .lista-escolha button:hover { background: var(--campo); } }
 .lista-escolha button.on { color: var(--rosa); font-weight: 700; background: #fff7fa; }
 .lista-escolha button b { color: var(--rosa); }
 #ppFotoBtn.pedir { box-shadow: 0 0 0 3px var(--rosa); animation: pulsar 1.2s ease-in-out 3; }
@@ -588,7 +588,7 @@ body.travado { overflow: hidden; }
 .pp-linha .pp-item { padding-right: 64px; }
 .pp-lixo { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--branco); color: var(--rosa-escuro); display: grid; place-items: center; cursor: pointer; box-shadow: inset 0 0 0 1.5px var(--linha); }
 .pp-lixo svg { width: 20px; height: 20px; }
-.pp-lixo:hover { background: var(--rosa-claro); }
+@media (hover: hover) and (pointer: fine) { .pp-lixo:hover { background: var(--rosa-claro); } }
 .pp-linha .pp-item .seta { display: none; }
 .link-copiar { display: grid; gap: 8px; padding: 14px; border-radius: 18px; background: var(--campo); }
 .link-copiar span { font-size: 13px; font-weight: 600; color: var(--cinza); }
@@ -1513,7 +1513,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select
 .btn--rosa:active { background: var(--rosa-escuro); }
 .btn--rosa:disabled { background: var(--campo); color: var(--placeholder); box-shadow: none; }
 .btn--branco { background: var(--campo); color: var(--preto); box-shadow: inset 0 0 0 1px var(--linha); }
-.btn--branco:active { background: var(--amarelo-claro); }
+
 .link, .link-sel { font-weight: 600; color: var(--rosa); }
 .btn--perigo, .fi-op--perigo { background: var(--rosa-claro) !important; color: var(--rosa-escuro) !important; }
 /* Botão de ícone: área de toque 44×44 */
@@ -1640,7 +1640,7 @@ body.modo-selecao #ppListaBloco .barra-filtro #ppSelecionar { margin-left: auto;
 
 /* ===== Botões claros: brancos com sombra (opção C) ===== */
 .btn--branco { background: #fff; color: var(--preto); box-shadow: 0 8px 18px -10px rgba(29,29,31,.45), inset 0 0 0 1px var(--linha); }
-.btn--branco:active { background: #fff8e4; }
+
 .fi-acao, #folhaItemOps .fi-op:not(.fi-op--perigo), .wz-op, .rt-lugar:not(.on), .lista-mod button:not(.on), .tabs-mod button:not(.on), .ed-chips button:not(.on), .ed-linha button:not(.on):not(.ed-ok):not(.ed-del), .in-num, .alternar button[aria-checked="false"], .frases-lista button {
   background: #fff; box-shadow: 0 8px 18px -12px rgba(29,29,31,.4), inset 0 0 0 1px var(--linha); }
 
@@ -2717,3 +2717,16 @@ textarea.leg-caixa { width: 100%; min-height: 150px; border: 1.5px solid var(--l
 .lp-item.pe-sem > span:last-child { flex: 1; min-width: 0; text-align: left; }
 .pe-cores { flex-wrap: wrap; gap: 10px; margin: 4px 0 6px; }
 .pe-cores button { width: 36px; height: 36px; flex: none; }
+
+/* Toque: só o efeito de apertar, sem mudar de cor e sem ficar marcado depois */
+button, .btn { transition: scale .12s ease; }
+button:active:not([disabled]), .btn:active:not([disabled]) { scale: .96; }
+button:focus:not(:focus-visible), .btn:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
+dialog:focus { outline: none; }
+/* Botões do fim dos popups presos embaixo */
+.folha-pe { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom)); z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0 -18px calc(-18px - env(safe-area-inset-bottom)); padding: 12px 18px calc(18px + env(safe-area-inset-bottom)); background: var(--branco, #fff); box-shadow: 0 -12px 16px -14px rgba(29, 29, 31, .35); }
+.dialogo:not(.folha) .folha-pe { bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px 20px; box-shadow: none; }
+.folha-pe > .btn, .folha-pe > .duas, .folha-pe > div { width: 100%; margin: 0; }
+.folha-pe > [hidden] { display: none !important; }
+.folha-pe > .aj-barra { position: static; padding: 0; box-shadow: none; display: grid; }
+.folha-pe > .aj-barra[hidden] { display: none !important; }
