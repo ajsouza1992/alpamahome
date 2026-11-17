@@ -66,6 +66,11 @@
     .busca:focus-within { border-color: var(--rosa); box-shadow: 0 0 0 3px rgba(232, 51, 109, .14); }
     .busca .ic { color: var(--rosa); width: 17px; height: 17px; }
     .busca input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 14.5px; padding: 11px 0; color: var(--preto); }
+    .mini-marca { display: none; flex: none; text-decoration: none; }
+    .mini-marca .marca__miga { font-size: 19px; padding: 0 9px 3px; border-radius: 10px; }
+    .busca-bar.fixo .mini-marca { display: block; animation: entra .25s ease-out; }
+    .busca-bar.fixo { box-shadow: 0 6px 18px -12px rgba(0, 0, 0, .35); }
+    @keyframes entra { from { opacity: 0; transform: translateX(-8px); } }
     .bt-filtro { flex: none; position: relative; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: var(--preto); color: #fff; padding: 11px 15px; font-size: 13px; font-weight: 700; }
     .bt-filtro b { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; border-radius: 999px; background: var(--rosa); font-size: 10px; display: grid; place-items: center; padding: 0 4px; }
     .bt-filtro b:empty { display: none; }
@@ -179,6 +184,9 @@
       .vitr button { position: relative; border: 0; padding: 0; border-radius: 18px; overflow: hidden; background: #f7f2e8; cursor: pointer; transition: transform .2s; }
       .vitr button:hover { transform: translateY(-3px); }
       .vitr button:first-child { grid-row: 1 / 3; }
+      .vitr[data-n="3"], .vitr[data-n="4"] { grid-template-rows: 270px; }
+      .vitr[data-n="3"] { grid-template-columns: repeat(3, 1fr); } .vitr[data-n="4"] { grid-template-columns: repeat(4, 1fr); }
+      .vitr[data-n="3"] button:first-child, .vitr[data-n="4"] button:first-child { grid-row: auto; }
       .vitr img { width: 100%; height: 100%; object-fit: cover; }
       .vitr span { position: absolute; left: 8px; bottom: 8px; background: #fff; border-radius: 999px; font-size: 11px; font-weight: 700; padding: 3px 9px; box-shadow: 0 2px 6px rgba(0, 0, 0, .1); }
       .vitr span.off { background: var(--rosa); color: #fff; }
@@ -210,13 +218,14 @@
     <div class="heroi"><div class="heroi-txt">
       <h1>Achados de moda<br>com <em>preço de amiga</em></h1>
       <p class="sub">Promoções e cupons do Mercado Livre e da Shopee, escolhidos todo dia.</p>
-    </div><div class="vitr-box" id="vitrBox" hidden><p class="vitr-tit"><span></span>Em destaque agora</p><div class="vitr" id="vitr"></div></div></div>
+    </div><div class="vitr-box" id="vitrBox" hidden><p class="vitr-tit"><span></span>Maiores descontos agora</p><div class="vitr" id="vitr"></div></div></div>
   </div></header>
 
   <div class="faixa" aria-hidden="true"><div class="faixa-in" id="faixa"></div></div>
 
   <div class="busca-bar"><div class="larg">
     <div class="busca-in">
+      <a class="mini-marca" href="#" aria-label="Voltar ao topo"><span class="marca__miga">Miga</span></a>
       <label class="busca"><span class="sr">Buscar</span><svg class="ic"><use href="#i-busca"/></svg><input type="search" id="busca" placeholder="Buscar achadinho, cupom ou loja…" autocomplete="off"></label>
       <button type="button" class="bt-filtro" id="abrirFiltros"><svg class="ic"><use href="#i-filtro"/></svg>Filtros<b id="nFiltros"></b></button>
     </div>
@@ -244,7 +253,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=337"></script>
+  <script src="app/firebase-config.js?v=338"></script>
   <script>
   (() => {
     "use strict";
@@ -460,10 +469,15 @@
 
     /* Computador: vitrine de fotos ao lado do título e os números do dia */
     function pintarCapa() {
-      const l = embaralhar(produtos.filter((p) => imgOk(p.imagem))).slice(0, 5);
-      $("#vitr").innerHTML = l.length >= 3 ? l.map((p) => { const d = desconto(p); return `<button type="button" data-id="${esc(p.id)}" aria-label="${esc(p.nome)}"><img src="${esc(p.imagem)}" alt="" referrerpolicy="no-referrer">${d >= 5 ? `<span class="off">-${d}%</span>` : p.cupom ? "<span>Cupom</span>" : p.preco ? `<span>${brl(p.preco)}</span>` : ""}</button>`; }).join("") : "";
-      $("#vitrBox").hidden = l.length < 3;
+      // só os de maior desconto (os 10 maiores, revezando 5 a cada hora)
+      const top = produtos.filter((p) => imgOk(p.imagem) && desconto(p) >= 5).sort((a, b) => desconto(b) - desconto(a)).slice(0, 10);
+      const l = embaralhar(top).slice(0, 5).sort((a, b) => desconto(b) - desconto(a));
+      $("#vitr").innerHTML = l.length >= 3 ? l.map((p) => `<button type="button" data-id="${esc(p.id)}" aria-label="${esc(p.nome)}"><img src="${esc(p.imagem)}" alt="" referrerpolicy="no-referrer"><span class="off">-${desconto(p)}%</span></button>`).join("") : "";
+      $("#vitrBox").hidden = l.length < 3; $("#vitr").dataset.n = l.length;
     }
+    /* Ao rolar, a barra de busca gruda no topo e mostra o logo da Miga */
+    if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => $(".busca-bar").classList.toggle("fixo", !e.isIntersecting)).observe($(".faixa"));
+    $(".mini-marca").addEventListener("click", (e) => { e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); });
     carregar().then(() => { pintar(); pintarRedes(); pintarCapa(); const m = /^#p=(.+)$/.exec(location.hash); if (m) abrirProduto(decodeURIComponent(m[1]), false); })
       .catch(() => { $("#grade").setAttribute("aria-busy", "false"); $("#grade").innerHTML = '<p class="vazio"><b>Não consegui carregar os achadinhos agora</b>Tente de novo em instantes.</p>'; $("#contagem").textContent = ""; });
   })();
