@@ -7085,15 +7085,30 @@
   const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k] || ""}</svg><b>${esc(nome)}</b><small>${esc(String(valor || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " "))}</small></button>`;
   let amostra = null, amostraK = "", amostraT = 0;
   const ICO_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>', ICO_PAUSA = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1"/><rect x="13.5" y="5.5" width="4" height="13" rx="1"/></svg>';
+  /* Um só "motor de som" para as prévias (o Android limita quantos podem existir e bloqueia os criados fora do toque) */
+  let acPrevia = null, ultToque = { k: "", t: 0 };
+  function ctxPrevia() {
+    try { if (!acPrevia || acPrevia.state === "closed") acPrevia = new (window.AudioContext || window.webkitAudioContext)(); if (acPrevia.state !== "running") acPrevia.resume().catch(() => {}); } catch (e) { acPrevia = null; }
+    return acPrevia;
+  }
+  /** Toca uma música no motor das prévias; devolve a saída (para parar: pararSaida) */
+  function tocarMusicaPrevia(k, dur, vol) {
+    const ac = ctxPrevia(), E = MUSICAS[k]; if (!ac || !E) return null;
+    const g = ac.createGain(); g.gain.value = vol; g.connect(ac.destination); const saida = { g, vivo: true };
+    carregarSons(ac, E).then(() => { if (saida.vivo) tocarTrilha(ac, g, dur, [], [], null, E, null); }).catch(() => {});
+    return saida;
+  }
+  const pararSaida = (x) => { if (!x) return; x.vivo = false; try { x.g.gain.setValueAtTime(0, x.g.context.currentTime); x.g.disconnect(); } catch (e) { /* segue */ } };
   function tocarAmostra(k) {
-    try { if (amostra) amostra.close(); } catch (e) { /* segue */ }
-    clearTimeout(amostraT); amostra = null;
+    const agora = Date.now(); if (k && k === ultToque.k && agora - ultToque.t < 400) return; // o mesmo toque chegou duas vezes
+    ultToque = { k, t: agora };
+    pararSaida(amostra); amostra = null; clearTimeout(amostraT);
     const parar = () => { amostraK = ""; document.querySelectorAll("[data-ouvir]").forEach((b) => { b.innerHTML = ICO_PLAY; b.classList.remove("tocando"); }); };
     if (!k || k === amostraK) { parar(); return; }
     parar(); amostraK = k;
     document.querySelectorAll(`[data-ouvir="${k}"]`).forEach((b) => { b.innerHTML = ICO_PAUSA; b.classList.add("tocando"); }); // todos os botões dessa música (a da lista e a da tela de trás)
-    try { amostra = new (window.AudioContext || window.webkitAudioContext)(); const ac = amostra; amostra.resume && amostra.resume();
-      carregarSons(ac, MUSICAS[k]).then(() => { if (amostra === ac) tocarTrilha(ac, ac.destination, 8, [], [], null, MUSICAS[k], null); }); amostraT = setTimeout(() => { try { ac.close(); } catch (e) { /* segue */ } parar(); }, 8300); } catch (e) { parar(); }
+    amostra = tocarMusicaPrevia(k, 8, 0.9); if (!amostra) { parar(); toast("Não consegui tocar a música neste aparelho"); return; }
+    const esta = amostra; amostraT = setTimeout(() => { if (amostra === esta) { pararSaida(esta); amostra = null; parar(); } }, 8300);
   }
   /** Folha genérica do estúdio */
   /* Frases prontas para escrever em cima dos vídeos, por nicho (até 60 letras cada) */
@@ -8175,7 +8190,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
   }
   function loopPersonagem() {
     const cv = $("#peQuadro"); if (!cv) return; const cx = cv.getContext("2d"), P = pe();
-    const passo = () => { if ($("#peQuadro") !== cv || wz.canal !== "personagem" || wz.passo !== "peMontar") { if (P.midia && P.midia.video) P.midia.video.pause(); return; }
+    const passo = () => { if ($("#peQuadro") !== cv || wz.canal !== "personagem" || wz.passo !== "peMontar") { if (P.midia && P.midia.video) P.midia.video.pause(); pararSaida(P.somFundo); P.somFundo = null; return; }
       if (!P.gravando) quadroLogoArroba(cx, 540, P.midia ? (P.midia.video || P.midia.bmp) : null, P); requestAnimationFrame(passo); };
     if (P.midia && P.midia.video) { const v = P.midia.video; v.muted = true; v.loop = true; if (P.corte != null) { v.pause(); v.currentTime = Math.max(0, P.corte - 0.03); } else v.play().catch(() => {}); }
     passo();
@@ -8528,8 +8543,9 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     const ci = t.closest("[data-pe-circ]"); if (ci) { P.circulo = ci.dataset.peCirc === "logo" ? "logo" : ci.dataset.peCirc === "1"; lsPers.gravar("circulo", P.circulo); P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const ml = t.closest("[data-pe-moldura]"); if (ml) { P.moldura = ml.dataset.peMoldura; lsPers.gravar("moldura", P.moldura); if (P.resultado) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; } ml.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ml)); return; }
     if (t.closest("#peSom") && P.midia && P.midia.video) { const v = P.midia.video, b = t.closest("#peSom");
-      if (!v.muted && !v.paused) { v.muted = true; b.textContent = "▶ Ouvir prévia com som"; return; }
-      try { v.currentTime = 0; v.muted = false; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; } catch (er) { v.muted = true; toast("Não consegui tocar o som"); } return; }
+      if (!v.muted && !v.paused) { v.muted = true; pararSaida(P.somFundo); P.somFundo = null; b.textContent = "▶ Ouvir prévia com som"; return; }
+      pararSaida(P.somFundo); P.somFundo = P.musica && MUSICAS[P.musica] ? tocarMusicaPrevia(P.musica, Math.min(60, (isFinite(v.duration) ? v.duration : 15) + 1), 0.16) : null; // música baixinha, como no vídeo final
+      try { v.currentTime = 0; v.muted = false; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; const fundo = P.somFundo; v.addEventListener("ended", () => pararSaida(fundo), { once: true }); } catch (er) { v.muted = true; pararSaida(P.somFundo); P.somFundo = null; toast("Não consegui tocar o som"); } return; }
     if (t.closest("#peCopiarLeg")) { if (await copiarTexto($("#peLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
     { const q = t.closest("[data-pe-corte]"); if (q) { const v = P.midia && P.midia.video, d = v && isFinite(v.duration) ? v.duration : 15;
