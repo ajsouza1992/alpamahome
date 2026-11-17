@@ -1055,7 +1055,17 @@
   }
   const idSiteAchado = (p) => "ac-" + (p.loja || "loja") + "-" + (String(p.id || "").replace(/[^\w-]/g, "") || Array.from(String(p.link)).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36));
   /** O achado já está na Lista? (pelo link de afiliado ou pelo link da loja) */
-  const itemDoAchado = (p) => { const l = linkAfiliadoAuto(p); return fila().find((i) => !i.carregando && ((l && mesmoProduto(i, l)) || (p.link && mesmoProduto(i, p.link)))); };
+  // Índice da lista (links e códigos de produto) refeito só quando a lista muda: evita comparar cada achado com cada produto a cada toque
+  let idxLista = { assin: "", porChave: new Map(), porId: new Map() };
+  function indiceLista() {
+    const f = fila(), assin = f.length + "|" + (f[0] ? f[0].id + (f[0].link || "") : "") + "|" + (f.length ? f[f.length - 1].id : "") + "|" + f.filter((i) => i.carregando).length;
+    if (idxLista.assin === assin) return idxLista;
+    const porChave = new Map(), porId = new Map();
+    for (const i of f) { if (i.carregando) continue; if (i.link) porChave.set(chaveLink(i.link), i); [i.link, i.urlFinal].forEach((l) => { const c = idProduto(l); if (c) porId.set(c, i); }); }
+    idxLista = { assin, porChave, porId }; return idxLista;
+  }
+  const acharNaLista = (link) => { if (!link) return null; const x = indiceLista(); return x.porChave.get(chaveLink(link)) || x.porId.get(idProduto(link)) || null; };
+  const itemDoAchado = (p) => { if (!p) return null; if (p._aff === undefined) p._aff = linkAfiliadoAuto(p); return acharNaLista(p._aff) || acharNaLista(p.link) || undefined; };
   /** Achado que aparece: tem foto e ainda não está no site nem na sua lista */
   const achadoVisivel = (p) => !!(p && p.imagem) && !achadoNoSite(p) && !itemDoAchado(p);
   const achadoNoSite = (p) => { const it = itemDoAchado(p); return vitrineMap.has(idSiteAchado(p)) || (it && vitrineMap.has(it.id)); };
@@ -2630,6 +2640,7 @@
   function pintarSegProd(aba) { try { pintarSegProd0(aba); } catch (e) { /* app ainda abrindo */ } }
   /* Busca única: o mesmo texto vale para Minha lista, Achados e No site */
   var buscaProd = "";
+  ["#ppLink", "#acBusca", "#stBusca"].forEach((sel) => { const el = $(sel); const c = el && el.closest(".colar"); if (c) c.classList.add("busca-aba"); });
   document.addEventListener("input", (e) => {
     const b = e.target.closest(".prod-busca-in"); if (!b) return; buscaProd = b.value;
     document.querySelectorAll(".prod-busca-in").forEach((x) => { if (x !== b) x.value = buscaProd; });
@@ -3727,7 +3738,7 @@
         const desenhar = () => desenharMontagem($("#rtTela"), true, null, null, L.arte); desenhar(); prepararFoto(item).then(() => { if (wz.passo === "rodar") desenhar(); });
         // Em movimento: a prévia já mostra a arte se mexendo (em loop), antes de criar o vídeo
         if (gravando) rpGravarFundo(); // Postar rápido: se ainda não tem vídeo, continua/começa a criar sozinho
-        if (podeMov && wz.mov && !vMov) { const cv = $("#rtTela"), ini = performance.now(); const passo = () => { if (!cv.isConnected) return; if (wz.gravandoMov) { requestAnimationFrame(passo); return; } desenharMontagem(cv, true, null, null, "story", ((performance.now() - ini) / 1000) % SEG_MOV); requestAnimationFrame(passo); }; prepararFoto(item).then(passo); }
+        if (podeMov && wz.mov && !vMov) { const cv = $("#rtTela"), ini = performance.now(); const lentoU = {}; const passo = () => { if (!cv.isConnected) return; if (wz.gravandoMov) { requestAnimationFrame(passo); return; } if (performance.now() - (lentoU.v || 0) < 55 || document.hidden) { requestAnimationFrame(passo); return; } lentoU.v = performance.now(); desenharMontagem(cv, true, null, null, "story", ((performance.now() - ini) / 1000) % SEG_MOV); requestAnimationFrame(passo); }; prepararFoto(item).then(passo); }
       }
       return true;
     }
@@ -3927,7 +3938,7 @@
     if (!L.arte) return;
     const cv = $("#rtTela"); if (!cv) return;
     const anima = podeMov && wz.mov && !vMov, ini = performance.now();
-    const pintar = () => { if (!cv.isConnected) return; if (!wz.gravandoMov) desenharMontagem(cv, true, null, null, L.arte === "post" ? "post" : "story", anima ? ((performance.now() - ini) / 1000) % SEG_MOV : undefined); if (anima) requestAnimationFrame(pintar); };
+    const lentoU = {}; const pintar = () => { if (!cv.isConnected) return; if (anima) { if (performance.now() - (lentoU.v || 0) < 55 || document.hidden) { requestAnimationFrame(pintar); return; } lentoU.v = performance.now(); } if (!wz.gravandoMov) desenharMontagem(cv, true, null, null, L.arte === "post" ? "post" : "story", anima ? ((performance.now() - ini) / 1000) % SEG_MOV : undefined); if (anima) requestAnimationFrame(pintar); };
     prepararFoto(item).then(pintar);
     if (gravando) rpGravarFundo();
   }
@@ -3946,7 +3957,7 @@
     </div>${botaoContinuar(true, temArte && mov && wz.mov && !vidMovAtual() ? `<svg class="rp-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>Aprovar e criar o vídeo` : "Continuar").replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
     if (!temArte) return;
     const cv = $("#rtTela"); let ini = performance.now();
-    const pintar = () => { if (!cv.isConnected) return; if (!(wz.gravandoMov && mov && wz.mov)) desenharMontagem(cv, true, null, null, rpFormato(), mov && wz.mov ? ((performance.now() - ini) / 1000) % SEG_MOV : undefined); if (mov && wz.mov) requestAnimationFrame(pintar); };
+    const lentoU = {}; const pintar = () => { if (!cv.isConnected) return; if (mov && wz.mov) { if (performance.now() - (lentoU.v || 0) < 55 || document.hidden) { requestAnimationFrame(pintar); return; } lentoU.v = performance.now(); } if (!(wz.gravandoMov && mov && wz.mov)) desenharMontagem(cv, true, null, null, rpFormato(), mov && wz.mov ? ((performance.now() - ini) / 1000) % SEG_MOV : undefined); if (mov && wz.mov) requestAnimationFrame(pintar); };
     prepararFoto(item).then(pintar);
   }
   /** Cria o vídeo em segundo plano; se você trocar modelo/cor no meio, recomeça com a escolha nova */
@@ -9064,7 +9075,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   });
   function loopChamada() {
     const cv = $("#chQuadro"); if (!cv) return; const cx = cv.getContext("2d"), ini = performance.now();
-    const passo = () => { const v = $("#chQuadro"); if (!v || v !== cv || wz.canal !== "chamada" || (wz.passo !== "chEditar" && wz.passo !== "chRevisar")) return; if (!ch().tocando) { previaSemConta = true; try { quadroChamada(cx, 540, ((performance.now() - ini) / 1000) % T_CHAMADA, ch()); } finally { previaSemConta = false; } } requestAnimationFrame(passo); };
+    const lentoU = {}; const passo = () => { const v = $("#chQuadro"); if (!v || v !== cv || wz.canal !== "chamada" || (wz.passo !== "chEditar" && wz.passo !== "chRevisar")) return; if (performance.now() - (lentoU.v || 0) < 55 || document.hidden) { requestAnimationFrame(passo); return; } lentoU.v = performance.now(); if (!ch().tocando) { previaSemConta = true; try { quadroChamada(cx, 540, ((performance.now() - ini) / 1000) % T_CHAMADA, ch()); } finally { previaSemConta = false; } } requestAnimationFrame(passo); };
     passo();
   }
   async function rodarChamada(gravar) {
