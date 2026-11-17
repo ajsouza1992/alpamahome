@@ -253,7 +253,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=339"></script>
+  <script src="app/firebase-config.js?v=340"></script>
   <script>
   (() => {
     "use strict";
@@ -272,7 +272,11 @@
     const VANT = { ofertas: ["Em oferta", (p) => desconto(p) >= 10], cupom: ["Com cupom", (p) => !!p.cupom], frete: ["Frete grátis", (p) => !!p.frete], desc30: ["Desconto 30%+", (p) => desconto(p) >= 30], oficial: ["Loja oficial", (p) => !!p.oficial], top: ["Mais vendido", (p) => !!p.maisVendido] };
     const ORDENS = { destaque: "Em destaque", novos: "Mais novos", desconto: "Mais desconto", menor: "Menor preço", maior: "Maior preço", vendidos: "Mais vendidos" };
     const PALAVRAS = ["PROMOÇÕES", "OFERTA RELÂMPAGO", "DESCONTO", "CUPOM", "FRETE GRÁTIS", "ACHADINHOS", "PREÇO DE AMIGA", "QUEIMA DE ESTOQUE", "LIQUIDAÇÃO", "MAIS VENDIDOS", "NOVIDADES", "MODA", "BELEZA", "CASA", "FITNESS", "SÓ HOJE", "BARATINHO", "ACHADO DO DIA"];
-    const est = { q: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", vant: new Set(), ordem: "destaque" };
+    /* Atalhos de cima: grupos de categoria (só aparecem os que têm produto) */
+    const GRUPOS = { roupas: ["Roupas", ["looks"]], calcados: ["Calçados", ["calcados"]], acessorios: ["Bolsas e acessórios", ["acessorios"]], beleza: ["Beleza", ["maquiagem", "skincare", "cabelo"]], perfumes: ["Perfumes", ["perfumes"]],
+      fitness: ["Fitness", ["fitness", "suplementos"]], casa: ["Casa", ["casa"]], infantil: ["Infantil", ["bebes"]], eletronicos: ["Eletrônicos", ["eletronicos"]] };
+    const doGrupo = (g, p) => GRUPOS[g][1].includes(p.tipo) || (g === "infantil" && p.para === "crianca");
+    const est = { q: "", grupo: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", vant: new Set(), ordem: "destaque" };
     let produtos = [], cfg = {};
 
     /* Faixa: as palavras repetidas o bastante para nunca ficar buraco; anda sem parar */
@@ -341,6 +345,7 @@
       const q = semAcento(est.q).trim();
       return produtos.filter((p) => {
         if (q && !semAcento(`${p.nome} ${TIPOS[p.tipo] || ""} ${LOJAS[p.loja] || ""} ${p.cupom || ""} ${p.descricao || ""}`).includes(q)) return false;
+        if (est.grupo && !doGrupo(est.grupo, p)) return false;
         if (est.para && p.para !== est.para) return false;
         if (est.tipos.size && !est.tipos.has(p.tipo)) return false;
         if (est.lojas.size && !est.lojas.has(p.loja)) return false;
@@ -364,8 +369,7 @@
     const chip = (attr, v, nome, on, extra = "") => `<button type="button" class="ch${extra}${on ? " on" : ""}" ${attr}="${esc(v)}" aria-pressed="${on}">${nome}</button>`;
     function htmlFiltros() {
       const tipos = presentes("tipo").sort((a, b) => (TIPOS[a] || a).localeCompare(TIPOS[b] || b, "pt-BR")), lojas = presentes("loja"), vant = Object.keys(VANT).filter((k) => k !== "ofertas" && produtos.some(VANT[k][1]));
-      return `<div class="grupo"><span class="lbl">Para quem</span><div class="ops">${Object.entries(PARA).map(([k, n]) => chip("data-para", k, n, est.para === k)).join("")}</div></div>
-        ${tipos.length > 1 ? `<div class="grupo"><span class="lbl">Categoria</span><div class="ops">${tipos.map((k) => chip("data-tipo", k, esc(TIPOS[k] || k), est.tipos.has(k))).join("")}</div></div>` : ""}
+      return `${tipos.length > 1 ? `<div class="grupo"><span class="lbl">Categoria</span><div class="ops">${tipos.map((k) => chip("data-tipo", k, esc(TIPOS[k] || k), est.tipos.has(k))).join("")}</div></div>` : ""}
         ${lojas.length > 1 ? `<div class="grupo"><span class="lbl">Loja</span><div class="ops">${lojas.map((k) => chip("data-loja", k, (LOGO[k] ? `<img src="${LOGO[k]}" alt="">` : "") + esc(LOJAS[k] || k), est.lojas.has(k))).join("")}</div></div>` : ""}
         <div class="grupo"><span class="lbl">Preço</span><div class="ops">${Object.entries(PRECOS).map(([k, [n]]) => chip("data-preco", k, n, est.preco === k)).join("")}</div></div>
         ${vant.length ? `<div class="grupo"><span class="lbl">Vantagens</span><div class="ops">${vant.map((k) => chip("data-vant", k, VANT[k][0], est.vant.has(k), " rosa")).join("")}</div></div>` : ""}
@@ -388,7 +392,8 @@
     function pintar() {
       const l = ordenar(filtrar()), n = nFiltros();
       $("#nFiltros").textContent = n || "";
-      $("#rapidos").innerHTML = [["", "Tudo", !est.para && !est.vant.has("ofertas")], ...(produtos.some(VANT.ofertas[1]) ? [["@ofertas", "Ofertas", est.vant.has("ofertas")]] : []), ...Object.entries(PARA).map(([k, nome]) => [k, nome, est.para === k])]
+      $("#rapidos").innerHTML = [["", "Tudo", !est.grupo && !est.vant.has("ofertas") && !est.vant.has("cupom")], ...(produtos.some(VANT.ofertas[1]) ? [["@ofertas", "Ofertas", est.vant.has("ofertas")]] : []), ...(produtos.some(VANT.cupom[1]) ? [["@cupom", "Com cupom", est.vant.has("cupom")]] : []),
+        ...Object.entries(GRUPOS).filter(([g]) => produtos.some((p) => doGrupo(g, p))).map(([g, [nome]]) => [g, nome, est.grupo === g])]
         .map(([k, nome, on]) => `<button type="button" class="rap${on ? " on" : ""}" data-rap="${k}" aria-pressed="${on}">${nome}</button>`).join("");
       if ($("#dlgFiltros").open) $("#filtros").innerHTML = htmlFiltros();
       $("#verN").textContent = l.length ? `Ver ${l.length} ${l.length === 1 ? "achado" : "achados"}` : "Nenhum achado";
@@ -453,9 +458,9 @@
       if (t.closest("[data-fechar-f]")) { $("#dlgFiltros").close(); return; }
       if (t.closest("#abrirFiltros")) { $("#filtros").innerHTML = htmlFiltros(); $("#dlgFiltros").showModal(); return; }
       if (t.closest("#verN")) { $("#dlgFiltros").close(); $(".busca-bar").scrollIntoView({ behavior: "smooth" }); return; }
-      if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; est.vant.clear(); est.ordem = "destaque"; pintar(); return; }
+      if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; est.vant.clear(); est.grupo = ""; est.ordem = "destaque"; pintar(); return; }
       const mais = t.closest("[data-mais]"); if (mais) { mais.closest(".desc").classList.remove("curta"); mais.hidden = true; return; }
-      const rp = t.closest("[data-rap]"); if (rp) { const k = rp.dataset.rap; if (!k) { est.para = ""; est.vant.delete("ofertas"); } else if (k === "@ofertas") { alterna(est.vant, "ofertas"); if (est.vant.has("ofertas")) est.ordem = "desconto"; } else est.para = est.para === k ? "" : k; pintar(); return; }
+      const rp = t.closest("[data-rap]"); if (rp) { const k = rp.dataset.rap; if (!k) { est.grupo = ""; est.vant.delete("ofertas"); est.vant.delete("cupom"); } else if (k === "@ofertas") { alterna(est.vant, "ofertas"); if (est.vant.has("ofertas")) est.ordem = "desconto"; } else if (k === "@cupom") alterna(est.vant, "cupom"); else est.grupo = est.grupo === k ? "" : k; pintar(); return; }
       const pa = t.closest("[data-para]"); if (pa) { const v = pa.dataset.para; est.para = est.para === v ? "" : v; pintar(); return; }
       const tp = t.closest("[data-tipo]"); if (tp) { alterna(est.tipos, tp.dataset.tipo); pintar(); return; }
       const lj = t.closest("[data-loja]"); if (lj) { alterna(est.lojas, lj.dataset.loja); pintar(); return; }
