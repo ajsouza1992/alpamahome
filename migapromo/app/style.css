@@ -2439,3 +2439,4 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .ac-sotop svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .ac-sotop[aria-pressed="true"] { background: #1d1d1f; color: #ffd23f; }
 .ac-sotop[hidden] { display: none; }
+#stOrdem.on { background: var(--rosa); color: #fff; border-radius: 999px; padding: 5px 12px; }

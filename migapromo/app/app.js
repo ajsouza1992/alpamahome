@@ -1209,8 +1209,8 @@
     $("#stFiltro").hidden = cats.length < 2;
     $("#stFiltro").innerHTML = [["", "Todos"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" role="radio" data-st-cat="${k}" aria-checked="${stEst.cat === k}">${esc(nome)} <small>${k ? todos.filter((p) => (p.tipo || "outros") === k).length : n}</small></button>`).join("");
     const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (!stEst.cat || (p.tipo || "outros") === stEst.cat) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
-    if (stEst.ordem === "cliques") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }; l = l.slice().sort((a, b) => k(b).loja - k(a).loja || k(b).abrir - k(a).abrir); }
-    $("#stOrdem").textContent = stEst.ordem === "cliques" ? "Mais clicados" : "Recentes"; $("#stOrdem").hidden = !!stEst.sel || !n;
+    if (stEst.ordem !== "recentes") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }, tot = (p) => k(p).loja + k(p).abrir; l = l.slice().sort((a, b) => tot(b) - tot(a) || k(b).loja - k(a).loja); if (stEst.ordem === "top10") l = l.filter((p) => tot(p) > 0).slice(0, 10); }
+    $("#stOrdem").textContent = { cliques: "Mais clicados", top10: "Top 10 cliques" }[stEst.ordem] || "Recentes"; $("#stOrdem").classList.toggle("on", stEst.ordem === "top10"); $("#stOrdem").hidden = !!stEst.sel || !n;
     const lista = $("#stLista"); lista.classList.toggle("st-sel", !!stEst.sel);
     lista.innerHTML = l.length ? `<div class="pp-lista">${l.map((p) => { const on = stEst.sel && stEst.sel.has(p.id);
       const k = cliquesSite.mapa.get(p.id), nCl = k ? k.loja + k.abrir : 0;
@@ -1218,7 +1218,7 @@
         <span><strong>${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
         <span class="st-tags"><b>${esc(NOME_CAT[p.tipo] || "Outros")}</b><b class="st-para">${esc(PARA_SITE[p.para] || "Mulher")}</b></span></span>
       </button>${stEst.sel ? `<button type="button" class="pp-marcar" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
-      : `<p class="vazio-lista">${n ? "Nenhum produto com essa busca." : "Seu site ainda está vazio. Toque em <b>Enviar dos Achados</b> para escolher vários de uma vez."}</p>`;
+      : `<p class="vazio-lista">${n ? (stEst.ordem === "top10" && !t ? "Ainda não tem cliques nos últimos 30 dias." : "Nenhum produto com essa busca.") : "Seu site ainda está vazio. Toque em <b>Enviar dos Achados</b> para escolher vários de uma vez."}</p>`;
     const bs = $("#barraSite"); bs.hidden = !stEst.sel;
     if (stEst.sel) $("#stQtd").textContent = stEst.sel.size ? `${stEst.sel.size} ${stEst.sel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     document.body.classList.toggle("modo-selecao", !bs.hidden);
@@ -1236,7 +1236,7 @@
   $("#stAbrir").addEventListener("click", () => window.open(urlVitrine(), "_blank", "noopener"));
   $("#stBusca").addEventListener("input", (e) => { stEst.q = e.target.value; renderSite(); });
   $("#stFiltro").addEventListener("click", (e) => { const b = e.target.closest("[data-st-cat]"); if (!b) return; stEst.cat = b.dataset.stCat; renderSite(); });
-  $("#stOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar os produtos", [["recentes", "Mais recentes"], ["cliques", "Mais clicados (últimos 30 dias)"]], stEst.ordem); if (!v) return; stEst.ordem = v; renderSite(); if (v === "cliques") carregarCliquesSite(true); });
+  $("#stOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar os produtos", [["recentes", "Mais recentes"], ["cliques", "Mais clicados primeiro"], ["top10", "Só o Top 10 de cliques"]], stEst.ordem); if (!v) return; stEst.ordem = v; renderSite(); if (v !== "recentes") carregarCliquesSite(true); });
   $("#stSelecionar").addEventListener("click", () => { stEst.sel = stEst.sel ? null : new Set(); renderSite(); });
   $("#stTodos").addEventListener("click", () => { if (!stEst.sel) return; if (stVisiveis.every((id) => stEst.sel.has(id))) stVisiveis.forEach((id) => stEst.sel.delete(id)); else stVisiveis.forEach((id) => stEst.sel.add(id)); renderSite(); });
 
