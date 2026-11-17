@@ -11,6 +11,7 @@
  */
 (function () {
   "use strict";
+  try { const mi = /^#importar=(.+)$/.exec(location.hash); if (mi) { let t = ""; try { t = decodeURIComponent(mi[1]); } catch (e) { t = ""; } if (t) localStorage.setItem("miga_importar", ((localStorage.getItem("miga_importar") || "") + "\n" + t).trim()); history.replaceState(null, "", location.pathname + location.search); } } catch (e) { /* segue */ }
   /* Popups: o teclado só abre quando a pessoa toca no campo (o navegador focava o 1º campo sozinho) */
   /* Popups: Fechar, Cancelar, Salvar e Confirmar ficam presos no fim da tela (sem rolar até o fim) */
   const ehBotao = (el) => el && el.matches && (el.matches("button.btn, a.btn") || (el.children.length > 0 && [...el.children].every((c) => c.matches("button, a.btn, input[type=hidden]"))));
@@ -592,7 +593,7 @@
     irPara("inicio");
     // Link compartilhado de outro app (Shopee, Mercado Livre...): vai para a Lista
     if (recebidoPendente) { const t = recebidoPendente; recebidoPendente = ""; paraCaixa(t); }
-    { const mi = /^#importar=(.+)$/.exec(location.hash); if (mi) { history.replaceState(null, "", location.pathname); let t = ""; try { t = decodeURIComponent(mi[1]); } catch (er) { t = ""; } if (t) setTimeout(() => paraCaixa(t), 300); } }
+    { let t = ""; try { t = localStorage.getItem("miga_importar") || ""; localStorage.removeItem("miga_importar"); } catch (er) { t = ""; } if (t) setTimeout(() => paraCaixa(t), 300); }
   }
   let recebidoPendente = "";
   /** Liga a conta deste aparelho a uma conta Google: abre a mesma conta no celular e no computador */

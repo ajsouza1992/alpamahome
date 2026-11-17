@@ -45,8 +45,8 @@
   function pintarBotao(bt, link) {
     const on = marcados.includes(link);
     bt.classList.toggle("miga-on", on);
-    bt.textContent = on ? "Na Miga" : "Miga +";
-    bt.title = on ? "Tirar da lista da Miga" : "Marcar para mandar para a Miga Promo";
+    bt.setAttribute("aria-pressed", String(on));
+    bt.title = on ? "Desmarcar (tirar da Miga)" : "Marcar para mandar para a Miga Promo";
   }
 
   async function alternar(link) {
@@ -61,8 +61,7 @@
       const link = linkProduto(a.getAttribute("href")); if (!link) return;
       const card = cartaoDe(a, link); if (!card || card.dataset.miga || card.querySelector("[data-miga]") || card.closest("[data-miga]")) return;
       card.dataset.miga = link; card.classList.add("miga-card");
-      const bt = document.createElement("button"); bt.type = "button"; bt.className = "miga-bt";
-      bt.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); alternar(link); }, true);
+      const bt = document.createElement("button"); bt.type = "button"; bt.className = "miga-bt"; bt.dataset.migaLink = link; bt.setAttribute("aria-label", "Marcar para a Miga");
       card.appendChild(bt); pintarBotao(bt, link);
     });
   }
@@ -70,11 +69,22 @@
   /** Página de um produto (não de busca): o próprio produto */
   function produtoDaPagina() { return linkProduto(location.href); }
 
+  // O clique no quadradinho é tratado antes do site (o site não abre o produto nem "engole" o clique)
+  let ultimo = null;
+  ["pointerdown", "mousedown", "touchstart"].forEach((ev) => window.addEventListener(ev, (e) => { if (e.target.closest && e.target.closest(".miga-bt")) e.stopPropagation(); }, true));
+  window.addEventListener("click", (e) => {
+    const bt = e.target.closest && e.target.closest(".miga-bt"); if (!bt) return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    const k = bt.dataset.migaLink; if (ultimo && ultimo.k === k && Date.now() - ultimo.t < 250) return; ultimo = { k, t: Date.now() };
+    alternar(k);
+  }, true);
+
   /* ---------- Barra de baixo ---------- */
   const barra = document.createElement("div"); barra.className = "miga-barra";
   barra.innerHTML = `<span class="miga-logo">Miga</span><b class="miga-n"></b>
     <button type="button" class="miga-acao miga-este">+ Este produto</button>
     <button type="button" class="miga-acao miga-todos">Marcar todos da página</button>
+    <button type="button" class="miga-acao miga-desfazer">Desfazer</button>
     <button type="button" class="miga-acao miga-limpar">Limpar</button>
     <button type="button" class="miga-enviar">Enviar para a Miga</button>`;
   document.documentElement.appendChild(barra);
@@ -86,20 +96,21 @@
     marcados = tudo ? marcados.filter((x) => !l.includes(x)) : [...new Set([...marcados, ...l])];
     await gravar(); atualizarTudo();
   });
+  barra.querySelector(".miga-desfazer").addEventListener("click", async () => { if (!marcados.length) return; marcados = marcados.slice(0, -1); await gravar(); atualizarTudo(); });
   barra.querySelector(".miga-limpar").addEventListener("click", async () => { if (!marcados.length) return; if (!confirm(`Tirar os ${marcados.length} produtos marcados?`)) return; marcados = []; await gravar(); atualizarTudo(); });
   barra.querySelector(".miga-enviar").addEventListener("click", async () => {
-    if (!marcados.length) { alert("Toque em “+ Miga” nos produtos que você quer mandar."); return; }
+    if (!marcados.length) { alert("Marque no quadradinho os produtos que você quer mandar."); return; }
     window.open(APP + "#importar=" + encodeURIComponent(marcados.join("\n")), "_blank");
-    marcados = []; await gravar(); atualizarTudo();
+    // Os marcados ficam guardados até você tocar em Limpar (se o app não abrir, nada se perde; a Miga não repete produtos)
   });
 
   function atualizarTudo() {
     document.querySelectorAll(".miga-card").forEach((c) => { const bt = c.querySelector(":scope > .miga-bt"); if (bt) pintarBotao(bt, c.dataset.miga); });
     const n = marcados.length, aqui = produtoDaPagina();
-    barra.querySelector(".miga-n").textContent = n ? `${n} ${n === 1 ? "produto marcado" : "produtos marcados"}` : "Toque em + Miga nos produtos";
+    barra.querySelector(".miga-n").textContent = n ? `${n} ${n === 1 ? "produto marcado" : "produtos marcados"}` : "Marque os produtos no quadradinho";
     const este = barra.querySelector(".miga-este"); este.hidden = !aqui; if (aqui) este.textContent = marcados.includes(aqui) ? "Tirar este produto" : "+ Este produto";
     barra.querySelector(".miga-todos").hidden = !document.querySelector("[data-miga]");
-    barra.querySelector(".miga-limpar").hidden = !n;
+    barra.querySelector(".miga-limpar").hidden = !n; barra.querySelector(".miga-desfazer").hidden = !n;
     barra.querySelector(".miga-enviar").disabled = !n;
     barra.querySelector(".miga-enviar").textContent = n ? `Enviar ${n} para a Miga` : "Enviar para a Miga";
   }
