@@ -3345,7 +3345,7 @@
     if (rapidoGrav) wz.gravandoMov = false;
     if (movCancelar) { movCancelar = false; return null; }
     const mp4 = tipo.startsWith("video/mp4"); const blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), SEG_MOV);
-    return { blob, url: URL.createObjectURL(blob), nome: nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + (mp4 ? ".mp4" : ".webm"), chave: [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|") };
+    return { blob, url: URL.createObjectURL(blob), nome: nomeArquivo(it.nome).replace(/\.jpe?g$/i, "") + (mp4 ? ".mp4" : ".webm"), chave: [it.id, R.modelo, R.cor, R.camp, R.titulo, wz.icone || ""].join("|") };
   }
   async function desenharMiniaturas(porCor) {
     const it = wzItem();
@@ -3544,7 +3544,7 @@
   /** Legenda do feed: igual à do Reels (chamada, preço, aviso do link na bio, seu @ e hashtags) */
   const legendaFeed = (it) => legendaReels({ modelo: wz.modelo || "achadinho", camp: wz.camp || "", titulo: wz.tituloArte || "" }, [it]);
   /** Vídeo "em movimento" já criado para esta arte (mesmo produto, modelo, cor e título) */
-  function vidMovAtual() { const it = wzItem(), R = arteR(); const ch = it && [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|"); return wz.vidMov && wz.vidMov.chave === ch ? wz.vidMov : null; }
+  function vidMovAtual() { const it = wzItem(), R = arteR(); const ch = it && [it.id, R.modelo, R.cor, R.camp, R.titulo, wz.icone || ""].join("|"); return wz.vidMov && wz.vidMov.chave === ch ? wz.vidMov : null; }
   async function postarLugar() {
     const it = wzItem(), k = wz.lugares[wz.idx], L = LUGARES[k];
     let r = "sem";
@@ -3659,7 +3659,7 @@
     c.innerHTML = `<div class="rp-conf">
       <p class="rt-etapa">${wz.filaRoteiro ? `Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ` : ""}${esc(lug)}</p>
       ${temArte ? `<div class="wz-previa rp-prev"><canvas id="rtTela"></canvas></div>` : `<div class="wz-previa rp-prev">${item.imagem ? `<img src="${esc(item.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}</div>`}
-      <button type="button" class="rp-modelo" id="rpTrocarModelo"><span><small>${campanha() ? "Campanha" : wz.rpEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(campanha() ? campanha().nome : nomeModelo)}</b></span><i>Trocar</i></button>
+      <button type="button" class="rp-modelo" id="rpTrocarModelo"><span><small>${wz.tituloArte || wz.icone ? "Editado por você" : campanha() ? "Campanha" : wz.rpEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(wz.tituloArte ? tituloDigitado(wz.tituloArte).replace(/\*/g, "").replace(/\n/g, " ") : campanha() ? campanha().nome : nomeModelo)}</b></span><i>Trocar</i></button>
       ${temArte ? `<div class="rp-linha"><b>Cor</b></div><div class="rp-cores">${CORES_ESCOLHA.map((k) => `<button type="button" data-rp-cor="${k}" class="${wz.cor === k ? "on" : ""}" style="background:${CORES_VIDEO[k].fundo}" aria-label="${CORES_NOME[k]}"></button>`).join("")}</div>` : ""}
       ${temArte && mov ? `<label class="rp-mov"><input type="checkbox" id="rpMov"${wz.mov ? " checked" : ""}><span><b>Em movimento</b><small id="rpProg">${wz.mov ? (vidMovAtual() ? "Vídeo pronto" : "O vídeo é criado quando você aprovar") : "Desmarcado: vai a imagem parada"}</small></span></label>` : ""}
     </div>${botaoContinuar(true, temArte && mov && wz.mov && !vidMovAtual() ? `<svg class="rp-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>Aprovar e criar o vídeo` : "Continuar").replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
@@ -3682,7 +3682,7 @@
     if (wz.passo === "rodar") { const y = scrollY; mostrarPasso(); scrollTo(0, y); }
     else if (wz.passo === "rpConferir") mostrarPasso();
   }
-  function chaveRp() { const it = wzItem(), R = arteR(); return it ? [it.id, R.modelo, R.cor, R.camp, R.titulo].join("|") : ""; }
+  function chaveRp() { const it = wzItem(), R = arteR(); return it ? [it.id, R.modelo, R.cor, R.camp, R.titulo, wz.icone || ""].join("|") : ""; }
   function rpMudou() { if (wz.gravandoMov && wz.gravRp && wz.gravRp !== chaveRp()) { movCancelar = true; wz.rpRegravar = true; } mostrarPasso(); }
   $("#wzCorpo").addEventListener("change", (e) => {
     if (!wz.rapido || wz.passo !== "rpConferir") return;
@@ -3733,9 +3733,11 @@
       d.addEventListener("click", (e) => {
         if (e.target === d || e.target.closest("[data-fm-fechar]")) { d.close(); return; }
         const ab = e.target.closest("[data-fm-ir]"); if (ab) { const alvo = d.querySelector(`[data-fm-sec="${ab.dataset.fmIr}"]`); if (alvo) d.querySelector(".fm-rolar").scrollTo({ top: alvo.offsetTop - d.querySelector(".fm-rolar").offsetTop, behavior: "smooth" }); d.querySelectorAll("[data-fm-ir]").forEach((x) => x.classList.toggle("on", x === ab)); return; }
+        if (e.target.closest("[data-fm-editar]")) { d.close(); folhaTituloModelo(); return; }
         const op = e.target.closest("[data-fm-mod], [data-fm-camp]"); if (!op) return;
-        if (wz.canal === "reels") { const R = rr(); if (op.dataset.fmMod) { R.modelo = op.dataset.fmMod; R.camp = ""; R.titulo = ""; R.rrEscolheu = true; } else { const k = op.dataset.fmCamp; R.camp = k; if (CAMPANHAS[k]) R.cor = corCampanha || CAMPANHAS[k].cor; } R.legenda = null; R.resultado = null; R.postado = false; d.close(); mostrarPasso(); return; }
+        if (wz.canal === "reels") { const R = rr(); if (op.dataset.fmMod) { R.modelo = op.dataset.fmMod; R.camp = ""; R.titulo = ""; R.icone = ""; R.rrEscolheu = true; } else { const k = op.dataset.fmCamp; R.camp = k; if (CAMPANHAS[k]) R.cor = corCampanha || CAMPANHAS[k].cor; } R.legenda = null; R.resultado = null; R.postado = false; d.close(); mostrarPasso(); return; }
         const it = wzItem();
+        wz.tituloArte = ""; wz.icone = ""; // escolheu um modelo: volta o título e a figurinha dele
         if (op.dataset.fmMod) { wz.modelo = op.dataset.fmMod; wz.camp = ""; }
         else { const k = op.dataset.fmCamp; wz.camp = k; if (CAMPANHAS[k]) wz.cor = corCampanha || CAMPANHAS[k].cor; }
         wz.rpEscolheu = true; if (it && !it.textoEditado) it.texto = "";
@@ -3754,7 +3756,7 @@
       ["camps", "Campanhas", "Campanhas · trocam o título e a cor", Object.entries(CAMPANHAS).map(([k, c]) => card("data-fm-camp", k, c.nome, "", alvo.camp === k, true))]];
     d.innerHTML = `<div class="fm-cab"><h2>Escolha o modelo</h2><button type="button" class="fm-x" data-fm-fechar aria-label="Fechar">✕</button></div>
       <div class="fm-abas">${secs.map(([id, ab], i) => `<button type="button" data-fm-ir="${id}"${i ? "" : ' class="on"'}>${ab}</button>`).join("")}</div>
-      <div class="fm-rolar">${secs.map(([id, , tit, ops]) => `<p class="fm-sec" data-fm-sec="${id}">${tit}</p><div class="fm-grade">${ops.join("")}</div>`).join("")}</div>
+      <div class="fm-rolar"><button type="button" class="mod-editar fm-editar" data-fm-editar><span class="mod-editar__ic"><svg class="ic-mono"><use href="#i-lapis"/></svg></span><span><b>Editar manual</b><small>${(() => { const E = estLer(); return E.titulo || E.icone ? "Seu título: " + esc(String(E.titulo || "").replace(/\*/g, "").replace(/\n/g, " ") || "figurinha trocada") : "Escreva o título e escolha a figurinha"; })()}</small></span></button>${secs.map(([id, , tit, ops]) => `<p class="fm-sec" data-fm-sec="${id}">${tit}</p><div class="fm-grade">${ops.join("")}</div>`).join("")}</div>
       <button type="button" class="btn btn--branco fm-fechar" data-fm-fechar>Fechar</button>`;
     d.showModal();
   }
@@ -8954,7 +8956,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       </div>`);
   }
   $("#folhaEst").addEventListener("change", (e) => { if (e.target.dataset && e.target.dataset.vdOp) { const V = vd(); V[e.target.dataset.vdOp] = e.target.checked; V.resultado = null; } });
-  function aposMudarEstudio() { if (wz.canal === "reels") { const R = rr(); R.legenda = null; R.resultado = null; } if (wz.canal === "livre") livre().legenda = ""; const y = scrollY; mostrarPasso(); scrollTo(0, y); }
+  function aposMudarEstudio() { if (wz.rapido && wz.passo === "rpConferir") { const y = scrollY; rpMudou(); scrollTo(0, y); return; } if (wz.canal === "reels") { const R = rr(); R.legenda = null; R.resultado = null; } if (wz.canal === "livre") livre().legenda = ""; const y = scrollY; mostrarPasso(); scrollTo(0, y); }
   $("#wzCorpo").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-est]"); if (b) {
       const k = b.dataset.est, reels = wz.canal === "reels";
