@@ -2499,3 +2499,38 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .prod-seg small.alerta { display: block; width: max-content; margin: 2px auto 0; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #d92d20; color: #fff; opacity: 1; font-weight: 800; }
 #stResumo .st-alerta { display: block; margin-top: 6px; color: #d92d20; font-weight: 700; }
 .pp-cadastro { margin-bottom: 10px; }
+
+/* ===== Padrão das 3 telas de Produtos ===== */
+.prod-seg button { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.prod-seg button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* Categorias: pílulas numa fileira que desliza (o corte na borda e o degradê mostram que rola) */
+.aba-prod .cat-sel { display: none !important; }
+.aba-prod #ppCats { display: block; }
+.aba-prod .pp-chips-pc, #acCats, #stFiltro { display: flex !important; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 4px -16px 6px; padding: 2px 34px 6px 16px; border: 0; -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%); mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%); }
+.aba-prod .pp-chips-pc::-webkit-scrollbar, #acCats::-webkit-scrollbar, #stFiltro::-webkit-scrollbar { display: none; }
+#acCats[hidden], #stFiltro[hidden] { display: none !important; }
+#acCats .chip-cat, #stFiltro .chip-cat { flex: none; }
+#stFiltro button::after, #acCats button::after { content: none !important; }
+@media (min-width: 960px) { .aba-prod .pp-chips-pc, #acCats, #stFiltro { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; margin-left: 0; margin-right: 0; padding-left: 0; } }
+#catOrdem[hidden], #catLoja[hidden] { display: none !important; }
+/* Linha padrão: total · Lojas · Ordem · Selecionar (iguais nas 3 telas) */
+.aba-prod .barra-filtro { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.aba-prod .barra-filtro .nota { margin-right: auto !important; font-size: 13px; }
+.aba-prod .barra-filtro .link-sel, .aba-prod .barra-filtro .pp-ordem { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 36px; margin: 0 !important; padding: 0 12px; border: 0; border-radius: 999px; background: var(--campo); font: inherit; font-size: 13px; font-weight: 600; color: var(--preto); cursor: pointer; }
+.aba-prod .barra-filtro .pp-ordem svg { width: 16px; height: 16px; stroke: var(--rosa); fill: none; stroke-width: 2; stroke-linecap: round; }
+.aba-prod .barra-filtro .link-sel.on { background: var(--rosa); color: #fff; }
+.aba-prod .barra-filtro .link-sel[hidden] { display: none; }
+.aba-prod .barra-filtro #acSelecionar, .aba-prod .barra-filtro #stSelecionar, .aba-prod .barra-filtro #ppSelecionar { color: var(--rosa); }
+.aba-prod .barra-filtro .sel-todos:not([hidden]) { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; height: 36px; padding: 0 12px 0 8px; border: 0; border-radius: 999px; background: var(--campo); font: inherit; font-size: 13px; font-weight: 600; color: var(--preto); cursor: pointer; }
+.aba-prod .barra-filtro .pp-caixa-mini { width: 22px; height: 22px; border-radius: 7px; }
+/* mesma ordem e mesmo tamanho nas 3 telas: total em cima; Lojas · Ordem à esquerda e Selecionar à direita */
+.aba-prod .barra-filtro .nota { flex: 1 0 100%; margin: 0 0 2px !important; }
+.aba-prod .barra-filtro .nota[hidden] { display: none; }
+.aba-prod .barra-filtro .pp-loja { order: 1; }
+.aba-prod .barra-filtro .pp-ordem:not(.pp-loja) { order: 2; max-width: 46vw; }
+.aba-prod .barra-filtro .pp-ordem span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aba-prod .barra-filtro #ppSelecionar, .aba-prod .barra-filtro #acSelecionar, .aba-prod .barra-filtro #stSelecionar { order: 3; margin-left: auto !important; }
+.aba-prod .barra-filtro .sel-todos { order: 0; }
+.aba-prod .barra-filtro > .nota#ppTotal, .aba-prod .barra-filtro > .nota#acTotal, .aba-prod .barra-filtro > .nota#stTotal { flex: 1 0 100% !important; max-width: none !important; overflow: visible !important; white-space: normal !important; }
+#barraMarcados.bs-hist .bs-tres { grid-template-columns: 1fr 1fr 1.3fr !important; }
+#ppListaBloco .barra-filtro { flex-wrap: wrap !important; gap: 6px !important; }

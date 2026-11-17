@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=360">
+  <link rel="manifest" href="manifest.json?v=364">
   <link rel="icon" type="image/png" href="favicon-redondo.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&family=Roboto+Condensed:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=360">
+  <link rel="stylesheet" href="style.css?v=364">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -68,7 +68,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=360" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=364" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -94,7 +94,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=360" alt="">
+    <img src="logo.png?v=364" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -250,7 +250,7 @@
   </div>
 
   <div class="aba aba-prod" id="aba-postar">
-    <div class="prod-seg" role="tablist" aria-label="Produtos"><button type="button" data-prod="postar">Minha lista<small data-cont="postar"></small></button><button type="button" data-prod="achados">Achados<small data-cont="achados"></small></button><button type="button" data-prod="site">No site<small data-cont="site"></small></button></div>
+    <div class="prod-seg" role="tablist" aria-label="Produtos"><button type="button" data-prod="postar"><svg><use href="#i-lista"/></svg>Minha lista<small data-cont="postar"></small></button><button type="button" data-prod="achados"><svg><use href="#i-etiqueta"/></svg>Achados<small data-cont="achados"></small></button><button type="button" data-prod="site"><svg><use href="#i-site"/></svg>No site<small data-cont="site"></small></button></div>
     <section class="bloco" id="ppListaBloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Lista</h2>
@@ -283,6 +283,7 @@
         <button type="button" class="sel-todos" id="ppTodos" hidden><span class="pp-caixa-mini" id="ppTodosCx"></span>Selecionar todos</button>
         <span class="nota" id="ppTotal"></span>
         <button type="button" class="link-sel" id="ppSelecionar">Selecionar</button>
+        <button type="button" class="link-sel pp-ordem pp-loja" id="ppLoja"><span id="ppLojaTxt">Lojas</span> ▾</button>
         <button type="button" class="link-sel pp-ordem" id="ppOrdem"><svg><use href="#i-ordem"/></svg><span id="ppOrdemTxt">Recentes</span></button>
         <button type="button" class="btn-redondo" id="ppFiltrar" aria-label="Filtrar" hidden><em id="ppFiltroQtd" hidden></em></button>
         <button type="button" id="ppMarcar" hidden></button>
@@ -356,7 +357,7 @@
   </div>
 
   <div class="aba aba-prod" id="aba-site" hidden>
-    <div class="prod-seg" role="tablist" aria-label="Produtos"><button type="button" data-prod="postar">Minha lista<small data-cont="postar"></small></button><button type="button" data-prod="achados">Achados<small data-cont="achados"></small></button><button type="button" data-prod="site">No site<small data-cont="site"></small></button></div>
+    <div class="prod-seg" role="tablist" aria-label="Produtos"><button type="button" data-prod="postar"><svg><use href="#i-lista"/></svg>Minha lista<small data-cont="postar"></small></button><button type="button" data-prod="achados"><svg><use href="#i-etiqueta"/></svg>Achados<small data-cont="achados"></small></button><button type="button" data-prod="site"><svg><use href="#i-site"/></svg>No site<small data-cont="site"></small></button></div>
     <section class="bloco" id="stTelaProdutos">
       <div class="cabecalho-aba">
         <h2 class="passo">Site</h2>
@@ -375,7 +376,8 @@
       <div class="barra-filtro ac-barra">
         <button type="button" class="sel-todos" id="stTodos" hidden><span class="pp-caixa-mini" id="stTodosCx"></span>Selecionar todos</button>
         <span class="nota" id="stTotal"></span>
-        <button type="button" class="link-sel" id="stOrdem">Recentes</button>
+        <button type="button" class="link-sel pp-ordem pp-loja" id="stLoja"><span id="stLojaTxt">Lojas</span> ▾</button>
+        <button type="button" class="link-sel pp-ordem" id="stOrdem">Recentes</button>
         <button type="button" class="link-sel" id="stSelecionar">Selecionar</button>
       </div>
       <div class="catalogo" id="stLista"></div>
@@ -400,7 +402,7 @@
   </div>
 
   <div class="aba aba-prod" id="aba-achados" hidden>
-    <div class="prod-seg" role="tablist" aria-label="Produtos"><button type="button" data-prod="postar">Minha lista<small data-cont="postar"></small></button><button type="button" data-prod="achados">Achados<small data-cont="achados"></small></button><button type="button" data-prod="site">No site<small data-cont="site"></small></button></div>
+    <div class="prod-seg" role="tablist" aria-label="Produtos"><button type="button" data-prod="postar"><svg><use href="#i-lista"/></svg>Minha lista<small data-cont="postar"></small></button><button type="button" data-prod="achados"><svg><use href="#i-etiqueta"/></svg>Achados<small data-cont="achados"></small></button><button type="button" data-prod="site"><svg><use href="#i-site"/></svg>No site<small data-cont="site"></small></button></div>
     <section class="bloco">
       <div class="cabecalho-aba">
         <h2 class="passo">Achados</h2>
@@ -420,12 +422,12 @@
           <button type="button" role="radio" data-v="saude" aria-checked="false">Saúde</button>
           <button type="button" role="radio" data-v="bebes" aria-checked="false">Bebês</button>
       </div>
-      <div class="alternar alternar--loja" id="catLoja" role="radiogroup" aria-label="Loja do catálogo">
+      <div class="alternar alternar--loja" hidden id="catLoja" role="radiogroup" aria-label="Loja do catálogo">
         <button type="button" role="radio" data-v="todas" aria-checked="true">Todas</button>
         <button type="button" role="radio" data-v="mercadolivre" aria-checked="false">Mercado Livre</button>
         <button type="button" role="radio" data-v="shopee" aria-checked="false">Shopee</button>
       </div>
-      <div class="alternar alternar--loja alternar--ordem" id="catOrdem" role="radiogroup" aria-label="Ordem dos achados">
+      <div class="alternar alternar--loja alternar--ordem" hidden id="catOrdem" role="radiogroup" aria-label="Ordem dos achados">
         <button type="button" role="radio" data-v="melhores" aria-checked="true" class="ord-todos">Melhor combinação</button>
         <button type="button" role="radio" data-v="comissao" aria-checked="false">Maior comissão</button>
         <button type="button" role="radio" data-v="preco" aria-checked="false">Menor preço</button>
@@ -436,7 +438,8 @@
       <div class="barra-filtro ac-barra">
         <button type="button" class="sel-todos" id="acTodos" hidden><span class="pp-caixa-mini" id="acTodosCx"></span>Selecionar todos</button>
         <span class="nota" id="acTotal"></span>
-        <button type="button" class="ac-sotop" id="acSoTop" aria-pressed="false" hidden><i aria-hidden="true">★</i>Top vendas</button>
+        <button type="button" class="link-sel pp-ordem pp-loja" id="acLoja"><span id="acLojaTxt">Lojas</span> ▾</button>
+        <button type="button" class="link-sel pp-ordem" id="acOrdem"><svg><use href="#i-ordem"/></svg><span id="acOrdemTxt">Melhor combinação</span></button>
         <button type="button" class="link-sel" id="acSelecionar">Selecionar</button>
       </div>
       <p class="aviso" id="avisoCatalogo" hidden></p>
@@ -530,18 +533,19 @@
   <div class="barra-selecao" id="barraAcSite" hidden>
     <b id="acSiteQtd">Toque nos produtos</b>
     <div class="bs-duas bs-tres">
-      <button type="button" class="bs-continuar" id="acPostar">Postar</button>
       <button type="button" class="bs-excluir" id="acPorLista">Pôr na lista</button>
       <button type="button" class="bs-excluir" id="acSiteEnviar">Pôr no site</button>
+      <button type="button" class="bs-continuar" id="acPostar">Postar</button>
     </div>
   </div>
   <!-- Produtos marcados na Lista -->
   <div class="barra-selecao" id="barraMarcados" hidden>
     <b id="qtdMarcados">1 selecionado</b>
-    <div class="bs-duas">
+    <div class="bs-duas bs-tres">
       <button type="button" class="bs-excluir" id="excluirMarcados"><svg><use href="#i-lixo"/></svg>Excluir</button>
       <button type="button" class="bs-excluir bs-restaurar" id="restaurarMarcados" hidden><svg><use href="#i-restaurar"/></svg>Restaurar</button>
-      <button type="button" class="bs-continuar" id="oQueCriar">Continuar</button>
+      <button type="button" class="bs-excluir" id="ppPorSite">Pôr no site</button>
+      <button type="button" class="bs-continuar" id="oQueCriar">Postar</button>
     </div>
     <button type="button" id="desmarcarTodos" hidden></button><button type="button" id="bsCampanha" hidden></button><div id="bsAcoes" hidden></div>
   </div>
@@ -878,7 +882,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=360"></script>
-  <script src="app.js?v=360"></script>
+  <script src="firebase-config.js?v=364"></script>
+  <script src="app.js?v=364"></script>
 </body>
 </html>
