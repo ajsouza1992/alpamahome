@@ -1180,7 +1180,7 @@
       let it = itemDoAchado(p);
       if (it) { Object.assign(it, extrasDe(p)); if (p.preco) it.precoNovo = p.preco; if (p.precoAntigo) it.precoAntigo = p.precoAntigo; if (!it.imagem && p.imagem) it.imagem = p.imagem; if (cat) it.categoria = cat; }
       else { it = { ...extrasDe(p), id: novoId(), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "",
-        categoria: cat || adivinharCategoria(p.nome, p.categoria), catV2: true, texto: "", feito: {}, criadoEm: Date.now() }; fila().unshift(it); novos++; }
+        categoria: cat || catDoAchado(p), catV2: true, texto: "", feito: {}, criadoEm: Date.now() }; fila().unshift(it); novos++; }
       itens.push(it);
     }
     if (itens.length) { salvarFila(true); contarFila(); }
@@ -1213,7 +1213,7 @@
     for (const p of l) { const link = linkAfiliadoAuto(p); if (!link) { pulados++; continue; }
       const naLista = itemDoAchado(p); if (naLista) { itens.push(naLista); continue; }
       itens.push(paraPostarTemp({ ...extrasDe(p), id: idSiteAchado(p), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "",
-        categoria: adivinharCategoria(p.nome, p.categoria), catV2: true, texto: "", feito: {}, criadoEm: Date.now() })); }
+        categoria: catDoAchado(p), catV2: true, texto: "", feito: {}, criadoEm: Date.now() })); }
     sairAcSite(); if (!itens.length) return;
     if (pulados) toast(avisoPulados(pulados).trim());
     irPara("postar"); criarAPartirDaLista("roteiro", itens);
@@ -1232,7 +1232,7 @@
       const naLista = itemDoAchado(p);
       if (naLista) { if (c) naLista.categoria = c; daLista = true; r.itens.push(naLista); if (vitrineMap.has(idSiteAchado(p))) velhos.push(idSiteAchado(p)); continue; }
       r.itens.push({ ...extrasDe(p), id: idSiteAchado(p), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "",
-        categoria: c || adivinharCategoria(p.nome, p.categoria), catV2: true, texto: "", feito: {}, criadoEm: Date.now() });
+        categoria: c || catDoAchado(p), catV2: true, texto: "", feito: {}, criadoEm: Date.now() });
     }
     if (daLista) salvarFila(true);
     for (const it of r.itens) { const sp = produtoSite(it, para || paraQuemDe(it), it.descricao || "", vitrineMap.get(it.id)); try { await dados.vitrineSalvar(sp); vitrineMap.set(it.id, sp); ok++; } catch (err) { console.warn(err); } }
@@ -1509,8 +1509,16 @@
     const b = e.target.closest("[data-enviar-para]"); if (!b) return;
     const aba = b.dataset.enviarPara, n = aba === "pp" ? marcados.size : aba === "ac" ? (acSel ? acSel.size : 0) : (stEst.sel ? stEst.sel.size : 0);
     if (!n) { toast("Toque nos produtos primeiro"); return; }
-    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria no site"]] }[aba];
+    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria no site"]] }[aba];
     const v = await escolherOpcao(`Enviar ${n} ${n === 1 ? "produto" : "produtos"} para…`, ops, ""); if (!v) return;
+    // Mudar a categoria em massa (Minha lista e Achados; o Site usa a escolha de várias categorias)
+    if (v === "categoria" && aba !== "st") {
+      if (aba === "pp") { const l = itensMarcados(); if (!l.length) return; const c = await escolherCategoria({ sugestao: l[0].categoria || "outros", titulo: `Categoria de ${l.length} ${l.length === 1 ? "produto" : "produtos"}`, acao: "Mudar para" }); if (!c) return;
+        l.forEach((it) => { it.categoria = c; it.catV2 = true; if (!it.textoEditado) it.texto = ""; }); salvarFila(true); sairModoVarios(); renderFila(); toast(`${l.length} ${l.length === 1 ? "produto foi" : "produtos foram"} para ${NOME_CAT[c]}${l.some((it) => vitrineMap.has(it.id)) ? " (no site também)" : ""}`); return; }
+      const l = catalogoAtual.filter((p) => acSel.has(chAchado(p))); if (!l.length) return;
+      const c = await escolherCategoria({ sugestao: catDoAchado(l[0]), titulo: `Categoria de ${l.length} ${l.length === 1 ? "achado" : "achados"}`, acao: "Mudar para" }); if (!c) return;
+      l.forEach((p) => { p._cat = c; p.categoria = c; }); sairAcSite(); pintarAchados(); toast(`${l.length} ${l.length === 1 ? "achado foi" : "achados foram"} para ${NOME_CAT[c]}. Ao enviar, vão nessa categoria.`); return;
+    }
     const alvo = { pp: { site: "#ppPorSite", postar: "#oQueCriar" }, ac: { lista: "#acPorLista", site: "#acSiteEnviar", postar: "#acPostar" }, st: { lista: "#stParaLista", postar: "#stPostar", categoria: "#stCatVarios" } }[aba][v];
     const bt = $(alvo); if (bt) bt.click();
   });
