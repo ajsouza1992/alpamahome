@@ -1459,6 +1459,16 @@
     const ids = [...stEst.sel], ok = await tirarVariosDoSite(ids); stEst.sel = null; renderSite();
     if (ok !== ids.length) toast("Alguns não saíram. Tente de novo.");
   });
+  /* Selecionados: você escolhe para onde enviar (Lista, Site ou Postar), em cada aba */
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-enviar-para]"); if (!b) return;
+    const aba = b.dataset.enviarPara, n = aba === "pp" ? marcados.size : aba === "ac" ? (acSel ? acSel.size : 0) : (stEst.sel ? stEst.sel.size : 0);
+    if (!n) { toast("Toque nos produtos primeiro"); return; }
+    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"]] }[aba];
+    const v = await escolherOpcao(`Enviar ${n} ${n === 1 ? "produto" : "produtos"} para…`, ops, ""); if (!v) return;
+    const alvo = { pp: { site: "#ppPorSite", postar: "#oQueCriar" }, ac: { lista: "#acPorLista", site: "#acSiteEnviar", postar: "#acPostar" }, st: { lista: "#stParaLista", postar: "#stPostar" } }[aba][v];
+    const bt = $(alvo); if (bt) bt.click();
+  });
   /* Site → Lista: só os selecionados passam para a Lista (com o mesmo código, então o site acompanha o produto da Lista) */
   $("#stParaLista").addEventListener("click", () => {
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
@@ -2579,7 +2589,7 @@
     { const nomes = { roteiro: "Postar", reels: "Criar Reels", carrossel: "Criar carrossel", livre: "Criar colagem", ia: "Abrir kit da IA", site: "Pôr no site" }; $("#oQueCriar").textContent = acaoPendente && nomes[acaoPendente] ? `${nomes[acaoPendente]}${n ? ` (${n})` : ""}` : "Postar"; $("#ppPorSite").hidden = !!acaoPendente || !$("#aba-historico").hidden; $("#barraMarcados .bs-duas").classList.toggle("bs-tres", $("#ppPorSite").hidden ? !$("#restaurarMarcados").hidden : true); }
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
-    const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
+    const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist); { const escolha = !!acaoPendente || noHist; $("#oQueCriar").hidden = !escolha; $("#ppPorSite").hidden = true; const ev = $('[data-enviar-para="pp"]'); if (ev) ev.hidden = escolha; }
     const visH = [...document.querySelectorAll("#historico [data-marcar]")].map((x) => x.dataset.marcar);
     $("#hiTodosCx").classList.toggle("on", !!visH.length && visH.every((id) => marcados.has(id)));
     $("#ppTodos").hidden = !modoVarios; $("#ppTotal").hidden = modoVarios; $("#ppFiltrar").hidden = modoVarios;

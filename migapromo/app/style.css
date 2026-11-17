@@ -2760,3 +2760,6 @@ dialog:focus { outline: none; }
 body.modo-selecao .lojas-seg { display: none; }
 .aba-prod .barra-filtro .pp-ordem:not(.pp-loja) { max-width: 100%; }
 #barraSite .bs-quatro { grid-template-columns: 1fr 1fr !important; }
+.bs-um { grid-template-columns: 1fr !important; }
+.bs-duas > [hidden] { display: none !important; }
+#barraMarcados .bs-tres { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)) !important; }
