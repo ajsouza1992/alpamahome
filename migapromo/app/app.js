@@ -2447,7 +2447,7 @@
     // Modo seleção: a barra de baixo vira os botões de criar
     document.body.classList.toggle("modo-selecao", !b.hidden);
     $("#qtdMarcados").textContent = n ? `${n} ${n === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
-    { const nomes = { roteiro: "Postar", reels: "Criar Reels", carrossel: "Criar carrossel", livre: "Criar colagem", ia: "Abrir kit da IA", site: "Pôr no site" }; $("#oQueCriar").textContent = acaoPendente && nomes[acaoPendente] ? `${nomes[acaoPendente]}${n ? ` (${n})` : ""}` : "Postar"; $("#ppPorSite").hidden = !!acaoPendente || !$("#aba-historico").hidden; }
+    { const nomes = { roteiro: "Postar", reels: "Criar Reels", carrossel: "Criar carrossel", livre: "Criar colagem", ia: "Abrir kit da IA", site: "Pôr no site" }; $("#oQueCriar").textContent = acaoPendente && nomes[acaoPendente] ? `${nomes[acaoPendente]}${n ? ` (${n})` : ""}` : "Postar"; $("#ppPorSite").hidden = !!acaoPendente || !$("#aba-historico").hidden; $("#barraMarcados .bs-duas").classList.toggle("bs-tres", $("#ppPorSite").hidden ? !$("#restaurarMarcados").hidden : true); }
     $("#ppSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar"; $("#hiSelecionar").textContent = modoVarios ? "Cancelar" : "Selecionar";
     $("#hiTodos").hidden = !modoVarios; $("#hiTotal").hidden = modoVarios;
     const noHist = !$("#aba-historico").hidden; $("#restaurarMarcados").hidden = !noHist; $("#barraMarcados").classList.toggle("bs-hist", noHist);
@@ -2825,7 +2825,7 @@
     if (k === "continuar") { continuarProgresso(); return; }
     // precisa escolher os produtos: vai para a Lista já selecionando
     acaoPendente = k; filtroLista = "todas"; limparBusca(); irPara("postar"); marcados.clear(); modoVarios = true; renderFila();
-    toast(k === "ia" ? "Toque no produto do vídeo e depois em Continuar" : "Marque os produtos e toque em Continuar");
+    toast(k === "ia" ? "Toque no produto do vídeo e depois no botão rosa" : "Marque os produtos e toque no botão rosa embaixo");
   });
   async function cadastrarDoInicio(texto) {
     const t = String(texto || "").trim(); if (!t) { $("#inLink").focus(); return; }
@@ -3025,7 +3025,7 @@
   }
   $("#wzVoltar").addEventListener("click", () => {
     const l = passosDe(wz.canal || "whatsapp");
-    if (l.indexOf(wz.passo) <= 0 || (wz.canal === "roteiro" && wz.passo === "lugares")) { irPara("postar"); return; }
+    if (l.indexOf(wz.passo) <= 0 || (wz.canal === "roteiro" && wz.passo === "lugares")) { irPara(wz.veioDaLista ? "postar" : "inicio"); return; }
     irPasso(-1);
   });
   const opcaoCard = (attr, v, titulo, desc, on, extra = "") => `<button type="button" class="wz-op${on ? " on" : ""}" ${attr}="${esc(v)}">${extra}<span><b>${esc(titulo)}</b>${desc ? `<small>${esc(desc)}</small>` : ""}</span></button>`;
@@ -3087,7 +3087,7 @@
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
     $("#wzBarra").style.width = Math.round(((i + 1) / l.length) * 100) + "%";
     $("#wzPasso").textContent = (wz.canal ? (wz.reels && wz.reels.carrossel && wz.canal === "reels" ? "Carrossel" : wz.canal === "chamada" && wz.ch && wz.ch.tipo === "seg" ? "Seguidores" : CANAIS[wz.canal].nome) + " · " : "") + `Passo ${i + 1} de ${l.length}`;
-    $("#wzVoltar").hidden = false; $("#wzVoltar").lastChild.textContent = i <= 0 ? "Lista" : "Voltar";
+    $("#wzVoltar").hidden = false; $("#wzVoltar").lastChild.textContent = i <= 0 ? (wz.veioDaLista ? "Produtos" : "Início") : "Voltar";
     const c = $("#wzCorpo"), item = wzItem();
     window.scrollTo({ top: 0 });
 
