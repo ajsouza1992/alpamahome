@@ -67,7 +67,7 @@
     .busca .ic { color: var(--rosa); width: 17px; height: 17px; }
     .busca input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 14.5px; padding: 11px 0; color: var(--preto); }
     .mini-marca { display: none; flex: none; text-decoration: none; }
-    .mini-marca .marca__miga { font-size: 19px; padding: 0 9px 3px; border-radius: 10px; }
+    .mini-marca img { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .15)); }
     .busca-bar.fixo .mini-marca { display: block; animation: entra .25s ease-out; }
     .busca-bar.fixo { box-shadow: 0 6px 18px -12px rgba(0, 0, 0, .35); }
     @keyframes entra { from { opacity: 0; transform: translateX(-8px); } }
@@ -225,7 +225,7 @@
 
   <div class="busca-bar"><div class="larg">
     <div class="busca-in">
-      <a class="mini-marca" href="#" aria-label="Voltar ao topo"><span class="marca__miga">Miga</span></a>
+      <a class="mini-marca" href="#" aria-label="Voltar ao início"><img src="app/logo.png" alt="Miga Promo" width="44" height="44"></a>
       <label class="busca"><span class="sr">Buscar</span><svg class="ic"><use href="#i-busca"/></svg><input type="search" id="busca" placeholder="Buscar achadinho, cupom ou loja…" autocomplete="off"></label>
       <button type="button" class="bt-filtro" id="abrirFiltros"><svg class="ic"><use href="#i-filtro"/></svg>Filtros<b id="nFiltros"></b></button>
     </div>
@@ -253,7 +253,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=338"></script>
+  <script src="app/firebase-config.js?v=339"></script>
   <script>
   (() => {
     "use strict";
