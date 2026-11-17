@@ -1243,7 +1243,7 @@
     if (cont) { cont.textContent = n; cont.hidden = !n; }
     const aba = $("#aba-site"); if (!aba || aba.hidden) { const bs = $("#barraSite"); if (bs) bs.hidden = true; return; }
     const cats = [...new Set(todos.map((p) => p.tipo || "outros"))]; if (stEst.cat && !cats.includes(stEst.cat)) stEst.cat = "";
-    $("#stResumo").textContent = n ? `${n} ${n === 1 ? "produto" : "produtos"} no site. Toque em ⋮ para mudar ou tirar.` : "Nenhum produto no site ainda. Envie dos Achados ou da sua Lista.";
+    $("#stResumo").innerHTML = n ? `${n} ${n === 1 ? "produto" : "produtos"} no site. Toque em ⋮ para mudar ou tirar.${n > LIMITE_SITE ? ` <b class="st-alerta">Passou de ${LIMITE_SITE}: tire os mais antigos ou os menos clicados para o site continuar leve.</b>` : ""}` : "Nenhum produto no site ainda. Envie dos Achados ou da sua Lista.";
     $("#stFiltro").hidden = cats.length < 2;
     $("#stFiltro").innerHTML = [["", "Todos"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" role="radio" data-st-cat="${k}" aria-checked="${stEst.cat === k}">${esc(nome)} <small>${k ? todos.filter((p) => (p.tipo || "outros") === k).length : n}</small></button>`).join("");
     const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (!stEst.cat || (p.tipo || "outros") === stEst.cat) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
@@ -2564,12 +2564,14 @@
     const l = itensMarcados(); criarAPartirDaLista(l.length === 1 && b.dataset.criar === "livre" ? "instagram" : b.dataset.criar, l);
   });
   /* ---------- Tela única de Produtos: Minha lista · Achados · No site ---------- */
+  var LIMITE_SITE = 300; // recomendado: até 300 produtos no site
   function pintarSegProd(aba) { try { pintarSegProd0(aba); } catch (e) { /* app ainda abrindo */ } }
   function pintarSegProd0(aba) {
     const n = { postar: fila().filter((i) => !i.carregando).length, achados: catalogoAtual.filter((p) => !achadoNoSite(p)).length, site: vitrineMap.size };
     document.querySelectorAll(".prod-seg").forEach((sg) => sg.querySelectorAll("[data-prod]").forEach((b) => {
       b.classList.toggle("on", b.dataset.prod === (aba || (document.querySelector(".aba-prod:not([hidden])") || {}).id?.replace("aba-", "")));
-      const c = b.querySelector("small"); c.textContent = n[b.dataset.prod] ? n[b.dataset.prod] : ""; }));
+      const c = b.querySelector("small"); c.textContent = n[b.dataset.prod] ? n[b.dataset.prod] : "";
+      c.classList.toggle("alerta", b.dataset.prod === "site" && n.site > LIMITE_SITE); c.title = c.classList.contains("alerta") ? `Mais de ${LIMITE_SITE} produtos no site: o recomendado é até ${LIMITE_SITE}` : ""; }));
   }
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-prod]"); if (b) { if (b.classList.contains("on")) return; irPara(b.dataset.prod); scrollTo(0, 0); return; }
