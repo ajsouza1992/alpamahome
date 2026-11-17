@@ -280,7 +280,8 @@
     /* Atalhos de cima: grupos de categoria (só aparecem os que têm produto) */
     const GRUPOS = { looks: ["Roupas", ["looks"]], fitness: ["Moda fitness", ["fitness"]], calcados: ["Calçados", ["calcados"]], acessorios: ["Bolsas e acessórios", ["acessorios"]], perfumes: ["Perfumes", ["perfumes"]],
       maquiagem: ["Maquiagem", ["maquiagem"]], skincare: ["Skincare", ["skincare"]], cabelo: ["Cabelo", ["cabelo"]], suplementos: ["Suplementos", ["suplementos"]], eletronicos: ["Eletrônicos", ["eletronicos"]], casa: ["Casa", ["casa"]], outros: ["Outros", ["outros", "bebes"]] }; // iguais às do app
-    const doGrupo = (g, p) => GRUPOS[g][1].includes(p.tipo || "outros");
+    const tiposP = (p) => [p.tipo || "outros", ...(Array.isArray(p.tipos) ? p.tipos : [])]; // um produto pode estar em várias categorias
+    const doGrupo = (g, p) => tiposP(p).some((t) => GRUPOS[g][1].includes(t));
     const est = { q: "", grupo: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", vant: new Set(), ordem: "destaque" };
     let produtos = [], cfg = {};
 
@@ -355,10 +356,10 @@
     function filtrar() {
       const q = semAcento(est.q).trim();
       return produtos.filter((p) => {
-        if (q && !semAcento(`${p.nome} ${TIPOS[p.tipo] || ""} ${LOJAS[p.loja] || ""} ${p.cupom || ""} ${p.descricao || ""}`).includes(q)) return false;
+        if (q && !semAcento(`${p.nome} ${tiposP(p).map((t) => TIPOS[t] || "").join(" ")} ${LOJAS[p.loja] || ""} ${p.cupom || ""} ${p.descricao || ""}`).includes(q)) return false;
         if (est.grupo && !doGrupo(est.grupo, p)) return false;
         if (est.para && p.para !== est.para) return false;
-        if (est.tipos.size && !est.tipos.has(p.tipo)) return false;
+        if (est.tipos.size && !tiposP(p).some((t) => est.tipos.has(t))) return false;
         if (est.lojas.size && !est.lojas.has(p.loja)) return false;
         if (est.preco && !(p.preco && PRECOS[est.preco][1](p.preco))) return false;
         if (est.vant.size && ![...est.vant].every((k) => VANT[k][1](p))) return false;
@@ -377,7 +378,7 @@
     const pesoHora = (id) => { let h = 2166136261 ^ semente; for (const c of String(id)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); return (h ^ (h >>> 15)) >>> 0; };
     const embaralhar = (l) => l.slice().sort((a, b) => pesoHora(a.id) - pesoHora(b.id));
     const nFiltros = () => (est.para ? 1 : 0) + est.tipos.size + est.lojas.size + (est.preco ? 1 : 0) + [...est.vant].filter((k) => k !== "ofertas" && k !== "cupom").length + (est.ordem !== "destaque" ? 1 : 0); // Ofertas e Com cupom já aparecem marcados em cima
-    const presentes = (k) => [...new Set(produtos.map((p) => p[k]).filter(Boolean))];
+    const presentes = (k) => [...new Set(produtos.flatMap((p) => (k === "tipo" ? tiposP(p) : [p[k]])).filter(Boolean))];
     const chip = (attr, v, nome, on, extra = "") => `<button type="button" class="ch${extra}${on ? " on" : ""}" ${attr}="${esc(v)}" aria-pressed="${on}">${nome}</button>`;
     function htmlFiltros() {
       const tipos = presentes("tipo").sort((a, b) => (TIPOS[a] || a).localeCompare(TIPOS[b] || b, "pt-BR")), lojas = presentes("loja"), vant = Object.keys(VANT).filter((k) => k !== "ofertas" && produtos.some(VANT[k][1]));

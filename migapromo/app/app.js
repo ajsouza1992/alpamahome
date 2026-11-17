@@ -1318,11 +1318,11 @@
     const todos = stLista(), n = todos.length, cont = $("#contSite");
     if (cont) { cont.textContent = n; cont.hidden = !n; }
     const aba = $("#aba-site"); if (!aba || aba.hidden) { const bs = $("#barraSite"); if (bs) bs.hidden = true; return; }
-    const cats = [...new Set(todos.map((p) => p.tipo || "outros"))]; if (stEst.cat && !cats.includes(stEst.cat)) stEst.cat = "";
+    const cats = [...new Set(todos.flatMap(tiposDe))]; if (stEst.cat && !cats.includes(stEst.cat)) stEst.cat = "";
     $("#stResumo").innerHTML = n ? `${n} ${n === 1 ? "produto" : "produtos"} no site. Toque em ⋮ para mudar ou tirar.${n > LIMITE_SITE ? ` <b class="st-alerta">Passou de ${LIMITE_SITE}: tire os mais antigos ou os menos clicados para o site continuar leve.</b>` : ""}` : "Nenhum produto no site ainda. Envie dos Achados ou da sua Lista.";
     $("#stFiltro").hidden = cats.length < 2;
-    $("#stFiltro").innerHTML = [["", "Todas"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" class="chip-cat${stEst.cat === k ? " on" : ""}" data-st-cat="${k}">${k ? `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k] || ""}</svg>` : ""}${esc(nome)} <i>${k ? todos.filter((p) => (p.tipo || "outros") === k).length : n}</i></button>`).join("");
-    const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (stEst.loja === "todas" || p.loja === stEst.loja) && (!stEst.cat || (p.tipo || "outros") === stEst.cat) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
+    $("#stFiltro").innerHTML = [["", "Todas"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" class="chip-cat${stEst.cat === k ? " on" : ""}" data-st-cat="${k}">${k ? `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k] || ""}</svg>` : ""}${esc(nome)} <i>${k ? todos.filter((p) => tiposDe(p).includes(k)).length : n}</i></button>`).join("");
+    const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (stEst.loja === "todas" || p.loja === stEst.loja) && (!stEst.cat || tiposDe(p).includes(stEst.cat)) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
     if (soFav) l = l.filter(ehFavSite);
     if (stEst.ordem === "comissao" || stEst.ordem === "vendidos") { const f = stEst.ordem === "comissao" ? comissaoDe : vendidosDe, it = (p) => itemPorId(p.id) || {}; l = l.slice().sort((a, b) => f(it(b)) - f(it(a))); }
     else if (stEst.ordem !== "recentes") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }, tot = (p) => k(p).loja + k(p).abrir; l = l.slice().sort((a, b) => tot(b) - tot(a) || k(b).loja - k(a).loja); if (stEst.ordem === "top10") l = l.filter((p) => tot(p) > 0).slice(0, 10); }
@@ -1332,7 +1332,7 @@
       const k = cliquesSite.mapa.get(p.id), nCl = k ? k.loja + k.abrir : 0;
       return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${nCl ? `<span class="st-bolas">${k.loja ? `<i class="st-bola st-bola--loja" data-bola="loja" data-n="${k.loja}">${k.loja > 99 ? "99+" : k.loja}</i>` : ""}${k.abrir ? `<i class="st-bola st-bola--abriu" data-bola="abriu" data-n="${k.abrir}">${k.abrir > 99 ? "99+" : k.abrir}</i>` : ""}</span>` : ""}${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${ehFavSite(p) ? FAV_IC : ""}${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
-        <span class="st-tags"><b>${esc(NOME_CAT[p.tipo] || "Outros")}</b></span></span>
+        <span class="st-tags">${tiposDe(p).map((k) => `<b>${esc(NOME_CAT[k] || "Outros")}</b>`).join("")}</span></span>
       </button>${stEst.sel ? `<button type="button" class="pp-caixa" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
       : `<p class="vazio-lista">${n ? (stEst.ordem === "top10" && !t ? "Ainda não tem cliques nos últimos 30 dias." : "Nenhum produto com essa busca.") : "Seu site ainda está vazio. Toque em <b>Enviar dos Achados</b> para escolher vários de uma vez."}</p>`;
     const bs = $("#barraSite"); bs.hidden = !stEst.sel;
@@ -1449,8 +1449,8 @@
     if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
     if (op === "tirar") { await tirarVariosDoSite([p.id]); return; }
     if (op === "fav") { const it = itemPorId(p.id); if (it) { await alternarFav(it); } else { const nv = { ...p, fav: !p.fav }; try { await salvarNoSite(nv); renderSite(); toast(nv.fav ? "Nos favoritos" : "Saiu dos favoritos"); } catch (e) { /* segue */ } } return; }
-    if (op === "cat") { const c = await escolherCategoria({ sugestao: p.tipo || "outros", nome: p.nome, titulo: "Categoria no site", acao: "Mudar para" }); if (!c) return;
-      try { await salvarNoSite({ ...p, tipo: c, atualizadoEm: Date.now() }); renderSite(); toast(`Agora em ${NOME_CAT[c]}`); } catch (err) { toast("Não consegui mudar"); } return; }
+    if (op === "cat") { const cs = await escolherCategorias({ atuais: tiposDe(p), nome: p.nome }); if (!cs) return;
+      try { await salvarNoSite({ ...p, tipo: cs[0], tipos: cs, atualizadoEm: Date.now() }); renderSite(); toast(`Agora em ${cs.map((k) => NOME_CAT[k]).join(" e ")}`); } catch (err) { toast("Não consegui mudar"); } return; }
     if (op === "para") { const v = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), p.para || "mulher"); if (!v) return;
       try { await salvarNoSite({ ...p, para: v, atualizadoEm: Date.now() }); renderSite(); toast(`Agora em ${PARA_SITE[v]}`); } catch (err) { toast("Não consegui mudar"); } }
   });
@@ -1496,9 +1496,9 @@
   $("#stCatVarios").addEventListener("click", async () => {
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
     const l = [...stEst.sel].map((id) => vitrineMap.get(id)).filter(Boolean);
-    const c = await escolherCategoria({ sugestao: l[0].tipo || "outros", titulo: `Categoria no site · ${l.length}`, acao: "Mudar para" }); if (!c) return;
-    let ok = 0; for (const p of l) { try { await salvarNoSite({ ...p, tipo: c, atualizadoEm: Date.now() }); ok++; } catch (e) { console.warn(e); } }
-    stEst.sel = null; renderSite(); toast(`${ok} ${ok === 1 ? "produto foi" : "produtos foram"} para ${NOME_CAT[c]}`);
+    const cs = await escolherCategorias({ atuais: tiposDe(l[0]), titulo: `Categorias no site · ${l.length}` }); if (!cs) return;
+    let ok = 0; for (const p of l) { try { await salvarNoSite({ ...p, tipo: cs[0], tipos: cs, atualizadoEm: Date.now() }); ok++; } catch (e) { console.warn(e); } }
+    stEst.sel = null; renderSite(); toast(`${ok} ${ok === 1 ? "produto foi" : "produtos foram"} para ${cs.map((k) => NOME_CAT[k]).join(" e ")}`);
   });
 
   /* =========================== Aba Achados =========================== */
@@ -2853,7 +2853,7 @@
   function produtoSite(it, para, descricao, antes) {
     const img = String(it.imagem || ""), imgOk = img && (!img.startsWith("data:") || img.length < 600000) ? img : "";
     return { id: it.id, nome: limparNome(it.nome || ""), preco: it.precoNovo || null, precoAntigo: it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? it.precoAntigo : null,
-      cupom: it.cupom ? String(it.cupom).toUpperCase() : "", loja: it.loja || "", link: it.link || "", imagem: imgOk, tipo: it.categoria || "outros", para: PARA_SITE[para] ? para : "mulher",
+      cupom: it.cupom ? String(it.cupom).toUpperCase() : "", loja: it.loja || "", link: it.link || "", imagem: imgOk, tipo: it.categoria || "outros", tipos: [...new Set([it.categoria || "outros", ...((antes && Array.isArray(antes.tipos)) ? antes.tipos : [])])], para: PARA_SITE[para] ? para : "mulher",
       descricao: String(descricao || "").slice(0, 1200), fav: !!it.fav, frete: !!it.freteGratis, oficial: !!it.lojaOficial, maisVendido: it.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
   }
   /* Pacotes do site: toda mudança nos produtos do site refaz os pacotes (uns segundos depois, uma vez só) */
@@ -2979,6 +2979,21 @@
     criarAPartirDaLista(k === "livre" ? "instagram" : k, [it]);
   });
   /* ---------- Popup: qual a categoria? ---------- */
+  /** Várias categorias para o site (ex.: presilha em Cabelo e Acessórios). Devolve a lista (a primeira é a principal) ou null */
+  function escolherCategorias({ atuais = ["outros"], nome = "", titulo = "Categorias no site" } = {}) {
+    const d = $("#folhaCat"); let sel = (atuais || []).filter((k) => NOME_CAT[k]); if (!sel.length) sel = ["outros"];
+    $("#folhaCatTitulo").textContent = titulo; $("#folhaCatSub").textContent = (nome ? `“${limparNome(nome).slice(0, 50)}” · ` : "") + "toque em quantas quiser";
+    const pintar = () => { $("#folhaCatGrade").innerHTML = Object.entries(NOME_CAT).map(([k, n]) => blocoCat(k, n, 0, sel.includes(k)).replace(" vazia", "")).join("");
+      $("#folhaCatOk").textContent = sel.length > 1 ? `Usar ${sel.length} categorias` : sel.length ? `Usar ${NOME_CAT[sel[0]]}` : "Escolha pelo menos 1"; $("#folhaCatOk").disabled = !sel.length; };
+    pintar(); d.returnValue = ""; d.showModal();
+    return new Promise((ok) => {
+      const clique = (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; const k = b.dataset.cat; sel = sel.includes(k) ? sel.filter((x) => x !== k) : [...sel, k]; pintar(); };
+      const confirma = () => { if (!sel.length) return; d.returnValue = "ok"; d.close(); };
+      $("#folhaCatGrade").addEventListener("click", clique); $("#folhaCatOk").addEventListener("click", confirma);
+      d.addEventListener("close", () => { $("#folhaCatGrade").removeEventListener("click", clique); $("#folhaCatOk").removeEventListener("click", confirma); $("#folhaCatOk").disabled = false; ok(d.returnValue === "ok" ? sel : null); }, { once: true });
+    });
+  }
+  function tiposDe(p) { const l = [p.tipo || "outros", ...(Array.isArray(p.tipos) ? p.tipos : [])].filter((k) => NOME_CAT[k]); return [...new Set(l.length ? l : ["outros"])]; }
   function escolherCategoria({ sugestao = "outros", nome = "", titulo = "Qual a categoria?", acao = "Adicionar em", todas = false } = {}) {
     const d = $("#folhaCat"); let sel = NOME_CAT[sugestao] || (todas && sugestao === "todas") ? sugestao : "outros";
     $("#folhaCatTitulo").textContent = titulo; $("#folhaCatSub").textContent = nome ? `“${limparNome(nome).slice(0, 60)}” · sugestão já marcada` : "";
