@@ -2420,7 +2420,7 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .ac-num { position: relative; }
 .ac-var { position: absolute; top: 10px; right: 12px; font-style: normal; font-size: 11px; font-weight: 700; color: var(--cinza); }
 .ac-var.sobe { color: #1d8a4a; } .ac-var.desce { color: #c4314b; }
-.ac-comp { margin: -4px 0 0; font-size: 12px; }
+.ac-comp { margin: 6px 4px 8px; font-size: 12.5px; line-height: 1.45; color: var(--cinza); }
 .ac-dicas { margin: 0; padding: 12px 14px 12px 30px; background: #fff7d6; border-radius: 16px; font-size: 13px; line-height: 1.5; display: grid; gap: 4px; }
 .ac-tag { font-weight: 700; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--campo); color: var(--preto); white-space: nowrap; }
 .ac-tag.c { background: var(--rosa); color: #fff; }
