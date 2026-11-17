@@ -1187,14 +1187,21 @@
     const c = await categoriaDosAchados(l, "Enviar para"); if (c === null) return;
     let para = ""; if (c) { para = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), paraQuemDe({ nome: l[0].nome, categoria: c })); if (!para) return; }
     const b = $("#acSiteEnviar"); b.disabled = true; b.textContent = "Enviando…";
-    // vão também para a Lista, com todas as informações; o site acompanha o produto da Lista
-    const velhos = l.map(idSiteAchado).filter((id) => vitrineMap.has(id));
-    const r = trazerParaLista(l, c); let ok = 0;
+    // Vão direto para o site, sem entrar na Lista. Se o produto já está na Lista, o site acompanha o da Lista.
+    const r = { itens: [], pulados: 0 }, velhos = []; let ok = 0, daLista = false;
+    for (const p of l) {
+      const link = linkAfiliadoAuto(p); if (!link) { r.pulados++; continue; }
+      const naLista = itemDoAchado(p);
+      if (naLista) { if (c) naLista.categoria = c; daLista = true; r.itens.push(naLista); if (vitrineMap.has(idSiteAchado(p))) velhos.push(idSiteAchado(p)); continue; }
+      r.itens.push({ ...extrasDe(p), id: idSiteAchado(p), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "",
+        categoria: c || adivinharCategoria(p.nome, p.categoria), catV2: true, texto: "", feito: {}, criadoEm: Date.now() });
+    }
+    if (daLista) salvarFila(true);
     for (const it of r.itens) { const sp = produtoSite(it, para || paraQuemDe(it), it.descricao || "", vitrineMap.get(it.id)); try { await dados.vitrineSalvar(sp); vitrineMap.set(it.id, sp); ok++; } catch (err) { console.warn(err); } }
     for (const id of velhos) { try { await dados.vitrineApagar(id); vitrineMap.delete(id); } catch (err) { /* segue */ } }
     descreverNoSite(r.itens);
     b.disabled = false; b.textContent = "Enviar para o site"; sairAcSite(); pintarAchados(); renderFila();
-    toast(ok ? `${ok} ${ok === 1 ? "produto enviado" : "produtos enviados"} para o site e para a sua Lista.${avisoPulados(r.pulados)}` : "Não consegui enviar. Confira as regras do Firestore (vitrine).");
+    toast(ok ? `${ok} ${ok === 1 ? "produto enviado" : "produtos enviados"} para o site.${avisoPulados(r.pulados)}` : "Não consegui enviar. Confira as regras do Firestore (vitrine).");
   });
   $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(() => { if (catBusca && !$("#acBusca").value.trim()) { carregarCatalogo(); return; } pintarAchados(); }, 150); });
   $("#acBusca").addEventListener("keydown", (e) => { if (e.key === "Enter" && $("#acBusca").value.trim().length >= 2) { e.preventDefault(); buscarNasLojas($("#acBusca").value.trim()); } });
