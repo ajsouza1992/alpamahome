@@ -186,10 +186,23 @@
     el.hidden = !msg;
     el.classList.toggle("ok", !!ok);
   }
-  async function cabecalhoConta() {
+  async function cabecalhoConta(semML) {
     const h = { "content-type": "application/json" };
     try { const u = conta.fb && conta.fb.a.currentUser; if (u) h.authorization = "Bearer " + await u.getIdToken(); } catch (e) { /* segue */ }
+    if (!semML) { const t = await tokenContaML(); if (t) h["x-ml-token"] = t; }
     return h;
+  }
+  /** Token da conta do Mercado Livre (login feito em Achados); renova sozinho quando vence */
+  let renovandoML = null;
+  async function tokenContaML() {
+    let c = null; try { c = config && config.mlConta; } catch (e) { return ""; } if (!c || !c.a) return "";
+    if (c.e && Date.now() < c.e) return c.a;
+    if (!c.r) return "";
+    if (!renovandoML) renovandoML = (async () => {
+      try { const r = await fetch("api/mlrenovar", { method: "POST", headers: await cabecalhoConta(true), body: JSON.stringify({ refresh: c.r }) }); const d = await r.json().catch(() => ({}));
+        if (d.conta) { config.mlConta = JSON.parse(decodeURIComponent(escape(atob(d.conta)))); gravarConfig(); } else if (d.codigo === "mlconta") { config.mlConta = null; gravarConfig(); } } catch (e) { /* segue */ }
+      renovandoML = null; })();
+    await renovandoML; return (config.mlConta && config.mlConta.a) || "";
   }
   async function api(caminho, corpo) {
     const r = await fetch("api/" + caminho, {
@@ -375,8 +388,8 @@
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
       limpar: () => tx("readwrite", (s) => s.clear()),
-      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), cupomInfo: ls.lerJson("miga_cupom_info", {}), instagram: ls.ler("miga_instagram") || "", prompts: ls.lerJson("miga_prompts", {}), mlMattWord: ls.ler("miga_ml_word") || "", mlMattTool: ls.ler("miga_ml_tool") || "", ocultarPostados: ls.ler("miga_ocultar_postados") === "1" }),
-      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_cupom_info", JSON.stringify(c.cupomInfo || {})); ls.gravar("miga_instagram", c.instagram || ""); ls.gravar("miga_prompts", JSON.stringify(c.prompts || {})); ls.gravar("miga_ml_word", c.mlMattWord || ""); ls.gravar("miga_ml_tool", c.mlMattTool || ""); ls.gravar("miga_ocultar_postados", c.ocultarPostados ? "1" : ""); },
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), cupomInfo: ls.lerJson("miga_cupom_info", {}), instagram: ls.ler("miga_instagram") || "", prompts: ls.lerJson("miga_prompts", {}), mlMattWord: ls.ler("miga_ml_word") || "", mlMattTool: ls.ler("miga_ml_tool") || "", mlConta: ls.lerJson("miga_ml_conta", null), ocultarPostados: ls.ler("miga_ocultar_postados") === "1" }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_cupom_info", JSON.stringify(c.cupomInfo || {})); ls.gravar("miga_instagram", c.instagram || ""); ls.gravar("miga_prompts", JSON.stringify(c.prompts || {})); ls.gravar("miga_ml_word", c.mlMattWord || ""); ls.gravar("miga_ml_conta", JSON.stringify(c.mlConta || null)); ls.gravar("miga_ml_tool", c.mlMattTool || ""); ls.gravar("miga_ocultar_postados", c.ocultarPostados ? "1" : ""); },
       lerFila: async () => ls.lerJson("miga_fila", []),
       gravarFila: async (l) => { ls.gravar("miga_fila", JSON.stringify(l)); },
       // Vitrine (site público): no modo local fica só neste navegador
@@ -417,9 +430,9 @@
       lerConfig: async () => {
         const d = await fs.getDoc(docConfig());
         const x = d.exists() ? d.data() : {};
-        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], cupomInfo: x.cupomInfo || {}, instagram: x.instagram || "", prompts: x.prompts || {}, mlMattWord: x.mlMattWord || "", mlMattTool: x.mlMattTool || "", ocultarPostados: !!x.ocultarPostados, filaAntiga: x.fila || [] };
+        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], cupomInfo: x.cupomInfo || {}, instagram: x.instagram || "", prompts: x.prompts || {}, mlMattWord: x.mlMattWord || "", mlMattTool: x.mlMattTool || "", mlConta: x.mlConta || null, ocultarPostados: !!x.ocultarPostados, filaAntiga: x.fila || [] };
       },
-      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], cupomInfo: c.cupomInfo || {}, instagram: c.instagram || "", prompts: c.prompts || {}, mlMattWord: c.mlMattWord || "", mlMattTool: c.mlMattTool || "", ocultarPostados: !!c.ocultarPostados, atualizadoEm: Date.now() }, { merge: true }),
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], cupomInfo: c.cupomInfo || {}, instagram: c.instagram || "", prompts: c.prompts || {}, mlMattWord: c.mlMattWord || "", mlMattTool: c.mlMattTool || "", mlConta: c.mlConta || null, ocultarPostados: !!c.ocultarPostados, atualizadoEm: Date.now() }, { merge: true }),
       // Lista: um documento por produto em usuarios/{uid}/lista/{id} (as fotos não estouram o limite de 1 MB)
       lerFila: async () => {
         const snap = await fs.getDocs(colLista());
@@ -554,6 +567,9 @@
   async function carregarDados(listaDoAparelho) {
     try { config = await dados.lerConfig(); } catch (e) { config = { grupos: [], convite: "", cupons: [] }; toast("Não consegui carregar seus grupos"); }
     config.cupons = config.cupons || [];
+    { const h = location.hash, mc = /^#mlconta=(.+)$/.exec(h), me = /^#mlerro=(.+)$/.exec(h);
+      if (mc) { try { config.mlConta = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(mc[1]))))); gravarConfig(); setTimeout(() => toast("Conta do Mercado Livre conectada. Agora busque nos Achados."), 800); } catch (er) { toast("Não consegui ler a conta do Mercado Livre"); } history.replaceState(null, "", location.pathname); }
+      else if (me) { setTimeout(() => toast("O Mercado Livre não conectou: " + decodeURIComponent(me[1]).slice(0, 80)), 800); history.replaceState(null, "", location.pathname); } }
     try {
       config.fila = await dados.lerFila();
       // Lista antiga (guardada junto das configurações): passa para a coleção nova
@@ -1231,8 +1247,13 @@
       pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
       { const av = $("#avisoCatalogo"), temML = catalogoAtual.some((p) => p.loja === "mercadolivre"), lj = catLoja.valor();
         if (av) { av.hidden = !(lj !== "shopee" && !temML);
-          if (!av.hidden) av.innerHTML = `<b>Mercado Livre:</b> ele não deixa buscar por dentro de outros apps. Abra a busca lá, escolha os produtos e mande para a Miga: no produto, toque em <b>Compartilhar → Miga Promo</b>, ou copie os links e use <b>Colar vários links</b> na Minha lista. O seu código de afiliado entra sozinho.
-            <a class="btn btn--branco ml-abrir-busca" href="https://lista.mercadolivre.com.br/${encodeURIComponent(termo.trim().replace(/\s+/g, "-"))}" target="_blank" rel="noopener">Abrir a busca no Mercado Livre</a>`; } }
+          const conectada = !!(config.mlConta && config.mlConta.a), det = esc((d.avisos || []).map((x) => String(x).replace(/^ML_BUSCA_FECHADA \(|\)$/g, "")).join(" · ").slice(0, 200));
+          if (!av.hidden && !conectada) av.innerHTML = `<b>Mercado Livre:</b> para trazer a busca do Mercado Livre aqui, entre uma vez com a sua conta do Mercado Livre.
+            <a class="btn btn--rosa ml-abrir-busca" href="api/mlentrar">Entrar com minha conta do Mercado Livre</a>
+            <span class="ml-ou">Ou abra a busca lá e mande os produtos por <b>Compartilhar → Miga Promo</b> ou <b>Colar vários links</b>.</span>
+            <a class="btn btn--branco ml-abrir-busca" href="https://lista.mercadolivre.com.br/${encodeURIComponent(termo.trim().replace(/\s+/g, "-"))}" target="_blank" rel="noopener">Abrir a busca no Mercado Livre</a>`;
+          else if (!av.hidden) av.innerHTML = `<b>Mercado Livre:</b> ele não deixa buscar por dentro de outros apps. Abra a busca lá, escolha os produtos e mande para a Miga: no produto, toque em <b>Compartilhar → Miga Promo</b>, ou copie os links e use <b>Colar vários links</b> na Minha lista. O seu código de afiliado entra sozinho.
+            <a class="btn btn--branco ml-abrir-busca" href="https://lista.mercadolivre.com.br/${encodeURIComponent(termo.trim().replace(/\s+/g, "-"))}" target="_blank" rel="noopener">Abrir a busca no Mercado Livre</a><small class="ml-det">Detalhe para a Miga Promo: ${det}</small>`; } }
     } catch (e) { if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; } toast("Não consegui buscar nas lojas agora"); catBusca = ""; carregarCatalogo(); }
   }
   [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(() => (catBusca ? buscarNasLojas(catBusca) : carregarCatalogo()), 0); }));

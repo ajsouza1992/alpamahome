@@ -2780,3 +2780,5 @@ body.modo-selecao .lojas-seg { display: none; }
 .vl-linha .nota { margin: 0; }
 #vlAdicionar { width: 100%; }
 .aviso .ml-abrir-busca { display: flex; justify-content: center; width: 100%; margin-top: 10px; text-decoration: none; }
+.aviso .ml-ou { display: block; margin-top: 10px; }
+.aviso .ml-det { display: block; margin-top: 8px; font-size: 11.5px; opacity: .75; word-break: break-word; }

@@ -860,9 +860,44 @@ async function catalogoShopee(filtro, env, ordem = "vendidos", pagina = 1) {
 /* ---------- Busca no Mercado Livre pela palavra digitada ----------
    Só a busca oficial (com as chaves do ML). O ML pede verificação de robô quando um servidor abre a página de busca,
    então não lemos a página dele: o app mostra um botão para abrir a busca no Mercado Livre. */
-async function buscaML(termo, env, pagina = 1) {
+/* ---------- Conta do Mercado Livre (login oficial, OAuth) ----------
+   A busca oficial recusa o token do app sozinho (403). Com o login da conta dela, a busca usa o token da pessoa.
+   No Mercado Livre Developers → a sua aplicação → "URI de redirect", cadastre: https://SEU-SITE/app/api/mlretorno */
+const uriRetornoML = (request) => new URL("/app/api/mlretorno", request.url).href;
+function rotaMlEntrar(request, env) {
+  if (!env.ML_APP_ID) return new Response("Faltam as chaves do Mercado Livre (ML_APP_ID) no Cloudflare.", { status: 503 });
+  const u = new URL("https://auth.mercadolivre.com.br/authorization");
+  u.searchParams.set("response_type", "code"); u.searchParams.set("client_id", env.ML_APP_ID); u.searchParams.set("redirect_uri", uriRetornoML(request));
+  return Response.redirect(u.href, 302);
+}
+const pacoteConta = (d) => btoa(unescape(encodeURIComponent(JSON.stringify({ a: d.access_token, r: d.refresh_token || "", e: Date.now() + ((d.expires_in || 21600) - 300) * 1000 }))));
+async function tokenDaConta(env, corpo) {
+  const r = await fetch(ML_API + "/oauth/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" }, body: new URLSearchParams({ client_id: env.ML_APP_ID, client_secret: env.ML_SECRET, ...corpo }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.access_token) throw new Error(d.message || d.error || "erro " + r.status);
+  return d;
+}
+async function rotaMlRetorno(request, env) {
+  const q = new URL(request.url).searchParams, volta = new URL("/app/", request.url);
+  if (!q.get("code")) { volta.hash = "mlerro=" + encodeURIComponent(q.get("error_description") || q.get("error") || "sem código"); return Response.redirect(volta.href, 302); }
+  try { const d = await tokenDaConta(env, { grant_type: "authorization_code", code: q.get("code"), redirect_uri: uriRetornoML(request) }); volta.hash = "mlconta=" + encodeURIComponent(pacoteConta(d)); }
+  catch (e) { volta.hash = "mlerro=" + encodeURIComponent(e.message || "erro"); }
+  return Response.redirect(volta.href, 302);
+}
+async function rotaMlRenovar(request, env) {
+  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  let b; try { b = await request.json(); } catch (e) { b = {}; }
+  if (!b.refresh) return json({ erro: "Sem conta do Mercado Livre." }, 400);
+  try { const d = await tokenDaConta(env, { grant_type: "refresh_token", refresh_token: b.refresh }); return json({ conta: pacoteConta(d) }); }
+  catch (e) { return json({ erro: "O Mercado Livre pediu para entrar de novo (" + (e.message || "") + ").", codigo: "mlconta" }, 400); }
+}
+async function buscaML(termo, env, pagina = 1, tokenConta = "") {
   chamadasML = 0; const diag = []; let saida = [];
-  if (env.ML_APP_ID && env.ML_SECRET) {
+  if (tokenConta) {
+    try { const r = await getML(`/sites/MLB/search?q=${encodeURIComponent(termo)}&limit=48&offset=${(pagina - 1) * 48}`, tokenConta); diag.push("busca com a sua conta " + r.status + (r.dados && r.dados.message ? " " + String(r.dados.message).slice(0, 60) : ""));
+      for (const b of (r.dados && r.dados.results) || []) if (b.title && b.price) saida.push(itemML(b, { categoria: "outros" })); } catch (e) { diag.push("busca com a sua conta falhou"); }
+  }
+  if (!saida.length && env.ML_APP_ID && env.ML_SECRET) {
     try { const token = await tokenML(env); const r = await getML(`/sites/MLB/search?q=${encodeURIComponent(termo)}&limit=48&offset=${(pagina - 1) * 48}`, token); diag.push("busca oficial " + r.status);
       for (const b of (r.dados && r.dados.results) || []) if (b.title && b.price) saida.push(itemML(b, { categoria: "outros" })); } catch (e) { diag.push("busca oficial falhou"); }
   }
@@ -882,7 +917,7 @@ async function rotaCatalogo(request, env) {
   const configurado = { mercadolivre: !!(env.ML_APP_ID && env.ML_SECRET), shopee: !!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET) };
   if (!configurado.mercadolivre && !configurado.shopee && !busca) return json({ configurado, produtos: [], avisos: [] });
 
-  const chave = `v3-${nomeFiltro}-${loja}-${ordem}-${pagina}-${configurado.mercadolivre}-${configurado.shopee}`;
+  const chave = `v3-${nomeFiltro}-${loja}-${ordem}-${pagina}-${configurado.mercadolivre}-${configurado.shopee}${busca && request.headers.get("x-ml-token") ? "-conta" : ""}`;
   const guardado = await lerCache("catalogo", chave);
   if (guardado) return json({ ...guardado, doCache: true });
 
@@ -890,7 +925,7 @@ async function rotaCatalogo(request, env) {
   const filtro = busca ? { categoria: "outros", ml: "", busca, shopee: busca } : FILTROS_CATALOGO[nomeFiltro];
   const tarefas = [];
   // Mercado Livre: mais vendidos da categoria e subcategorias, 12 por página; Shopee: 50 por página
-  if (busca && loja !== "shopee") tarefas.push(buscaML(busca, env, pagina)); // busca: a palavra de verdade no Mercado Livre
+  if (busca && loja !== "shopee") tarefas.push(buscaML(busca, env, pagina, String(request.headers.get("x-ml-token") || "").slice(0, 200))); // busca: a palavra de verdade no Mercado Livre
   else if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env, pagina));
   if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem, pagina));
   const resultados = await Promise.allSettled(tarefas);
@@ -933,6 +968,9 @@ export default {
       if (m && m[1] === "status" && metodo === "GET") return rotaStatus(request, env);
       if (m && m[1] === "entrar" && metodo === "POST") return await rotaEntrar(request, env);
       if (m && m[1] === "catalogo" && metodo === "GET") return await rotaCatalogo(request, env);
+      if (m && m[1] === "mlentrar" && metodo === "GET") return rotaMlEntrar(request, env);
+      if (m && m[1] === "mlretorno" && metodo === "GET") return await rotaMlRetorno(request, env);
+      if (m && m[1] === "mlrenovar" && metodo === "POST") return await rotaMlRenovar(request, env);
       if (m && m[1] === "afiliado" && metodo === "POST") return await rotaAfiliado(request, env);
       if (m && m[1] === "descricao" && metodo === "POST") return await rotaDescricao(request, env);
       if (m) return json({ erro: "Rota não encontrada." }, 404);
