@@ -2415,7 +2415,7 @@
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value);
-    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: $("#ajVtInsta").value.trim() || config.instagram || "" }; if (vitrineCfgOk && JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; { const mw = $("#ajMlWord").value.trim(), mt = $("#ajMlTool").value.trim(); config.mlMattWord = mw.slice(0, 120); config.mlMattTool = mt.replace(/\D/g, "").slice(0, 20); } gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
+    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: $("#ajVtInsta").value.trim() || config.instagram || "" }; if (vitrineCfgOk && JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; { const mw = $("#ajMlWord").value.trim(), mt = $("#ajMlTool").value.trim(); config.mlMattWord = mw.slice(0, 120); config.mlMattTool = mt.replace(/\D/g, "").slice(0, 20); } gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); setTimeout(garantirAfiliados, 500); });
   /* Prompts editáveis (Ajustes) */
   function pintarAjPrompts() {
     $("#ajPrompts").innerHTML = Object.entries(PROMPTS_PADRAO).map(([k, d]) => { const v = modeloPrompt(k), mudou = (config.prompts || {})[k] != null;
@@ -2621,7 +2621,7 @@
       <div class="cx-lista">${caixa.map((x, i) => `<button type="button" class="cx-item${x.marcado ? " on" : ""}${x.erro || x.naLista ? " off" : ""}" data-cx="${i}">
         <span class="cx-foto">${x.imagem ? `<img src="${esc(x.imagem)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : `<img class="cx-loja" src="${x.loja === "shopee" ? "loja-shopee.png" : "loja-mercadolivre.png"}" alt="">`}</span>
         <span class="cx-txt"><b>${esc(x.nome || (x.lendo || !x.lido && !x.erro ? "Lendo o produto…" : "Produto " + ((x.link.match(/MLBU?-?\d{6,}/i) || [""])[0].replace("-", "") || "")))}</b><small>${x.erro ? "Não consegui ler este link" : x.naLista ? "Já está na Minha lista" : [x.preco ? brl(x.preco) : "", NOME_LOJA[x.loja] || ""].filter(Boolean).join(" · ")}</small></span>
-        <span class="pp-caixa" aria-pressed="${!!x.marcado}"></span><span class="cx-x" data-cx-tirar="${i}" role="button" aria-label="Tirar da caixa">${'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>'}</span></button>`).join("")}</div>
+        <span class="pp-caixa" aria-pressed="${!!x.marcado}"></span></button>`).join("")}</div>
       <div class="cx-pe"><button type="button" class="btn btn--branco" id="cxLimpar">Limpar caixa</button><button type="button" class="btn btn--rosa" id="cxAdicionar"${nMarc ? "" : " disabled"}>Adicionar ${nMarc || ""} à lista</button></div>`
       : '<p class="vazio-lista">A caixa está vazia. Compartilhe produtos do Mercado Livre com a Miga Promo, cole vários links ou use a extensão do Chrome.</p>';
   }
@@ -2634,13 +2634,13 @@
     if (e.target.closest("#cxLimpar")) { caixa = []; guardarCaixa(); pintarCaixa(); return; }
     if (e.target.closest("#cxAdicionar")) {
       const sel = caixa.filter((x) => x.marcado && !x.erro && !x.naLista); if (!sel.length) return;
-      const c = await escolherCategoria({ titulo: `Categoria dos ${sel.length} produtos`, acao: "Adicionar em", sugestao: adivinharCategoria(sel[0].nome || "") }); if (!c) { abrirCaixa(); return; }
       for (const x of sel) {
+        const c = adivinharCategoria(x.nome || "", x.categoria) || "outros";
         const link = x.linkAfiliado || comCodigoML(x.link);
         fila().unshift({ ...(x.extras || {}), id: novoId(), link, ...(x.linkAfiliado ? { linkOriginal: x.link } : {}), urlFinal: x.urlFinal || "", loja: x.loja || detectarLoja(link) || "mercadolivre", nome: x.nome || "", precoNovo: x.preco || null, precoAntigo: x.precoAntigo || null, imagem: x.imagem || "", cupom: "",
           categoria: c, catV2: true, descricao: x.descricao || "", texto: "", feito: {}, criadoEm: Date.now() });
       }
-      caixa = caixa.filter((x) => !sel.includes(x)); guardarCaixa(); salvarFila(true); contarFila(); renderFila(); $("#folhaEst").close();
+      caixa = caixa.filter((x) => !sel.includes(x)); guardarCaixa(); salvarFila(true); contarFila(); renderFila(); $("#folhaEst").close(); setTimeout(garantirAfiliados, 1500);
       toastAcao(`${sel.length} ${sel.length === 1 ? "produto adicionado" : "produtos adicionados"} à Minha lista`, "Ver", () => { filtroLista = "todas"; irPara("postar"); });
     }
   });
@@ -3028,12 +3028,41 @@
     if (mudou || sumiu) { renderFila(); toast(`Preços do site conferidos: ${mudou} ${mudou === 1 ? "atualizado" : "atualizados"}${sumiu ? ` · ${sumiu} sem resposta da loja` : ""}`); }
   }
   let vitrineCfgOk = false; // os links do site já vieram da nuvem?
+  /* ---------- Seu link de afiliado em TODOS os produtos (Minha lista e Site) ----------
+     Mercado Livre: põe matt_word/matt_tool (links oficiais /sec/ e meli.la ficam como estão).
+     Shopee: troca pelo seu link de afiliado (aos poucos, para não pesar). Roda sozinho ao abrir o app. */
+  let garantindo = false, avisouCodigoML = false;
+  const ehAfiliadoML = (u) => linkOficialML(u) || /[?&]matt_word=/.test(String(u || ""));
+  async function linkShopeeAfiliado(u) { try { const d = await api("afiliado", { url: u }); return d && d.link ? d.link : ""; } catch (e) { if (e.codigo === "senha") throw e; return ""; } }
+  async function garantirAfiliados() {
+    if (garantindo) return; garantindo = true;
+    try {
+      if (!(config.mlMattWord && config.mlMattTool) && !avisouCodigoML && [...fila(), ...vitrineMap.values()].some((x) => (x.loja || detectarLoja(x.link)) === "mercadolivre" && !ehAfiliadoML(x.link))) { avisouCodigoML = true; toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes → Afiliados"); }
+      let mudouFila = false, chamadas = 0; const LIMITE = 25;
+      for (const it of fila()) {
+        if (it.carregando || !it.link) continue; const lj = it.loja || detectarLoja(it.link);
+        if (lj === "mercadolivre") { const n = comCodigoML(it.link); if (n !== it.link) { it.link = n; mudouFila = true; } }
+        else if (lj === "shopee" && !it.afOk && !it.linkOriginal && chamadas < LIMITE) { chamadas++; const n = await linkShopeeAfiliado(it.urlFinal || it.link); if (n) { if (n !== it.link) { it.linkOriginal = it.link; it.link = n; } it.afOk = true; mudouFila = true; } }
+      }
+      if (mudouFila) { salvarFila(true); renderFila(); }
+      const mudar = [];
+      for (const p of [...vitrineMap.values()]) {
+        if (!p.link) continue; const lj = p.loja || detectarLoja(p.link), naLista = fila().find((i) => i.id === p.id); let novo = p.link, ok = p.afOk;
+        if (lj === "mercadolivre") { novo = naLista && ehAfiliadoML(naLista.link) ? naLista.link : comCodigoML(p.link); }
+        else if (lj === "shopee" && !p.afOk) { if (naLista && (naLista.afOk || naLista.linkOriginal)) { novo = naLista.link; ok = true; } else if (chamadas < LIMITE) { chamadas++; const n = await linkShopeeAfiliado(p.link); if (n) { novo = n; ok = true; } } }
+        if (novo !== p.link || ok !== p.afOk) mudar.push({ ...p, link: novo, ...(ok ? { afOk: true } : {}), atualizadoEm: Date.now() });
+      }
+      for (const p of mudar) { try { await salvarNoSite(p); } catch (e) { /* tenta na próxima vez */ } }
+      if (mudar.length) renderSite();
+    } catch (e) { /* tenta na próxima vez que abrir */ }
+    finally { garantindo = false; }
+  }
   async function carregarVitrine() {
     try { vitrineCfg = (await dados.vitrineLerConfig()) || {}; vitrineCfgOk = true; } catch (e) { vitrineCfg = {}; }
     if (vitrineCfgOk) [["#ajVtCanal", "canal"], ["#ajVtGrupo", "grupo"], ["#ajVtTiktok", "tiktok"], ["#ajVtInsta", "instagram"]].forEach(([sel, k]) => { const el = $(sel); if (el && !el.value && vitrineCfg[k]) el.value = vitrineCfg[k]; });
     try { const l = await dados.vitrineListar(); vitrineMap = new Map(l.map((p) => [p.id, p])); } catch (e) { /* segue */ }
     if (vitrineMap.size && !vitrineCfg.pacotesEm) agendarPacotes(); // primeira vez: monta os pacotes
-    setTimeout(conferirPrecosSite, 8000);
+    setTimeout(conferirPrecosSite, 8000); setTimeout(garantirAfiliados, 4000);
     renderFila();
   }
   /** Mudou o preço, a foto ou o cupom no app: o site acompanha */

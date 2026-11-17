@@ -2816,3 +2816,4 @@ body.modo-selecao .lojas-seg { display: none; }
 .cx-item .pp-caixa[aria-pressed="true"] { background: var(--rosa); box-shadow: none; }
 .cx-item .pp-caixa[aria-pressed="true"]::after { left: 9px; top: 5px; width: 6px; height: 11px; border-width: 0 2.5px 2.5px 0; }
 .cx-foto .cx-loja { object-fit: contain; padding: 12px; box-sizing: border-box; }
+.cx-item { grid-template-columns: 56px minmax(0, 1fr) 26px; }
