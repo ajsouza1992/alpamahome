@@ -1021,6 +1021,7 @@
     cat.querySelectorAll(".pp-linha").forEach((ln) => {
       const b = ln.querySelector("[data-achado]"); if (!b) return; const i = Number(b.dataset.achado), p = catalogoAtual[i]; if (!p) return; vis.push(i);
       if (!ln.querySelector(".pp-nosite-ac")) { const tags = [achadoNoSite(p) && "No site", itemDoAchado(p) && "Na Lista"].filter(Boolean); const m = ln.querySelector(".meta"); if (m && tags.length) m.insertAdjacentHTML("afterend", `<span class="st-tags">${tags.map((t) => `<b class="pp-nosite-ac${t === "Na Lista" ? " na-lista" : ""}">${t}</b>`).join("")}</span>`); }
+      if (p.maisVendido && !ln.querySelector(".ac-top")) ln.insertAdjacentHTML("afterbegin", `<i class="ac-top" title="${p.maisVendido}º mais vendido da categoria" aria-label="${p.maisVendido}º mais vendido">${p.maisVendido}º</i>`);
       const ch = chAchado(p); ln.classList.toggle("marcado", !!acSel && acSel.has(ch));
       let mk = ln.querySelector(".pp-caixa");
       if (acSel && !mk) { ln.insertAdjacentHTML("beforeend", `<button type="button" class="pp-caixa" data-ac-marcar="${i}" aria-label="Marcar"></button>`); mk = ln.querySelector(".pp-caixa"); }
@@ -1030,10 +1031,12 @@
     document.body.classList.toggle("modo-selecao", !bar.hidden || !$("#barraMarcados").hidden);
     if (acSel) $("#acSiteQtd").textContent = acSel.size ? `${acSel.size} ${acSel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#acSelecionar").textContent = acSel ? "Cancelar" : "Selecionar";
+    { const bt = $("#acSoTop"); bt.setAttribute("aria-pressed", String(acSoTop)); bt.hidden = !!acSel || (!acSoTop && !catalogoAtual.some((p) => p.maisVendido)); }
     $("#acTodos").hidden = !acSel; $("#acTotal").hidden = !!acSel;
     $("#acTodosCx").classList.toggle("on", !!acSel && !!vis.length && vis.every((i) => acSel.has(chAchado(catalogoAtual[i]))));
   }
   function sairAcSite() { acSel = null; decorarAchados(); }
+  $("#acSoTop").addEventListener("click", () => { acSoTop = !acSoTop; acLimite = 100; pintarAchados(); });
   $("#acSelecionar").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); });
   $("#acTodos").addEventListener("click", () => {
     if (!acSel) return; const vis = [...document.querySelectorAll("#catalogo [data-achado]")].map((b) => chAchado(catalogoAtual[Number(b.dataset.achado)])).filter(Boolean);
