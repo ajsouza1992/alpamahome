@@ -946,6 +946,7 @@
   /* =========================== Catálogo (mais vendidos) =========================== */
   const catFiltro = grupoBotoes("#catFiltro", "v");
   const catLoja = grupoBotoes("#catLoja", "v"), catOrdem = grupoBotoes("#catOrdem", "v");
+  let acLimite = 100; // quantos achados aparecem (de 100 em 100)
   let catalogoAtual = [], catalogoCarregado = false, catPagina = 1, catTemMais = false, catBusca = "";
   const FILTROS_CAT = ["moda", "beleza", "perfumes", "maquiagem", "cabelo", "acessorios", "bolsas", "calcados", "fitness", "saude", "casa", "cozinha", "eletronicos"];
 
@@ -960,7 +961,7 @@
     let d;
     try {
       // Sem categorias: junta os mais vendidos de todas, só filtrando pela loja
-      catPagina = 1; catBusca = "";
+      catPagina = 1; catBusca = ""; acLimite = 100;
       const rs = await Promise.allSettled(FILTROS_CAT.map((f) => api(`catalogo?filtro=${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`)));
       catTemMais = rs.some((r) => r.status === "fulfilled" && r.value.temMais);
       const ok = rs.filter((r) => r.status === "fulfilled").map((r) => r.value);
@@ -990,16 +991,18 @@
   /** Achados no mesmo jeito da Lista (foto, nome, preço, loja) com o ⋮ */
   function pintarAchados() { pintarAchadosBase(); decorarAchados(); }
   function pintarAchadosBase() {
-    const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !acSoTop || p.maisVendido).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t));
+    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !acSoTop || p.maisVendido).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
     const botaoBusca = bruto.length >= 3 && !daBusca ? `<button type="button" class="btn btn--rosa ac-buscar" id="acBuscarLojas"><svg class="ic-mono"><use href="#i-busca"/></svg>Buscar “${esc(bruto)}” nas lojas</button>` : "";
-    $("#acTotal").textContent = `${l.length} ${l.length === 1 ? "achado" : "achados"}`;
+    const total = l.length; l = l.slice(0, acLimite);
+    $("#acTotal").textContent = total > l.length ? `${l.length} de ${total} achados` : `${total} ${total === 1 ? "achado" : "achados"}`;
     $("#catalogo").innerHTML = botaoBusca + (daBusca ? `<p class="nota ac-busca-info">Resultados das lojas para “${esc(catBusca)}”. Apague a busca para voltar aos achados.</p>` : "") + (l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
       return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${esc(limparNome(p.nome))}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
-      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${catTemMais && !t ? `<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais ${daBusca ? `de “${esc(catBusca)}”` : "achados"}</button>` : ""}` : `<p class="vazio-lista">${bruto && !daBusca ? "Nada com essa palavra nos achados carregados: toque em Buscar nas lojas." : "Nada encontrado nos achados."}</p>`);
+      </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${total > l.length || (catTemMais && !t) ? `<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais 100 ${daBusca ? `de “${esc(catBusca)}”` : "achados"}</button>` : ""}` : `<p class="vazio-lista">${bruto && !daBusca ? "Nada com essa palavra nos achados carregados: toque em Buscar nas lojas." : "Nada encontrado nos achados."}</p>`);
   }
   /* ---------- Enviar vários achados para o site, já com o seu link de afiliado ---------- */
-  let acSel = null;
+  let acSel = null; // chaves dos achados marcados (id ou link), não a posição: assim não se perdem ao carregar mais
+  const chAchado = (p) => String((p && (p.id || p.link)) || "");
   var acSoTop = false; // filtro "Mais vendidos" (var: pode ser lido antes desta linha) // Set com os índices marcados (null = fora do modo)
   /** Mercado Livre: põe a sua etiqueta de afiliado (matt_word e matt_tool) no link do produto. Shopee já vem com o seu link. */
   function linkAfiliadoAuto(p) {
@@ -1018,28 +1021,28 @@
     cat.querySelectorAll(".pp-linha").forEach((ln) => {
       const b = ln.querySelector("[data-achado]"); if (!b) return; const i = Number(b.dataset.achado), p = catalogoAtual[i]; if (!p) return; vis.push(i);
       if (!ln.querySelector(".pp-nosite-ac")) { const tags = [achadoNoSite(p) && "No site", itemDoAchado(p) && "Na Lista"].filter(Boolean); const m = ln.querySelector(".meta"); if (m && tags.length) m.insertAdjacentHTML("afterend", `<span class="st-tags">${tags.map((t) => `<b class="pp-nosite-ac${t === "Na Lista" ? " na-lista" : ""}">${t}</b>`).join("")}</span>`); }
-      ln.classList.toggle("marcado", !!acSel && acSel.has(i));
+      const ch = chAchado(p); ln.classList.toggle("marcado", !!acSel && acSel.has(ch));
       let mk = ln.querySelector(".pp-caixa");
       if (acSel && !mk) { ln.insertAdjacentHTML("beforeend", `<button type="button" class="pp-caixa" data-ac-marcar="${i}" aria-label="Marcar"></button>`); mk = ln.querySelector(".pp-caixa"); }
-      if (!acSel && mk) mk.remove(); else if (mk) mk.setAttribute("aria-pressed", String(acSel.has(i)));
+      if (!acSel && mk) mk.remove(); else if (mk) mk.setAttribute("aria-pressed", String(acSel.has(ch)));
     });
     const bar = $("#barraAcSite"); bar.hidden = !acSel || $("#aba-achados").hidden;
     document.body.classList.toggle("modo-selecao", !bar.hidden || !$("#barraMarcados").hidden);
     if (acSel) $("#acSiteQtd").textContent = acSel.size ? `${acSel.size} ${acSel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#acSelecionar").textContent = acSel ? "Cancelar" : "Selecionar";
     $("#acTodos").hidden = !acSel; $("#acTotal").hidden = !!acSel;
-    $("#acTodosCx").classList.toggle("on", !!acSel && !!vis.length && vis.every((i) => acSel.has(i)));
+    $("#acTodosCx").classList.toggle("on", !!acSel && !!vis.length && vis.every((i) => acSel.has(chAchado(catalogoAtual[i]))));
   }
   function sairAcSite() { acSel = null; decorarAchados(); }
   $("#acSelecionar").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); });
   $("#acTodos").addEventListener("click", () => {
-    if (!acSel) return; const vis = [...document.querySelectorAll("#catalogo [data-achado]")].map((b) => Number(b.dataset.achado));
-    if (vis.every((i) => acSel.has(i))) vis.forEach((i) => acSel.delete(i)); else vis.forEach((i) => acSel.add(i)); decorarAchados();
+    if (!acSel) return; const vis = [...document.querySelectorAll("#catalogo [data-achado]")].map((b) => chAchado(catalogoAtual[Number(b.dataset.achado)])).filter(Boolean);
+    if (vis.every((c) => acSel.has(c))) vis.forEach((c) => acSel.delete(c)); else vis.forEach((c) => acSel.add(c)); decorarAchados();
   });
   $("#catalogo").addEventListener("click", (e) => {
     if (!acSel) return; const b = e.target.closest("[data-achado], [data-ac-marcar]"); if (!b) return;
-    e.stopImmediatePropagation(); e.preventDefault(); const i = Number(b.dataset.achado ?? b.dataset.acMarcar);
-    if (acSel.has(i)) acSel.delete(i); else acSel.add(i); decorarAchados();
+    e.stopImmediatePropagation(); e.preventDefault(); const c = chAchado(catalogoAtual[Number(b.dataset.achado ?? b.dataset.acMarcar)]); if (!c) return;
+    if (acSel.has(c)) acSel.delete(c); else acSel.add(c); decorarAchados();
   }, true);
   document.addEventListener("miga-aba", (e) => { if (acSel && e.detail !== "achados") sairAcSite(); if (stEst && stEst.sel && e.detail !== "site") { stEst.sel = null; renderSite(); } });
   /** Pergunta a categoria: automática (cada um a sua) ou uma para todos. Devolve "" (automática), a categoria, ou null (desistiu) */
@@ -1075,7 +1078,7 @@
   const avisoPulados = (n) => (n ? ` ${n} do Mercado Livre ficaram de fora: preencha o seu código de afiliado em Ajustes.` : "");
   $("#acPorLista").addEventListener("click", async () => {
     if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
-    const l = [...acSel].map((i) => catalogoAtual[i]).filter(Boolean);
+    const l = catalogoAtual.filter((p) => acSel.has(chAchado(p)));
     if (!l.some(linkAfiliadoAuto)) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
     const c = await categoriaDosAchados(l, "Pôr em"); if (c === null) return;
     const r = trazerParaLista(l, c); sairAcSite(); pintarAchados(); renderFila();
@@ -1083,7 +1086,7 @@
   });
   $("#acSiteEnviar").addEventListener("click", async () => {
     if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
-    const l = [...acSel].map((i) => catalogoAtual[i]).filter(Boolean);
+    const l = catalogoAtual.filter((p) => acSel.has(chAchado(p)));
     if (!l.some(linkAfiliadoAuto)) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
     const c = await categoriaDosAchados(l, "Enviar para"); if (c === null) return;
     let para = ""; if (c) { para = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), paraQuemDe({ nome: l[0].nome, categoria: c })); if (!para) return; }
@@ -1101,7 +1104,7 @@
   $("#acBusca").addEventListener("keydown", (e) => { if (e.key === "Enter" && $("#acBusca").value.trim().length >= 2) { e.preventDefault(); buscarNasLojas($("#acBusca").value.trim()); } });
   /** Busca a palavra direto nas lojas (Shopee pela palavra, Mercado Livre pelos mais vendidos da categoria dela) */
   async function buscarNasLojas(termo) {
-    catBusca = termo; catPagina = 1; esqueletoCatalogo(); $("#acBusca").blur();
+    catBusca = termo; catPagina = 1; acLimite = 100; esqueletoCatalogo(); $("#acBusca").blur();
     try {
       const d = await api(`catalogo?busca=${encodeURIComponent(termo)}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}`);
       catalogoAtual = (d.produtos || []).filter((p) => p.preco); catTemMais = !!d.temMais;
@@ -1147,13 +1150,16 @@
     btn.disabled = true; btn.textContent = "Carregando…";
     const pg = catPagina + 1, rs = await Promise.allSettled((catBusca ? [`busca=${encodeURIComponent(catBusca)}`] : FILTROS_CAT.map((f) => `filtro=${f}`)).map((f) => api(`catalogo?${f}&loja=${catLoja.valor()}&ordem=${catOrdem.valor()}&pagina=${pg}`)));
     const vistos = new Set(catalogoAtual.map((p) => p.id || p.link)), listas = rs.filter((r) => r.status === "fulfilled").map((r) => r.value.produtos || []); let novos = 0;
-    for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p || !p.preco) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); catalogoAtual.push(p); novos++; });
-    ordenarAchados();
+    const lote = [];
+    for (let i = 0; listas.some((l) => i < l.length); i++) listas.forEach((l) => { const p = l[i]; if (!p || !p.preco) return; const ch = p.id || p.link; if (vistos.has(ch)) return; vistos.add(ch); lote.push(p); novos++; });
+    { const antes = catalogoAtual; catalogoAtual = lote; ordenarAchados(); catalogoAtual = antes.concat(catalogoAtual); }
     catPagina = pg; catTemMais = novos > 0 && rs.some((r) => r.status === "fulfilled" && r.value.temMais);
     const y = scrollY; pintarAchados(); scrollTo(0, y); toast(novos ? `+${novos} achados` : "Não tem mais achados novos agora");
   }
   $("#catalogo").addEventListener("click", async (e) => {
-    const mais = e.target.closest("#acMais"); if (mais) { maisAchados(mais); return; }
+    const mais = e.target.closest("#acMais"); if (mais) { acLimite += 100;
+      const visiveis = $("#acBusca").value.trim() && !catBusca ? Infinity : catalogoAtual.filter((p) => !acSoTop || p.maisVendido).length;
+      if (visiveis >= acLimite || !catTemMais) { const y = scrollY; pintarAchados(); scrollTo(0, y); } else maisAchados(mais); return; }
     if (e.target.closest("#acBuscarLojas")) { buscarNasLojas($("#acBusca").value.trim()); return; }
     const am = e.target.closest("[data-achado-menu], [data-achado]");
     if (am) {
