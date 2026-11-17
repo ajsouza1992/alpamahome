@@ -258,7 +258,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=346"></script>
+  <script src="app/firebase-config.js?v=347"></script>
   <script>
   (() => {
     "use strict";
@@ -369,7 +369,7 @@
       const por = { novos: (a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0), menor: (a, b) => (a.preco || 1e9) - (b.preco || 1e9), maior: (a, b) => (b.preco || 0) - (a.preco || 0),
         desconto: (a, b) => desconto(b) - desconto(a), vendidos: (a, b) => (a.maisVendido || 999) - (b.maisVendido || 999) || (b.publicadoEm || 0) - (a.publicadoEm || 0) };
       if (est.ordem === "destaque" && est.vant.has("ofertas")) return l.slice().sort(por.desconto); // Ofertas: maior desconto primeiro
-      if (est.ordem === "destaque" || !por[est.ordem]) return embaralhar(l);
+      if (est.ordem === "destaque" || !por[est.ordem]) { const e = embaralhar(l); return [...e.filter((p) => p.fav), ...e.filter((p) => !p.fav)]; } // favoritos sempre no topo
       return l.slice().sort(por[est.ordem]);
     }
     /* Em destaque: a ordem muda sozinha a cada 1 hora (igual para todo mundo naquela hora), para não ficar sempre os mesmos no topo */

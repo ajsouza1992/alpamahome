@@ -1224,8 +1224,9 @@
     const am = e.target.closest("[data-achado-menu], [data-achado]");
     if (am) {
       const p = catalogoAtual[Number(am.dataset.achadoMenu ?? am.dataset.achado)]; if (!p) return;
-      const op = await escolherOpcao(limparNome(p.nome), [["adicionar", "Adicionar na lista"], ["abrir", "Abrir na loja"]], "");
+      const op = await escolherOpcao(limparNome(p.nome), [["adicionar", "Adicionar na lista"], ["fav", "Favoritar (vai para a lista)"], ["abrir", "Abrir na loja"]], "");
       if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
+      if (op === "fav") { const r = trazerParaLista([p], ""); if (r.itens[0]) { r.itens[0].fav = true; salvarFila(true); pintarAchados(); toast("Nos favoritos da sua lista"); } else toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
       if (op !== "adicionar") return;
       let link = p.link; if (!p.afiliado) { link = linkAfiliadoAuto(p) || await pedirLinkAfiliado(p); if (!link) return; }
       const ja = fila().find((i) => mesmoProduto(i, link)); if (ja) { toast("Esse produto já está na sua lista"); return; }
@@ -1272,14 +1273,16 @@
     $("#stFiltro").hidden = cats.length < 2;
     $("#stFiltro").innerHTML = [["", "Todas"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" class="chip-cat${stEst.cat === k ? " on" : ""}" data-st-cat="${k}">${k ? `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k] || ""}</svg>` : ""}${esc(nome)} <i>${k ? todos.filter((p) => (p.tipo || "outros") === k).length : n}</i></button>`).join("");
     const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (stEst.loja === "todas" || p.loja === stEst.loja) && (!stEst.cat || (p.tipo || "outros") === stEst.cat) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
-    if (stEst.ordem !== "recentes") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }, tot = (p) => k(p).loja + k(p).abrir; l = l.slice().sort((a, b) => tot(b) - tot(a) || k(b).loja - k(a).loja); if (stEst.ordem === "top10") l = l.filter((p) => tot(p) > 0).slice(0, 10); }
-    $("#stOrdem").textContent = { cliques: "Mais clicados", top10: "Top 10 cliques" }[stEst.ordem] || "Recentes"; $("#stOrdem").classList.toggle("on", stEst.ordem === "top10"); $("#stOrdem").hidden = !!stEst.sel || !n; $("#stLoja").hidden = !!stEst.sel || !n; $("#stLojaTxt").textContent = { todas: "Lojas", mercadolivre: "Mercado Livre", shopee: "Shopee" }[stEst.loja] || "Lojas"; $("#stLoja").classList.toggle("on", stEst.loja !== "todas");
+    if (soFav) l = l.filter(ehFavSite);
+    if (stEst.ordem === "comissao" || stEst.ordem === "vendidos") { const f = stEst.ordem === "comissao" ? comissaoDe : vendidosDe, it = (p) => fila().find((x) => x.id === p.id) || {}; l = l.slice().sort((a, b) => f(it(b)) - f(it(a))); }
+    else if (stEst.ordem !== "recentes") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }, tot = (p) => k(p).loja + k(p).abrir; l = l.slice().sort((a, b) => tot(b) - tot(a) || k(b).loja - k(a).loja); if (stEst.ordem === "top10") l = l.filter((p) => tot(p) > 0).slice(0, 10); }
+    $("#stOrdem").textContent = { cliques: "Mais clicados", top10: "Top 10 cliques", comissao: "Comissão", vendidos: "Vendidos" }[stEst.ordem] || "Recentes"; $("#stOrdem").classList.toggle("on", stEst.ordem === "top10"); $("#stOrdem").hidden = !!stEst.sel || !n; $("#stLoja").hidden = !!stEst.sel || !n; $("#stLojaTxt").textContent = { todas: "Lojas", mercadolivre: "Mercado Livre", shopee: "Shopee" }[stEst.loja] || "Lojas"; $("#stLoja").classList.toggle("on", stEst.loja !== "todas");
     const lista = $("#stLista"); lista.classList.toggle("st-sel", !!stEst.sel);
     lista.innerHTML = l.length ? `<div class="pp-lista">${l.map((p) => { const on = stEst.sel && stEst.sel.has(p.id);
       const k = cliquesSite.mapa.get(p.id), nCl = k ? k.loja + k.abrir : 0;
-      return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${nCl ? `<i class="st-bola" title="${k.loja} na loja, ${k.abrir} abriram (30 dias)" aria-label="${nCl} cliques">${nCl > 99 ? "99+" : nCl}</i>` : ""}${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
-        <span><strong>${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
-        <span class="st-tags"><b>${esc(NOME_CAT[p.tipo] || "Outros")}</b><b class="st-para">${esc(PARA_SITE[p.para] || "Mulher")}</b></span></span>
+      return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${nCl ? `<span class="st-bolas">${k.loja ? `<i class="st-bola st-bola--loja" data-bola="loja" data-n="${k.loja}">${k.loja > 99 ? "99+" : k.loja}</i>` : ""}${k.abrir ? `<i class="st-bola st-bola--abriu" data-bola="abriu" data-n="${k.abrir}">${k.abrir > 99 ? "99+" : k.abrir}</i>` : ""}</span>` : ""}${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
+        <span><strong>${ehFavSite(p) ? FAV_IC : ""}${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
+        <span class="st-tags"><b>${esc(NOME_CAT[p.tipo] || "Outros")}</b></span></span>
       </button>${stEst.sel ? `<button type="button" class="pp-caixa" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
       : `<p class="vazio-lista">${n ? (stEst.ordem === "top10" && !t ? "Ainda não tem cliques nos últimos 30 dias." : "Nenhum produto com essa busca.") : "Seu site ainda está vazio. Toque em <b>Enviar dos Achados</b> para escolher vários de uma vez."}</p>`;
     const bs = $("#barraSite"); bs.hidden = !stEst.sel;
@@ -1303,7 +1306,7 @@
   $("#stBusca").addEventListener("input", (e) => { stEst.q = e.target.value; renderSite(); });
   $("#stFiltro").addEventListener("click", (e) => { const b = e.target.closest("[data-st-cat]"); if (!b) return; stEst.cat = b.dataset.stCat; renderSite(); });
   $("#stLoja").addEventListener("click", async () => { const v = await escolherOpcao("Loja", [["todas", "Todas as lojas"], ["mercadolivre", "Mercado Livre"], ["shopee", "Shopee"]], stEst.loja); if (!v) return; stEst.loja = v; renderSite(); });
-  $("#stOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar os produtos", [["recentes", "Mais recentes"], ["cliques", "Mais clicados primeiro"], ["top10", "Só o Top 10 de cliques"]], stEst.ordem); if (!v) return; stEst.ordem = v; renderSite(); if (v !== "recentes") carregarCliquesSite(true); });
+  $("#stOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar os produtos", [["recentes", "Mais recentes"], ["cliques", "Mais clicados primeiro"], ["top10", "Só o Top 10 de cliques"], ["comissao", "Maior comissão"], ["vendidos", "Mais vendidos"]], stEst.ordem); if (!v) return; stEst.ordem = v; renderSite(); if (v !== "recentes") carregarCliquesSite(true); });
   $("#stSelecionar").addEventListener("click", () => { stEst.sel = stEst.sel ? null : new Set(); renderSite(); });
   $("#stTodos").addEventListener("click", () => { if (!stEst.sel) return; if (stVisiveis.every((id) => stEst.sel.has(id))) stVisiveis.forEach((id) => stEst.sel.delete(id)); else stVisiveis.forEach((id) => stEst.sel.add(id)); renderSite(); });
 
@@ -1384,13 +1387,15 @@
   $("#stDosAchados").addEventListener("click", () => { irPara("achados"); acSel = new Set(); decorarAchados(); toast("Toque nos produtos que vão para o site"); });
   $("#stDaLista").addEventListener("click", () => { irPara("postar"); entrarModoVarios(); acaoPendente = "site"; pintarMarcados(); toast("Toque nos produtos da Lista que vão para o site"); });
   $("#stLista").addEventListener("click", async (e) => {
+    { const bo = e.target.closest("[data-bola]"); if (bo) { e.stopPropagation(); const n = Number(bo.dataset.n); toast(bo.dataset.bola === "loja" ? `Rosa: ${n} ${n === 1 ? "clique" : "cliques"} no botão da loja (compra) nos últimos 30 dias` : `Amarela: ${n} ${n === 1 ? "pessoa abriu" : "pessoas abriram"} o produto no site nos últimos 30 dias`); return; } }
     const mk = e.target.closest("[data-st-marcar]") || (stEst.sel && e.target.closest("[data-st-item]"));
     if (mk) { const id = mk.dataset.stMarcar || mk.dataset.stItem; if (stEst.sel.has(id)) stEst.sel.delete(id); else stEst.sel.add(id); renderSite(); return; }
     const b = e.target.closest("[data-st-menu], [data-st-item]"); if (!b) return;
     const p = vitrineMap.get(b.dataset.stMenu || b.dataset.stItem); if (!p) return;
-    const op = await escolherOpcao(p.nome || "Produto", [["cat", "Mudar a categoria"], ["para", "Mudar para quem"], ["abrir", "Abrir o link da loja"], ["tirar", "Tirar do site"]], "");
+    const op = await escolherOpcao(p.nome || "Produto", [["fav", ehFavSite(p) ? "Tirar dos favoritos" : "Favoritar (vai para o topo do site)"], ["cat", "Mudar a categoria"], ["abrir", "Abrir o link da loja"], ["tirar", "Tirar do site"]], "");
     if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
     if (op === "tirar") { await tirarVariosDoSite([p.id]); return; }
+    if (op === "fav") { const it = fila().find((x) => x.id === p.id); if (it) { await alternarFav(it); } else { const nv = { ...p, fav: !p.fav }; try { await salvarNoSite(nv); renderSite(); toast(nv.fav ? "Nos favoritos" : "Saiu dos favoritos"); } catch (e) { /* segue */ } } return; }
     if (op === "cat") { const c = await escolherCategoria({ sugestao: p.tipo || "outros", nome: p.nome, titulo: "Categoria no site", acao: "Mudar para" }); if (!c) return;
       try { await salvarNoSite({ ...p, tipo: c, atualizadoEm: Date.now() }); renderSite(); toast(`Agora em ${NOME_CAT[c]}`); } catch (err) { toast("Não consegui mudar"); } return; }
     if (op === "para") { const v = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), p.para || "mulher"); if (!v) return;
@@ -2153,13 +2158,21 @@
   }
   let catNova = "auto", filtroLista = "todas", ocultarComp = false, ordemLista = "recentes";
   try { ordemLista = localStorage.getItem("miga_ordem") || "recentes"; } catch (e) { /* segue */ }
-  const ORDENS = { recentes: "Mais recentes", antigos: "Mais antigos", preco: "Menor preço", desconto: "Maior desconto" };
+  const ORDENS = { recentes: "Mais recentes", antigos: "Mais antigos", preco: "Menor preço", desconto: "Maior desconto", comissao: "Maior comissão", vendidos: "Mais vendidos" };
+  var FAV_IC = '<svg class="ic-fav" viewBox="0 0 24 24" aria-label="Favorito"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>';
+  var soFav = false; // filtro Favoritos (Minha lista e No site)
+  /** Ordem por comissão e por vendidos: vale para a lista e para o site (o site usa o produto da lista) */
+  const comissaoDe = (i) => Number(i && (i.comissaoValor || (i.comissao && i.precoNovo ? i.comissao * i.precoNovo / 100 : 0)) || 0);
+  const vendidosDe = (i) => Number(i && (i.vendidos || (i.maisVendido ? 1e7 / i.maisVendido : 0)) || 0);
   const descontoDe = (i) => i.precoAntigo && i.precoNovo && i.precoAntigo > i.precoNovo ? 1 - i.precoNovo / i.precoAntigo : 0;
   function ordenar(l) {
     const c = [...l];
     if (ordemLista === "antigos") c.sort((x, y) => (x.criadoEm || 0) - (y.criadoEm || 0));
     else if (ordemLista === "preco") c.sort((x, y) => (x.precoNovo || 1e9) - (y.precoNovo || 1e9));
     else if (ordemLista === "desconto") c.sort((x, y) => descontoDe(y) - descontoDe(x));
+    else if (ordemLista === "comissao") c.sort((x, y) => comissaoDe(y) - comissaoDe(x));
+    else if (ordemLista === "vendidos") c.sort((x, y) => vendidosDe(y) - vendidosDe(x));
+    if (soFav) return c.filter((i) => i.fav);
     return c;
   }
   const diasDesde = (ms) => ms ? Math.floor((Date.now() - ms) / 864e5) : 0;
@@ -2304,7 +2317,7 @@
     : filtroResumo === "hoje" ? !!i.postadoEm && new Date(i.postadoEm).toDateString() === new Date().toDateString() : true);
   function filtrarResumo(k) { filtroResumo = k || ""; filtroLista = "todas"; limparBusca(); if (modoVarios) sairModoVarios(); irPara("postar"); renderFila(); window.scrollTo({ top: 0 }); }
   function renderFila() {
-    renderSite(); pintarSegProd();
+    renderSite(); pintarSegProd(); try { pintarFavBt(); } catch (e) { /* segue */ }
     migrarCategorias(); renderCatsLista(); pintarMarcados();
     const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && (lojaLista === "todas" || i.carregando || i.loja === lojaLista) && bateBusca(i) && passaResumo(i));
     { const t = $("#ppLojaTxt"); if (t) { t.textContent = { todas: "Lojas", mercadolivre: "Mercado Livre", shopee: "Shopee" }[lojaLista] || "Lojas"; $("#ppLoja").classList.toggle("on", lojaLista !== "todas"); $("#ppLoja").hidden = modoVarios; } }
@@ -2325,7 +2338,7 @@
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
       return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}${ppAtual === i ? " aberto" : ""}">${post ? '<span class="selo-canto"><svg><use href="#i-check"/></svg>Postado</span>' : ""}<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
-        <span><strong>${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
+        <span><strong>${i.fav ? FAV_IC : ""}${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           ${i.precoNovo ? `<span class="pp-preco">${brl(i.precoNovo)}${i.precoAntigo && i.precoAntigo > i.precoNovo ? `<s>${brl(i.precoAntigo)}</s>` : ""}</span>` : ""}
           <span class="meta">${vitrineMap.has(i.id) ? '<b class="pp-nosite">No site</b> ' : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
           ${i.obs && i.obsManual ? `<span class="pp-obs">${marcaBusca(i.obs)}</span>` : ""}
@@ -2449,6 +2462,8 @@
   $("#ppCats").addEventListener("click", async (e) => {
     if (e.target.closest("[data-cat-abrir]")) { const c = await escolherCategoria({ sugestao: filtroLista, titulo: "Ver qual categoria?", acao: "Ver", todas: true }); if (c) { filtroLista = c; renderFila(); } return; }
     const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; renderFila(); });
+  ["#ppFav", "#stFav"].forEach((sel) => $(sel).addEventListener("click", () => { soFav = !soFav; renderFila(); renderSite(); }));
+  function pintarFavBt() { ["#ppFav", "#stFav"].forEach((sel) => { const b = $(sel); if (!b) return; b.classList.toggle("on", soFav); b.setAttribute("aria-pressed", String(soFav)); b.hidden = !!(sel === "#ppFav" ? modoVarios : stEst.sel); }); }
   $("#ppLoja").addEventListener("click", async () => { const v = await escolherOpcao("Loja", [["todas", "Todas as lojas"], ["mercadolivre", "Mercado Livre"], ["shopee", "Shopee"]], lojaLista); if (!v) return; lojaLista = v; renderFila(); });
   $("#ppOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar", Object.entries(ORDENS), ordemLista); if (!v) return; ordemLista = v; try { localStorage.setItem("miga_ordem", v); } catch (e) { /* segue */ } renderFila(); });
   $("#ppVisao").addEventListener("click", (e) => { const b = e.target.closest("[data-visao]"); if (!b) return; if (termoBusca.trim()) { abaBusca = b.dataset.visao; renderFila(); return; } visaoLista = b.dataset.visao; try { localStorage.setItem("miga_visao", visaoLista); } catch (er) { /* segue */ } if (modoVarios) marcados.clear(); renderFila(); });
@@ -2690,7 +2705,7 @@
     $("#folhaItemSub").textContent = [it.precoNovo && brl(it.precoNovo), NOME_LOJA[it.loja], NOME_CAT[it.categoria || "outros"], post && "postado"].filter(Boolean).join(" · ");
     $("#folhaItemCriar").hidden = modo !== "criar"; $("#folhaItemOps").hidden = modo === "criar";
     $("#folhaItemCriar").innerHTML = `<button type="button" class="fi-principal" data-fi="roteiro"><svg><use href="#i-enviar"/></svg>Postar</button><div class="fi-grade">` + ACOES_ITEM.map(([k, n, ic]) => `<button type="button" class="fi-acao" data-fi="${k}"><svg><use href="#${ic}"/></svg>${n}</button>`).join("") + "</div>";
-    $("#folhaItemOps").innerHTML = `<button type="button" class="fi-op" data-fi="editar"><svg><use href="#i-lapis"/></svg>Editar</button>${it.imagem ? `<button type="button" class="fi-op" data-fi="baixarimg"><svg><use href="#i-baixar"/></svg>Baixar imagem</button>` : ""}${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}${vitrineMap.has(it.id) ? `<button type="button" class="fi-op" data-fi="tirarsite"><svg><use href="#i-loja"/></svg>Tirar do site</button>` : `<button type="button" class="fi-op" data-fi="porsite"><svg><use href="#i-loja"/></svg>Pôr no site</button>`}<button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
+    $("#folhaItemOps").innerHTML = `<button type="button" class="fi-op" data-fi="editar"><svg><use href="#i-lapis"/></svg>Editar</button>${it.imagem ? `<button type="button" class="fi-op" data-fi="baixarimg"><svg><use href="#i-baixar"/></svg>Baixar imagem</button>` : ""}${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}${vitrineMap.has(it.id) ? `<button type="button" class="fi-op" data-fi="tirarsite"><svg><use href="#i-loja"/></svg>Tirar do site</button>` : `<button type="button" class="fi-op" data-fi="porsite"><svg><use href="#i-loja"/></svg>Pôr no site</button>`}<button type="button" class="fi-op${it.fav ? " on" : ""}" data-fi="fav">${FAV_IC}${it.fav ? "Tirar dos favoritos" : "Favoritar"}</button><button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
     $("#folhaItem").showModal();
   }
   /* ======================= Vitrine (site público com os produtos que você publica) ======================= */
@@ -2705,11 +2720,18 @@
     return "mulher";
   }
   /** Só o que aparece no site */
+  const ehFavSite = (p) => !!(p && (p.fav || (fila().find((x) => x.id === p.id) || {}).fav));
+  /** Favoritar: na lista fica marcado e no site vai para o topo */
+  async function alternarFav(it) {
+    it.fav = !it.fav; salvarFila(true);
+    const v = vitrineMap.get(it.id); if (v) { const nv = { ...v, fav: it.fav, atualizadoEm: Date.now() }; try { await dados.vitrineSalvar(nv); vitrineMap.set(it.id, nv); } catch (e) { /* segue */ } }
+    renderFila(); toast(it.fav ? "Nos favoritos: no site ele aparece no topo" : "Saiu dos favoritos");
+  }
   function produtoSite(it, para, descricao, antes) {
     const img = String(it.imagem || ""), imgOk = img && (!img.startsWith("data:") || img.length < 600000) ? img : "";
     return { id: it.id, nome: limparNome(it.nome || ""), preco: it.precoNovo || null, precoAntigo: it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? it.precoAntigo : null,
       cupom: it.cupom ? String(it.cupom).toUpperCase() : "", loja: it.loja || "", link: it.link || "", imagem: imgOk, tipo: it.categoria || "outros", para: PARA_SITE[para] ? para : "mulher",
-      descricao: String(descricao || "").slice(0, 1200), frete: !!it.freteGratis, oficial: !!it.lojaOficial, maisVendido: it.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
+      descricao: String(descricao || "").slice(0, 1200), fav: !!it.fav, frete: !!it.freteGratis, oficial: !!it.lojaOficial, maisVendido: it.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
   }
   /* Pacotes do site: toda mudança nos produtos do site refaz os pacotes (uns segundos depois, uma vez só) */
   function ligarPacotes(d) {
@@ -2787,6 +2809,7 @@
     const k = b.dataset.fi; $("#folhaItem").close();
     if (k === "editar") { irPara("postar"); abrirItemFila(it); ppEditando = true; $("#ppSalvar").hidden = false; $("#ppSalvar").textContent = "Salvar alterações"; return; }
     if (k === "excluir") { excluirProduto(it); return; }
+    if (k === "fav") { alternarFav(it); return; }
     if (k === "porsite") { abrirPorNoSite([it]); return; }
     if (k === "tirarsite") { tirarDoSite(it); return; }
     if (k === "baixarimg") { toast("Baixando a imagem…"); let arq = null; try { arq = await converterImagem(await arquivoDaImagem(it.imagem), "image/jpeg"); } catch (err) { arq = null; }

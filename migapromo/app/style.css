@@ -2550,3 +2550,18 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .melhor-hora { margin: 4px 0 10px; padding: 10px 14px; border-radius: 14px; background: var(--rosa-claro); font-size: 14px; }
 .melhor-hora b { color: var(--rosa); }
 #aba-acessos .btn-voltar { margin-bottom: 8px; }
+/* Favoritos */
+.ic-fav { width: 15px; height: 15px; fill: var(--amarelo); stroke: #c99a00; stroke-width: 1.4; stroke-linejoin: round; vertical-align: -2px; margin-right: 4px; }
+.aba-prod .barra-filtro .pp-fav { order: 1; }
+.aba-prod .barra-filtro .pp-fav svg { width: 15px; height: 15px; fill: none; stroke: #c99a00; stroke-width: 1.8; stroke-linejoin: round; }
+.aba-prod .barra-filtro .pp-fav.on { background: var(--amarelo); color: var(--preto); }
+.aba-prod .barra-filtro .pp-fav.on svg { fill: var(--preto); stroke: var(--preto); }
+.fi-op .ic-fav { width: 22px; height: 22px; margin: 0; }
+/* Bolinhas de cliques: rosa = loja, amarela = abriram */
+.st-bolas { position: absolute; z-index: 3; right: 12px; top: -9px; display: flex; gap: 4px; }
+.st-bolas .st-bola { position: static !important; cursor: pointer; }
+.st-bola--abriu { background: var(--amarelo) !important; color: var(--preto) !important; }
+#stLista .pp-linha:has(.st-bolas) { margin-top: 6px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.aba-prod .barra-filtro .pp-fav { width: 40px; padding: 0; justify-content: center; }
+.aba-prod .barra-filtro .pp-fav svg { width: 18px; height: 18px; }
