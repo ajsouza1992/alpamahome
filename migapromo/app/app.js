@@ -1232,11 +1232,14 @@
     b.disabled = false; b.textContent = "Enviar para o site"; sairAcSite(); pintarAchados(); renderFila();
     toast(ok ? `${ok} ${ok === 1 ? "produto enviado" : "produtos enviados"} para o site.${avisoPulados(r.pulados)}` : "Não consegui enviar. Confira as regras do Firestore (vitrine).");
   });
-  $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(() => { if (catBusca && !$("#acBusca").value.trim()) { carregarCatalogo(); return; } pintarAchados(); }, 150); });
+  $("#acBusca").addEventListener("input", () => { clearTimeout(pintarAchados.t); pintarAchados.t = setTimeout(() => { if (catBusca && !$("#acBusca").value.trim() && !limpandoTopo) { carregarCatalogo(); return; } pintarAchados(); }, 150); });
   $("#acBusca").addEventListener("keydown", (e) => { if (e.key === "Enter" && $("#acBusca").value.trim().length >= 2) { e.preventDefault(); buscarNasLojas($("#acBusca").value.trim()); } });
   /** Busca a palavra direto nas lojas (Shopee pela palavra, Mercado Livre pelos mais vendidos da categoria dela) */
   function pintarBuscaLojas() { const r = $("#buscaLojasRes"); if (!r) return; r.hidden = !catBusca; $("#buscaLojasTermo").textContent = catBusca || ""; if (catBusca && $("#buscaLojas").value !== catBusca && document.activeElement !== $("#buscaLojas")) $("#buscaLojas").value = catBusca; }
-  $("#buscaLojasForm").addEventListener("submit", (e) => { e.preventDefault(); const t = $("#buscaLojas").value.trim(); if (t.length < 2) { toast("Escreva o que você procura"); return; } $("#buscaLojas").blur(); buscarNasLojas(t); });
+  /** A barra de cima (filtro da tela) não pode ficar filtrando o resultado da busca nas lojas */
+  let limpandoTopo = false;
+  function limparFiltroTopo() { const b = document.querySelector(".prod-busca-in"); if (b && b.value) { limpandoTopo = true; b.value = ""; b.dispatchEvent(new Event("input", { bubbles: true })); setTimeout(() => { limpandoTopo = false; }, 600); } }
+  $("#buscaLojasForm").addEventListener("submit", (e) => { e.preventDefault(); const t = $("#buscaLojas").value.trim(); if (t.length < 2) { toast("Escreva o que você procura"); return; } $("#buscaLojas").blur(); limparFiltroTopo(); buscarNasLojas(t); });
   $("#buscaLojasSair").addEventListener("click", () => { $("#buscaLojas").value = ""; catBusca = ""; pintarBuscaLojas(); carregarCatalogo(); });
   async function buscarNasLojas(termo) {
     catBusca = termo; setTimeout(pintarBuscaLojas, 0); catPagina = 1; acLimite = 100; esqueletoCatalogo(); $("#acBusca").blur();
@@ -2777,7 +2780,7 @@
     [["#ppLink"], ["#acBusca"], ["#stBusca"]].forEach(([sel]) => { const el = $(sel); if (el && el.value !== buscaProd) { el.value = buscaProd; el.dispatchEvent(new Event("input", { bubbles: true })); } });
     pintarSegProd();
   });
-  document.addEventListener("keydown", (e) => { const b = e.target.closest(".prod-busca-in"); if (!b || e.key !== "Enter") return; if (!$("#aba-achados").hidden) { e.preventDefault(); $("#acBusca").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); } });
+  document.addEventListener("keydown", (e) => { const b = e.target.closest(".prod-busca-in"); if (!b || e.key !== "Enter") return; if (!$("#aba-achados").hidden) { e.preventDefault(); const t = b.value.trim(); if (t.length < 2) return; b.blur(); $("#buscaLojas").value = t; limparFiltroTopo(); buscarNasLojas(t); } });
   function pintarSegProd0(aba) {
     contarFila();
     const q = semAcento(buscaProd.trim()), bate = (t) => !q || semAcento(t).includes(q);
