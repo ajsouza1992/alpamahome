@@ -2642,3 +2642,48 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .sd-aviso { margin: 8px 0 0; font-size: 12.5px; color: #b42318; }
 /* O botão fixo de baixo não cobre mais o fim da tela (Reels, Carrossel, Colagem…) */
 @media (max-width: 959px) { .wz__corpo:has(.wz-rodape:not(.pr-rodape)), .wz__corpo:has(.pr-rodape) { padding-bottom: 150px !important; } }
+/* Passos com nome (Produtos › Arte › Postar) */
+.wz__info #wzPasso { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; max-width: 62%; margin-left: auto; }
+.wz-canal { font-size: 12px; color: var(--cinza); font-weight: 700; }
+.wz-trilha { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; max-width: 100%; font-size: 12.5px; white-space: nowrap; }
+.wz-trilha::-webkit-scrollbar { display: none; }
+.wz-trilha i { font-style: normal; color: var(--cinza); }
+.wz-trilha i.ok { color: var(--preto); }
+.wz-trilha i.on { color: var(--rosa); font-weight: 800; }
+.wz-trilha em { font-style: normal; color: #c9bfae; }
+/* Prévia do mesmo tamanho e com a mesma moldura em todas as criações */
+@media (max-width: 959px) {
+  .wz-previa, .est-previa, .vd-previa, .ka-previa { background: #efe8dc !important; border-radius: 22px !important; padding: 14px !important; display: grid !important; place-items: center; }
+  .wz-previa canvas, .wz-previa video, .wz-previa img, .est-previa canvas, .est-previa video, .est-previa img, .vd-previa canvas, .vd-previa video, .ka-previa canvas { max-height: 420px !important; max-width: 100% !important; width: auto !important; height: auto; border-radius: 14px; box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .35); }
+}
+/* Vídeo: miniatura de como fica cada tipo */
+.vd-modo button { display: grid; justify-items: start; gap: 4px; }
+.vd-mini { position: relative; display: block; width: 64px; height: 108px; border-radius: 12px; background: #fff3c4; margin-bottom: 8px; overflow: hidden; box-shadow: 0 6px 14px -8px rgba(0, 0, 0, .35); }
+.vd-mini--livre { background: #1d1d1f; }
+.vd-mini i { position: absolute; display: block; }
+.vd-mini .vd-f { left: 12px; right: 12px; top: 26px; height: 40px; border-radius: 6px; background: #fff; box-shadow: inset 0 0 0 2px #f6b3c8; }
+.vd-mini .vd-t { left: 10px; right: 10px; top: 10px; height: 8px; border-radius: 4px; background: var(--rosa); }
+.vd-mini--livre .vd-t { top: auto; bottom: 14px; background: #fff; }
+.vd-mini .vd-p { left: 16px; right: 16px; top: 74px; height: 10px; border-radius: 4px; background: var(--rosa); }
+.vd-mini .vd-play { left: 50%; top: 40%; transform: translate(-30%, -50%); border-left: 16px solid #fff; border-top: 10px solid transparent; border-bottom: 10px solid transparent; }
+.cup-sug { margin: 6px 0 10px; }
+.cup-sug .nota { margin: 0 0 6px; }
+.cup-sug-l { display: flex; flex-wrap: wrap; gap: 6px; }
+.cup-sug-l button { border: 1.5px dashed var(--rosa); background: var(--rosa-claro); color: var(--rosa); border-radius: 10px; padding: 6px 10px; font: 700 12.5px var(--sans); letter-spacing: .3px; cursor: pointer; }
+/* Usar a IA em 3 passos numerados */
+.ia-passos { display: grid; gap: 8px; background: var(--campo); border-radius: 18px; padding: 12px; margin-top: 6px; }
+.ia-tit { margin: 0; font-weight: 700; font-size: 14px; }
+.ia-p { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--branco); border-radius: 14px; padding: 8px 8px 8px 10px; font-size: 13.5px; }
+.ia-p b { width: 28px; height: 28px; border-radius: 50%; background: var(--rosa); color: #fff; display: grid; place-items: center; font-size: 13px; }
+.ia-p .btn { min-height: 38px; padding: 0 14px; font-size: 13px; }
+.ia-p:nth-of-type(2) { grid-template-columns: 28px minmax(0, 1fr); }
+.ia-passos .nota { margin: 0; font-size: 12.5px; }
+/* Criação IA: Mais opções recolhidas */
+.pe-mais { background: var(--campo); border-radius: 18px; padding: 0; margin-top: 8px; }
+.pe-mais > summary { list-style: none; cursor: pointer; padding: 14px 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pe-mais > summary::-webkit-details-marker { display: none; }
+.pe-mais > summary small { font-weight: 500; color: var(--cinza); font-size: 12.5px; }
+.pe-mais > summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 2.5px solid var(--cinza); border-bottom: 2.5px solid var(--cinza); transform: rotate(45deg); }
+.pe-mais[open] > summary::after { transform: rotate(-135deg); }
+.pe-mais-c { padding: 0 14px 14px; display: grid; gap: 8px; }
+.ia-p .btn--rosa { background: var(--rosa) !important; color: #fff !important; }

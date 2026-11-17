@@ -2585,7 +2585,7 @@
   const OPCOES_CRIAR = [
     ["roteiro", "Postar", "Story, Status, grupos, canal e feed. Com vários, um produto depois do outro", (n) => n >= 1, "Marque pelo menos 1 produto."],
     ["reels", "Reels de produtos", "1 a 5 produtos, 10 modelos com música", (n) => n >= 1 && n <= 5, "Marque de 1 a 5 produtos."],
-    ["livre", "Imagem", "Arte com o produto, ou montagem com vários", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."],
+    ["livre", "Colagem", "Arte com o produto, ou montagem com vários", (n) => n >= 1 && n <= 6, "Marque até 6 produtos."],
     ["carrossel", "Carrossel de preços", "Capa no tema e um slide de preço para cada produto", (n) => n >= 1 && n <= 8, "Marque de 1 a 8 produtos."],
     ["site", "Pôr no site", "Vitrine pública com filtros, que leva para a loja pelo seu link", (n) => n >= 1, "Marque pelo menos 1 produto."]
   ];
@@ -3122,7 +3122,7 @@
     whatsapp: { nome: "WhatsApp", cor: "#25d366", desc: "Mensagem para os grupos ou imagem para o Status", icone: "i-rede-whats" },
     instagram: { nome: "Imagem do produto", cor: "#e8336d", desc: "Arte para story, Status ou post", icone: "i-rede-insta" },
     telegram: { nome: "Telegram", cor: "#229ed9", desc: "Mensagem com link clicável", icone: "i-rede-tg" },
-    livre: { nome: "Criação livre", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
+    livre: { nome: "Colagem", cor: "#1d1d1f", desc: "Imagem com vários produtos, do seu jeito", icone: "i-rede-grade" },
     cartas: { nome: "Carrossel", cor: "#e8336d", desc: "Carrossel de dicas, do seu jeito", icone: "i-carrossel" },
     personagem: { nome: "Criação IA", cor: "#e8336d", desc: "Ela mostrando o produto, com textos, logo e @", icone: "i-pessoa" },
     chamada: { nome: "Corre pros Stories", cor: "#1d1d1f", desc: "Reels chamando pros seus stories", icone: "i-rede-insta" },
@@ -3137,6 +3137,11 @@
   const CORES_NOME = { creme: "Creme", rosa: "Rosa", branco: "Branco", preto: "Preto", rose: "Rosê", verde: "Verde pastel" };
   let wz = {};
   const wzItem = () => fila().find((i) => i.id === wz.itemId);
+  const NOME_PASSO = { canal: "Tipo", produto: "Produto", rItens: "Produtos", rOrdem: "Ordem", rModelo: "Arte", rPronto: "Vídeo", rDepois: "Postar", kCarrossel: "Arte", kPronto: "Pronto",
+    grade: "Formato", itens: "Produtos", tema: "Arte", livre: "Pronto", vDados: "Dados", vArquivo: "Vídeo", vTema: "Estilo", vPronto: "Pronto", cEscolher: "Cupons", cPronto: "Pronto",
+    chEditar: "Editar", chPronto: "Pronto", chInicio: "Assunto", chImg: "Arte", chImgPostar: "Postar", chFim: "Pronto", chRevisar: "Revisar", chPostar: "Postar",
+    peEscolher: "Escolher", pePrompt: "Pedido", peMontar: "Montar", peLugares: "Lugares", peRodar: "Postar", peResumo: "Pronto", kaInicio: "Telas", kaRevisar: "Revisar", kaPostar: "Postar", kaPronto: "Pronto",
+    lugares: "Lugares", mensagem: "Mensagem", rpConferir: "Arte", rodar: "Postar", resumo: "Pronto", montagem: "Arte", postar: "Postar", tipoWhats: "Tipo", enviar: "Enviar", telegram: "Enviar" };
   function passosDe(canal) {
     const l = passosBase(canal);
     return wz.veioDaLista ? l.filter((p) => !["canal", "produto", "rItens", "vDados"].includes(p)) : l;
@@ -3236,7 +3241,10 @@
     setTimeout(guardarProgresso, 0);
     const l = passosDe(wz.canal || "whatsapp"), i = l.indexOf(wz.passo);
     $("#wzBarra").style.width = Math.round(((i + 1) / l.length) * 100) + "%";
-    $("#wzPasso").textContent = (wz.canal ? (wz.reels && wz.reels.carrossel && wz.canal === "reels" ? "Carrossel" : wz.canal === "chamada" && wz.ch && wz.ch.tipo === "seg" ? "Seguidores" : CANAIS[wz.canal].nome) + " · " : "") + `Passo ${i + 1} de ${l.length}`;
+    { const nomeC = wz.canal ? (wz.reels && wz.reels.carrossel && wz.canal === "reels" ? "Carrossel" : wz.canal === "chamada" && wz.ch && wz.ch.tipo === "seg" ? "Seguidores" : CANAIS[wz.canal].nome) : "";
+      const ps = l.map((k) => NOME_PASSO[k] || k).filter((n, j, a) => a.indexOf(n) === j || true);
+      $("#wzPasso").innerHTML = `${nomeC ? `<b class="wz-canal">${esc(nomeC)}</b>` : ""}<span class="wz-trilha">${l.map((k, j) => `<i class="${j === i ? "on" : j < i ? "ok" : ""}">${esc(NOME_PASSO[k] || k)}</i>`).join('<em>›</em>')}</span>`;
+      const on = $("#wzPasso .on"); if (on) on.scrollIntoView({ block: "nearest", inline: "center" }); }
     $("#wzVoltar").hidden = false; $("#wzVoltar").lastChild.textContent = i <= 0 ? (wz.veioDaLista ? "Produtos" : "Início") : "Voltar";
     const c = $("#wzCorpo"), item = wzItem();
     window.scrollTo({ top: 0 });
@@ -4891,8 +4899,8 @@
       // Uma tela só: com produto (nome, preço, foto e prompts de IA) ou só o seu vídeo pronto
       const modo = V.modo, it = vdItem();
       const seg = `<div class="vd-modo">
-          <button type="button" class="${modo === "produto" ? "on" : ""}" data-vd-modo="produto"><b>Com produto</b><small>Nome, preço e foto vêm da sua lista</small></button>
-          <button type="button" class="${modo === "livre" ? "on" : ""}" data-vd-modo="livre"><b>Só o meu vídeo</b><small>Vídeo pronto com título e tema</small></button>
+          <button type="button" class="${modo === "produto" ? "on" : ""}" data-vd-modo="produto"><span class="vd-mini vd-mini--prod" aria-hidden="true"><i class="vd-f"></i><i class="vd-t"></i><i class="vd-p"></i></span><b>Com produto</b><small>Nome, preço e foto vêm da sua lista</small></button>
+          <button type="button" class="${modo === "livre" ? "on" : ""}" data-vd-modo="livre"><span class="vd-mini vd-mini--livre" aria-hidden="true"><i class="vd-play"></i><i class="vd-t"></i></span><b>Só o meu vídeo</b><small>Vídeo pronto com título e tema</small></button>
         </div>`;
       let corpo = "";
       if (modo === "produto" && !it) {
@@ -5913,6 +5921,8 @@
       c.innerHTML = `<h2 class="wz-titulo">Quais cupons?</h2>
         <p class="nota">Marque de 1 a 5. Para cada um, escolha a loja e, se quiser, o que ele dá.</p>
         <div class="aj-linha"><input id="cNovo" class="campo-cupom" maxlength="30" placeholder="Novo cupom (ex.: MIGA10)" autocapitalize="characters"><button type="button" class="btn btn--rosa" id="cAdd">Adicionar</button></div>
+        ${(() => { const sug = []; fila().forEach((it) => { const cp = String(it.cupom || "").trim().toUpperCase(); if (cp && !todos.includes(cp) && !sug.some((x) => x[0] === cp)) sug.push([cp, it.loja || ""]); });
+          return sug.length ? `<div class="cup-sug"><p class="nota">Cupons dos seus produtos · toque para usar</p><div class="cup-sug-l">${sug.slice(0, 12).map(([cp, lj]) => `<button type="button" data-c-sug="${esc(cp)}" data-c-sug-loja="${esc(lj)}">${esc(cp)}${lj ? ` · ${esc((NOME_LOJA[lj] || lj).toUpperCase())}` : ""}</button>`).join("")}</div></div>` : ""; })()}
         <div class="wz-ops">${todos.map((cp) => { const on = C.sel.includes(cp), i = infoCupom(cp); return `<div class="cup-item${on ? " on" : ""}">
           <button type="button" class="wz-prod wz-flag${on ? " on" : ""}" data-c-sel="${esc(cp)}"><span class="cup-ic">${LOGO_LOJA[i.loja] ? `<img src="${LOGO_LOJA[i.loja]}" alt="">` : "%"}</span><span><b>${esc(cp)}</b><small>${esc(i.desc || (i.loja ? NOME_LOJA[i.loja] : "Toque para marcar"))}</small></span><i class="flag" aria-hidden="true"></i></button>
           ${on ? `<div class="cup-det"><div class="opcoes-texto">${LOJAS_CUPOM.map(([k, n]) => `<button type="button" data-c-loja="${k}" data-cp="${esc(cp)}" class="${i.loja === k ? "on" : ""}">${n}</button>`).join("")}</div>
@@ -5949,6 +5959,8 @@
       if (!C.sel.includes(v) && C.sel.length < 5) C.sel.push(v);
       gravarConfig(); mostrarPasso(); return;
     }
+    const sg = t.closest("[data-c-sug]");
+    if (sg) { const v = sg.dataset.cSug; config.cupons = [v, ...(config.cupons || []).filter((x) => x !== v)].slice(0, 30); if (sg.dataset.cSugLoja) infoCupom(v).loja = sg.dataset.cSugLoja; if (!C.sel.includes(v) && C.sel.length < 5) C.sel.push(v); C.texto = null; gravarConfig(); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const s = t.closest("[data-c-sel]");
     if (s) { const cp = s.dataset.cSel, i = C.sel.indexOf(cp); if (i >= 0) C.sel.splice(i, 1); else if (C.sel.length >= 5) { toast("No máximo 5 cupons"); return; } else C.sel.push(cp); C.texto = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const lj = t.closest("[data-c-loja]");
@@ -7240,8 +7252,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="ka2-campo"><span>Ou escreva do que vai falar</span><input id="kaAssunto" maxlength="120" placeholder="Ex.: como comprar na Shein sem taxa" value="${esc(K.assunto || "")}"></label>
         <b class="ch-rot">Quantas telas?</b><div class="pe-seg">${[3, 5, 7].map((q) => `<button type="button" data-ka2-qtd="${q}" class="${(K.qtd || 5) === q ? "on" : ""}">${q}</button>`).join("")}</div>
         <b class="ch-rot">Cor</b><div class="rp-cores">${[["alterna", BOLA_ALTERNA, "Alternar as cores"], ...Object.entries(CORES_CARTA).map(([k, v]) => [k, v.fundo, v.nome])].map(([k, bg, n]) => `<button type="button" data-ka2-cor="${k}" class="${(K.corBase || "alterna") === k ? "on" : ""}" style="background:${bg}" aria-label="${n}" title="${n}"></button>`).join("")}</div>
-        <div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="ka2Copiar">Copiar prompt</button><button type="button" class="btn ${K.resp ? "btn--branco" : "btn--rosa"} rp-adesivo ka2-colar" id="ka2Colar">${K.resp ? `Colado · ${K.resp.telas.length} telas` : "Colar resposta"}</button></div>
-        <p class="nota">${K.resp ? "Resposta da IA colada: toque em Montar o carrossel." : assunto ? "Copie o prompt, faça na IA e cole a resposta. Sem colar, o app monta telas prontas para você escrever." : "Escolha uma ideia ou escreva o assunto, copie o prompt, faça na IA (ChatGPT ou Gemini) e cole a resposta."}</p>
+        <div class="ia-passos"><p class="ia-tit">Quer textos novos? Use a IA (opcional)</p>
+          <div class="ia-p"><b>1</b><span>Copie o pedido</span><button type="button" class="btn btn--branco" id="ka2Copiar">Copiar</button></div>
+          <div class="ia-p"><b>2</b><span>Cole no ChatGPT ou no Gemini e copie a resposta</span></div>
+          <div class="ia-p"><b>3</b><span>${K.resp ? "Resposta colada" : "Cole a resposta aqui"}</span><button type="button" class="btn $${K.resp ? "btn--branco" : "btn--rosa"}" id="ka2Colar">${K.resp ? "Trocar" : "Colar"}</button></div>
+          <p class="nota">Sem colar nada, o app usa textos prontos do assunto.</p></div>
       </div>
       <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="ka2Montar">Montar o carrossel</button></div>`;
       if (K.temSalvo) carregarMarca().then(() => { const cv = document.querySelector("[data-ka2-ult]"); if (cv && T[0]) desenharCarta(cv.getContext("2d"), 88, T[0], 0, T.length); });
@@ -7714,6 +7729,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       ${quadros}${quadros ? '<p class="nota pe-cenas-dica">Na IA de vídeo, use esse quadro como <b>imagem inicial</b> da próxima cena (junto com as fotos dela e do produto). Assim o vídeo parece um só.</p>' : '<p class="nota">Anexe cada vídeo que a IA criou, na ordem das cenas.</p>'}
       <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="peJuntar"${nOk >= 2 && !P.juntando ? "" : " disabled"}>${P.juntando ? "Juntando as cenas… 0%" : nOk >= 2 ? `Juntar e editar (${Math.round(tot)} s)` : "Juntar e editar"}</button></div>`;
   }
+  document.addEventListener("toggle", (e) => { if (e.target && e.target.classList && e.target.classList.contains("pe-mais")) { try { pe().maisAberto = e.target.open; } catch (er) { /* segue */ } } }, true);
   function telaPersonagem(c) {
     const it = wzItem(), P = pe();
     const f = P.fotosAgora || fotosPers(), tipoTxt = P.tipo === "video" ? "vídeo" : "imagem";
@@ -7729,10 +7745,12 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
         ${comProd ? (it ? `<button type="button" class="pe-prodcx" id="peEscolherProd">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.precoNovo ? " · " + brl(it.precoNovo) : ""}</small></span><i>Trocar</i></button>` : `<button type="button" class="btn btn--branco" id="peEscolherProd">Escolher produto da Lista</button>`) : ""}
         ${segFmt()}
         ${P.tipo === "imagem" ? `<b class="ch-rot">Quantas fotos?</b><div class="pe-seg">${[1, 2, 3].map((q) => `<button type="button" data-pe-qtd="${q}" class="${qtdPers(P) === q ? "on" : ""}">${q} ${q === 1 ? "foto" : "fotos"}</button>`).join("")}</div>` : ""}
-        ${comProd ? `${P.tipo === "video" ? `<b class="ch-rot">Duração do vídeo</b><div class="pe-seg">${[[1, "10 s", "1 cena"], [2, "20 s", "2 cenas"], [3, "30 s", "3 cenas"]].map(([q, a, b]) => `<button type="button" data-pe-cenas="${q}" class="${cenasN(P) === q ? "on" : ""}">${a}<small>${b}</small></button>`).join("")}</div>` : ""}<button type="button" class="rp-modelo" id="peCenario"><span><small>${cenasN(P) > 1 ? `Cenário · o mesmo nas ${cenasN(P)} cenas` : "Cenário"}</small><b>${esc(nomeCenario(P))}</b></span><i>Trocar</i></button>` : ""}
+        ${comProd ? `<button type="button" class="rp-modelo" id="peCenario"><span><small>${cenasN(P) > 1 ? `Cenário · o mesmo nas ${cenasN(P)} cenas` : "Cenário"}</small><b>${esc(nomeCenario(P))}</b></span><i>Trocar</i></button>` : ""}
+        ${comProd ? `<details class="pe-mais"${P.maisAberto ? " open" : ""}><summary>Mais opções <small>duração, cor do fundo, pose e enquadramento</small></summary><div class="pe-mais-c">${comProd ? `${P.tipo === "video" ? `<b class="ch-rot">Duração do vídeo</b><div class="pe-seg">${[[1, "10 s", "1 cena"], [2, "20 s", "2 cenas"], [3, "30 s", "3 cenas"]].map(([q, a, b]) => `<button type="button" data-pe-cenas="${q}" class="${cenasN(P) === q ? "on" : ""}">${a}<small>${b}</small></button>`).join("")}</div>` : ""}` : ""}` : ""}
         ${comProd && cenarioPers(P) === "estudio" ? `<div class="pe-fundo2"><button type="button" data-pe-fundo="auto" class="pe-auto${(P.fundo || "auto") === "auto" ? " on" : ""}">Automático</button>${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="pe-bola${P.fundo === k ? " on" : ""}" style="background:${x[1]}" aria-label="${x[0]}" title="${x[0]}"></button>`).join("")}</div>` : ""}
         ${P.tipo === "imagem" ? `<label class="pe-pose"><input type="checkbox" id="pePose"${P.poseLivre === false ? "" : " checked"}><span><b>Pose livre</b> <small>· ela posa à vontade</small></span></label>` : ""}
         ${comProd && qtdPers(P) === 1 ? `<b class="ch-rot">Enquadramento</b><div class="ed-chips pe-enq">${Object.entries(ENQUAD_PERS).map(([k, [n]]) => `<button type="button" data-pe-enquad="${k}" class="${enquadDe(P, it) === k ? "on" : ""}">${n}</button>`).join("")}</div>` : ""}
+        ${comProd ? "</div></details>" : ""}
         </div>${botaoContinuar(true).replace('id="wzContinuar"', 'id="peIr2"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
       return;
     }
@@ -8513,6 +8531,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
   }
   const easeC = (t) => t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);
   const puloC = (t) => { t = Math.max(0, Math.min(1, t)); const s = 1.70158 * 1.6; return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2); };
+  var previaSemConta = false; // prévia na tela: o número já aparece certo (a contagem fica só no vídeo)
   function quadroChamada(ctx, W, t, CH) {
     const N = NICHOS_CHAMADA[CH.nicho] || NICHOS_CHAMADA.geral, C = CORES_CHAMADA_P[CH.cor] || CORES_CHAMADA.preto, x = ctx;
     x.save(); x.scale(W / 1080, W / 1080);
@@ -8636,7 +8655,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       if (D.etiqueta) pilula(D.etiqueta, 540, 430, "#ffd23f", "#1d1d1f", 46, 0.05, t, -0.04);
       linha(partesDestaque(D.t1, T, A), 640, 104, 0.2, t);
       const k = easeC((t - 0.35) / 0.4); if (k > 0) {
-        const alvo = numSeg(D.numero), conta = alvo && /^[\d.]+$/.test(D.numero) ? fmtSeg(Math.round(alvo * easeC((t - 0.35) / 1.3))) : D.numero, pul = t > 1.65 ? 1 + 0.12 * Math.max(0, 1 - (t - 1.65) / 0.35) : 1;
+        const alvo = numSeg(D.numero), conta = alvo && /^[\d.]+$/.test(D.numero) && !previaSemConta ? fmtSeg(Math.round(alvo * easeC((t - 0.35) / 1.3))) : D.numero, pul = t > 1.65 ? 1 + 0.12 * Math.max(0, 1 - (t - 1.65) / 0.35) : 1;
         x.save(); x.globalAlpha = k; x.translate(540, 905); const bat = 1; x.scale(pul * bat * (0.6 + 0.4 * k), pul * bat * (0.6 + 0.4 * k)); numeroDourado(x, conta, 0, 0, 380, -0.03); x.restore();
         brilha(190, 740, 44, 1.7, t); brilha(905, 1020, 38, 1.95, t); brilha(880, 730, 30, 2.2, t);
       }
@@ -8841,8 +8860,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <button type="button" class="rp-modelo" id="chAssuntoBt"><span><small>Assunto</small><b>${esc(CH.ideia || nomeNichoCh(CH.nicho))}</b></span><i>Trocar</i></button>
         <label class="ka2-campo"><span>Ou escreva do que vai falar</span><input id="chLivre" maxlength="120" placeholder="Ex.: calças jeans até R$ 80" value="${esc(CH.livre || "")}"></label>
         <b class="ch-rot">Cor</b><div class="rp-cores">${Object.entries(CORES_CHAMADA).map(([k, v]) => `<button type="button" data-ch-cor="${k}" class="${CH.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}" title="${v.nome}"></button>`).join("")}</div>
-        <div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="chCopPrompt">Copiar prompt</button><button type="button" class="btn ${CH.resp ? "btn--branco" : "btn--rosa"} rp-adesivo ka2-colar" id="chColar2">${CH.resp ? "Resposta colada" : "Colar resposta"}</button></div>
-        <p class="nota">${CH.resp ? `Resposta da IA colada: toque em Montar ${img ? "a imagem" : "o vídeo"}.` : "Copie o prompt, faça na IA (ChatGPT ou Gemini) e cole a resposta. Sem colar, o app usa textos prontos do assunto."}</p>
+        <div class="ia-passos"><p class="ia-tit">Quer textos novos? Use a IA (opcional)</p>
+          <div class="ia-p"><b>1</b><span>Copie o pedido</span><button type="button" class="btn btn--branco" id="chCopPrompt">Copiar</button></div>
+          <div class="ia-p"><b>2</b><span>Cole no ChatGPT ou no Gemini e copie a resposta</span></div>
+          <div class="ia-p"><b>3</b><span>${CH.resp ? "Resposta colada" : "Cole a resposta aqui"}</span><button type="button" class="btn $${CH.resp ? "btn--branco" : "btn--rosa"}" id="chColar2">${CH.resp ? "Trocar" : "Colar"}</button></div>
+          <p class="nota">Sem colar nada, o app usa textos prontos do assunto.</p></div>
       </div>${rod(`<button type="button" class="btn btn--rosa wz-continuar" id="chMontar">${img ? "Montar a imagem" : "Montar o vídeo"}</button>`)}`;
       return true;
     }
@@ -9024,7 +9046,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   });
   function loopChamada() {
     const cv = $("#chQuadro"); if (!cv) return; const cx = cv.getContext("2d"), ini = performance.now();
-    const passo = () => { const v = $("#chQuadro"); if (!v || v !== cv || wz.canal !== "chamada" || (wz.passo !== "chEditar" && wz.passo !== "chRevisar")) return; if (!ch().tocando) quadroChamada(cx, 540, ((performance.now() - ini) / 1000) % T_CHAMADA, ch()); requestAnimationFrame(passo); };
+    const passo = () => { const v = $("#chQuadro"); if (!v || v !== cv || wz.canal !== "chamada" || (wz.passo !== "chEditar" && wz.passo !== "chRevisar")) return; if (!ch().tocando) { previaSemConta = true; try { quadroChamada(cx, 540, ((performance.now() - ini) / 1000) % T_CHAMADA, ch()); } finally { previaSemConta = false; } } requestAnimationFrame(passo); };
     passo();
   }
   async function rodarChamada(gravar) {
