@@ -2751,3 +2751,11 @@ dialog:focus { outline: none; }
 .pe-cena.ok .pe-cena-t button, .ia-p .btn.ok, .pe-etp-bt.ok { background: #e7f7ec !important; color: #16803c !important; box-shadow: none !important; }
 .ia-p .btn--rosa { background: #fff !important; color: var(--preto) !important; }
 .pe-fotos-bt .pe-etp-bt { width: 100% !important; padding: 0 6px !important; }
+/* Filtro de loja à vista */
+#ppLoja, #stLoja, #acLoja { display: none !important; }
+.lojas-seg { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px; padding: 4px; margin: 8px 0 4px; background: var(--campo); border-radius: 999px; }
+.lojas-seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; font: inherit; font-size: 13px; font-weight: 700; color: var(--cinza); cursor: pointer; white-space: nowrap; min-width: 0; }
+.lojas-seg button img { width: 20px; height: 20px; border-radius: 50%; object-fit: contain; flex: none; }
+.lojas-seg button[aria-pressed="true"] { background: #fff; color: var(--preto); box-shadow: 0 4px 10px -6px rgba(29,29,31,.4); }
+body.modo-selecao .lojas-seg { display: none; }
+.aba-prod .barra-filtro .pp-ordem:not(.pp-loja) { max-width: 100%; }

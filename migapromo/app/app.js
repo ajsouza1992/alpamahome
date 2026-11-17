@@ -1020,6 +1020,10 @@
     }
     if (d.avisos && d.avisos.length) console.info("Catálogo:", d.avisos.join(" | "));
     catalogoAtual = (d.produtos || []).filter((p) => p.preco);
+    { const lj = catLoja.valor(), temML = catalogoAtual.some((p) => p.loja === "mercadolivre"), av = $("#avisoCatalogo");
+      const msg = lj !== "shopee" && !conf.mercadolivre ? "O Mercado Livre não está conectado: cadastre ML_APP_ID e ML_SECRET no Cloudflare (Variáveis e segredos) e faça uma nova implantação."
+        : lj !== "shopee" && !temML ? `O Mercado Livre não trouxe produtos agora${d.avisos && d.avisos.length ? " (" + d.avisos.join(" · ").slice(0, 140) + ")" : ""}. Toque em Atualizar daqui a pouco.` : "";
+      if (av) { av.textContent = msg; av.hidden = !msg; } }
     ordenarAchados();
     catEm = Date.now(); pintarHoraCatalogo(); precosDoCatalogo();
     if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Sem achados nessa loja agora. Escolha outra loja.</p>'; return; }
@@ -1108,7 +1112,7 @@
     if (acSel) $("#acSiteQtd").textContent = acSel.size ? `${acSel.size} ${acSel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#acSelecionar").textContent = acSel ? "Cancelar" : "Selecionar";
     { const lj = { todas: "Lojas", mercadolivre: "Mercado Livre", shopee: "Shopee" }[catLoja.valor()] || "Lojas", od = { textContent: { melhores: "Melhores", comissao: "Comissão", preco: "Menor preço", vendidos: "Vendidos", desconto: "Desconto" }[catOrdem.valor()] || "Ordem" };
-      $("#acLojaTxt").textContent = lj; $("#acLoja").classList.toggle("on", catLoja.valor() !== "todas"); $("#acOrdemTxt").textContent = od ? od.textContent : "Ordem";
+      $("#acLojaTxt").textContent = lj; $("#acLoja").classList.toggle("on", catLoja.valor() !== "todas"); $("#acOrdemTxt").textContent = "Ordenar: " + ({ melhores: "Melhor combinação", comissao: "Maior comissão", preco: "Menor preço", vendidos: "Mais vendidos", desconto: "Mais desconto" }[catOrdem.valor()] || "Melhor combinação");
       $("#acLoja").hidden = $("#acOrdem").hidden = !!acSel; }
     $("#acTodos").hidden = !acSel; $("#acTotal").hidden = !!acSel;
     $("#acTodosCx").classList.toggle("on", !!acSel && !!vis.length && vis.every((i) => acSel.has(chAchado(catalogoAtual[i]))));
@@ -1310,7 +1314,7 @@
     if (soFav) l = l.filter(ehFavSite);
     if (stEst.ordem === "comissao" || stEst.ordem === "vendidos") { const f = stEst.ordem === "comissao" ? comissaoDe : vendidosDe, it = (p) => fila().find((x) => x.id === p.id) || {}; l = l.slice().sort((a, b) => f(it(b)) - f(it(a))); }
     else if (stEst.ordem !== "recentes") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }, tot = (p) => k(p).loja + k(p).abrir; l = l.slice().sort((a, b) => tot(b) - tot(a) || k(b).loja - k(a).loja); if (stEst.ordem === "top10") l = l.filter((p) => tot(p) > 0).slice(0, 10); }
-    $("#stOrdem").textContent = { cliques: "Mais clicados", top10: "Top 10 cliques", comissao: "Comissão", vendidos: "Vendidos" }[stEst.ordem] || "Recentes"; $("#stOrdem").classList.toggle("on", stEst.ordem === "top10"); $("#stOrdem").hidden = !!stEst.sel || !n; $("#stLoja").hidden = !!stEst.sel || !n; $("#stLojaTxt").textContent = { todas: "Lojas", mercadolivre: "Mercado Livre", shopee: "Shopee" }[stEst.loja] || "Lojas"; $("#stLoja").classList.toggle("on", stEst.loja !== "todas");
+    $("#stOrdem").textContent = "Ordenar: " + ({ cliques: "Mais clicados", top10: "Top 10 cliques", comissao: "Maior comissão", vendidos: "Mais vendidos" }[stEst.ordem] || "Mais novos"); $("#stOrdem").classList.toggle("on", stEst.ordem === "top10"); $("#stOrdem").hidden = !!stEst.sel || !n; $("#stLoja").hidden = !!stEst.sel || !n; $("#stLojaTxt").textContent = { todas: "Lojas", mercadolivre: "Mercado Livre", shopee: "Shopee" }[stEst.loja] || "Lojas"; $("#stLoja").classList.toggle("on", stEst.loja !== "todas");
     const lista = $("#stLista"); lista.classList.toggle("st-sel", !!stEst.sel);
     lista.innerHTML = l.length ? `<div class="pp-lista">${l.map((p) => { const on = stEst.sel && stEst.sel.has(p.id);
       const k = cliquesSite.mapa.get(p.id), nCl = k ? k.loja + k.abrir : 0;
@@ -2377,7 +2381,7 @@
     pintarCats();
     const np = l.filter((i) => !foiCompartilhado(i)).length, nd = l.length - np;
     $("#ppSelecionar").hidden = !l.length && !modoVarios; $("#ppOrdem").hidden = l.length < 2 || modoVarios; $("#ppDica").hidden = !l.length;
-    $("#ppOrdemTxt").textContent = ({ recentes: "Recentes", antigos: "Antigos", preco: "Menor preço", desconto: "Desconto" })[ordemLista] || "Recentes";
+    $("#ppOrdemTxt").textContent = "Ordenar: " + (({ recentes: "Mais novos", antigos: "Mais antigos", preco: "Menor preço", desconto: "Maior desconto", comissao: "Maior comissão", vendidos: "Mais vendidos" })[ordemLista] || "Mais novos");
     $("#ppTotal").textContent = verArquivo ? `Arquivo: ${l.length} ${l.length === 1 ? "produto" : "produtos"}` : termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}${ocultos ? ` · ${ocultos} ${ocultos === 1 ? "postado oculto" : "postados ocultos"}` : ""}`;
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
       return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}${ppAtual === i ? " aberto" : ""}">${post ? '<span class="selo-canto"><svg><use href="#i-check"/></svg>Postado</span>' : ""}<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
@@ -2508,6 +2512,15 @@
     const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; renderFila(); });
   ["#ppFav", "#stFav"].forEach((sel) => $(sel).addEventListener("click", () => { soFav = !soFav; renderFila(); renderSite(); }));
   function pintarFavBt() { ["#ppFav", "#stFav"].forEach((sel) => { const b = $(sel); if (!b) return; b.classList.toggle("on", soFav); b.setAttribute("aria-pressed", String(soFav)); b.hidden = !!(sel === "#ppFav" ? modoVarios : stEst.sel); }); }
+  /* Filtro de loja sempre à vista (Todas · Mercado Livre · Shopee) nas três telas de Produtos */
+  function pintarLojasSeg() {
+    const val = { pp: lojaLista, st: stEst.loja || "todas", ac: catLoja.valor() };
+    document.querySelectorAll("[data-lojas]").forEach((g) => g.querySelectorAll("[data-loja-seg]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lojaSeg === (val[g.dataset.lojas] || "todas")))));
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-loja-seg]"); if (!b) return; const g = b.closest("[data-lojas]").dataset.lojas, v = b.dataset.lojaSeg;
+    if (g === "pp") { lojaLista = v; renderFila(); } else if (g === "st") { stEst.loja = v; renderSite(); } else { const c = $(`#catLoja [data-v="${v}"]`); if (c && v !== catLoja.valor()) c.click(); }
+    pintarLojasSeg(); });
+  setTimeout(pintarLojasSeg, 0);
   $("#ppLoja").addEventListener("click", async () => { const v = await escolherOpcao("Loja", [["todas", "Todas as lojas"], ["mercadolivre", "Mercado Livre"], ["shopee", "Shopee"]], lojaLista); if (!v) return; lojaLista = v; renderFila(); });
   $("#ppOrdem").addEventListener("click", async () => { const v = await escolherOpcao("Ordenar", Object.entries(ORDENS), ordemLista); if (!v) return; ordemLista = v; try { localStorage.setItem("miga_ordem", v); } catch (e) { /* segue */ } renderFila(); });
   $("#ppVisao").addEventListener("click", (e) => { const b = e.target.closest("[data-visao]"); if (!b) return; if (termoBusca.trim()) { abaBusca = b.dataset.visao; renderFila(); return; } visaoLista = b.dataset.visao; try { localStorage.setItem("miga_visao", visaoLista); } catch (er) { /* segue */ } if (modoVarios) marcados.clear(); renderFila(); });
