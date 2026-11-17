@@ -2782,3 +2782,6 @@ body.modo-selecao .lojas-seg { display: none; }
 .aviso .ml-abrir-busca { display: flex; justify-content: center; width: 100%; margin-top: 10px; text-decoration: none; }
 .aviso .ml-ou { display: block; margin-top: 10px; }
 .aviso .ml-det { display: block; margin-top: 8px; font-size: 11.5px; opacity: .75; word-break: break-word; }
+
+/* Uma barra de busca só (a de cima): a barra extra dos Achados fica escondida */
+#buscaLojasForm, #buscaLojasRes { display: none !important; }

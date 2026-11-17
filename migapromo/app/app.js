@@ -2780,11 +2780,11 @@
     [["#ppLink"], ["#acBusca"], ["#stBusca"]].forEach(([sel]) => { const el = $(sel); if (el && el.value !== buscaProd) { el.value = buscaProd; el.dispatchEvent(new Event("input", { bubbles: true })); } });
     pintarSegProd();
   });
-  document.addEventListener("keydown", (e) => { const b = e.target.closest(".prod-busca-in"); if (!b || e.key !== "Enter") return; if (!$("#aba-achados").hidden) { e.preventDefault(); const t = b.value.trim(); if (t.length < 2) return; b.blur(); $("#buscaLojas").value = t; limparFiltroTopo(); buscarNasLojas(t); } });
+  document.addEventListener("keydown", (e) => { const b = e.target.closest(".prod-busca-in"); if (!b || e.key !== "Enter") return; e.preventDefault(); const t = b.value.trim(); if (t.length < 2) return; b.blur(); if (/^https?:\/\//i.test(t)) return; buscarNasLojas(t); if ($("#aba-achados").hidden) toast(`Buscando “${t}” na Shopee e no Mercado Livre: veja em Achados`); });
   function pintarSegProd0(aba) {
     contarFila();
     const q = semAcento(buscaProd.trim()), bate = (t) => !q || semAcento(t).includes(q);
-    const n = q ? { postar: fila().filter((i) => !i.carregando && bate(`${i.nome} ${NOME_LOJA[i.loja] || ""} ${i.cupom || ""}`)).length, achados: catalogoAtual.filter((p) => achadoVisivel(p) && bate(p.nome)).length, site: [...vitrineMap.values()].filter((p) => bate(`${p.nome} ${p.cupom || ""}`)).length } : { postar: fila().filter((i) => !i.carregando).length, achados: catalogoAtual.filter(achadoVisivel).length, site: vitrineMap.size };
+    const n = q ? { postar: fila().filter((i) => !i.carregando && bate(`${i.nome} ${NOME_LOJA[i.loja] || ""} ${i.cupom || ""}`)).length, achados: catalogoAtual.filter((p) => achadoVisivel(p) && (catBusca && semAcento(catBusca) === semAcento(String(q).trim()) || bate(p.nome))).length, site: [...vitrineMap.values()].filter((p) => bate(`${p.nome} ${p.cupom || ""}`)).length } : { postar: fila().filter((i) => !i.carregando).length, achados: catalogoAtual.filter(achadoVisivel).length, site: vitrineMap.size };
     document.querySelectorAll(".prod-seg").forEach((sg) => sg.querySelectorAll("[data-prod]").forEach((b) => {
       b.classList.toggle("on", b.dataset.prod === (aba || (document.querySelector(".aba-prod:not([hidden])") || {}).id?.replace("aba-", "")));
       const c = b.querySelector("small"); c.textContent = n[b.dataset.prod] ? n[b.dataset.prod] : q ? "0" : "";
