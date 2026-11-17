@@ -70,14 +70,15 @@
   function produtoDaPagina() { return linkProduto(location.href); }
 
   // O clique no quadradinho é tratado antes do site (o site não abre o produto nem "engole" o clique)
+  // Marca/desmarca já no apertar do mouse: o site do ML redesenha o cartão no clique e o "click" se perdia
   let ultimo = null;
-  ["pointerdown", "mousedown", "touchstart"].forEach((ev) => window.addEventListener(ev, (e) => { if (e.target.closest && e.target.closest(".miga-bt")) e.stopPropagation(); }, true));
-  window.addEventListener("click", (e) => {
+  window.addEventListener("pointerdown", (e) => {
     const bt = e.target.closest && e.target.closest(".miga-bt"); if (!bt) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-    const k = bt.dataset.migaLink; if (ultimo && ultimo.k === k && Date.now() - ultimo.t < 250) return; ultimo = { k, t: Date.now() };
+    const k = bt.dataset.migaLink; if (ultimo && ultimo.k === k && Date.now() - ultimo.t < 300) return; ultimo = { k, t: Date.now() };
     alternar(k);
   }, true);
+  ["mousedown", "mouseup", "pointerup", "click", "touchstart"].forEach((ev) => window.addEventListener(ev, (e) => { if (e.target.closest && e.target.closest(".miga-bt")) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } }, true));
 
   /* ---------- Barra de baixo ---------- */
   const barra = document.createElement("div"); barra.className = "miga-barra";

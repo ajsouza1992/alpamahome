@@ -2609,8 +2609,13 @@
     folhaEst("Caixa de importação", `<p class="nota">Produtos que chegaram pelo Compartilhar, pelo Colar vários links ou pela extensão do Chrome. Marque os que quer e adicione de uma vez. O seu código de afiliado entra sozinho.</p><div id="cxLista"></div>`);
     pintarCaixa();
   }
+  let cxApertado = false, cxPendente = false;
+  document.addEventListener("pointerdown", (e) => { if (e.target.closest && e.target.closest("#cxLista")) cxApertado = true; }, true);
+  document.addEventListener("pointerup", () => { if (!cxApertado) return; setTimeout(() => { cxApertado = false; if (cxPendente) { cxPendente = false; pintarCaixa(); } }, 60); }, true);
+  document.addEventListener("pointercancel", () => { cxApertado = false; }, true);
   function pintarCaixa() {
     const box = $("#cxLista"); if (!box) return;
+    if (cxApertado) { cxPendente = true; return; }
     const nMarc = caixa.filter((x) => x.marcado).length, lendo = caixa.some((x) => !x.lido && !x.erro);
     box.innerHTML = caixa.length ? `<div class="cx-topo"><button type="button" class="link" id="cxTodos">${caixa.every((x) => x.marcado || x.erro || x.naLista) ? "Desmarcar todos" : "Marcar todos"}</button><span class="nota">${caixa.length} ${caixa.length === 1 ? "produto" : "produtos"}${lendo ? " · lendo…" : ""}</span></div>
       <div class="cx-lista">${caixa.map((x, i) => `<button type="button" class="cx-item${x.marcado ? " on" : ""}${x.erro || x.naLista ? " off" : ""}" data-cx="${i}">
