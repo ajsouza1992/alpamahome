@@ -990,7 +990,7 @@
   /** Achados no mesmo jeito da Lista (foto, nome, preço, loja) com o ⋮ */
   function pintarAchados() { pintarAchadosBase(); decorarAchados(); }
   function pintarAchadosBase() {
-    const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t));
+    const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !acSoTop || p.maisVendido).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t));
     const botaoBusca = bruto.length >= 3 && !daBusca ? `<button type="button" class="btn btn--rosa ac-buscar" id="acBuscarLojas"><svg class="ic-mono"><use href="#i-busca"/></svg>Buscar “${esc(bruto)}” nas lojas</button>` : "";
     $("#acTotal").textContent = `${l.length} ${l.length === 1 ? "achado" : "achados"}`;
     $("#catalogo").innerHTML = botaoBusca + (daBusca ? `<p class="nota ac-busca-info">Resultados das lojas para “${esc(catBusca)}”. Apague a busca para voltar aos achados.</p>` : "") + (l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
@@ -999,7 +999,8 @@
       </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${catTemMais && !t ? `<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais ${daBusca ? `de “${esc(catBusca)}”` : "achados"}</button>` : ""}` : `<p class="vazio-lista">${bruto && !daBusca ? "Nada com essa palavra nos achados carregados: toque em Buscar nas lojas." : "Nada encontrado nos achados."}</p>`);
   }
   /* ---------- Enviar vários achados para o site, já com o seu link de afiliado ---------- */
-  let acSel = null; // Set com os índices marcados (null = fora do modo)
+  let acSel = null;
+  var acSoTop = false; // filtro "Mais vendidos" (var: pode ser lido antes desta linha) // Set com os índices marcados (null = fora do modo)
   /** Mercado Livre: põe a sua etiqueta de afiliado (matt_word e matt_tool) no link do produto. Shopee já vem com o seu link. */
   function linkAfiliadoAuto(p) {
     if (!p || !p.link) return "";
@@ -1017,6 +1018,7 @@
     cat.querySelectorAll(".pp-linha").forEach((ln) => {
       const b = ln.querySelector("[data-achado]"); if (!b) return; const i = Number(b.dataset.achado), p = catalogoAtual[i]; if (!p) return; vis.push(i);
       if (!ln.querySelector(".pp-nosite-ac")) { const tags = [achadoNoSite(p) && "No site", itemDoAchado(p) && "Na Lista"].filter(Boolean); const m = ln.querySelector(".meta"); if (m && tags.length) m.insertAdjacentHTML("afterend", `<span class="st-tags">${tags.map((t) => `<b class="pp-nosite-ac${t === "Na Lista" ? " na-lista" : ""}">${t}</b>`).join("")}</span>`); }
+      if (p.maisVendido && !ln.querySelector(".ac-top")) ln.insertAdjacentHTML("afterbegin", `<i class="ac-top" title="${p.maisVendido}º mais vendido da categoria">${p.maisVendido}º mais vendido</i>`);
       ln.classList.toggle("marcado", !!acSel && acSel.has(i));
       let mk = ln.querySelector(".pp-marcar");
       if (acSel && !mk) { ln.insertAdjacentHTML("beforeend", `<button type="button" class="pp-marcar" data-ac-marcar="${i}" aria-label="Marcar"></button>`); mk = ln.querySelector(".pp-marcar"); }
@@ -1026,10 +1028,12 @@
     document.body.classList.toggle("modo-selecao", !bar.hidden || !$("#barraMarcados").hidden);
     if (acSel) $("#acSiteQtd").textContent = acSel.size ? `${acSel.size} ${acSel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#acSelecionar").textContent = acSel ? "Cancelar" : "Selecionar";
+    { const bt = $("#acSoTop"); bt.setAttribute("aria-pressed", String(acSoTop)); bt.hidden = !!acSel || (!acSoTop && !catalogoAtual.some((p) => p.maisVendido)); }
     $("#acTodos").hidden = !acSel; $("#acTotal").hidden = !!acSel;
     $("#acTodosCx").classList.toggle("on", !!acSel && !!vis.length && vis.every((i) => acSel.has(i)));
   }
   function sairAcSite() { acSel = null; decorarAchados(); }
+  $("#acSoTop").addEventListener("click", () => { acSoTop = !acSoTop; pintarAchados(); });
   $("#acSelecionar").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); });
   $("#acTodos").addEventListener("click", () => {
     if (!acSel) return; const vis = [...document.querySelectorAll("#catalogo [data-achado]")].map((b) => Number(b.dataset.achado));

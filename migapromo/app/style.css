@@ -2429,3 +2429,13 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 /* Bolinha com o número de cliques (30 dias) na foto do produto do Site */
 #stLista .pp-item { position: relative; }
 .st-bola { position: absolute; z-index: 2; left: 66px; top: 6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--rosa); color: #fff; font: 700 11.5px/22px var(--sans); font-style: normal; text-align: center; box-shadow: 0 0 0 2px var(--branco); }
+
+/* Achados: selo de mais vendido pequeno no canto de cima do cartão, e o filtro na mesma cor */
+#catalogo .tag-ex--top { display: none !important; }
+#catalogo .pp-linha { position: relative; }
+.ac-top { position: absolute; z-index: 3; top: -7px; right: 14px; background: #1d1d1f; color: #ffd23f; font: 700 10px/1 var(--sans); font-style: normal; letter-spacing: .2px; padding: 4px 8px; border-radius: 999px; box-shadow: 0 0 0 2px var(--branco); white-space: nowrap; }
+#catalogo .pp-linha:has(.ac-top) { margin-top: 6px; }
+.ac-sotop { display: inline-flex; align-items: center; gap: 5px; border: 1.5px solid #1d1d1f; background: var(--branco); color: #1d1d1f; border-radius: 999px; padding: 6px 11px; font: 700 12.5px var(--sans); cursor: pointer; white-space: nowrap; }
+.ac-sotop svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ac-sotop[aria-pressed="true"] { background: #1d1d1f; color: #ffd23f; }
+.ac-sotop[hidden] { display: none; }
