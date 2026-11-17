@@ -161,7 +161,7 @@
     @media (min-width: 900px) {
       .larg { padding-left: 32px; padding-right: 32px; }
       .capa { padding-top: 22px; padding-bottom: 26px; }
-      .bola { width: 420px; height: 400px; left: -90px; top: -170px; }
+      .bola { width: 620px; height: 600px; left: -150px; top: -250px; }
       .marca__miga { font-size: 28px; } .marca__promo { font-size: 16px; }
       .rede { width: 42px; height: 42px; }
       h1 { font-size: 40px; letter-spacing: -1.5px; margin-top: 26px; }
@@ -171,9 +171,9 @@
       .heroi h1 { margin-top: 0; }
       h1 { font-size: 48px; line-height: 1.05; }
       .sub { font-size: 15px; margin-bottom: 18px; }
-      .nums { display: flex; gap: 30px; }
-      .nums b { display: block; font-size: 24px; font-weight: 800; line-height: 1.2; }
-      .nums span { font-size: 12.5px; color: var(--cinza); }
+      .vitr-tit { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--rosa); }
+      .vitr-tit span { width: 8px; height: 8px; border-radius: 50%; background: var(--rosa); animation: pisca 1.6s ease-in-out infinite; }
+      @keyframes pisca { 50% { opacity: .25; } }
       .vitr { display: grid; grid-template-columns: 1.25fr 1fr 1fr; grid-template-rows: 130px 130px; gap: 10px; }
       .vitr:empty { display: none; }
       .vitr button { position: relative; border: 0; padding: 0; border-radius: 18px; overflow: hidden; background: #f7f2e8; cursor: pointer; transition: transform .2s; }
@@ -191,7 +191,7 @@
       .alca { display: none; }
     }
     @media (min-width: 1150px) { .grade { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-    @media (max-width: 899px) { .vitr, .nums { display: none !important; } }
+    @media (max-width: 899px) { .vitr-box { display: none !important; } }
   </style>
 </head>
 <body>
@@ -210,8 +210,7 @@
     <div class="heroi"><div class="heroi-txt">
       <h1>Achados de moda<br>com <em>preço de amiga</em></h1>
       <p class="sub">Promoções e cupons do Mercado Livre e da Shopee, escolhidos todo dia.</p>
-      <div class="nums" id="nums" hidden></div>
-    </div><div class="vitr" id="vitr" aria-label="Últimos achados"></div></div>
+    </div><div class="vitr-box" id="vitrBox" hidden><p class="vitr-tit"><span></span>Em destaque agora</p><div class="vitr" id="vitr"></div></div></div>
   </div></header>
 
   <div class="faixa" aria-hidden="true"><div class="faixa-in" id="faixa"></div></div>
@@ -245,7 +244,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=336"></script>
+  <script src="app/firebase-config.js?v=337"></script>
   <script>
   (() => {
     "use strict";
@@ -262,9 +261,9 @@
     const PRECOS = { ate20: ["Até R$ 20", (p) => p <= 20], ate50: ["Até R$ 50", (p) => p <= 50], ate100: ["Até R$ 100", (p) => p <= 100], mais100: ["Acima de R$ 100", (p) => p > 100] };
     const desconto = (p) => (p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0);
     const VANT = { ofertas: ["Em oferta", (p) => desconto(p) >= 10], cupom: ["Com cupom", (p) => !!p.cupom], frete: ["Frete grátis", (p) => !!p.frete], desc30: ["Desconto 30%+", (p) => desconto(p) >= 30], oficial: ["Loja oficial", (p) => !!p.oficial], top: ["Mais vendido", (p) => !!p.maisVendido] };
-    const ORDENS = { novos: "Mais novos", desconto: "Mais desconto", menor: "Menor preço", maior: "Maior preço", vendidos: "Mais vendidos" };
+    const ORDENS = { destaque: "Em destaque", novos: "Mais novos", desconto: "Mais desconto", menor: "Menor preço", maior: "Maior preço", vendidos: "Mais vendidos" };
     const PALAVRAS = ["PROMOÇÕES", "OFERTA RELÂMPAGO", "DESCONTO", "CUPOM", "FRETE GRÁTIS", "ACHADINHOS", "PREÇO DE AMIGA", "QUEIMA DE ESTOQUE", "LIQUIDAÇÃO", "MAIS VENDIDOS", "NOVIDADES", "MODA", "BELEZA", "CASA", "FITNESS", "SÓ HOJE", "BARATINHO", "ACHADO DO DIA"];
-    const est = { q: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", vant: new Set(), ordem: "novos" };
+    const est = { q: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", vant: new Set(), ordem: "destaque" };
     let produtos = [], cfg = {};
 
     /* Faixa: as palavras repetidas o bastante para nunca ficar buraco; anda sem parar */
@@ -344,9 +343,14 @@
     function ordenar(l) {
       const por = { novos: (a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0), menor: (a, b) => (a.preco || 1e9) - (b.preco || 1e9), maior: (a, b) => (b.preco || 0) - (a.preco || 0),
         desconto: (a, b) => desconto(b) - desconto(a), vendidos: (a, b) => (a.maisVendido || 999) - (b.maisVendido || 999) || (b.publicadoEm || 0) - (a.publicadoEm || 0) };
-      return l.slice().sort(por[est.ordem] || por.novos);
+      if (est.ordem === "destaque" || !por[est.ordem]) return embaralhar(l);
+      return l.slice().sort(por[est.ordem]);
     }
-    const nFiltros = () => (est.para ? 1 : 0) + est.tipos.size + est.lojas.size + (est.preco ? 1 : 0) + est.vant.size + (est.ordem !== "novos" ? 1 : 0);
+    /* Em destaque: a ordem muda sozinha a cada 1 hora (igual para todo mundo naquela hora), para não ficar sempre os mesmos no topo */
+    const semente = Math.floor(Date.now() / 36e5);
+    const pesoHora = (id) => { let h = 2166136261 ^ semente; for (const c of String(id)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); return (h ^ (h >>> 15)) >>> 0; };
+    const embaralhar = (l) => l.slice().sort((a, b) => pesoHora(a.id) - pesoHora(b.id));
+    const nFiltros = () => (est.para ? 1 : 0) + est.tipos.size + est.lojas.size + (est.preco ? 1 : 0) + est.vant.size + (est.ordem !== "destaque" ? 1 : 0);
     const presentes = (k) => [...new Set(produtos.map((p) => p[k]).filter(Boolean))];
     const chip = (attr, v, nome, on, extra = "") => `<button type="button" class="ch${extra}${on ? " on" : ""}" ${attr}="${esc(v)}" aria-pressed="${on}">${nome}</button>`;
     function htmlFiltros() {
@@ -440,7 +444,7 @@
       if (t.closest("[data-fechar-f]")) { $("#dlgFiltros").close(); return; }
       if (t.closest("#abrirFiltros")) { $("#filtros").innerHTML = htmlFiltros(); $("#dlgFiltros").showModal(); return; }
       if (t.closest("#verN")) { $("#dlgFiltros").close(); $(".busca-bar").scrollIntoView({ behavior: "smooth" }); return; }
-      if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; est.vant.clear(); est.ordem = "novos"; pintar(); return; }
+      if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; est.vant.clear(); est.ordem = "destaque"; pintar(); return; }
       const mais = t.closest("[data-mais]"); if (mais) { mais.closest(".desc").classList.remove("curta"); mais.hidden = true; return; }
       const rp = t.closest("[data-rap]"); if (rp) { const k = rp.dataset.rap; if (!k) { est.para = ""; est.vant.delete("ofertas"); } else if (k === "@ofertas") { alterna(est.vant, "ofertas"); if (est.vant.has("ofertas")) est.ordem = "desconto"; } else est.para = est.para === k ? "" : k; pintar(); return; }
       const pa = t.closest("[data-para]"); if (pa) { const v = pa.dataset.para; est.para = est.para === v ? "" : v; pintar(); return; }
@@ -456,13 +460,9 @@
 
     /* Computador: vitrine de fotos ao lado do título e os números do dia */
     function pintarCapa() {
-      const novos = produtos.filter((p) => imgOk(p.imagem)).sort((a, b) => (b.publicadoEm || 0) - (a.publicadoEm || 0)).slice(0, 5);
-      $("#vitr").innerHTML = novos.length >= 3 ? novos.map((p) => { const d = desconto(p); return `<button type="button" data-id="${esc(p.id)}" aria-label="${esc(p.nome)}"><img src="${esc(p.imagem)}" alt="" referrerpolicy="no-referrer">${d >= 5 ? `<span class="off">-${d}%</span>` : p.cupom ? "<span>Cupom</span>" : ""}</button>`; }).join("") : "";
-      if (!produtos.length) return;
-      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-      const doDia = produtos.filter((p) => (p.publicadoEm || 0) >= hoje.getTime()).length, cup = produtos.filter((p) => p.cupom).length, maxD = Math.max(0, ...produtos.map(desconto));
-      const n = [[doDia || produtos.length, doDia ? "achados hoje" : "achados no site"], cup && [cup, "com cupom"], maxD >= 10 && [`até ${maxD}%`, "de desconto"]].filter(Boolean);
-      $("#nums").innerHTML = n.map(([v, r]) => `<div><b>${v}</b><span>${r}</span></div>`).join(""); $("#nums").hidden = false;
+      const l = embaralhar(produtos.filter((p) => imgOk(p.imagem))).slice(0, 5);
+      $("#vitr").innerHTML = l.length >= 3 ? l.map((p) => { const d = desconto(p); return `<button type="button" data-id="${esc(p.id)}" aria-label="${esc(p.nome)}"><img src="${esc(p.imagem)}" alt="" referrerpolicy="no-referrer">${d >= 5 ? `<span class="off">-${d}%</span>` : p.cupom ? "<span>Cupom</span>" : p.preco ? `<span>${brl(p.preco)}</span>` : ""}</button>`; }).join("") : "";
+      $("#vitrBox").hidden = l.length < 3;
     }
     carregar().then(() => { pintar(); pintarRedes(); pintarCapa(); const m = /^#p=(.+)$/.exec(location.hash); if (m) abrirProduto(decodeURIComponent(m[1]), false); })
       .catch(() => { $("#grade").setAttribute("aria-busy", "false"); $("#grade").innerHTML = '<p class="vazio"><b>Não consegui carregar os achadinhos agora</b>Tente de novo em instantes.</p>'; $("#contagem").textContent = ""; });
