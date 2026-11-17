@@ -991,7 +991,7 @@
   /** Achados no mesmo jeito da Lista (foto, nome, preço, loja) com o ⋮ */
   function pintarAchados() { pintarAchadosBase(); decorarAchados(); }
   function pintarAchadosBase() {
-    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => !acSoTop || p.maisVendido).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
+    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => (!acSoTop || p.maisVendido) && !achadoNoSite(p)).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
     const botaoBusca = bruto.length >= 3 && !daBusca ? `<button type="button" class="btn btn--rosa ac-buscar" id="acBuscarLojas"><svg class="ic-mono"><use href="#i-busca"/></svg>Buscar “${esc(bruto)}” nas lojas</button>` : "";
     const total = l.length; l = l.slice(0, acLimite);
     $("#acTotal").textContent = total > l.length ? `${l.length} de ${total} achados` : `${total} ${total === 1 ? "achado" : "achados"}`;
@@ -1049,7 +1049,8 @@
   }, true);
   document.addEventListener("miga-aba", (e) => { if (acSel && e.detail !== "achados") sairAcSite(); if (stEst && stEst.sel && e.detail !== "site") { stEst.sel = null; renderSite(); } });
   /** Pergunta a categoria: automática (cada um a sua) ou uma para todos. Devolve "" (automática), a categoria, ou null (desistiu) */
-  async function categoriaDosAchados(l, acao) {
+  async function categoriaDosAchados() { return ""; } // categoria automática: cada produto vai para a sua (sem perguntar)
+  async function categoriaDosAchadosPerguntando(l, acao) {
     const modo = l.length === 1 ? "uma" : await escolherOpcao(`Categoria de ${l.length} produtos`, [["auto", "Automática: o app escolhe a de cada um"], ["uma", "Escolher uma categoria para todos"]], "auto"); if (!modo) return null;
     if (modo === "auto") return "";
     return await escolherCategoria({ sugestao: adivinharCategoria(l[0].nome, l[0].categoria), nome: l.length === 1 ? l[0].nome : "", titulo: `Categoria · ${l.length}`, acao }) || null;
@@ -1161,7 +1162,7 @@
   }
   $("#catalogo").addEventListener("click", async (e) => {
     const mais = e.target.closest("#acMais"); if (mais) { acLimite += 100;
-      const visiveis = $("#acBusca").value.trim() && !catBusca ? Infinity : catalogoAtual.filter((p) => !acSoTop || p.maisVendido).length;
+      const visiveis = $("#acBusca").value.trim() && !catBusca ? Infinity : catalogoAtual.filter((p) => (!acSoTop || p.maisVendido) && !achadoNoSite(p)).length;
       if (visiveis >= acLimite || !catTemMais) { const y = scrollY; pintarAchados(); scrollTo(0, y); } else maisAchados(mais); return; }
     if (e.target.closest("#acBuscarLojas")) { buscarNasLojas($("#acBusca").value.trim()); return; }
     const am = e.target.closest("[data-achado-menu], [data-achado]");
