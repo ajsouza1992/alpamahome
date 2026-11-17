@@ -2837,3 +2837,6 @@ body.modo-selecao .lojas-seg { display: none; }
 .fl-op .pp-caixa { position: relative; right: auto; top: auto; transform: none; width: 24px; height: 24px; border-radius: 50%; flex: none; }
 .fl-op .pp-caixa[aria-pressed="true"]::after { left: 8px; top: 4px; width: 6px; height: 11px; border-width: 0 2.5px 2.5px 0; }
 .pp-filtro.on { background: var(--campo) !important; color: inherit !important; box-shadow: none !important; }
+/* Selinho com o número de filtros em cima do botão Filtrar (como no menu de baixo) */
+.aba-prod .barra-filtro .pp-filtro { position: relative; overflow: visible !important; }
+.pp-filtro .f-n { position: absolute; top: -8px; right: -6px; margin: 0; min-width: 20px; height: 20px; padding: 0 5px; border: 2px solid #fff; box-sizing: border-box; box-shadow: 0 2px 6px rgba(232, 51, 109, .35); }
