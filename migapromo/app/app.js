@@ -3506,7 +3506,8 @@
     wz.passo = "resumo"; mostrarPasso();
   }
   /** Depois do Reels, Carrossel ou Vídeo: posta os mesmos produtos no WhatsApp (canal e grupos), um por um */
-  const movSalvo = () => { try { return !!localStorage.getItem("miga_mov"); } catch (e) { return false; } };
+  // "Em movimento" vem ligado por padrão (no domínio novo ainda não havia nada salvo); só desliga se você desmarcar
+  const movSalvo = () => { try { const v = localStorage.getItem("miga_mov"); return v === null ? true : v === "1"; } catch (e) { return true; } };
   function postarProdutosNoWhats(ids, base = {}) {
     ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
     const lug = lugaresSalvos().filter((k) => LUGARES[k].texto);
@@ -3679,7 +3680,7 @@
   $("#wzCorpo").addEventListener("change", (e) => {
     if (!wz.rapido || wz.passo !== "rpConferir") return;
     if (e.target.id === "rpModelo") { wz.modelo = e.target.value; const it = wzItem(); if (it && !it.textoEditado) it.texto = ""; rpMudou(); }
-    if (e.target.id === "rpMov") { wz.mov = e.target.checked; try { localStorage.setItem("miga_mov", wz.mov ? "1" : ""); } catch (er) { /* segue */ } if (!wz.mov && wz.gravandoMov) { movCancelar = true; wz.rpRegravar = false; } mostrarPasso(); }
+    if (e.target.id === "rpMov") { wz.mov = e.target.checked; try { localStorage.setItem("miga_mov", wz.mov ? "1" : "0"); } catch (er) { /* segue */ } if (!wz.mov && wz.gravandoMov) { movCancelar = true; wz.rpRegravar = false; } mostrarPasso(); }
   });
   $("#wzCorpo").addEventListener("click", (e) => {
     if (!wz.rapido || wz.passo !== "rpConferir") return;
@@ -3763,7 +3764,7 @@
   $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "rtLegFeed") wz.legFeed = e.target.value;
     if (e.target.id === "rpTexto") { const it = wzItem(); if (it) { it.texto = e.target.value; it.textoEditado = true; salvarFila(); } } });
   $("#wzCorpo").addEventListener("change", (e) => {
-    if (e.target.id !== "rtMov") return; wz.mov = e.target.checked; try { localStorage.setItem("miga_mov", wz.mov ? "1" : ""); } catch (er) { /* segue */ }
+    if (e.target.id !== "rtMov") return; wz.mov = e.target.checked; try { localStorage.setItem("miga_mov", wz.mov ? "1" : "0"); } catch (er) { /* segue */ }
     const y = scrollY; mostrarPasso(); scrollTo(0, y);
   });
   // Voltou do outro app: segue o roteiro
