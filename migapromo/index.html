@@ -258,7 +258,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=343"></script>
+  <script src="app/firebase-config.js?v=344"></script>
   <script>
   (() => {
     "use strict";
@@ -304,10 +304,17 @@
     async function carregar() {
       const fb = window.FIREBASE_CONFIG;
       if (!fb || !fb.projectId) { // modo local (testes)
-        try { produtos = Object.values(JSON.parse(localStorage.getItem("miga_vitrine") || "{}")); cfg = JSON.parse(localStorage.getItem("miga_vitrine_cfg") || "{}"); } catch (e) { produtos = []; }
+        try { const pk = JSON.parse(localStorage.getItem("miga_vitrine_pacotes") || "null"); produtos = pk ? pk.flat() : Object.values(JSON.parse(localStorage.getItem("miga_vitrine") || "{}")); cfg = JSON.parse(localStorage.getItem("miga_vitrine_cfg") || "{}"); } catch (e) { produtos = []; }
         return;
       }
       const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(fb.projectId)}/databases/(default)/documents/vitrine/miga`, chave = fb.apiKey ? `key=${encodeURIComponent(fb.apiKey)}` : "";
+      // Pacotes: lê 1 documento com a configuração e poucos documentos grandes com todos os produtos
+      try { const r = await fetch(`${base}?${chave}`); if (r.ok) cfg = campos((await r.json()).fields); } catch (e) { cfg = {}; }
+      const nPac = Number(cfg.pacotes || 0);
+      if (nPac > 0) {
+        try { const docs = await Promise.all(Array.from({ length: nPac }, (_, i) => fetch(`${base}/pacotes/p${i}?${chave}`).then((r) => (r.ok ? r.json() : null))));
+          if (docs.every(Boolean)) { produtos = docs.flatMap((d) => JSON.parse(campos(d.fields).itens || "[]")); return; } } catch (e) { /* cai para o jeito antigo */ }
+      }
       const lista = []; let pagina = "";
       for (let i = 0; i < 20; i++) {
         const r = await fetch(`${base}/produtos?pageSize=300&${chave}${pagina ? "&pageToken=" + encodeURIComponent(pagina) : ""}`);
@@ -316,7 +323,6 @@
         if (!d.nextPageToken) break; pagina = d.nextPageToken;
       }
       produtos = lista;
-      try { const r = await fetch(`${base}?${chave}`); if (r.ok) cfg = campos((await r.json()).fields); } catch (e) { cfg = {}; }
     }
 
     /* ---------- Contador de acessos: só o tipo do toque, o produto, de onde veio e quando (nada pessoal) ---------- */

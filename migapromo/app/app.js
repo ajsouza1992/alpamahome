@@ -353,6 +353,7 @@
       vitrineListar: async () => Object.values(ls.lerJson("miga_vitrine", {})),
       vitrineSalvar: async (p) => { const m = ls.lerJson("miga_vitrine", {}); m[p.id] = p; ls.gravar("miga_vitrine", JSON.stringify(m)); },
       vitrineApagar: async (id) => { const m = ls.lerJson("miga_vitrine", {}); delete m[id]; ls.gravar("miga_vitrine", JSON.stringify(m)); },
+      vitrineGravarPacotes: async (pacotes) => { ls.gravar("miga_vitrine_pacotes", JSON.stringify(pacotes)); },
       acessosListar: async (desde) => ls.lerJson("miga_acessos", []).filter((e) => e.em >= desde).sort((a, b) => b.em - a.em),
       vitrineLerConfig: async () => ls.lerJson("miga_vitrine_cfg", {}),
       vitrineGravarConfig: async (c) => { ls.gravar("miga_vitrine_cfg", JSON.stringify(c)); }
@@ -413,10 +414,17 @@
       acessosListar: async (desde) => (await fs.getDocs(fs.query(fs.collection(db, "acessos", "miga", "eventos"), fs.where("em", ">=", new Date(desde)), fs.orderBy("em", "desc"), fs.limit(5000))))
         .docs.map((d) => { const x = d.data(); return { ...x, em: x.em && x.em.toMillis ? x.em.toMillis() : Number(x.em) || 0 }; }),
       vitrineLerConfig: async () => { const d = await fs.getDoc(fs.doc(db, "vitrine", "miga")); return d.exists() ? d.data() : {}; },
+      // Pacotes: o site lê poucos documentos grandes (vitrine/miga/pacotes/p0, p1…) em vez de um por produto
+      vitrineGravarPacotes: async (pacotes) => {
+        const antes = Number((vitrineCfg && vitrineCfg.pacotes) || 0);
+        for (let i = 0; i < pacotes.length; i++) await fs.setDoc(fs.doc(db, "vitrine", "miga", "pacotes", "p" + i), { itens: JSON.stringify(pacotes[i]), n: pacotes[i].length, em: Date.now() });
+        for (let i = pacotes.length; i < antes; i++) { try { await fs.deleteDoc(fs.doc(db, "vitrine", "miga", "pacotes", "p" + i)); } catch (e) { /* segue */ } }
+        await fs.setDoc(fs.doc(db, "vitrine", "miga"), { pacotes: pacotes.length, pacotesEm: Date.now() }, { merge: true });
+      },
       vitrineGravarConfig: (c) => fs.setDoc(fs.doc(db, "vitrine", "miga"), { ...c, atualizadoEm: Date.now() }, { merge: true })
     };
   }
-  let dados = local;
+  let dados = ligarPacotes(local);
   let vitrineMap = new Map(), vitrineCfg = {}; // produtos no site (vitrine)
 
   /* =========================== Entrada (só com Google) =========================== */
@@ -445,7 +453,7 @@
   /** Confere se a conta tem acesso e abre o app */
   async function abrirComConta() {
     const { auth, a } = conta.fb;
-    conta.uid = a.currentUser.uid; dados = criarNuvem();
+    conta.uid = a.currentUser.uid; dados = ligarPacotes(criarNuvem());
     try { await dados.lerConfig(); }
     catch (e) {
       const email = (a.currentUser && a.currentUser.email) || "escolhida";
@@ -560,7 +568,7 @@
         return;
       }
     }
-    conta.uid = a.currentUser.uid; dados = criarNuvem();
+    conta.uid = a.currentUser.uid; dados = ligarPacotes(criarNuvem());
     await carregarDados(listaAqui);
     if (!$("#aba-postar").hidden) renderFila();
     mostrarConta();
@@ -2608,9 +2616,26 @@
       cupom: it.cupom ? String(it.cupom).toUpperCase() : "", loja: it.loja || "", link: it.link || "", imagem: imgOk, tipo: it.categoria || "outros", para: PARA_SITE[para] ? para : "mulher",
       descricao: String(descricao || "").slice(0, 1200), frete: !!it.freteGratis, oficial: !!it.lojaOficial, maisVendido: it.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
   }
+  /* Pacotes do site: toda mudança nos produtos do site refaz os pacotes (uns segundos depois, uma vez só) */
+  function ligarPacotes(d) {
+    const sal = d.vitrineSalvar, apa = d.vitrineApagar;
+    d.vitrineSalvar = async (p) => { await sal(p); agendarPacotes(); };
+    d.vitrineApagar = async (id) => { await apa(id); agendarPacotes(); };
+    return d;
+  }
+  let pacoteT = 0;
+  function agendarPacotes() { clearTimeout(pacoteT); pacoteT = setTimeout(gravarPacotes, 2500); }
+  async function gravarPacotes() {
+    if (!dados.vitrineGravarPacotes) return;
+    const leve = (p) => { const x = { ...p }; if (String(x.imagem || "").startsWith("data:") && x.imagem.length > 60000) x.imagem = ""; delete x.atualizadoEm; return x; };
+    const l = [...vitrineMap.values()].map(leve), pacotes = [];
+    for (let i = 0; i < l.length; i += 150) pacotes.push(l.slice(i, i + 150));
+    try { await dados.vitrineGravarPacotes(pacotes); vitrineCfg = { ...vitrineCfg, pacotes: pacotes.length, pacotesEm: Date.now() }; } catch (e) { console.warn("pacotes", e); }
+  }
   async function carregarVitrine() {
     try { const l = await dados.vitrineListar(); vitrineMap = new Map(l.map((p) => [p.id, p])); } catch (e) { /* segue */ }
     try { vitrineCfg = (await dados.vitrineLerConfig()) || {}; } catch (e) { vitrineCfg = {}; }
+    if (vitrineMap.size && !vitrineCfg.pacotesEm) agendarPacotes(); // primeira vez: monta os pacotes
     renderFila();
   }
   /** Mudou o preço, a foto ou o cupom no app: o site acompanha */
