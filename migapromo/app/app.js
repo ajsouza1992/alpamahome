@@ -1230,9 +1230,9 @@
       ordenarAchados();
       pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
       { const av = $("#avisoCatalogo"), temML = catalogoAtual.some((p) => p.loja === "mercadolivre"), lj = catLoja.valor();
-        const det = (d.avisos || []).map((x) => String(x).replace(/^Mercado Livre não trouxe resultados \(|\)$/g, "")).join(" · ").slice(0, 420);
-        const msg = lj !== "shopee" && !temML ? `O Mercado Livre não trouxe resultados agora.${det ? " Detalhe para a Miga Promo: " + det : ""}` : "";
-        if (av) { av.textContent = msg; av.hidden = !msg; } }
+        if (av) { av.hidden = !(lj !== "shopee" && !temML);
+          if (!av.hidden) av.innerHTML = `<b>Mercado Livre:</b> ele não deixa buscar por dentro de outros apps. Abra a busca lá, escolha os produtos e mande para a Miga: no produto, toque em <b>Compartilhar → Miga Promo</b>, ou copie os links e use <b>Colar vários links</b> na Minha lista. O seu código de afiliado entra sozinho.
+            <a class="btn btn--branco ml-abrir-busca" href="https://lista.mercadolivre.com.br/${encodeURIComponent(termo.trim().replace(/\s+/g, "-"))}" target="_blank" rel="noopener">Abrir a busca no Mercado Livre</a>`; } }
     } catch (e) { if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; } toast("Não consegui buscar nas lojas agora"); catBusca = ""; carregarCatalogo(); }
   }
   [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(() => (catBusca ? buscarNasLojas(catBusca) : carregarCatalogo()), 0); }));

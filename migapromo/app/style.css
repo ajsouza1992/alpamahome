@@ -2779,3 +2779,4 @@ body.modo-selecao .lojas-seg { display: none; }
 .vl-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0 10px; }
 .vl-linha .nota { margin: 0; }
 #vlAdicionar { width: 100%; }
+.aviso .ml-abrir-busca { display: flex; justify-content: center; width: 100%; margin-top: 10px; text-decoration: none; }

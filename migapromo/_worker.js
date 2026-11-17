@@ -857,71 +857,16 @@ async function catalogoShopee(filtro, env, ordem = "vendidos", pagina = 1) {
   });
 }
 
-/* ---------- Busca de verdade no Mercado Livre (a palavra que você digitou) ----------
-   1º a busca oficial (com as chaves do ML); se não vier nada, lê a página de resultados do site do ML. */
-const desfazHtml = (t) => String(t || "").replace(/<[^>]+>/g, " ").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
-function precoDoBloco(html) {
-  const al = html.match(/aria-label="(?:(?:Agora|Antes):\s*)?([\d.]+)\s*reais(?:\s*com\s*(\d+)\s*centavos)?"/i);
-  if (al) return Number(al[1].replace(/\./g, "")) + (al[2] ? Number(al[2]) / 100 : 0);
-  const fr = html.match(/andes-money-amount__fraction[^>]*>([\d.]+)</), ct = html.match(/andes-money-amount__cents[^>]*>(\d+)</);
-  return fr ? Number(fr[1].replace(/\./g, "")) + (ct ? Number(ct[1]) / 100 : 0) : null;
-}
-/** Plano B do leitor: a página traz os produtos num JSON (estado da página) — acha cada link MLB e lê nome, preço e foto perto dele */
-function lerJsonBuscaML(html) {
-  const t = html.replace(/\\u002F/gi, "/").replace(/\\\//g, "/").replace(/\\u0026/gi, "&"), out = [], vistos = new Set();
-  const re = /https:\/\/(?:produto|www)\.mercadolivre\.com\.br\/[^"'\s<>\\]*?MLB-?(\d{6,})[^"'\s<>\\]*/g; let m;
-  while ((m = re.exec(t)) && out.length < 60) {
-    const id = m[1]; if (vistos.has(id)) continue;
-    const ini = Math.max(0, m.index - 2500), janela = t.slice(ini, m.index + 2500), perto = t.slice(m.index, m.index + 2500);
-    const tit = desfazHtml(((perto.match(/"(?:title|text)"\s*:\s*"([^"]{8,200})"/) || janela.match(/"(?:title|text)"\s*:\s*"([^"]{8,200})"/) || [])[1] || "").replace(/\\"/g, '"'));
-    const pr = perto.match(/"(?:value|amount|price)"\s*:\s*(\d+(?:\.\d+)?)/) || janela.match(/"(?:value|amount|price)"\s*:\s*(\d+(?:\.\d+)?)/);
-    const ant = perto.match(/"(?:original_price|previous_price|regular_amount)"\s*:\s*\{?[^}]{0,80}?(\d+(?:\.\d+)?)/);
-    const img = (janela.match(/https:\/\/http2\.mlstatic\.com\/[^"'\s\\]+?\.(?:webp|jpg|jpeg|png)/) || [])[0];
-    const preco = pr ? Number(pr[1]) : null; if (!tit || !preco || /^https?:/.test(tit)) continue;
-    vistos.add(id);
-    out.push({ id: "MLB" + id, nome: tit, preco, precoAntigo: ant && Number(ant[1]) > preco ? Number(ant[1]) : null, imagem: img || "", link: m[0].split(/[#?]/)[0], loja: "mercadolivre", categoria: "outros" });
-  }
-  return out;
-}
-function lerPaginaBuscaML(html) {
-  const out = [], vistos = new Set();
-  const blocos = html.split(/<li[^>]+ui-search-layout__item|<div[^>]+class="[^"]*poly-card[ "]/).slice(1);
-  for (const b of blocos) {
-    const bloco = b.slice(0, 9000);
-    let link = (bloco.match(/href="(https:\/\/(?:produto|www)\.mercadolivre\.com\.br\/[^"#?]+)/) || [])[1];
-    if (!link) continue;
-    const id = (link.match(/MLB-?(\d{6,})/i) || [])[1]; if (!id || vistos.has(id)) continue;
-    const tit = desfazHtml((bloco.match(/class="[^"]*(?:poly-component__title|ui-search-item__title)[^"]*"[^>]*>([\s\S]*?)<\/(?:a|h2|h3)>/) || [])[1]);
-    const img = (bloco.match(/(?:data-src|src)="(https:\/\/http2\.mlstatic\.com\/[^"]+\.(?:webp|jpg|jpeg|png))"/) || [])[1];
-    const antesHtml = (bloco.match(/andes-money-amount--previous[\s\S]{0,600}?<\/s>/) || [""])[0];
-    const atualHtml = (bloco.match(/poly-price__current[\s\S]{0,900}/) || [bloco.replace(antesHtml, "")])[0];
-    const preco = precoDoBloco(atualHtml), antes = antesHtml ? precoDoBloco(antesHtml) : null;
-    if (!tit || !preco) continue;
-    vistos.add(id);
-    out.push({ id: "MLB" + id, nome: tit, preco, precoAntigo: antes && antes > preco ? antes : null, imagem: img ? img.replace(/^http:/, "https:") : "", link: link.replace(/\/$/, ""), loja: "mercadolivre", categoria: "outros", ...( /frete gr[áa]tis/i.test(bloco) ? { freteGratis: true } : {}), ...(/loja oficial/i.test(bloco) ? { lojaOficial: true } : {}) });
-  }
-  return out.length ? out : lerJsonBuscaML(html);
-}
+/* ---------- Busca no Mercado Livre pela palavra digitada ----------
+   Só a busca oficial (com as chaves do ML). O ML pede verificação de robô quando um servidor abre a página de busca,
+   então não lemos a página dele: o app mostra um botão para abrir a busca no Mercado Livre. */
 async function buscaML(termo, env, pagina = 1) {
   chamadasML = 0; const diag = []; let saida = [];
   if (env.ML_APP_ID && env.ML_SECRET) {
     try { const token = await tokenML(env); const r = await getML(`/sites/MLB/search?q=${encodeURIComponent(termo)}&limit=48&offset=${(pagina - 1) * 48}`, token); diag.push("busca oficial " + r.status);
       for (const b of (r.dados && r.dados.results) || []) if (b.title && b.price) saida.push(itemML(b, { categoria: "outros" })); } catch (e) { diag.push("busca oficial falhou"); }
   }
-  if (!saida.length) {
-    const slug = termo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    const url = `https://lista.mercadolivre.com.br/${slug}${pagina > 1 ? `_Desde_${(pagina - 1) * 48 + 1}` : ""}_NoIndex_True`;
-    const agentes = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"];
-    for (const ua of agentes) {
-      try { const r = await fetch(url, { headers: { "user-agent": ua, "accept": "text/html,application/xhtml+xml", "accept-language": "pt-BR,pt;q=0.9" }, redirect: "follow" });
-        const html = r.ok ? await r.text() : ""; saida = html ? lerPaginaBuscaML(html) : [];
-        const tit = desfazHtml((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "").slice(0, 60);
-        diag.push(`página ${r.status} · ${Math.round(html.length / 1024)} KB · "${tit}" · cards ${(html.match(/poly-card|ui-search-layout__item/g) || []).length} · MLB ${(html.match(/MLB-?\d{6,}/g) || []).length} · lidos ${saida.length}${r.url && r.url !== url ? " · foi para " + r.url.slice(0, 60) : ""}`);
-        if (saida.length) break;
-      } catch (e) { diag.push("página falhou"); }
-    }
-  }
-  if (!saida.length && pagina === 1) throw new Error("Mercado Livre não trouxe resultados (" + diag.join(" · ") + ")");
+  if (!saida.length && pagina === 1) throw new Error("ML_BUSCA_FECHADA (" + diag.join(" · ") + ")");
   saida.temMais = saida.length >= 30;
   return saida;
 }

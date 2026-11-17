@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=397` → próxima `?v=398`
-- `app/sw.js`: `VERSAO = "miga-promo-v400"` → próxima `v401`
-- Comando usado: `sed -i 's/?v=397/?v=398/g' app/index.html app/sw.js && sed -i 's/miga-promo-v400/miga-promo-v401/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=398` → próxima `?v=399`
+- `app/sw.js`: `VERSAO = "miga-promo-v401"` → próxima `v402`
+- Comando usado: `sed -i 's/?v=398/?v=399/g' app/index.html app/sw.js && sed -i 's/miga-promo-v401/miga-promo-v402/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -129,7 +129,7 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 
 ## 7. Pendências e ideias em aberto
 1. **Mercado Livre nos Achados**: confirmar se as chaves `ML_APP_ID`/`ML_SECRET` estão no projeto migapromo. O app mostra um aviso acima dos Achados explicando o motivo quando o ML não traz nada — pedir para ela dizer o que o aviso mostra.
-2. **Busca nas lojas (Achados)**: barra "Buscar nas lojas" no topo dos Achados. Shopee busca pela palavra (API de afiliados). Mercado Livre: `buscaML` no `_worker.js` tenta a busca oficial e, se falhar, lê a página `lista.mercadolivre.com.br/<termo>` (`lerPaginaBuscaML`). **Ainda não testada no ar** — se o ML bloquear ou mudar a página, o aviso acima dos Achados mostra o motivo (ex.: "página 403"). Ajustar o leitor se precisar.
+2. **Busca nas lojas (Achados)**: barra "Buscar nas lojas" no topo dos Achados. **Shopee** busca pela palavra (API de afiliados) e funciona. **Mercado Livre**: a busca oficial dá 403 e a página de busca manda servidores para verificação de robô (`/gz/account-verification`) — **não tentar driblar**. O app mostra um aviso com o botão **"Abrir a busca no Mercado Livre"**; ela escolhe lá e manda para a Miga por **Compartilhar → Miga Promo** ou **Colar vários links**.
    **Colar vários links**: botão "Colar vários links de uma vez" na Minha lista (caixa de texto; usa `adicionarTexto`).
 3. **Logo de abertura (splash) do app/site no Android**: ícones refeitos em alta (192/384/512/1024). Se continuar borrado, ela precisa **remover e instalar de novo** o atalho.
 4. **Desempenho**: voltar para a Minha lista com ~300 produtos leva ~0,6 s (`renderFila`). Se ela reclamar de travada, otimizar.
