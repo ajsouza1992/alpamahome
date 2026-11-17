@@ -258,7 +258,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=341"></script>
+  <script src="app/firebase-config.js?v=342"></script>
   <script>
   (() => {
     "use strict";
@@ -466,7 +466,11 @@
       if (t.closest("#verN")) { $("#dlgFiltros").close(); $(".busca-bar").scrollIntoView({ behavior: "smooth" }); return; }
       if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; est.vant.clear(); est.grupo = ""; est.ordem = "destaque"; pintar(); return; }
       const mais = t.closest("[data-mais]"); if (mais) { mais.closest(".desc").classList.remove("curta"); mais.hidden = true; return; }
-      const rp = t.closest("[data-rap]"); if (rp) { const k = rp.dataset.rap; if (!k) { est.grupo = ""; est.vant.delete("ofertas"); est.vant.delete("cupom"); } else if (k === "@ofertas") { alterna(est.vant, "ofertas"); } else if (k === "@cupom") alterna(est.vant, "cupom"); else est.grupo = est.grupo === k ? "" : k; pintar(); return; }
+      const rp = t.closest("[data-rap]"); if (rp) { const k = rp.dataset.rap; // um atalho por vez (como abas): marcar um desmarca os outros; tocar de novo volta para Tudo
+        const ja = (k === "@ofertas" && est.vant.has("ofertas")) || (k === "@cupom" && est.vant.has("cupom")) || (k && est.grupo === k);
+        est.grupo = ""; est.vant.delete("ofertas"); est.vant.delete("cupom");
+        if (k && !ja) { if (k === "@ofertas") est.vant.add("ofertas"); else if (k === "@cupom") est.vant.add("cupom"); else est.grupo = k; }
+        pintar(); return; }
       const pa = t.closest("[data-para]"); if (pa) { const v = pa.dataset.para; est.para = est.para === v ? "" : v; pintar(); return; }
       const tp = t.closest("[data-tipo]"); if (tp) { alterna(est.tipos, tp.dataset.tipo); pintar(); return; }
       const lj = t.closest("[data-loja]"); if (lj) { alterna(est.lojas, lj.dataset.loja); pintar(); return; }
