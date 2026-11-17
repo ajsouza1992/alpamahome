@@ -7319,7 +7319,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="ia-passos"><p class="ia-tit">Quer textos novos? Use a IA (opcional)</p>
           <div class="ia-p"><b>1</b><span>Copie o pedido</span><button type="button" class="btn btn--branco" id="ka2Copiar">Copiar</button></div>
           <div class="ia-p"><b>2</b><span>Cole no ChatGPT ou no Gemini e copie a resposta</span></div>
-          <div class="ia-p"><b>3</b><span>${K.resp ? "Resposta colada" : "Cole a resposta aqui"}</span><button type="button" class="btn $${K.resp ? "btn--branco" : "btn--rosa"}" id="ka2Colar">${K.resp ? "Trocar" : "Colar"}</button></div>
+          <div class="ia-p"><b>3</b><span>${K.resp ? "Resposta colada" : "Cole a resposta aqui"}</span><button type="button" class="btn btn--branco" id="ka2Colar">${K.resp ? "Trocar" : "Colar"}</button></div>
           <p class="nota">Sem colar nada, o app usa textos prontos do assunto.</p></div>
       </div>
       <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="ka2Montar">Montar o carrossel</button></div>`;
@@ -8938,7 +8938,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <div class="ia-passos"><p class="ia-tit">Quer textos novos? Use a IA (opcional)</p>
           <div class="ia-p"><b>1</b><span>Copie o pedido</span><button type="button" class="btn btn--branco" id="chCopPrompt">Copiar</button></div>
           <div class="ia-p"><b>2</b><span>Cole no ChatGPT ou no Gemini e copie a resposta</span></div>
-          <div class="ia-p"><b>3</b><span>${CH.resp ? "Resposta colada" : "Cole a resposta aqui"}</span><button type="button" class="btn $${CH.resp ? "btn--branco" : "btn--rosa"}" id="chColar2">${CH.resp ? "Trocar" : "Colar"}</button></div>
+          <div class="ia-p"><b>3</b><span>${CH.resp ? "Resposta colada" : "Cole a resposta aqui"}</span><button type="button" class="btn btn--branco" id="chColar2">${CH.resp ? "Trocar" : "Colar"}</button></div>
           <p class="nota">Sem colar nada, o app usa textos prontos do assunto.</p></div>
       </div>${rod(`<button type="button" class="btn btn--rosa wz-continuar" id="chMontar">${img ? "Montar a imagem" : "Montar o vídeo"}</button>`)}`;
       return true;
