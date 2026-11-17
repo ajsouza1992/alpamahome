@@ -2740,3 +2740,14 @@ dialog:focus { outline: none; }
 .rp-cores button { flex: 0 1 40px; width: auto; height: auto; aspect-ratio: 1; min-width: 26px; padding: 0; }
 .pe-cores { flex-wrap: wrap; }
 .pe-cores button { flex: 0 0 36px; width: 36px; height: 36px; }
+/* ===== Padrão único dos botões pequenos de ação (Copiar, Colar, Baixar, Trocar, Escolher) em todas as telas ===== */
+.ia-p .btn, .pe-roupa .btn, .pe-etp-bt, .pe-etp-bt--b, .leg-btn, .pe-cena-t button, [data-ka2-copalt], .ka-alt__bt, .pe-assunto-l .btn {
+  flex: none; width: auto !important; min-height: 38px !important; height: auto; margin: 0 !important; padding: 0 14px !important;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 0 !important; border-radius: 999px !important; background: #fff !important; color: var(--preto) !important;
+  box-shadow: 0 6px 14px -9px rgba(29,29,31,.45), inset 0 0 0 1px var(--linha) !important;
+  font: inherit; font-size: 13px !important; font-weight: 700 !important; white-space: nowrap; cursor: pointer;
+}
+.pe-cena.ok .pe-cena-t button, .ia-p .btn.ok, .pe-etp-bt.ok { background: #e7f7ec !important; color: #16803c !important; box-shadow: none !important; }
+.ia-p .btn--rosa { background: #fff !important; color: var(--preto) !important; }
+.pe-fotos-bt .pe-etp-bt { width: 100% !important; padding: 0 6px !important; }
