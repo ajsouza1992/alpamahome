@@ -2966,6 +2966,7 @@
   $("#inAcoes").addEventListener("click", (e) => {
     const b = e.target.closest("[data-in]"); if (!b) return; const k = b.dataset.in;
     try { const u = JSON.parse(localStorage.getItem("miga_usadas") || "{}"); u[k] = (u[k] || 0) + 1; localStorage.setItem("miga_usadas", JSON.stringify(u)); } catch (er) { /* segue */ }
+    setTimeout(() => { if (wz && wz.canal && wz.canal !== "roteiro" && wz.canal !== "reels") { wz.deInicio = true; const v = $("#wzVoltar"); if (v && v.lastChild && /Produtos/.test(v.lastChild.textContent)) v.lastChild.textContent = "Início"; } }, 60);
     if (k === "video") { abrirVideoLivre(); return; }
     if (k === "cupons") { abrirPostarCupons(); return; }
     if (k === "chamada") { abrirChamada(); return; }
@@ -3180,7 +3181,7 @@
   }
   $("#wzVoltar").addEventListener("click", () => {
     const l = passosDe(wz.canal || "whatsapp");
-    if (l.indexOf(wz.passo) <= 0 || (wz.canal === "roteiro" && wz.passo === "lugares")) { irPara(wz.veioDaLista ? "postar" : "inicio"); return; }
+    if (l.indexOf(wz.passo) <= 0 || (wz.canal === "roteiro" && wz.passo === "lugares")) { irPara(wz.veioDaLista && !wz.deInicio ? "postar" : "inicio"); return; }
     irPasso(-1);
   });
   const opcaoCard = (attr, v, titulo, desc, on, extra = "") => `<button type="button" class="wz-op${on ? " on" : ""}" ${attr}="${esc(v)}">${extra}<span><b>${esc(titulo)}</b>${desc ? `<small>${esc(desc)}</small>` : ""}</span></button>`;
@@ -3253,7 +3254,7 @@
       const ps = l.map((k) => NOME_PASSO[k] || k).filter((n, j, a) => a.indexOf(n) === j || true);
       $("#wzPasso").innerHTML = `${nomeC ? `<b class="wz-canal">${esc(nomeC)}</b>` : ""}<span class="wz-trilha">${l.map((k, j) => `<i class="${j === i ? "on" : j < i ? "ok" : ""}">${esc(NOME_PASSO[k] || k)}</i>`).join('<em>›</em>')}</span>`;
       const on = $("#wzPasso .on"); if (on) on.scrollIntoView({ block: "nearest", inline: "center" }); }
-    $("#wzVoltar").hidden = false; $("#wzVoltar").lastChild.textContent = i <= 0 ? (wz.veioDaLista ? "Produtos" : "Início") : "Voltar";
+    $("#wzVoltar").hidden = false; $("#wzVoltar").lastChild.textContent = i <= 0 ? (wz.veioDaLista && !wz.deInicio ? "Produtos" : "Início") : "Voltar";
     const c = $("#wzCorpo"), item = wzItem();
     window.scrollTo({ top: 0 });
 
@@ -7045,6 +7046,7 @@
     produtos: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>'
   };
   ICONE_EST.produtosLivre = ICONE_EST.produtos; ICONE_EST.produtosRt = ICONE_EST.produtos;
+  Object.assign(ICONE_EST, { chAssunto: '<path d="M4 6h16M4 12h10M4 18h7"/>', chCor: ICONE_EST.cor, chModo: ICONE_EST.formato, chMusica: ICONE_EST.musica, peProduto: ICONE_EST.produtos, peFormato: ICONE_EST.formato, peCenario: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/>', peTipo: ICONE_EST.estilo });
   const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k] || ""}</svg><b>${esc(nome)}</b><small>${esc(String(valor || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " "))}</small></button>`;
   let amostra = null, amostraK = "", amostraT = 0;
   const ICO_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>', ICO_PAUSA = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1"/><rect x="13.5" y="5.5" width="4" height="13" rx="1"/></svg>';
@@ -7751,13 +7753,13 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     const segFmt = () => `<b class="ch-rot">Formato</b><div class="pe-seg">${[["quadrado", "Quadrado 1:1"], ["vertical", "Em pé 9:16"]].map(([k, n]) => `<button type="button" data-pe-formato="${k}" class="${fmtPers(P) === k ? "on" : ""}">${n}</button>`).join("")}</div>`;
     if (wz.passo === "peEscolher") {
       const comProd = P.tipo !== "chamada";
-      c.innerHTML = `<div class="pe-tela"><b class="ch-rot">Criar</b>
-        <div class="pe-seg">${[["imagem", "Imagem"], ["video", "Vídeo"], ["chamada", "Sem produto"]].map(([k, n]) => `<button type="button" data-pe-tipo="${k}" class="${P.tipo === k ? "on" : ""}">${n}</button>`).join("")}</div>
+      c.innerHTML = `<div class="pe-tela">
+        <div class="est-ctrl">${botaoEst("peTipo", "Criar", { imagem: "Imagem", video: "Vídeo", chamada: "Sem produto" }[P.tipo] || "Imagem")}${comProd ? botaoEst("peProduto", "Produto", it ? limparNome(it.nome || "") : "Escolher") : ""}${botaoEst("peFormato", "Formato", fmtPers(P) === "quadrado" ? "Quadrado 1:1" : "Em pé 9:16")}${comProd ? botaoEst("peCenario", "Cenário", nomeCenario(P)) : ""}</div>
         ${P.tipo === "chamada" ? '<p class="nota">Vídeo dela chamando a galera (canal, grupo, stories…), sem produto.</p>' : ""}
-        ${comProd ? (it ? `<button type="button" class="pe-prodcx" id="peEscolherProd">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${esc(NOME_CAT[it.categoria] || "Outros")}${it.precoNovo ? " · " + brl(it.precoNovo) : ""}</small></span><i>Trocar</i></button>` : `<button type="button" class="btn btn--branco" id="peEscolherProd">Escolher produto da Lista</button>`) : ""}
-        ${segFmt()}
+
+
         ${P.tipo === "imagem" ? `<b class="ch-rot">Quantas fotos?</b><div class="pe-seg">${[1, 2, 3].map((q) => `<button type="button" data-pe-qtd="${q}" class="${qtdPers(P) === q ? "on" : ""}">${q} ${q === 1 ? "foto" : "fotos"}</button>`).join("")}</div>` : ""}
-        ${comProd ? `<button type="button" class="rp-modelo" id="peCenario"><span><small>${cenasN(P) > 1 ? `Cenário · o mesmo nas ${cenasN(P)} cenas` : "Cenário"}</small><b>${esc(nomeCenario(P))}</b></span><i>Trocar</i></button>` : ""}
+
         ${comProd ? `<details class="pe-mais"${P.maisAberto ? " open" : ""}><summary>Mais opções <small>duração, cor do fundo, pose e enquadramento</small></summary><div class="pe-mais-c">${comProd ? `${P.tipo === "video" ? `<b class="ch-rot">Duração do vídeo</b><div class="pe-seg">${[[1, "10 s", "1 cena"], [2, "20 s", "2 cenas"], [3, "30 s", "3 cenas"]].map(([q, a, b]) => `<button type="button" data-pe-cenas="${q}" class="${cenasN(P) === q ? "on" : ""}">${a}<small>${b}</small></button>`).join("")}</div>` : ""}` : ""}` : ""}
         ${comProd && cenarioPers(P) === "estudio" ? `<div class="pe-fundo2"><button type="button" data-pe-fundo="auto" class="pe-auto${(P.fundo || "auto") === "auto" ? " on" : ""}">Automático</button>${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="pe-bola${P.fundo === k ? " on" : ""}" style="background:${x[1]}" aria-label="${x[0]}" title="${x[0]}"></button>`).join("")}</div>` : ""}
         ${P.tipo === "imagem" ? `<label class="pe-pose"><input type="checkbox" id="pePose"${P.poseLivre === false ? "" : " checked"}><span><b>Pose livre</b> <small>· ela posa à vontade</small></span></label>` : ""}
@@ -7953,7 +7955,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     if (t.closest("#peRefazerV")) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     if (t.closest("#peAprovar")) { if (videoIA()) { /* vídeo pronto */ } else if (P.midia && P.midia.tipo === "video") { toast("Crie o vídeo primeiro"); return; } else if (!fotosIA().length) { toast("Anexe a foto que a IA criou"); return; } wz.passo = "peLugares"; mostrarPasso(); scrollTo(0, 0); return; }
     const qd = t.closest("[data-pe-qtd]"); if (qd) { P.qtd = +qd.dataset.peQtd; lsPers.gravar("qtd", P.qtd); P.promptEd = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
-    if (t.closest("#peCenario")) { abrirFolhaCenario(); return; }
+    if (t.closest("#peCenario") || t.closest('[data-est="peCenario"]')) { abrirFolhaCenario(); return; }
     const tr = t.closest("[data-pe-tirar]"); if (tr) { const i = +tr.dataset.peTirar; (P.midias || []).splice(i, 1); if (!P.midias.length) { P.midias = null; P.midia = null; P.edIdx = 0; } else { P.edIdx = Math.min(P.edIdx || 0, P.midias.length - 1); P.midia = { tipo: "imagem", bmp: P.midias[P.edIdx].bmp }; } const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const tc = t.closest("[data-pe-toca]"); if (tc) { const i = +tc.dataset.peToca, m = (P.midias || [])[i]; if (m) { m.on = !m.on; P.edIdx = i; P.midia = { tipo: "imagem", bmp: m.bmp }; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; } // tocar marca/desmarca e mostra grande
     const us = t.closest("[data-pe-usar]"); if (us) { const m = (P.midias || [])[+us.dataset.peUsar]; if (m) { m.on = !m.on; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
@@ -8423,7 +8425,10 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     if (t.closest("#peIr2")) { if (semProduto()) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; } if (!it) { toast("Escolha o produto"); return; } wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peVoltar")) { const l = passosDe("personagem"), i = l.indexOf(wz.passo); if (i > 0) { wz.passo = l[i - 1]; mostrarPasso(); scrollTo(0, 0); } else irPara("inicio"); return; }
     if (t.closest("#peIr3")) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
-    if (t.closest("#peEscolherProd")) { const l = fila().filter((x) => !x.carregando && x.nome); if (!l.length) { toast("Adicione um produto na Lista primeiro"); return; }
+    { const eb = t.closest('[data-est="peTipo"], [data-est="peFormato"]'); if (eb) { const P = pe();
+      if (eb.dataset.est === "peTipo") { const v = await escolherOpcao("Criar", [["imagem", "Imagem"], ["video", "Vídeo"], ["chamada", "Sem produto · ela chama a galera"]], P.tipo); if (v && v !== P.tipo) { P.tipo = v; P.tx = null; P.promptEd = null; P.livre = null; mostrarPasso(); } return; }
+      const v = await escolherOpcao("Formato", [["vertical", "Em pé 9:16"], ["quadrado", "Quadrado 1:1"]], fmtPers(P)); if (v) { P.formato = v; P.promptEd = null; P.livre = null; P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; } }
+    if (t.closest("#peEscolherProd") || t.closest('[data-est="peProduto"]')) { const l = fila().filter((x) => !x.carregando && x.nome); if (!l.length) { toast("Adicione um produto na Lista primeiro"); return; }
       folhaEst("Escolha o produto", `<div class="lista-prod">${l.map((x) => `<button type="button" class="lp-item pe-esc" data-pe-prod="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span>${esc(limparNome(x.nome))}</span></button>`).join("")}</div>`); return; }
     if (t.closest("#peAssunto")) { const v = await escolherOpcao("Assunto do vídeo", ASSUNTOS_PERS.map(([k, n, f]) => [k, `${n} · “${f}”`]), P.assunto || "canal"); if (v) { P.assunto = v; P.falaMeio = null; P.promptEd = null; const a = assuntoDe(P); P.tx = { chamada: a[3], nome: "", de: "", por: "", cupom: "", selo: "" }; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
     if (t.closest("#peRoupa")) { sortearRoupa(P); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
@@ -8868,10 +8873,10 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const img = CH.modo === "img", rod = (h) => `<div class="wz-rodape pr-rodape rp-rod2">${h}</div>`;
     if (wz.passo === "chInicio") {
       c.innerHTML = `<div class="ka2">
-        <div class="pe-seg ch-modo"><button type="button" data-ch-modo="video" class="${img ? "" : "on"}">Vídeo<small>Reels de 12 s</small></button><button type="button" data-ch-modo="img" class="${img ? "on" : ""}">Imagem<small>com caixinha de pergunta</small></button></div>
-        <button type="button" class="rp-modelo" id="chAssuntoBt"><span><small>Assunto</small><b>${esc(CH.ideia || nomeNichoCh(CH.nicho))}</b></span><i>Trocar</i></button>
+        <div class="est-ctrl">${botaoEst("chAssunto", "Assunto", CH.ideia || nomeNichoCh(CH.nicho))}${botaoEst("chCor", "Cor", (CORES_CHAMADA[CH.cor] || {}).nome || "Sua cor")}${botaoEst("chModo", "Formato", img ? "Imagem" : "Vídeo")}${img ? "" : botaoEst("chMusica", "Música", (NOMES_MUSICA[CH.musica] || [CH.musica || "Música"])[0])}</div>
+
         <label class="ka2-campo"><span>Ou escreva do que vai falar</span><input id="chLivre" maxlength="120" placeholder="Ex.: calças jeans até R$ 80" value="${esc(CH.livre || "")}"></label>
-        <b class="ch-rot">Cor</b><div class="rp-cores">${Object.entries(CORES_CHAMADA).map(([k, v]) => `<button type="button" data-ch-cor="${k}" class="${CH.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}" title="${v.nome}"></button>`).join("")}</div>
+
         <div class="ia-passos"><p class="ia-tit">Quer textos novos? Use a IA (opcional)</p>
           <div class="ia-p"><b>1</b><span>Copie o pedido</span><button type="button" class="btn btn--branco" id="chCopPrompt">Copiar</button></div>
           <div class="ia-p"><b>2</b><span>Cole no ChatGPT ou no Gemini e copie a resposta</span></div>
@@ -8941,7 +8946,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "chamada" || !wz.ch || wz.ch.tipo === "seg") return; const CH = ch(), t = e.target;
     const mo = t.closest("[data-ch-modo]"); if (mo) { if (CH.modo !== mo.dataset.chModo) { CH.modo = mo.dataset.chModo; CH.resp = null; } reCh(); return; }
-    if (t.closest("#chAssuntoBt")) { folhaAssuntoCh(); return; }
+    if (t.closest("#chAssuntoBt") || t.closest('[data-est="chAssunto"]')) { folhaAssuntoCh(); return; }
+    if (t.closest('[data-est="chCor"]')) { const v = await escolherOpcao("Cor", Object.entries(CORES_CHAMADA).map(([k, x]) => [k, x.nome, x.fundo]), CH.cor); if (v) { CH.cor = v; mostrarPasso(); } return; }
+    if (t.closest('[data-est="chModo"]')) { const v = await escolherOpcao("Formato", [["video", "Vídeo · Reels de 12 s"], ["img", "Imagem · com caixinha de pergunta"]], CH.modo === "img" ? "img" : "video"); if (v && v !== (CH.modo === "img" ? "img" : "video")) { CH.modo = v; CH.resp = null; reCh(); } return; }
     if (t.closest("#chCopPrompt")) { const as = assuntoCh(CH); if (await copiarTexto(CH.modo === "img" ? promptCaixinha(as) : promptChamada(as))) toast("Prompt copiado: cole no ChatGPT ou no Gemini"); return; }
     if (t.closest("#chColar2")) {
       let txt = ""; try { txt = await navigator.clipboard.readText(); } catch (err) { txt = ""; }
@@ -9108,7 +9115,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#chEditarTx")) { folhaTextosChamada(); return; }
     const co = t.closest("[data-ch-cor]"); if (co) { CH.cor = co.dataset.chCor; mostrarPasso(); return; }
     const ouv = t.closest("[data-ouvir]"); if (ouv) { tocarAmostra(ouv.dataset.ouvir); return; }
-    if (t.closest("#chTrocarMus")) { tocarAmostra(""); folhaEst("Música", `<p class="nota">Toque no ▶ para ouvir antes de escolher.</p><div class="lista-mod">${LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${(ALIAS_MUS[CH.musica] || CH.musica) === k ? " on" : ""}"><button type="button" data-ch-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`); return; }
+    if (t.closest("#chTrocarMus") || t.closest('[data-est="chMusica"]')) { tocarAmostra(""); folhaEst("Música", `<p class="nota">Toque no ▶ para ouvir antes de escolher.</p><div class="lista-mod">${LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${(ALIAS_MUS[CH.musica] || CH.musica) === k ? " on" : ""}"><button type="button" data-ch-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`); return; }
     const mu = t.closest("[data-ch-mus]"); if (mu) {
       let v = mu.dataset.chMus; if (v === "mais") { v = await escolherOpcao("Música", LISTA_MUSICAS.filter((k) => MUSICAS[k]).map((k) => [k, NOMES_MUSICA[k][0]]), CH.musica); if (v === null) return; }
       CH.musica = v; mostrarPasso(); return; }
