@@ -901,14 +901,13 @@ async function buscaML(termo, env, pagina = 1, tokenConta = "") {
   if (!saida.length && tokenConta) {
     try {
       const r = await getML(`/products/search?status=active&site_id=MLB&q=${encodeURIComponent(termo)}&limit=30&offset=${(pagina - 1) * 30}`, tokenConta);
-      const lista = ((r.dados && r.dados.results) || []).filter((x) => x && x.id && x.name).slice(0, 18);
+      const lista = ((r.dados && r.dados.results) || []).filter((x) => x && x.id && x.name).slice(0, 8);
       diag.push("catálogo " + r.status + " · " + lista.length + (r.dados && r.dados.message ? " " + String(r.dados.message).slice(0, 50) : ""));
       const prontos = await Promise.all(lista.map(async (x) => {
         let preco = null, antes = null, itemId = "", extra = {};
         const bb = x.buy_box_winner || null;
         if (bb && bb.price) { preco = bb.price; antes = bb.original_price || null; itemId = bb.item_id || ""; }
         if (!preco) { const d = await getML(`/products/${x.id}`, tokenConta); const w = d.dados && d.dados.buy_box_winner; if (w && w.price) { preco = w.price; antes = w.original_price || null; itemId = w.item_id || ""; if (w.shipping && w.shipping.free_shipping) extra.freteGratis = true; } }
-        if (!preco) { const d = await getML(`/products/${x.id}/items?limit=1`, tokenConta); const it = ((d.dados && d.dados.results) || [])[0]; if (it && it.price) { preco = it.price; antes = it.original_price || null; itemId = it.item_id || ""; } }
         const foto = ((x.pictures || [])[0] || {}).url || ((x.pictures || [])[0] || {}).secure_url || "";
         return preco ? { id: itemId || x.id, nome: x.name, preco, precoAntigo: antes && antes > preco ? antes : null, imagem: mlHttps(foto), link: x.permalink || `https://www.mercadolivre.com.br/p/${x.id}`, loja: "mercadolivre", categoria: "outros", ...extra } : null;
       }));
@@ -943,10 +942,17 @@ async function rotaCatalogo(request, env) {
   const filtro = busca ? { categoria: "outros", ml: "", busca, shopee: busca } : FILTROS_CATALOGO[nomeFiltro];
   const tarefas = [];
   // Mercado Livre: mais vendidos da categoria e subcategorias, 12 por página; Shopee: 50 por página
-  if (busca && loja !== "shopee") tarefas.push(buscaML(busca, env, pagina, String(request.headers.get("x-ml-token") || "").slice(0, 200))); // busca: a palavra de verdade no Mercado Livre
-  else if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env, pagina));
-  if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem, pagina));
-  const resultados = await Promise.allSettled(tarefas);
+  let resultados;
+  if (busca) {
+    // Busca: a Shopee primeiro e sozinha; o Mercado Livre depois (o Cloudflare limita as consultas por pedido e o ML não pode derrubar a Shopee)
+    resultados = [];
+    if (configurado.shopee && loja !== "mercadolivre") resultados.push(...(await Promise.allSettled([catalogoShopee(filtro, env, ordem, pagina)])));
+    if (loja !== "shopee") resultados.push(...(await Promise.allSettled([buscaML(busca, env, pagina, String(request.headers.get("x-ml-token") || "").slice(0, 200))])));
+  } else {
+    if (configurado.mercadolivre && loja !== "shopee") tarefas.push(catalogoML(filtro, env, pagina));
+    if (configurado.shopee && loja !== "mercadolivre") tarefas.push(catalogoShopee(filtro, env, ordem, pagina));
+    resultados = await Promise.allSettled(tarefas);
+  }
   const produtos = [], avisos = []; let maisML = false;
   for (const r of resultados) {
     if (r.status === "fulfilled") { produtos.push(...r.value); if (r.value.temMais) maisML = true; }
