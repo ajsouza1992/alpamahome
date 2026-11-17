@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=412">
+  <link rel="manifest" href="manifest.json?v=413">
   <link rel="icon" type="image/png" href="favicon-redondo.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&family=Roboto+Condensed:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=412">
+  <link rel="stylesheet" href="style.css?v=413">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -68,7 +68,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=412" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=413" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -94,7 +94,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=412" alt="">
+    <img src="logo.png?v=413" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -289,6 +289,7 @@
         <button type="button" class="link-sel pp-ordem pp-fav" id="ppFav" aria-pressed="false" title="Favoritos"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span class="sr-only">Favoritos</span></button>
         <button type="button" class="link-sel pp-ordem pp-loja" id="ppLoja"><span id="ppLojaTxt">Lojas</span> ▾</button>
         <button type="button" class="link-sel pp-ordem" id="ppOrdem"><svg><use href="#i-ordem"/></svg><span id="ppOrdemTxt">Recentes</span></button>
+        <button type="button" class="link-sel pp-ordem pp-filtro" id="fLista"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filtrar</span></button>
         <button type="button" class="btn-redondo" id="ppFiltrar" aria-label="Filtrar" hidden><em id="ppFiltroQtd" hidden></em></button>
         <button type="button" id="ppMarcar" hidden></button>
       </div>
@@ -369,7 +370,7 @@
         <button type="button" class="link" id="stAbrir">Abrir o site</button>
       </div>
       <p class="nota" id="stResumo">Os produtos que estão na sua vitrine.</p>
-      <div class="duas st-enviar">
+      <div class="duas st-enviar" hidden>
         <button type="button" class="btn btn--rosa" id="stDosAchados"><svg class="ic-mono"><use href="#i-etiqueta"/></svg>Enviar dos Achados</button>
         <button type="button" class="btn btn--branco" id="stDaLista"><svg class="ic-mono"><use href="#i-lista"/></svg>Enviar da Lista</button>
       </div>
@@ -385,6 +386,7 @@
         <button type="button" class="link-sel pp-ordem pp-fav" id="stFav" aria-pressed="false" title="Favoritos"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span class="sr-only">Favoritos</span></button>
         <button type="button" class="link-sel pp-ordem pp-loja" id="stLoja"><span id="stLojaTxt">Lojas</span> ▾</button>
         <button type="button" class="link-sel pp-ordem" id="stOrdem">Recentes</button>
+        <button type="button" class="link-sel pp-ordem pp-filtro" id="fSite"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filtrar</span></button>
         <button type="button" class="link-sel" id="stSelecionar">Selecionar</button>
       </div>
       <div class="catalogo" id="stLista"></div>
@@ -451,6 +453,7 @@
         <span class="nota" id="acTotal"></span>
         <button type="button" class="link-sel pp-ordem pp-loja" id="acLoja"><span id="acLojaTxt">Lojas</span> ▾</button>
         <button type="button" class="link-sel pp-ordem" id="acOrdem"><svg><use href="#i-ordem"/></svg><span id="acOrdemTxt">Melhor combinação</span></button>
+        <button type="button" class="link-sel pp-ordem pp-filtro" id="fAchados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filtrar</span></button>
         <button type="button" class="link-sel" id="acSelecionar">Selecionar</button>
       </div>
       <p class="aviso" id="avisoCatalogo" hidden></p>
@@ -536,7 +539,7 @@
     <b id="stQtd">Toque nos produtos</b>
     <div class="bs-duas st-bts bs-tres">
       <button type="button" class="bs-excluir" id="stTirarVarios"><svg><use href="#i-lixo"/></svg>Excluir</button>
-      <button type="button" class="bs-excluir" id="stCatVarios">Categoria</button>
+      <button type="button" class="bs-excluir" id="stCatVarios" hidden>Categoria</button>
       <button type="button" class="bs-excluir" id="stParaLista" hidden>Pôr na Lista</button>
       <button type="button" class="bs-continuar" id="stPostar" hidden>Postar</button>
       <button type="button" class="bs-continuar bs-enviar" data-enviar-para="st">Enviar para…</button>
@@ -904,7 +907,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=412"></script>
-  <script src="app.js?v=412"></script>
+  <script src="firebase-config.js?v=413"></script>
+  <script src="app.js?v=413"></script>
 </body>
 </html>

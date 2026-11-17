@@ -1085,7 +1085,7 @@
   }
   function pintarAchadosBase() {
     pintarCatsAchados();
-    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => (!acSoTop || p.maisVendido) && achadoVisivel(p) && (!acCat || catDoAchado(p) === acCat)).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
+    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => (!acSoTop || p.maisVendido) && achadoVisivel(p) && (!acCat || catDoAchado(p) === acCat) && passaFiltro("ac", p)).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
     const botaoBusca = bruto.length >= 3 && !daBusca ? `<button type="button" class="btn btn--rosa ac-buscar" id="acBuscarLojas"><svg class="ic-mono"><use href="#i-busca"/></svg>Buscar “${esc(bruto)}” nas lojas</button>` : "";
     const total = l.length; l = l.slice(0, acLimite);
     $("#acTotal").textContent = total > l.length ? `${l.length} de ${total} achados` : `${total} ${total === 1 ? "achado" : "achados"}`;
@@ -1365,7 +1365,7 @@
     $("#stResumo").innerHTML = n ? `${n} ${n === 1 ? "produto" : "produtos"} no site. Toque em ⋮ para mudar ou tirar.${n > LIMITE_SITE ? ` <b class="st-alerta">Passou de ${LIMITE_SITE}: tire os mais antigos ou os menos clicados para o site continuar leve.</b>` : ""}` : "Nenhum produto no site ainda. Envie dos Achados ou da sua Lista.";
     $("#stFiltro").hidden = cats.length < 2;
     $("#stFiltro").innerHTML = [["", "Todas"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" class="chip-cat${stEst.cat === k ? " on" : ""}" data-st-cat="${k}">${k ? `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k] || ""}</svg>` : ""}${esc(nome)} <i>${k ? todos.filter((p) => tiposDe(p).includes(k)).length : n}</i></button>`).join("");
-    const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (stEst.loja === "todas" || p.loja === stEst.loja) && (!stEst.cat || tiposDe(p).includes(stEst.cat)) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
+    const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (stEst.loja === "todas" || p.loja === stEst.loja) && (!stEst.cat || tiposDe(p).includes(stEst.cat)) && passaFiltro("st", p) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
     if (soFav) l = l.filter(ehFavSite);
     if (stEst.ordem === "comissao" || stEst.ordem === "vendidos") { const f = stEst.ordem === "comissao" ? comissaoDe : vendidosDe, it = (p) => itemPorId(p.id) || {}; l = l.slice().sort((a, b) => f(it(b)) - f(it(a))); }
     else if (stEst.ordem !== "recentes") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }, tot = (p) => k(p).loja + k(p).abrir; l = l.slice().sort((a, b) => tot(b) - tot(a) || k(b).loja - k(a).loja); if (stEst.ordem === "top10") l = l.filter((p) => tot(p) > 0).slice(0, 10); }
@@ -1499,6 +1499,8 @@
   });
   $("#stTirarVarios").addEventListener("click", async () => {
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
+    const n = stEst.sel.size;
+    if (!(await confirmar({ titulo: `Excluir ${n} ${n === 1 ? "produto" : "produtos"} do site?`, texto: "Eles saem do site na hora. Na Minha lista nada muda.", ok: "Excluir" }))) return;
     const ids = [...stEst.sel], ok = await tirarVariosDoSite(ids); stEst.sel = null; renderSite();
     if (ok !== ids.length) toast("Alguns não saíram. Tente de novo.");
   });
@@ -1507,9 +1509,9 @@
     const b = e.target.closest("[data-enviar-para]"); if (!b) return;
     const aba = b.dataset.enviarPara, n = aba === "pp" ? marcados.size : aba === "ac" ? (acSel ? acSel.size : 0) : (stEst.sel ? stEst.sel.size : 0);
     if (!n) { toast("Toque nos produtos primeiro"); return; }
-    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"]] }[aba];
+    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria no site"]] }[aba];
     const v = await escolherOpcao(`Enviar ${n} ${n === 1 ? "produto" : "produtos"} para…`, ops, ""); if (!v) return;
-    const alvo = { pp: { site: "#ppPorSite", postar: "#oQueCriar" }, ac: { lista: "#acPorLista", site: "#acSiteEnviar", postar: "#acPostar" }, st: { lista: "#stParaLista", postar: "#stPostar" } }[aba][v];
+    const alvo = { pp: { site: "#ppPorSite", postar: "#oQueCriar" }, ac: { lista: "#acPorLista", site: "#acSiteEnviar", postar: "#acPostar" }, st: { lista: "#stParaLista", postar: "#stPostar", categoria: "#stCatVarios" } }[aba][v];
     const bt = $(alvo); if (bt) bt.click();
   });
   /* Site → Lista: só os selecionados passam para a Lista (com o mesmo código, então o site acompanha o produto da Lista) */
@@ -2447,7 +2449,7 @@
   function renderFila() {
     renderSite(); pintarSegProd(); try { pintarFavBt(); } catch (e) { /* segue */ }
     migrarCategorias(); renderCatsLista(); pintarMarcados();
-    const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && (lojaLista === "todas" || i.carregando || i.loja === lojaLista) && bateBusca(i) && passaResumo(i));
+    const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && (lojaLista === "todas" || i.carregando || i.loja === lojaLista) && bateBusca(i) && passaResumo(i) && passaFiltro("pp", i));
     { const t = $("#ppLojaTxt"); if (t) { t.textContent = { todas: "Lojas", mercadolivre: "Mercado Livre", shopee: "Shopee" }[lojaLista] || "Lojas"; $("#ppLoja").classList.toggle("on", lojaLista !== "todas"); $("#ppLoja").hidden = modoVarios; } }
     { let fb = $("#ppFiltroRes"); if (!fb) { fb = document.createElement("div"); fb.id = "ppFiltroRes"; fb.className = "pp-filtro-res"; $("#ppLista").before(fb); }
       fb.hidden = !filtroResumo; fb.innerHTML = filtroResumo ? `<span>Mostrando: <b>${NOMES_RESUMO[filtroResumo]}</b> (${base.length})</span><button type="button" class="btn btn--branco btn--mini" data-limpar-resumo>Ver todos</button>` : ""; }
@@ -2693,6 +2695,49 @@
     const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; renderFila(); });
   ["#ppFav", "#stFav"].forEach((sel) => $(sel).addEventListener("click", () => { soFav = !soFav; renderFila(); renderSite(); }));
   function pintarFavBt() { ["#ppFav", "#stFav"].forEach((sel) => { const b = $(sel); if (!b) return; b.classList.toggle("on", soFav); b.setAttribute("aria-pressed", String(soFav)); b.hidden = !!(sel === "#ppFav" ? modoVarios : stEst.sel); }); }
+  /* Botão "Filtrar" ao lado do "Ordenar" (Minha lista, Achados e No site): abre as opções num popup */
+  const FILTROS = {
+    pp: [["todos", "Todos"], ["postar", "Para postar"], ["postados", "Já postados"], ["nosite", "Estão no site"], ["forasite", "Fora do site"], ["fav", "Favoritos"], ["incompletos", "Sem foto ou preço"], ["cupom", "Com cupom"], ["desconto", "Com desconto"]],
+    ac: [["todos", "Todos"], ["desconto", "Com desconto"], ["frete", "Frete grátis"], ["oficial", "Loja oficial"], ["vendidos", "Mais vendidos"], ["comissao", "Comissão alta (10%+)"]],
+    st: [["todos", "Todos"], ["nalista", "Também na Minha lista"], ["sosite", "Só no site"], ["fav", "Favoritos"], ["comcliques", "Com cliques"], ["semcliques", "Sem cliques"], ["cupom", "Com cupom"], ["desconto", "Com desconto"]]
+  };
+  const filtroAba = { pp: "todos", ac: "todos", st: "todos" };
+  const descFiltro = (novo, antigo) => (antigo && novo && antigo > novo ? 1 - novo / antigo : 0);
+  function passaFiltro(aba, x) {
+    const f = filtroAba[aba]; if (!f || f === "todos" || !x) return true;
+    if (aba === "pp") {
+      if (x.carregando) return true;
+      if (f === "postar") return !foiCompartilhado(x); if (f === "postados") return foiCompartilhado(x);
+      if (f === "nosite") return vitrineMap.has(x.id); if (f === "forasite") return !vitrineMap.has(x.id);
+      if (f === "fav") return !!x.fav; if (f === "incompletos") return !x.imagem || !x.precoNovo || !x.nome;
+      if (f === "cupom") return !!x.cupom; if (f === "desconto") return descFiltro(x.precoNovo, x.precoAntigo) > 0.02;
+    }
+    if (aba === "ac") {
+      if (f === "desconto") return descFiltro(x.preco, x.precoAntigo) > 0.02; if (f === "frete") return !!x.freteGratis;
+      if (f === "oficial") return !!x.lojaOficial; if (f === "vendidos") return !!x.maisVendido || (x.vendidos || 0) >= 100;
+      if (f === "comissao") return (x.comissao || 0) >= 10;
+    }
+    if (aba === "st") {
+      if (f === "nalista") return fila().some((i) => i.id === x.id); if (f === "sosite") return !fila().some((i) => i.id === x.id);
+      if (f === "fav") return ehFavSite(x);
+      const k = cliquesSite.mapa.get(x.id), n = k ? k.loja + k.abrir : 0;
+      if (f === "comcliques") return n > 0; if (f === "semcliques") return n === 0;
+      if (f === "cupom") return !!x.cupom; if (f === "desconto") return descFiltro(x.preco, x.precoAntigo) > 0.02;
+    }
+    return true;
+  }
+  function pintarBotoesFiltro() {
+    [["pp", "#fLista"], ["ac", "#fAchados"], ["st", "#fSite"]].forEach(([aba, sel]) => { const b = $(sel); if (!b) return; const f = filtroAba[aba];
+      b.querySelector("span").textContent = f === "todos" ? "Filtrar" : "Filtro: " + (FILTROS[aba].find(([k]) => k === f) || ["", ""])[1]; b.classList.toggle("on", f !== "todos"); });
+  }
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("#fLista, #fAchados, #fSite"); if (!b) return;
+    const aba = { fLista: "pp", fAchados: "ac", fSite: "st" }[b.id];
+    const v = await escolherOpcao("Filtrar", FILTROS[aba], filtroAba[aba]); if (!v) return;
+    filtroAba[aba] = v; pintarBotoesFiltro();
+    if (aba === "pp") renderFila(); else if (aba === "ac") pintarAchados(); else { if (v === "comcliques" || v === "semcliques") carregarCliquesSite(true); renderSite(); }
+  });
+  setTimeout(pintarBotoesFiltro, 0);
   /* Filtro de loja sempre à vista (Todas · Mercado Livre · Shopee) nas três telas de Produtos */
   function pintarLojasSeg() {
     const val = { pp: lojaLista, st: stEst.loja || "todas", ac: catLoja.valor() };
