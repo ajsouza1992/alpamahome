@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=399` → próxima `?v=400`
-- `app/sw.js`: `VERSAO = "miga-promo-v402"` → próxima `v403`
-- Comando usado: `sed -i 's/?v=399/?v=400/g' app/index.html app/sw.js && sed -i 's/miga-promo-v402/miga-promo-v403/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=400` → próxima `?v=401`
+- `app/sw.js`: `VERSAO = "miga-promo-v403"` → próxima `v404`
+- Comando usado: `sed -i 's/?v=400/?v=401/g' app/index.html app/sw.js && sed -i 's/miga-promo-v403/miga-promo-v404/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -129,7 +129,7 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 
 ## 7. Pendências e ideias em aberto
 1. **Mercado Livre nos Achados**: confirmar se as chaves `ML_APP_ID`/`ML_SECRET` estão no projeto migapromo. O app mostra um aviso acima dos Achados explicando o motivo quando o ML não traz nada — pedir para ela dizer o que o aviso mostra.
-2. **Busca nas lojas (Achados)**: barra "Buscar nas lojas". **Shopee** funciona. **Mercado Livre**: o token só do app dá 403 e a página de busca pede verificação de robô (não driblar). Caminho novo (a testar): **login da conta do ML** (OAuth) — rotas `mlentrar` / `mlretorno` / `mlrenovar` no `_worker.js`; a conta fica em `config.mlConta` (nuvem) e vai no cabeçalho `x-ml-token` da busca. Precisa cadastrar no ML Developers → aplicação → URIs de redirect: `https://www.migapromo.com/app/api/mlretorno` (e `https://migapromo.com/app/api/mlretorno`). Se ainda der 403, o aviso mostra "busca com a sua conta 403". Reserva: botão "Abrir a busca no Mercado Livre" + Compartilhar/Colar vários links.
+2. **Busca nas lojas (Achados)**: barra "Buscar nas lojas". **Shopee** funciona. **Mercado Livre**: o token só do app dá 403 e a página de busca pede verificação de robô (não driblar). Caminho novo (a testar): **login da conta do ML** (OAuth) — rotas `mlentrar` / `mlretorno` / `mlrenovar` no `_worker.js`; a conta fica em `config.mlConta` (nuvem) e vai no cabeçalho `x-ml-token` da busca. Precisa cadastrar no ML Developers → aplicação → URIs de redirect: `https://www.migapromo.com/app/api/mlretorno` (e `https://migapromo.com/app/api/mlretorno`). Resultado no ar: busca com a conta = 403 forbidden. Plano B novo (a testar): /products/search (catálogo) com a conta + preço por /products/{id} (buy_box_winner) ou /products/{id}/items. Reserva: botão "Abrir a busca no Mercado Livre" + Compartilhar/Colar vários links.
    **Colar vários links**: botão "Colar vários links de uma vez" na Minha lista (caixa de texto; usa `adicionarTexto`).
 3. **Logo de abertura (splash) do app/site no Android**: ícones refeitos em alta (192/384/512/1024). Se continuar borrado, ela precisa **remover e instalar de novo** o atalho.
 4. **Desempenho**: voltar para a Minha lista com ~300 produtos leva ~0,6 s (`renderFila`). Se ela reclamar de travada, otimizar.
