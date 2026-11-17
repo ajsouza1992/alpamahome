@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=400` → próxima `?v=401`
-- `app/sw.js`: `VERSAO = "miga-promo-v403"` → próxima `v404`
-- Comando usado: `sed -i 's/?v=400/?v=401/g' app/index.html app/sw.js && sed -i 's/miga-promo-v403/miga-promo-v404/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=405` → próxima `?v=406`
+- `app/sw.js`: `VERSAO = "miga-promo-v408"` → próxima `v409`
+- Comando usado: `sed -i 's/?v=405/?v=406/g' app/index.html app/sw.js && sed -i 's/miga-promo-v408/miga-promo-v409/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -129,7 +129,7 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 
 ## 7. Pendências e ideias em aberto
 1. **Mercado Livre nos Achados**: confirmar se as chaves `ML_APP_ID`/`ML_SECRET` estão no projeto migapromo. O app mostra um aviso acima dos Achados explicando o motivo quando o ML não traz nada — pedir para ela dizer o que o aviso mostra.
-2. **Busca nas lojas (Achados)**: barra "Buscar nas lojas". **Shopee** funciona. **Mercado Livre**: o token só do app dá 403 e a página de busca pede verificação de robô (não driblar). Caminho novo (a testar): **login da conta do ML** (OAuth) — rotas `mlentrar` / `mlretorno` / `mlrenovar` no `_worker.js`; a conta fica em `config.mlConta` (nuvem) e vai no cabeçalho `x-ml-token` da busca. Precisa cadastrar no ML Developers → aplicação → URIs de redirect: `https://www.migapromo.com/app/api/mlretorno` (e `https://migapromo.com/app/api/mlretorno`). Resultado no ar: busca com a conta = 403 forbidden. Plano B novo (a testar): /products/search (catálogo) com a conta + preço por /products/{id} (buy_box_winner) ou /products/{id}/items. Reserva: botão "Abrir a busca no Mercado Livre" + Compartilhar/Colar vários links.
+2. **Busca nas lojas (Achados)**: só a barra de cima (lupa do teclado busca nas lojas). **Shopee** funciona. **Mercado Livre não libera busca por palavra para apps de fora** (testado: /sites/MLB/search 403 com token do app e da conta; página de busca pede verificação de robô; /products/search traz itens errados). Não insistir. Caminho adotado: **Caixa de importação** (`paraCaixa`, `lerCaixa`, `abrirCaixa` no app.js; guarda em localStorage `miga_caixa`) recebe links do **Compartilhar** (share_target), do **Colar vários links** e da **extensão do Chrome** (`extensao-miga/` na raiz do repositório; abre `/app/#importar=<links>`). Links oficiais do Gerador de Links (`mercadolivre.com/sec/…`, `meli.la/…`) ficam como estão (`linkOficialML`); links comuns do ML ganham matt_word/matt_tool (`comCodigoML`). Pendente: ela conferir no Portal do Afiliado se as vendas com matt_word são atribuídas.
    **Colar vários links**: botão "Colar vários links de uma vez" na Minha lista (caixa de texto; usa `adicionarTexto`).
 3. **Logo de abertura (splash) do app/site no Android**: ícones refeitos em alta (192/384/512/1024). Se continuar borrado, ela precisa **remover e instalar de novo** o atalho.
 4. **Desempenho**: voltar para a Minha lista com ~300 produtos leva ~0,6 s (`renderFila`). Se ela reclamar de travada, otimizar.

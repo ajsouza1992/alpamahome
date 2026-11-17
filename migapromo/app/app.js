@@ -591,7 +591,8 @@
     iniciarCriar(); wz = {};
     irPara("inicio");
     // Link compartilhado de outro app (Shopee, Mercado Livre...): vai para a Lista
-    if (recebidoPendente) { const t = recebidoPendente; recebidoPendente = ""; irPara("postar"); adicionarNaFila(t); }
+    if (recebidoPendente) { const t = recebidoPendente; recebidoPendente = ""; paraCaixa(t); }
+    { const mi = /^#importar=(.+)$/.exec(location.hash); if (mi) { history.replaceState(null, "", location.pathname); let t = ""; try { t = decodeURIComponent(mi[1]); } catch (er) { t = ""; } if (t) setTimeout(() => paraCaixa(t), 300); } }
   }
   let recebidoPendente = "";
   /** Liga a conta deste aparelho a uma conta Google: abre a mesma conta no celular e no computador */
@@ -1097,9 +1098,16 @@
   const chAchado = (p) => String((p && (p.id || p.link)) || "");
   var acSoTop = false; // filtro "Mais vendidos" (var: pode ser lido antes desta linha) // Set com os índices marcados (null = fora do modo)
   /** Mercado Livre: põe a sua etiqueta de afiliado (matt_word e matt_tool) no link do produto. Shopee já vem com o seu link. */
+  /** Link curto oficial do Gerador de Links do Mercado Livre: já é o seu link de afiliado, fica como está */
+  const linkOficialML = (u) => /^https?:\/\/(?:meli\.la\/|(?:www\.)?mercadolivre\.com(?:\.br)?\/sec\/)/i.test(String(u || "").trim());
+  /** Link do Mercado Livre com o seu código (se ainda não tiver código nem for link oficial) */
+  function comCodigoML(u) {
+    const l = String(u || "").trim(); if (!l || linkOficialML(l) || /[?&]matt_word=/.test(l) || detectarLoja(l) !== "mercadolivre" || !config.mlMattWord || !config.mlMattTool) return l;
+    try { const x = new URL(l); x.searchParams.set("matt_word", config.mlMattWord); x.searchParams.set("matt_tool", config.mlMattTool); return x.href; } catch (e) { return l; }
+  }
   function linkAfiliadoAuto(p) {
     if (!p || !p.link) return "";
-    if (p.afiliado) return p.link;
+    if (p.afiliado || linkOficialML(p.link)) return p.link;
     if ((p.loja || detectarLoja(p.link)) !== "mercadolivre" || !config.mlMattWord || !config.mlMattTool) return "";
     try { const u = new URL(p.link); u.searchParams.set("matt_word", config.mlMattWord); u.searchParams.set("matt_tool", config.mlMattTool); return u.href; } catch (e) { return ""; }
   }
@@ -1250,13 +1258,8 @@
       pintarAchados(); if (!catalogoAtual.length) toast("As lojas não trouxeram nada com essa palavra"); else if (d.avisos && d.avisos.length) console.info("Busca:", d.avisos.join(" | "));
       { const av = $("#avisoCatalogo"), temML = catalogoAtual.some((p) => p.loja === "mercadolivre"), lj = catLoja.valor();
         if (av) { av.hidden = !(lj !== "shopee" && !temML);
-          const conectada = !!(config.mlConta && config.mlConta.a), det = esc((d.avisos || []).map((x) => String(x).replace(/^ML_BUSCA_FECHADA \(|\)$/g, "")).join(" · ").slice(0, 200));
-          if (!av.hidden && !conectada) av.innerHTML = `<b>Mercado Livre:</b> para trazer a busca do Mercado Livre aqui, entre uma vez com a sua conta do Mercado Livre.
-            <a class="btn btn--rosa ml-abrir-busca" href="api/mlentrar">Entrar com minha conta do Mercado Livre</a>
-            <span class="ml-ou">Ou abra a busca lá e mande os produtos por <b>Compartilhar → Miga Promo</b> ou <b>Colar vários links</b>.</span>
-            <a class="btn btn--branco ml-abrir-busca" href="https://lista.mercadolivre.com.br/${encodeURIComponent(termo.trim().replace(/\s+/g, "-"))}" target="_blank" rel="noopener">Abrir a busca no Mercado Livre</a>`;
-          else if (!av.hidden) av.innerHTML = `<b>Mercado Livre:</b> ele não deixa buscar por dentro de outros apps. Abra a busca lá, escolha os produtos e mande para a Miga: no produto, toque em <b>Compartilhar → Miga Promo</b>, ou copie os links e use <b>Colar vários links</b> na Minha lista. O seu código de afiliado entra sozinho.
-            <a class="btn btn--branco ml-abrir-busca" href="https://lista.mercadolivre.com.br/${encodeURIComponent(termo.trim().replace(/\s+/g, "-"))}" target="_blank" rel="noopener">Abrir a busca no Mercado Livre</a><small class="ml-det">Detalhe para a Miga Promo: ${det}</small>`; } }
+          if (!av.hidden) av.innerHTML = `<b>Mercado Livre:</b> a busca por palavra só funciona lá dentro. Abra a busca, escolha os produtos e mande para a <b>Caixa de importação</b> da Miga: no celular, toque em <b>Compartilhar → Miga Promo</b>; no computador, use a <b>extensão Miga no Chrome</b> (botão "+ Miga" em cada produto). Também dá para colar os links do <b>Gerador de Links</b> em <b>Colar vários links</b>.
+            <a class="btn btn--branco ml-abrir-busca" href="https://lista.mercadolivre.com.br/${encodeURIComponent(termo.trim().replace(/\s+/g, "-"))}" target="_blank" rel="noopener">Abrir a busca no Mercado Livre</a>`; } }
     } catch (e) { if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return; } toast("Não consegui buscar nas lojas agora"); catBusca = ""; carregarCatalogo(); }
   }
   [$("#catFiltro"), $("#catLoja"), $("#catOrdem")].forEach((el) => el.addEventListener("click", (e) => { if (e.target.closest("button")) setTimeout(() => (catBusca ? buscarNasLojas(catBusca) : carregarCatalogo()), 0); }));
@@ -2529,7 +2532,7 @@
       if (naLista) { irPara("postar"); toast(foiCompartilhado(ja) ? "Esse produto já foi postado: está na aba “Postados”" : "Esse produto já está na sua lista"); termoBusca = lido.link; $("#ppLink").value = lido.link; pintarBotaoColar(); renderFila(); return null; }
       toast("Esse produto já estava na lista"); return ja;
     }
-    const item = { id: novoId(), link: lido.link, loja: detectarLoja(lido.link) || "mercadolivre", nome: lido.nome || "", precoNovo: lido.preco || null, precoAntigo: null, imagem: "", cupom: "", categoria: "outros", texto: "", feito: {}, criadoEm: Date.now(), carregando: true };
+    const item = { id: novoId(), link: comCodigoML(lido.link), loja: detectarLoja(lido.link) || "mercadolivre", nome: lido.nome || "", precoNovo: lido.preco || null, precoAntigo: null, imagem: "", cupom: "", categoria: "outros", texto: "", feito: {}, criadoEm: Date.now(), carregando: true };
     fila().unshift(item);
     $("#ppLink").value = "";
     renderFila();
@@ -2578,11 +2581,71 @@
   }
   const pintarBotaoColar = () => { $("#ppColar").hidden = !$("#ppLink").value; };
   const limparBusca = () => { termoBusca = ""; abaBusca = null; $("#ppLink").value = ""; pintarBotaoColar(); };
+  /* ---------- Caixa de importação: tudo que chega (Compartilhar, Colar vários links, extensão do Chrome) espera aqui ----------
+     O app lê nome, foto e preço de cada link; você marca os que quer e adiciona de uma vez. */
+  let caixa = []; try { caixa = JSON.parse(localStorage.getItem("miga_caixa") || "[]") || []; } catch (e) { caixa = []; }
+  const guardarCaixa = () => { try { localStorage.setItem("miga_caixa", JSON.stringify(caixa.map(({ lendo, ...x }) => x))); } catch (e) { /* segue */ } pintarBotaoCaixa(); };
+  function pintarBotaoCaixa() { const b = $("#cxAbrir"); if (!b) return; b.hidden = !caixa.length; const n = $("#cxQtd"); if (n) n.textContent = caixa.length; }
+  function paraCaixa(texto) {
+    const links = [...new Set(String(texto || "").match(/https?:\/\/[^\s<>"']+/g) || [])].map((u) => u.replace(/[).,;]+$/, ""));
+    let novos = 0, ja = 0;
+    for (const u of links) { if (caixa.some((x) => x.link === u || mesmoProduto({ link: x.link, urlFinal: x.urlFinal }, u))) continue; if (fila().some((i) => mesmoProduto(i, u))) { ja++; continue; }
+      caixa.push({ link: u, loja: detectarLoja(u) || "", nome: "", preco: null, imagem: "", marcado: true }); novos++; }
+    guardarCaixa(); irPara("postar"); abrirCaixa(); lerCaixa();
+    if (ja) toast(`${ja} ${ja === 1 ? "já estava" : "já estavam"} na Minha lista`); else if (!novos && links.length) toast("Esses links já estão na caixa");
+  }
+  let lendoCaixa = false;
+  async function lerCaixa() {
+    if (lendoCaixa) return; lendoCaixa = true;
+    try { for (let k = 0; k < caixa.length; k++) { const x = caixa[k]; if (x.lido || x.erro) continue; x.lendo = true; pintarCaixa();
+        try { const d = await api("produto", { url: x.link }); x.nome = limparNome(d.nome || x.nome || ""); x.preco = d.preco || null; x.precoAntigo = d.precoAntigo || null; x.imagem = d.imagem || ""; x.loja = d.loja || x.loja; x.urlFinal = d.urlFinal || ""; x.extras = extrasDe(d); if (d.descricao) x.descricao = d.descricao; if (d.linkAfiliado) x.linkAfiliado = d.linkAfiliado; x.lido = true;
+          if (fila().some((i) => mesmoProduto(i, x.urlFinal || x.link))) { x.naLista = true; x.marcado = false; } }
+        catch (e) { x.erro = true; x.marcado = false; }
+        delete x.lendo; guardarCaixa(); pintarCaixa(); } }
+    finally { lendoCaixa = false; }
+  }
+  function abrirCaixa() {
+    folhaEst("Caixa de importação", `<p class="nota">Produtos que chegaram pelo Compartilhar, pelo Colar vários links ou pela extensão do Chrome. Marque os que quer e adicione de uma vez. O seu código de afiliado entra sozinho.</p><div id="cxLista"></div>`);
+    pintarCaixa();
+  }
+  function pintarCaixa() {
+    const box = $("#cxLista"); if (!box) return;
+    const nMarc = caixa.filter((x) => x.marcado).length, lendo = caixa.some((x) => !x.lido && !x.erro);
+    box.innerHTML = caixa.length ? `<div class="cx-topo"><button type="button" class="link" id="cxTodos">${caixa.every((x) => x.marcado || x.erro || x.naLista) ? "Desmarcar todos" : "Marcar todos"}</button><span class="nota">${caixa.length} ${caixa.length === 1 ? "produto" : "produtos"}${lendo ? " · lendo…" : ""}</span></div>
+      <div class="cx-lista">${caixa.map((x, i) => `<button type="button" class="cx-item${x.marcado ? " on" : ""}${x.erro || x.naLista ? " off" : ""}" data-cx="${i}">
+        <span class="cx-foto">${x.imagem ? `<img src="${esc(x.imagem)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}</span>
+        <span class="cx-txt"><b>${esc(x.nome || (x.lendo || !x.lido && !x.erro ? "Lendo o produto…" : "Produto"))}</b><small>${x.erro ? "Não consegui ler este link" : x.naLista ? "Já está na Minha lista" : [x.preco ? brl(x.preco) : "", NOME_LOJA[x.loja] || ""].filter(Boolean).join(" · ")}</small></span>
+        <span class="pp-caixa" aria-pressed="${!!x.marcado}"></span><span class="cx-x" data-cx-tirar="${i}" role="button" aria-label="Tirar da caixa">${'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>'}</span></button>`).join("")}</div>
+      <div class="cx-pe"><button type="button" class="btn btn--branco" id="cxLimpar">Limpar caixa</button><button type="button" class="btn btn--rosa" id="cxAdicionar"${nMarc ? "" : " disabled"}>Adicionar ${nMarc || ""} à lista</button></div>`
+      : '<p class="vazio-lista">A caixa está vazia. Compartilhe produtos do Mercado Livre com a Miga Promo, cole vários links ou use a extensão do Chrome.</p>';
+  }
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("#cxAbrir")) { abrirCaixa(); lerCaixa(); return; }
+    if (!e.target.closest("#cxLista")) return;
+    const tira = e.target.closest("[data-cx-tirar]"); if (tira) { caixa.splice(+tira.dataset.cxTirar, 1); guardarCaixa(); pintarCaixa(); return; }
+    const it = e.target.closest("[data-cx]"); if (it) { const x = caixa[+it.dataset.cx]; if (x && !x.erro && !x.naLista) { x.marcado = !x.marcado; guardarCaixa(); pintarCaixa(); } return; }
+    if (e.target.closest("#cxTodos")) { const todos = caixa.every((x) => x.marcado || x.erro || x.naLista); caixa.forEach((x) => { if (!x.erro && !x.naLista) x.marcado = !todos; }); guardarCaixa(); pintarCaixa(); return; }
+    if (e.target.closest("#cxLimpar")) { caixa = []; guardarCaixa(); pintarCaixa(); return; }
+    if (e.target.closest("#cxAdicionar")) {
+      const sel = caixa.filter((x) => x.marcado && !x.erro && !x.naLista); if (!sel.length) return;
+      const c = await escolherCategoria({ titulo: `Categoria dos ${sel.length} produtos`, acao: "Adicionar em", sugestao: adivinharCategoria(sel[0].nome || "") }); if (!c) { abrirCaixa(); return; }
+      for (const x of sel) {
+        const link = x.linkAfiliado || comCodigoML(x.link);
+        fila().unshift({ ...(x.extras || {}), id: novoId(), link, ...(x.linkAfiliado ? { linkOriginal: x.link } : {}), urlFinal: x.urlFinal || "", loja: x.loja || detectarLoja(link) || "mercadolivre", nome: x.nome || "", precoNovo: x.preco || null, precoAntigo: x.precoAntigo || null, imagem: x.imagem || "", cupom: "",
+          categoria: c, catV2: true, descricao: x.descricao || "", texto: "", feito: {}, criadoEm: Date.now() });
+      }
+      caixa = caixa.filter((x) => !sel.includes(x)); guardarCaixa(); salvarFila(true); contarFila(); renderFila(); $("#folhaEst").close();
+      toastAcao(`${sel.length} ${sel.length === 1 ? "produto adicionado" : "produtos adicionados"} à Minha lista`, "Ver", () => { filtroLista = "todas"; irPara("postar"); });
+    }
+  });
+  setTimeout(pintarBotaoCaixa, 0);
+  // A extensão pode abrir o app que já está aberto: lê o #importar= também quando só o endereço muda
+  window.addEventListener("hashchange", () => { const mi = /^#importar=(.+)$/.exec(location.hash); if (!mi) return; history.replaceState(null, "", location.pathname); let t = ""; try { t = decodeURIComponent(mi[1]); } catch (er) { t = ""; } if (t) paraCaixa(t); });
   /* Colar vários links de uma vez (um por linha, ou do jeito que vier: o app acha todos os links) */
   const linksDoTexto = (t) => [...new Set(String(t || "").match(/https?:\/\/[^\s<>"']+/g) || [])];
   function pintarVarios() { const ta = $("#vlTexto"); if (!ta) return; const l = linksDoTexto(ta.value), novos = l.filter((u) => !fila().some((i) => mesmoProduto(i, u)));
     $("#vlConta").textContent = l.length ? `${l.length} ${l.length === 1 ? "link" : "links"}${l.length > novos.length ? ` · ${l.length - novos.length} já ${l.length - novos.length === 1 ? "está" : "estão"} na Lista` : ""}` : "Nenhum link ainda";
-    const b = $("#vlAdicionar"); b.disabled = !novos.length; b.textContent = novos.length ? `Adicionar ${novos.length} ${novos.length === 1 ? "produto" : "produtos"}` : "Adicionar"; }
+    const b = $("#vlAdicionar"); b.disabled = !novos.length; b.textContent = novos.length ? `Ver ${novos.length} ${novos.length === 1 ? "produto" : "produtos"} na caixa` : "Ver na caixa"; }
   $("#vlAbrir").addEventListener("click", () => {
     folhaEst("Colar vários links", `<p class="nota">Cole aqui os links dos produtos (Mercado Livre, Shopee…), um embaixo do outro. O seu código de afiliado entra sozinho.</p>
       <textarea id="vlTexto" class="vl-texto" rows="7" placeholder="https://...&#10;https://...&#10;https://..."></textarea>
@@ -2593,7 +2656,7 @@
   document.addEventListener("input", (e) => { if (e.target && e.target.id === "vlTexto") pintarVarios(); });
   document.addEventListener("click", async (e) => {
     if (e.target.closest("#vlColar")) { try { const t = await navigator.clipboard.readText(); const ta = $("#vlTexto"); ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + t.trim(); pintarVarios(); } catch (er) { toast("Toque e segure na caixa para colar"); } return; }
-    if (e.target.closest("#vlAdicionar")) { const t = $("#vlTexto").value, l = linksDoTexto(t); if (!l.length) return; $("#folhaEst").close(); irPara("postar"); await adicionarTexto(l.join("\n")); renderFila(); }
+    if (e.target.closest("#vlAdicionar")) { const t = $("#vlTexto").value, l = linksDoTexto(t); if (!l.length) return; paraCaixa(l.join("\n")); }
   });
   async function adicionarDaBusca() { const t = $("#ppLink").value; limparBusca(); renderFila(); await adicionarTexto(t); renderFila(); }
   $("#ppLink").addEventListener("input", () => { termoBusca = $("#ppLink").value; if (!termoBusca.trim()) abaBusca = null; pintarBotaoColar(); clearTimeout(renderFila.t); renderFila.t = setTimeout(renderFila, 120); });
