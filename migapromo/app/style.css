@@ -2759,3 +2759,4 @@ dialog:focus { outline: none; }
 .lojas-seg button[aria-pressed="true"] { background: #fff; color: var(--preto); box-shadow: 0 4px 10px -6px rgba(29,29,31,.4); }
 body.modo-selecao .lojas-seg { display: none; }
 .aba-prod .barra-filtro .pp-ordem:not(.pp-loja) { max-width: 100%; }
+#barraSite .bs-quatro { grid-template-columns: 1fr 1fr !important; }

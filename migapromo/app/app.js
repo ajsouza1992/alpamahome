@@ -1454,12 +1454,27 @@
     const ids = [...stEst.sel], ok = await tirarVariosDoSite(ids); stEst.sel = null; renderSite();
     if (ok !== ids.length) toast("Alguns não saíram. Tente de novo.");
   });
+  /* Site → Lista: só os selecionados passam para a Lista (com o mesmo código, então o site acompanha o produto da Lista) */
+  $("#stParaLista").addEventListener("click", () => {
+    if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
+    let novos = 0, ja = 0;
+    for (const id of stEst.sel) {
+      if (fila().some((x) => x.id === id)) { ja++; continue; }
+      const sp = vitrineMap.get(id); if (!sp || !sp.link) continue;
+      fila().unshift({ id: sp.id, link: sp.link, loja: sp.loja || detectarLoja(sp.link) || "mercadolivre", nome: sp.nome || "", precoNovo: sp.preco || null, precoAntigo: sp.precoAntigo || null, imagem: sp.imagem || "", cupom: sp.cupom || "",
+        categoria: sp.tipo || "outros", catV2: true, descricao: sp.descricao || "", fav: !!sp.fav, freteGratis: !!sp.frete, lojaOficial: !!sp.oficial, maisVendido: sp.maisVendido || null, texto: "", feito: {}, criadoEm: Date.now() });
+      novos++;
+    }
+    if (novos) { salvarFila(true); contarFila(); }
+    stEst.sel = null; renderSite(); renderFila();
+    toastAcao(`${novos} ${novos === 1 ? "produto" : "produtos"} na Lista${ja ? ` (${ja} já ${ja === 1 ? "estava" : "estavam"})` : ""}.`, "Ver na Lista", () => { filtroLista = "todas"; irPara("postar"); });
+  });
   $("#stPostar").addEventListener("click", () => {
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
     const ids = [...stEst.sel], l = ids.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
     stEst.sel = null; renderSite();
-    if (!l.length) { toast("Esses produtos não estão na sua lista: envie de novo pelos Achados para poder postar"); return; }
-    if (l.length < ids.length) toast(`${ids.length - l.length} não estão na sua lista e ficaram de fora`);
+    if (!l.length) { toast("Esses produtos não estão na sua Lista: toque em Pôr na Lista primeiro"); return; }
+    if (l.length < ids.length) toast(`${ids.length - l.length} não estão na sua Lista e ficaram de fora (use Pôr na Lista)`);
     irPara("postar"); criarAPartirDaLista("roteiro", l);
   });
   $("#stCatVarios").addEventListener("click", async () => {
