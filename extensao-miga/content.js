@@ -22,7 +22,8 @@
     if (ehML) {
       if (/click\d*\.mercadolivre/.test(u.hostname)) return ""; // anúncio patrocinado com link de rastreio
       if (!/mercadolivre\.com/.test(u.hostname)) return "";
-      if (!/MLB-?\d{6,}/i.test(u.pathname)) return "";
+      if (!/MLBU?-?\d{6,}/i.test(u.pathname + u.search)) return "";
+      if (!/MLBU?-?\d{6,}/i.test(u.pathname)) { const m = /(MLBU?-?\d{6,})/i.exec(u.search); return m ? "https://www.mercadolivre.com.br/p/" + m[1].replace("-", "") : ""; }
       return u.origin + u.pathname.replace(/\/$/, "");
     }
     // Shopee: /nome-do-produto-i.LOJA.ITEM  ou  /product/LOJA/ITEM
@@ -31,14 +32,20 @@
   }
 
   /** Cartão (quadradinho) do produto na página de busca */
-  function cartaoDe(a) {
-    return a.closest("li.ui-search-layout__item, .poly-card, .andes-card, .ui-recommendations-card, [data-sqe='item'], li.shopee-search-item-result__item, .shop-search-result-view__item") || a.closest("li") || a.parentElement;
+  function cartaoDe(a, link) {
+    let el = a;
+    for (let i = 0; i < 10; i++) {
+      const p = el.parentElement; if (!p || p === document.body || p === document.documentElement) break;
+      const outros = [...p.querySelectorAll("a[href]")].some((x) => { const l = linkProduto(x.getAttribute("href")); return l && l !== link; });
+      if (outros) break; el = p;
+    }
+    return el;
   }
 
   function pintarBotao(bt, link) {
     const on = marcados.includes(link);
     bt.classList.toggle("miga-on", on);
-    bt.textContent = on ? "Na Miga" : "+ Miga";
+    bt.textContent = on ? "Na Miga" : "Miga +";
     bt.title = on ? "Tirar da lista da Miga" : "Marcar para mandar para a Miga Promo";
   }
 
@@ -52,7 +59,7 @@
     document.querySelectorAll("a[href]").forEach((a) => {
       if (a.closest(".miga-barra")) return;
       const link = linkProduto(a.getAttribute("href")); if (!link) return;
-      const card = cartaoDe(a); if (!card || card.dataset.miga) return;
+      const card = cartaoDe(a, link); if (!card || card.dataset.miga || card.querySelector("[data-miga]") || card.closest("[data-miga]")) return;
       card.dataset.miga = link; card.classList.add("miga-card");
       const bt = document.createElement("button"); bt.type = "button"; bt.className = "miga-bt";
       bt.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); alternar(link); }, true);

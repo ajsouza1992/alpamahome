@@ -1,14 +1,18 @@
 /* Miga Promo · botão "+ Miga" nos produtos e barra de baixo */
 .miga-card { position: relative !important; }
 .miga-bt {
-  position: absolute !important; top: 8px; right: 8px; z-index: 50;
-  padding: 7px 12px; border: 2px solid #1d1d1f; border-radius: 999px;
-  background: #fff; color: #e8336d; font: 800 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
-  box-shadow: 2px 2px 0 #1d1d1f; cursor: pointer; transition: transform .12s ease;
+  position: absolute !important; top: 10px; right: 10px; z-index: 50;
+  display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 12px;
+  border: 0; border-radius: 999px; background: #fff; color: #e8336d;
+  font: 700 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .01em;
+  box-shadow: 0 2px 10px rgba(29, 29, 31, .18), inset 0 0 0 1.5px #f3b6ca; cursor: pointer;
+  transition: transform .12s ease, background .12s ease;
 }
+.miga-bt::before { content: ""; width: 14px; height: 14px; border-radius: 4px; background: #e8336d; box-shadow: 1px 1px 0 #1d1d1f; transform: rotate(-6deg); }
 .miga-bt:hover { transform: translateY(-1px); }
 .miga-bt:active { transform: scale(.95); }
-.miga-bt.miga-on { background: #e8336d; color: #fff; }
+.miga-bt.miga-on { background: #e8336d; color: #fff; box-shadow: 0 2px 10px rgba(232, 51, 109, .35); }
+.miga-bt.miga-on::before { background: #fff; }
 .miga-card:has(.miga-on) { outline: 3px solid #e8336d; outline-offset: -3px; border-radius: 12px; }
 
 .miga-barra {
