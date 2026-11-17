@@ -2565,3 +2565,54 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .aba-prod .barra-filtro .pp-fav { width: 40px; padding: 0; justify-content: center; }
 .aba-prod .barra-filtro .pp-fav svg { width: 18px; height: 18px; }
+/* Fila de postagem: fotinhas no topo */
+.rt-faixa { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 10px; }
+.rt-faixa::-webkit-scrollbar { display: none; }
+.rt-faixa-it { position: relative; flex: none; width: 52px; height: 52px; padding: 0; border: 2px solid var(--linha); border-radius: 14px; background: var(--campo); overflow: visible; cursor: pointer; }
+.rt-faixa-it img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+.rt-faixa-it span { display: grid; place-items: center; height: 100%; font-weight: 800; color: var(--cinza); }
+.rt-faixa-it.on { border-color: var(--rosa); box-shadow: 0 0 0 3px var(--rosa-claro); }
+.rt-faixa-it.ok img { opacity: .55; }
+.rt-faixa-it i { position: absolute; right: -5px; top: -5px; width: 20px; height: 20px; border-radius: 50%; background: #1d8a4a; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--branco); }
+.rt-faixa-it i svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.pp-arquivo { margin-top: 12px; } .pp-arquivo .btn { width: 100%; }
+/* Menu ⋮ padrão */
+.mp-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mp-op { min-height: 84px; }
+.mp-op[disabled] { opacity: .35; cursor: default; }
+.mp-op--rosa { background: var(--rosa) !important; color: #fff !important; border-color: var(--rosa) !important; }
+.mp-op--rosa svg { color: #fff; }
+.mp-op .ic-fav { width: 26px; height: 26px; }
+.fi-extra { display: flex; gap: 16px; justify-content: center; margin-top: 10px; }
+#folhaItemOps { display: block !important; }
+#folhaItemOps[hidden] { display: none !important; }
+/* Busca única acima dos 3 botões; as buscas de cada aba ficam escondidas (o app usa elas por baixo) */
+.prod-busca { margin: 0 0 10px; background: var(--branco); box-shadow: var(--sombra); }
+.aba-prod .colar:has(#ppLink), .aba-prod .colar:has(#acBusca), .aba-prod .colar:has(#stBusca) { display: none !important; }
+/* Menu ⋮ padrão: ícone em cima, nome embaixo */
+.mp-op { grid-template-columns: 1fr !important; justify-items: center; text-align: center; row-gap: 6px; padding: 12px 6px !important; font-size: 13px !important; }
+.mp-op svg { width: 22px; height: 22px; }
+/* Cartão igual nas 3 abas: foto 64, nome, preço, loja e uma linha de etiquetas */
+.aba-prod .pp-linha .pp-item { grid-template-columns: 64px minmax(0, 1fr) !important; gap: 10px !important; padding: 8px 48px 8px 8px !important; align-items: center; min-height: 0; }
+.aba-prod .pp-mini, .aba-prod .pp-mini > img, .aba-prod .pp-mini .sem-foto { width: 64px !important; height: 64px !important; border-radius: 12px; }
+.aba-prod .pp-item > span { display: block; min-width: 0; }
+.aba-prod .pp-item strong { font-size: 13.5px !important; line-height: 1.3 !important; }
+.aba-prod .pp-item .pp-preco { display: block; font-size: 14.5px; line-height: 1.3; }
+.aba-prod .pp-item .meta { display: block; font-size: 11.5px !important; line-height: 1.35; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aba-prod .pp-item .meta-ex { display: none !important; }
+.aba-prod .pp-item .tags-ex, .aba-prod .pp-item .st-tags { display: flex !important; flex-wrap: nowrap !important; overflow: hidden; gap: 4px; margin-top: 3px; }
+.aba-prod .pp-item .tags-ex + .tags-ex { display: none !important; }
+.aba-prod .pp-item .tag-ex, .aba-prod .pp-item .st-tags b, .aba-prod .pp-item .pp-nosite-ac { flex: none; font-size: 10px !important; padding: 1px 7px !important; margin: 0 !important; }
+.aba-prod .pp-item .pp-obs { display: none; }
+@media (min-width: 960px) { .aba-prod .pp-linha .pp-item { grid-template-columns: 96px minmax(0, 1fr) !important; } .aba-prod .pp-mini, .aba-prod .pp-mini > img, .aba-prod .pp-mini .sem-foto { width: 96px !important; height: 96px !important; } }
+.aba-prod .pp-linha .pp-item .pp-mini, .aba-prod .pp-linha .pp-item .pp-mini > img, .aba-prod .pp-linha .pp-item .pp-mini .sem-foto { width: 64px !important; height: 64px !important; min-width: 0 !important; max-width: 64px !important; padding: 0 !important; }
+@media (min-width: 960px) { .aba-prod .pp-linha .pp-item .pp-mini, .aba-prod .pp-linha .pp-item .pp-mini > img, .aba-prod .pp-linha .pp-item .pp-mini .sem-foto { width: 96px !important; height: 96px !important; max-width: 96px !important; } }
+.mp-op svg { width: 26px !important; height: 26px !important; padding: 0 !important; background: none !important; color: var(--rosa); stroke: currentColor; }
+.mp-op--rosa svg { color: #fff !important; }
+.fi-op--perigo.mp-op svg { color: #d92d20; }
+/* total + Selecionar na mesma linha; Lojas, estrela e Ordem embaixo */
+.aba-prod .barra-filtro > .nota#ppTotal, .aba-prod .barra-filtro > .nota#acTotal, .aba-prod .barra-filtro > .nota#stTotal { flex: 1 1 50% !important; order: 0 !important; }
+.aba-prod .barra-filtro #ppSelecionar, .aba-prod .barra-filtro #acSelecionar, .aba-prod .barra-filtro #stSelecionar { order: 1 !important; }
+.aba-prod .barra-filtro .pp-loja, .aba-prod .barra-filtro .pp-fav, .aba-prod .barra-filtro .pp-ordem:not(.pp-loja):not(.pp-fav) { order: 2 !important; }
+.aba-prod .barra-filtro .pp-loja { margin-left: 0 !important; }
+.aba-prod .barra-filtro::after { content: ""; order: 1; flex-basis: 100%; height: 0; }

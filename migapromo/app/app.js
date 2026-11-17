@@ -1224,7 +1224,9 @@
     const am = e.target.closest("[data-achado-menu], [data-achado]");
     if (am) {
       const p = catalogoAtual[Number(am.dataset.achadoMenu ?? am.dataset.achado)]; if (!p) return;
-      const op = await escolherOpcao(limparNome(p.nome), [["adicionar", "Adicionar na lista"], ["fav", "Favoritar (vai para a lista)"], ["abrir", "Abrir na loja"]], "");
+      const op = await new Promise((ok) => { menuPadrao(limparNome(p.nome), [p.preco && brl(p.preco), NOME_LOJA[p.loja], NOME_CAT[catDoAchado(p)]].filter(Boolean).join(" · "),
+        [["postar", "Postar", "i-enviar"], ["adicionar", "Pôr na lista", "i-lista"], ["site", "Pôr no site", "i-site"], ["fav", "Favoritar", "fav"], ["abrir", "Abrir link", "i-abrir"], ["excluir", "Excluir", "i-lixo", true]], ok); $("#folhaItem").addEventListener("close", () => setTimeout(() => ok(null), 0), { once: true }); });
+      if (op === "postar" || op === "site") { acSel = new Set([chAchado(p)]); decorarAchados(); $(op === "postar" ? "#acPostar" : "#acSiteEnviar").click(); return; }
       if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
       if (op === "fav") { const r = trazerParaLista([p], ""); if (r.itens[0]) { r.itens[0].fav = true; salvarFila(true); pintarAchados(); toast("Nos favoritos da sua lista"); } else toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
       if (op !== "adicionar") return;
@@ -1392,7 +1394,10 @@
     if (mk) { const id = mk.dataset.stMarcar || mk.dataset.stItem; if (stEst.sel.has(id)) stEst.sel.delete(id); else stEst.sel.add(id); renderSite(); return; }
     const b = e.target.closest("[data-st-menu], [data-st-item]"); if (!b) return;
     const p = vitrineMap.get(b.dataset.stMenu || b.dataset.stItem); if (!p) return;
-    const op = await escolherOpcao(p.nome || "Produto", [["fav", ehFavSite(p) ? "Tirar dos favoritos" : "Favoritar (vai para o topo do site)"], ["cat", "Mudar a categoria"], ["abrir", "Abrir o link da loja"], ["tirar", "Tirar do site"]], "");
+    const naLista = fila().find((x) => x.id === p.id);
+    const op = await new Promise((ok) => { menuPadrao(p.nome || "Produto", [p.preco && brl(p.preco), NOME_LOJA[p.loja], NOME_CAT[p.tipo]].filter(Boolean).join(" · "),
+      [["postar", "Postar", "i-enviar", !naLista], ["cat", "Categoria", "i-lapis"], ["tirar", "Tirar do site", "i-site"], ["fav", ehFavSite(p) ? "Tirar dos favoritos" : "Favoritar", "fav"], ["abrir", "Abrir link", "i-abrir"], ["excluir", "Excluir", "i-lixo", true]], ok); $("#folhaItem").addEventListener("close", () => setTimeout(() => ok(null), 0), { once: true }); });
+    if (op === "postar" && naLista) { irPara("postar"); criarAPartirDaLista("roteiro", [naLista]); return; }
     if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
     if (op === "tirar") { await tirarVariosDoSite([p.id]); return; }
     if (op === "fav") { const it = fila().find((x) => x.id === p.id); if (it) { await alternarFav(it); } else { const nv = { ...p, fav: !p.fav }; try { await salvarNoSite(nv); renderSite(); toast(nv.fav ? "Nos favoritos" : "Saiu dos favoritos"); } catch (e) { /* segue */ } } return; }
@@ -2269,6 +2274,8 @@
   const incompletos = () => fila().filter((i) => !i.carregando && (!i.imagem || !i.precoNovo || !i.nome));
   let modoCompletar = false;
   /* ---------- Produtos: Lista e Histórico numa tela só, com busca ---------- */
+  var verArquivo = false;
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-arquivo]"); if (!b) return; verArquivo = b.dataset.arquivo === "1"; renderFila(); scrollTo(0, 0); });
   let visaoLista = (() => { try { return localStorage.getItem("miga_visao") || "postar"; } catch (e) { return "postar"; } })();
   let termoBusca = "", abaBusca = null;
   const ehLink = (t) => /https?:\/\//.test(String(t || ""));
@@ -2329,12 +2336,17 @@
     [["#vqPostar", qt.postar], ["#vqPostados", qt.postados], ["#vqTodos", qt.todos]].forEach(([s, n]) => { $(s).textContent = n; $(s).hidden = !n; });
     pintarNovoLink();
     const ocultos = config.ocultarPostados && !termoBusca.trim() && filtroResumo !== "hoje" ? base.filter(foiCompartilhado).length : 0;
-    const l0 = ordenar(base), l = [...l0.filter((i) => !foiCompartilhado(i)), ...(ocultos ? [] : l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0)))];
+    // Arquivo: postados há mais de 7 dias saem da lista (aparecem só no Arquivo ou na busca)
+    const arquivado = (i) => foiCompartilhado(i) && diasDesde(i.postadoEm || i.criadoEm) >= 7, nArq = base.filter(arquivado).length;
+    const base2 = verArquivo ? base.filter(arquivado) : termoBusca.trim() || filtroResumo ? base : base.filter((i) => !arquivado(i));
+    const l0 = ordenar(base2), l = verArquivo ? l0 : [...l0.filter((i) => !foiCompartilhado(i)), ...(ocultos ? [] : l0.filter(foiCompartilhado).sort((x, y) => (y.postadoEm || 0) - (x.postadoEm || 0)))];
+    { let ab = $("#ppArquivo"); if (!ab) { ab = document.createElement("div"); ab.id = "ppArquivo"; ab.className = "pp-arquivo"; $("#ppLista").after(ab); }
+      ab.hidden = !nArq && !verArquivo; ab.innerHTML = verArquivo ? `<button type="button" class="btn btn--branco" data-arquivo="0">Voltar para a lista</button>` : `<button type="button" class="btn btn--branco" data-arquivo="1">Arquivo · ${nArq} ${nArq === 1 ? "postado" : "postados"} há mais de 7 dias</button>`; }
     pintarCats();
     const np = l.filter((i) => !foiCompartilhado(i)).length, nd = l.length - np;
     $("#ppSelecionar").hidden = !l.length && !modoVarios; $("#ppOrdem").hidden = l.length < 2 || modoVarios; $("#ppDica").hidden = !l.length;
     $("#ppOrdemTxt").textContent = ({ recentes: "Recentes", antigos: "Antigos", preco: "Menor preço", desconto: "Desconto" })[ordemLista] || "Recentes";
-    $("#ppTotal").textContent = termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}${ocultos ? ` · ${ocultos} ${ocultos === 1 ? "postado oculto" : "postados ocultos"}` : ""}`;
+    $("#ppTotal").textContent = verArquivo ? `Arquivo: ${l.length} ${l.length === 1 ? "produto" : "produtos"}` : termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}${ocultos ? ` · ${ocultos} ${ocultos === 1 ? "postado oculto" : "postados ocultos"}` : ""}`;
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
       return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}${ppAtual === i ? " aberto" : ""}">${post ? '<span class="selo-canto"><svg><use href="#i-check"/></svg>Postado</span>' : ""}<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
@@ -2616,12 +2628,22 @@
   /* ---------- Tela única de Produtos: Minha lista · Achados · No site ---------- */
   var LIMITE_SITE = 300; // recomendado: até 300 produtos no site
   function pintarSegProd(aba) { try { pintarSegProd0(aba); } catch (e) { /* app ainda abrindo */ } }
+  /* Busca única: o mesmo texto vale para Minha lista, Achados e No site */
+  var buscaProd = "";
+  document.addEventListener("input", (e) => {
+    const b = e.target.closest(".prod-busca-in"); if (!b) return; buscaProd = b.value;
+    document.querySelectorAll(".prod-busca-in").forEach((x) => { if (x !== b) x.value = buscaProd; });
+    [["#ppLink"], ["#acBusca"], ["#stBusca"]].forEach(([sel]) => { const el = $(sel); if (el && el.value !== buscaProd) { el.value = buscaProd; el.dispatchEvent(new Event("input", { bubbles: true })); } });
+    pintarSegProd();
+  });
+  document.addEventListener("keydown", (e) => { const b = e.target.closest(".prod-busca-in"); if (!b || e.key !== "Enter") return; if (!$("#aba-achados").hidden) { e.preventDefault(); $("#acBusca").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); } });
   function pintarSegProd0(aba) {
     contarFila();
-    const n = { postar: fila().filter((i) => !i.carregando).length, achados: catalogoAtual.filter(achadoVisivel).length, site: vitrineMap.size };
+    const q = semAcento(buscaProd.trim()), bate = (t) => !q || semAcento(t).includes(q);
+    const n = q ? { postar: fila().filter((i) => !i.carregando && bate(`${i.nome} ${NOME_LOJA[i.loja] || ""} ${i.cupom || ""}`)).length, achados: catalogoAtual.filter((p) => achadoVisivel(p) && bate(p.nome)).length, site: [...vitrineMap.values()].filter((p) => bate(`${p.nome} ${p.cupom || ""}`)).length } : { postar: fila().filter((i) => !i.carregando).length, achados: catalogoAtual.filter(achadoVisivel).length, site: vitrineMap.size };
     document.querySelectorAll(".prod-seg").forEach((sg) => sg.querySelectorAll("[data-prod]").forEach((b) => {
       b.classList.toggle("on", b.dataset.prod === (aba || (document.querySelector(".aba-prod:not([hidden])") || {}).id?.replace("aba-", "")));
-      const c = b.querySelector("small"); c.textContent = n[b.dataset.prod] ? n[b.dataset.prod] : "";
+      const c = b.querySelector("small"); c.textContent = n[b.dataset.prod] ? n[b.dataset.prod] : q ? "0" : "";
       c.classList.toggle("alerta", b.dataset.prod === "site" && n.site > LIMITE_SITE); c.title = c.classList.contains("alerta") ? `Mais de ${LIMITE_SITE} produtos no site: o recomendado é até ${LIMITE_SITE}` : ""; }));
   }
   document.addEventListener("click", (e) => {
@@ -2699,13 +2721,26 @@
   /* ---------- Menu ⋮ do produto ---------- */
   let itemMenu = null;
   const ACOES_ITEM = [["reels", "Reels", "i-reels"], ["livre", "Colagem", "i-rede-grade"], ["video", "Vídeo", "i-rede-video"], ["carrossel", "Carrossel", "i-carrossel"], ["personagem", "Criação IA", "i-brilho"], ["link", "Abrir link", "i-abrir"]];
+  /** Menu ⋮ padrão (mesma ordem e mesmo desenho nas 3 abas): Postar · Editar · Site · Favoritar · Abrir link · Excluir */
+  function opsPadrao(ops, attr) {
+    return `<div class="mp-grade">${ops.map(([k, n, ic, off]) => `<button type="button" class="fi-op mp-op${k === "roteiro" || k === "postar" ? " mp-op--rosa" : ""}${k === "excluir" || k === "tirar" ? " fi-op--perigo" : ""}"${off ? " disabled" : ` ${attr}="${k}"`}>${ic === "fav" ? FAV_IC : `<svg><use href="#${ic}"/></svg>`}${esc(n)}</button>`).join("")}</div>`;
+  }
+  let mpAcao = null;
+  function menuPadrao(titulo, sub, ops, acao) {
+    itemMenu = null; mpAcao = acao;
+    $("#folhaItemTitulo").textContent = titulo; $("#folhaItemSub").textContent = sub;
+    $("#folhaItemCriar").hidden = true; $("#folhaItemOps").hidden = false; $("#folhaItemOps").innerHTML = opsPadrao(ops, "data-mp");
+    $("#folhaItem").showModal();
+  }
+  $("#folhaItemOps").addEventListener("click", (e) => { const b = e.target.closest("[data-mp]"); if (!b || !mpAcao) return; const f = mpAcao; mpAcao = null; $("#folhaItem").close(); f(b.dataset.mp); });
   function abrirMenuItem(it, modo = "criar") {
     itemMenu = it; const post = foiCompartilhado(it);
     $("#folhaItemTitulo").textContent = limparNome(it.nome || "Produto");
     $("#folhaItemSub").textContent = [it.precoNovo && brl(it.precoNovo), NOME_LOJA[it.loja], NOME_CAT[it.categoria || "outros"], post && "postado"].filter(Boolean).join(" · ");
     $("#folhaItemCriar").hidden = modo !== "criar"; $("#folhaItemOps").hidden = modo === "criar";
     $("#folhaItemCriar").innerHTML = `<button type="button" class="fi-principal" data-fi="roteiro"><svg><use href="#i-enviar"/></svg>Postar</button><div class="fi-grade">` + ACOES_ITEM.map(([k, n, ic]) => `<button type="button" class="fi-acao" data-fi="${k}"><svg><use href="#${ic}"/></svg>${n}</button>`).join("") + "</div>";
-    $("#folhaItemOps").innerHTML = `<button type="button" class="fi-op" data-fi="editar"><svg><use href="#i-lapis"/></svg>Editar</button>${it.imagem ? `<button type="button" class="fi-op" data-fi="baixarimg"><svg><use href="#i-baixar"/></svg>Baixar imagem</button>` : ""}${post ? `<button type="button" class="fi-op" data-fi="restaurar"><svg><use href="#i-restaurar"/></svg>Restaurar<small>tira o selo de postado</small></button>` : ""}${vitrineMap.has(it.id) ? `<button type="button" class="fi-op" data-fi="tirarsite"><svg><use href="#i-loja"/></svg>Tirar do site</button>` : `<button type="button" class="fi-op" data-fi="porsite"><svg><use href="#i-loja"/></svg>Pôr no site</button>`}<button type="button" class="fi-op${it.fav ? " on" : ""}" data-fi="fav">${FAV_IC}${it.fav ? "Tirar dos favoritos" : "Favoritar"}</button><button type="button" class="fi-op fi-op--perigo" data-fi="excluir"><svg><use href="#i-lixo"/></svg>Excluir</button>`;
+    $("#folhaItemOps").innerHTML = opsPadrao([["roteiro", "Postar", "i-enviar"], ["editar", "Editar", "i-lapis"], vitrineMap.has(it.id) ? ["tirarsite", "Tirar do site", "i-site"] : ["porsite", "Pôr no site", "i-site"], ["fav", it.fav ? "Tirar dos favoritos" : "Favoritar", "fav"], ["link", "Abrir link", "i-abrir", !it.link], ["excluir", "Excluir", "i-lixo"]], "data-fi")
+      + (it.imagem || post ? `<div class="fi-extra">${it.imagem ? '<button type="button" class="link" data-fi="baixarimg">Baixar imagem</button>' : ""}${post ? '<button type="button" class="link" data-fi="restaurar">Tirar o selo de postado</button>' : ""}</div>` : "");
     $("#folhaItem").showModal();
   }
   /* ======================= Vitrine (site público com os produtos que você publica) ======================= */
@@ -3679,6 +3714,15 @@
       <p class="nota">Ou use as setinhas para mudar a ordem do seu jeito.</p>
       <ol class="rt-ordem-lista">${its.map((it, i) => `<li><i>${i + 1}</i>${fotoMini(it)}<span><b>${esc(limparNome(it.nome || "Sem nome"))}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${obsTag(it)}</span><button type="button" data-rt-mover="${i}:-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">↑</button><button type="button" data-rt-mover="${i}:1" ${i === its.length - 1 ? "disabled" : ""} aria-label="Descer">↓</button></li>`).join("")}</ol></div>`;
   }
+  /** Postar vários: fotinhas da fila no topo (feitos com check); tocar numa pula para ela */
+  function faixaFila(item) {
+    if (!wz.filaRoteiro || wz.filaRoteiro.length < 2) return "";
+    const feitos = new Set((wz.rpHist || []).filter((x) => x.feitos.length).map((x) => x.id));
+    return `<div class="rt-faixa" role="list">${wz.filaRoteiro.map((id, n) => { const it = fila().find((x) => x.id === id); if (!it) return "";
+      return `<button type="button" role="listitem" class="rt-faixa-it${id === item.id ? " on" : ""}${feitos.has(id) ? " ok" : ""}" data-rt-ir="${esc(id)}" aria-label="Produto ${n + 1}: ${esc(limparNome(it.nome || ""))}">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : `<span>${n + 1}</span>`}${feitos.has(id) ? '<i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></i>' : ""}</button>`; }).join("")}</div>`;
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-rt-ir]"); if (!b || !wz || !wz.filaRoteiro) return; if (b.dataset.rtIr === wz.itemId) return;
+    wz.itemId = b.dataset.rtIr; wz.idx = 0; wz.res = {}; wz.rpEditando = false; if (wz.rapido) wz.passo = "rpConferir"; mostrarPasso(); scrollTo(0, 0); });
   const proximoDaFila = () => { if (!wz.filaRoteiro) return null; const i = wz.filaRoteiro.indexOf(wz.itemId); return fila().find((x) => x.id === wz.filaRoteiro[i + 1]) || null; };
   function avancarRoteiro() {
     wz.aguardando = false;
@@ -3841,7 +3885,7 @@
     const lug = wz.lugares.map((k) => ({ story: "Story", status: "Status", grupo: "Grupos", feed: "Feed" })[k] || LUGARES[k].nome).join(" · "), temArte = wz.lugares.some((k) => LUGARES[k].arte), mov = rpTemMov();
     const nomeModelo = (MODELOS_REELS[wz.modelo] || MODELOS_REELS.achadinho).nome;
     c.innerHTML = `<div class="rp-conf">
-      <p class="rt-etapa">${wz.filaRoteiro ? `Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ` : ""}${esc(lug)}</p>
+      ${faixaFila(item)}<p class="rt-etapa">${wz.filaRoteiro ? `Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ` : ""}${esc(lug)}</p>
       ${temArte ? `<div class="wz-previa rp-prev"><canvas id="rtTela"></canvas></div>` : `<div class="wz-previa rp-prev">${item.imagem ? `<img src="${esc(item.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}</div>`}
       <button type="button" class="rp-modelo" id="rpTrocarModelo"><span><small>${wz.tituloArte || wz.icone ? "Editado por você" : campanha() ? "Campanha" : wz.rpEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(wz.tituloArte ? tituloDigitado(wz.tituloArte).replace(/\*/g, "").replace(/\n/g, " ") : campanha() ? campanha().nome : nomeModelo)}</b></span><i>Trocar</i></button>
       ${temArte ? `<div class="rp-linha"><b>Cor</b></div><div class="rp-cores">${CORES_ESCOLHA.map((k) => `<button type="button" data-rp-cor="${k}" class="${wz.cor === k ? "on" : ""}" style="background:${CORES_VIDEO[k].fundo}" aria-label="${CORES_NOME[k]}"></button>`).join("")}</div>` : ""}
