@@ -258,7 +258,7 @@
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="app/firebase-config.js?v=345"></script>
+  <script src="app/firebase-config.js?v=346"></script>
   <script>
   (() => {
     "use strict";
@@ -269,7 +269,7 @@
     const imgOk = (u) => /^https?:\/\//i.test(String(u || "")) || /^data:image\//i.test(String(u || ""));
     const ic = (n) => `<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
     const PARA = { mulher: "Mulher", crianca: "Criança", casa: "Casa" };
-    const TIPOS = { looks: "Looks", fitness: "Moda fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", bebes: "Infantil", outros: "Outros" };
+    const TIPOS = { looks: "Roupas", fitness: "Moda fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", bebes: "Infantil", outros: "Outros" };
     const LOJAS = { shopee: "Shopee", mercadolivre: "Mercado Livre", amazon: "Amazon", magalu: "Magalu" };
     const LOGO = { shopee: "app/loja-shopee.png", mercadolivre: "app/loja-mercadolivre.png", amazon: "app/loja-amazon.png" };
     const PRECOS = { ate20: ["Até R$ 20", (p) => p <= 20], ate50: ["Até R$ 50", (p) => p <= 50], ate100: ["Até R$ 100", (p) => p <= 100], mais100: ["Acima de R$ 100", (p) => p > 100] };
@@ -278,7 +278,7 @@
     const ORDENS = { destaque: "Em destaque", novos: "Mais novos", desconto: "Mais desconto", menor: "Menor preço", maior: "Maior preço", vendidos: "Mais vendidos" };
     const PALAVRAS = ["PROMOÇÕES", "OFERTA RELÂMPAGO", "DESCONTO", "CUPOM", "FRETE GRÁTIS", "ACHADINHOS", "PREÇO DE AMIGA", "QUEIMA DE ESTOQUE", "LIQUIDAÇÃO", "MAIS VENDIDOS", "NOVIDADES", "MODA", "BELEZA", "CASA", "FITNESS", "SÓ HOJE", "BARATINHO", "ACHADO DO DIA"];
     /* Atalhos de cima: grupos de categoria (só aparecem os que têm produto) */
-    const GRUPOS = { looks: ["Looks", ["looks"]], fitness: ["Moda fitness", ["fitness"]], calcados: ["Calçados", ["calcados"]], acessorios: ["Bolsas e acessórios", ["acessorios"]], perfumes: ["Perfumes", ["perfumes"]],
+    const GRUPOS = { looks: ["Roupas", ["looks"]], fitness: ["Moda fitness", ["fitness"]], calcados: ["Calçados", ["calcados"]], acessorios: ["Bolsas e acessórios", ["acessorios"]], perfumes: ["Perfumes", ["perfumes"]],
       maquiagem: ["Maquiagem", ["maquiagem"]], skincare: ["Skincare", ["skincare"]], cabelo: ["Cabelo", ["cabelo"]], suplementos: ["Suplementos", ["suplementos"]], eletronicos: ["Eletrônicos", ["eletronicos"]], casa: ["Casa", ["casa"]], outros: ["Outros", ["outros", "bebes"]] }; // iguais às do app
     const doGrupo = (g, p) => GRUPOS[g][1].includes(p.tipo || "outros");
     const est = { q: "", grupo: "", para: "", tipos: new Set(), lojas: new Set(), preco: "", vant: new Set(), ordem: "destaque" };

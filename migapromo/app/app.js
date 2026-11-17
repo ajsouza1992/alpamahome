@@ -113,7 +113,7 @@
   }
   const ONDE_LOJA = { mercadolivre: "no Mercado Livre", shopee: "na Shopee", amazon: "na Amazon", magalu: "no Magalu" };
   // Categorias (nicho feminino), na ordem dos destaques do Instagram
-  const NOME_CAT = { looks: "Looks", fitness: "Moda fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
+  const NOME_CAT = { looks: "Roupas", fitness: "Moda fitness", calcados: "Calçados", acessorios: "Bolsas e acessórios", perfumes: "Perfumes", maquiagem: "Maquiagem", skincare: "Skincare", cabelo: "Cabelo", suplementos: "Suplementos", eletronicos: "Eletrônicos", casa: "Casa", outros: "Outros" };
   /** Ícones do app (estilo Selo suave), como caminhos SVG 24×24: categorias, figurinhas (f_), formatos de selo (s_) */
   const ICONE_MODELO_ARTE = { achadinho: "brilho", relampago: "raio", baixou: "etiqueta", ultimas: "relogio", novidade: "megafone", enquete: "pergunta", cupom: "cupom", lista: "lista", meutexto: "lapis", boasvindas: "coracao", comofunciona: "info", categorias: "colagem", stories: "story", siga: "instagram" };
   const ICONES_MIGA = {"looks": "M9 2v3.5L7 8l2.5 2L5 21h14l-4.5-11L17 8l-2-2.5V2M9 5.5c1.8 1 4.2 1 6 0", "fitness": "M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7", "calcados": "M3 18.5 4.6 15a2 2 0 0 1 1.8-1.2h2.8a4 4 0 0 0 3.2-1.6L16.5 6a1.6 1.6 0 0 1 2.7.3L21 10v1.5M3 18.5h7.5a4 4 0 0 0 3-1.4L21 11.5M18.6 12.8 17.8 21h2.4l.8-8.6", "acessorios": "M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2", "perfumes": "M9 9h6a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3zM10 9V6h4v3M12 6V3M9 3h6", "maquiagem": "M9 21V11h6v10zM10 11V6l4-3v8", "skincare": "M8 10h8v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1zM10 10V7h4v3M11 7V4h4", "suplementos": "M10.5 20.5l10-10a4.9 4.9 0 1 0-7-7l-10 10a4.9 4.9 0 1 0 7 7zM8.5 8.5l7 7", "eletronicos": "M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3", "casa": "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "outros": "M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2M12 17.5s-3-1.7-3-3.5a1.5 1.5 0 0 1 3-.6 1.5 1.5 0 0 1 3 .6c0 1.8-3 3.5-3 3.5z", "continuar": "M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M10.5 9v6l4.5-3z", "f_brilho": "M12 2l2 6.5L20 10l-6 2-2 7-2-7-6-2 6-1.5zM19 15l.7 2 2 .8-2 .7-.7 2-.7-2-2-.7 2-.8z", "f_coracao": "M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z", "f_presente": "M4 8h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1zM12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5", "f_fogo": "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.4a2.5 2.5 0 0 0 2.5 2.4z", "f_raio": "M4 14a1 1 0 0 1-.8-1.6l9.9-10.2a.5.5 0 0 1 .9.5l-1.9 6A1 1 0 0 0 13 10h7a1 1 0 0 1 .8 1.6l-9.9 10.2a.5.5 0 0 1-.9-.5l1.9-6A1 1 0 0 0 11 14z", "f_etiqueta": "M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4zM6.2 7.5a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z", "f_bolsa": "M3.5 9h17l-1.3 10.2a2 2 0 0 1-2 1.8H6.8a2 2 0 0 1-2-1.8zM8 9V7a4 4 0 0 1 8 0v2M10 13h4", "f_trofeu": "M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17c0 .6-.5 1-1 1.2C7.9 18.8 7 20.2 7 22M14 14.7V17c0 .6.5 1 1 1.2 1.1.6 2 2 2 3.8M18 2H6v7a6 6 0 0 0 12 0z", "f_top": "M7 3v5c0 1-2 2-2 4v6h14v-6c0-2-2-3-2-4V3M7 8c1.5 2 3.5 2 5 0 1.5 2 3.5 2 5 0M5 15h14", "f_relogio": "M4 13a8 8 0 1 0 16 0a8 8 0 1 0 -16 0zM12 9v4l2 2M5 3 2 6M22 6l-3-3", "f_pote": "M8 7h8a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-8a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3zM7 7V4h10v3M8 13h8", "f_cupom": "M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM9 15l6-6M8.7 9.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0zM13.7 14.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0z", "f_porcento": "M19 5 5 19M4 6.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0zM15 17.5a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0z", "f_dinheiro": "M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-16a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2zM9.5 12a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0zM6 12h.01M18 12h.01", "f_carrinho": "M7 21a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM18 21a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM2 2h2.5l2.7 12.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L22 7H5.1", "f_megafone": "M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6", "f_estrela": "M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.5 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.7a2 2 0 0 0-.6 1.8l.9 5.2a.5.5 0 0 1-.8.5l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.5l.9-5.2a2 2 0 0 0-.6-1.8L1.6 9.8a.5.5 0 0 1 .3-.9l5.2-.8A2 2 0 0 0 8.6 7z", "f_check": "M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0zM8 12l3 3 5-6", "f_seta": "M5 12h14M13 6l6 6-6 6", "f_cabide": "M12 7a2 2 0 1 1 2-2c0 1-1 1.5-2 2.5v1M12 8.5 2.5 16a1 1 0 0 0 .6 1.8h17.8a1 1 0 0 0 .6-1.8z", "f_tenis": "M2 17V9.5a1.5 1.5 0 0 1 2.4-1.2L7 10.2l2.5-2.7 3.3 3.8c1.5 1.7 3.6 2.5 5.8 2.7A3.6 3.6 0 0 1 22 17.6V18H2zM2 18v1.5a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V18M11 12.5l-1.3 1.2M13 14.5l-1.3 1.2", "f_haltere": "M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7", "f_batom": "M9 21V11h6v10zM10 11V6l4-3v8", "f_perfume": "M9 9h6a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3zM10 9V6h4v3M12 6V3M9 3h6", "f_fone": "M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3", "f_panela": "M3 10h18v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM1 10h2M21 10h2M8 6c0-1 1-1 1-2M12 6c0-1 1-1 1-2M16 6c0-1 1-1 1-2", "f_patinha": "M9 4a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM16 8a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM18 16a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.8 1.2 5 5 0 0 0-1.7-2.2A4 4 0 0 1 9 10z", "f_mamadeira": "M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1", "f_bebe": "M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1", "f_lapis": "M21.2 6.8a2.8 2.8 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5z", "f_aviao": "M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z", "f_arvore": "M17 14l3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7zM12 22v-3", "f_floco": "M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M9 4l3 3 3-3M9 20l3-3 3 3M4 9l3 3-3 3M20 9l-3 3 3 3", "f_casa": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z", "f_espelho": "M6 9a6 7 0 1 0 12 0a6 7 0 1 0 -12 0zM12 16v5M9 21h6M9.5 7a3 3 0 0 1 2-2", "f_caixa": "M4 4h16a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-3a1 1 0 0 1 1 -1zM5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4", "f_folha": "M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10zM2 21c0-3 1.9-5.4 5.2-6.1 2.4-.5 4.7-1.6 6.8-3.9", "f_gota": "M12 2.7 6.3 8.4a8 8 0 1 0 11.4 0zM9 15a3 3 0 0 0 3 3", "f_xicara": "M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM6 2v2M10 2v2M14 2v2", "f_calendario": "M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-13a2 2 0 0 1 2 -2zM16 2v4M8 2v4M3 10h18M9 15.5l2 2 4-4", "f_caminhao": "M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.6a1 1 0 0 0-.2-.6l-3.5-4.4A1 1 0 0 0 17.5 8H14M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0zM5 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z", "f_ampulheta": "M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2", "f_foguete": "M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1zM12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2zM9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5", "f_pergunta": "M7.9 20A9 9 0 1 0 4 16.1L2 22zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01", "f_info": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0zM12 16v-4M12 8h.01", "f_story": "M10.1 2.2a10 10 0 0 1 3.8 0M17.6 3.7a10 10 0 0 1 2.7 2.7M21.8 10.1a10 10 0 0 1 0 3.8M20.3 17.6a10 10 0 0 1-2.7 2.7M13.9 21.8a10 10 0 0 1-3.8 0M6.4 20.3a10 10 0 0 1-2.7-2.7M2.2 13.9a10 10 0 0 1 0-3.8M3.7 6.4a10 10 0 0 1 2.7-2.7M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0z", "f_vestido": "M9 2v3.5L7 8l2.5 2L5 21h14l-4.5-11L17 8l-2-2.5V2M9 5.5c1.8 1 4.2 1 6 0", "f_lista": "M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13", "f_instagram": "M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1 -5 5h-10a5 5 0 0 1 -5 -5v-10a5 5 0 0 1 5 -5zM8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0zM16.7 6.5a0.8 0.8 0 1 0 1.6 0a0.8 0.8 0 1 0 -1.6 0z", "f_colagem": "M4.5 3h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM15.5 3h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM15.5 14h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5zM4.5 14h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1 -1.5 1.5h-4a1.5 1.5 0 0 1 -1.5 -1.5v-4a1.5 1.5 0 0 1 1.5 -1.5z", "f_lapis2": "M21.2 6.8a2.8 2.8 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5z", "s_estrela": "M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.5 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.7a2 2 0 0 0-.6 1.8l.9 5.2a.5.5 0 0 1-.8.5l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.5l.9-5.2a2 2 0 0 0-.6-1.8L1.6 9.8a.5.5 0 0 1 .3-.9l5.2-.8A2 2 0 0 0 8.6 7z", "s_circulo": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z", "s_fita": "M5 8H2l2 4-2 4h3M19 8h3l-2 4 2 4h-3M6.5 6h11a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 14.5v-7A1.5 1.5 0 0 1 6.5 6z", "s_etiqueta": "M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4zM6.2 7.5a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0z", "f_caderno": "M2 6h4M2 10h4M2 14h4M2 18h4M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-16a2 2 0 0 1 2 -2zM16 2v20"};
@@ -531,6 +531,7 @@
     } catch (e) { config.fila = config.fila || []; toast("Não consegui carregar a lista: " + (e.code || e.message)); }
     delete config.filaAntiga;
     carregarVitrine();
+    setTimeout(() => { if (!catalogoCarregado) carregarCatalogo().then(() => { try { pintarSegProd(); contarFila(); } catch (e) { /* segue */ } }).catch(() => {}); }, 1500); // número certo em Produtos desde o início
     // Ao ligar a conta Google: junta a lista que estava neste aparelho
     if (listaDoAparelho && listaDoAparelho.length) {
       const links = new Set(config.fila.map((i) => i.link));
@@ -640,7 +641,7 @@
     document.dispatchEvent(new CustomEvent("miga-aba", { detail: aba }));
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
-    if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
+    if (aba === "achados" && (!catalogoCarregado || (catEm && Date.now() - catEm > 36e5))) carregarCatalogo();
     if (aba === "site") { renderSite(); carregarCliquesSite(); }
     if (aba === "acessos") carregarAcessos();
     pintarSegProd(aba);
@@ -998,14 +999,33 @@
     if (d.avisos && d.avisos.length) console.info("Catálogo:", d.avisos.join(" | "));
     catalogoAtual = (d.produtos || []).filter((p) => p.preco);
     ordenarAchados();
+    catEm = Date.now(); pintarHoraCatalogo(); precosDoCatalogo();
     if (!catalogoAtual.length) { $("#catalogo").innerHTML = '<p class="vazio-lista">Sem achados nessa loja agora. Escolha outra loja.</p>'; return; }
     pintarAchados();
+  }
+  /* Achados: quando foi a última atualização (e atualiza sozinho depois de 1 hora) */
+  var catEm = 0;
+  function pintarHoraCatalogo() {
+    const b = $("#atualizarCatalogo"); if (!b) return;
+    if (!catEm) { b.textContent = "Atualizar"; return; }
+    const m = Math.floor((Date.now() - catEm) / 60000);
+    b.textContent = m < 1 ? "Atualizado agora" : m < 60 ? `Atualizado há ${m} min` : `Atualizado há ${Math.floor(m / 60)} h · atualizar`;
+  }
+  setInterval(pintarHoraCatalogo, 30000);
+  /** Os preços novos dos achados vão sozinhos para os produtos da sua lista e do site */
+  function precosDoCatalogo() {
+    let mudou = 0;
+    for (const p of catalogoAtual) {
+      if (!p.preco) continue; const it = itemDoAchado(p); if (!it || it.carregando) continue;
+      if (it.precoNovo !== p.preco || (p.precoAntigo && it.precoAntigo !== p.precoAntigo)) { it.precoNovo = p.preco; if (p.precoAntigo) it.precoAntigo = p.precoAntigo; mudou++; }
+    }
+    if (mudou) { salvarFila(true); try { sincronizarVitrine(); } catch (e) { /* segue */ } }
   }
   /** Achados no mesmo jeito da Lista (foto, nome, preço, loja) com o ⋮ */
   function pintarAchados() { pintarAchadosBase(); decorarAchados(); }
   function pintarCatsAchados() {
     const el = $("#acCats"); if (!el) return;
-    const conta = {}; catalogoAtual.forEach((p) => { if (achadoNoSite(p)) return; const c = catDoAchado(p); conta[c] = (conta[c] || 0) + 1; });
+    const conta = {}; catalogoAtual.forEach((p) => { if (!achadoVisivel(p)) return; const c = catDoAchado(p); conta[c] = (conta[c] || 0) + 1; });
     if (acCat && !conta[acCat]) acCat = "";
     el.hidden = Object.keys(conta).length < 2;
     el.innerHTML = [["", "Todas", Object.values(conta).reduce((a, b) => a + b, 0)], ...Object.keys(NOME_CAT).filter((k) => conta[k]).map((k) => [k, NOME_CAT[k], conta[k]])]
@@ -1013,7 +1033,7 @@
   }
   function pintarAchadosBase() {
     pintarCatsAchados();
-    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => (!acSoTop || p.maisVendido) && !achadoNoSite(p) && (!acCat || catDoAchado(p) === acCat)).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
+    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => (!acSoTop || p.maisVendido) && achadoVisivel(p) && (!acCat || catDoAchado(p) === acCat)).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
     const botaoBusca = bruto.length >= 3 && !daBusca ? `<button type="button" class="btn btn--rosa ac-buscar" id="acBuscarLojas"><svg class="ic-mono"><use href="#i-busca"/></svg>Buscar “${esc(bruto)}” nas lojas</button>` : "";
     const total = l.length; l = l.slice(0, acLimite);
     $("#acTotal").textContent = total > l.length ? `${l.length} de ${total} achados` : `${total} ${total === 1 ? "achado" : "achados"}`;
@@ -1036,6 +1056,8 @@
   const idSiteAchado = (p) => "ac-" + (p.loja || "loja") + "-" + (String(p.id || "").replace(/[^\w-]/g, "") || Array.from(String(p.link)).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36));
   /** O achado já está na Lista? (pelo link de afiliado ou pelo link da loja) */
   const itemDoAchado = (p) => { const l = linkAfiliadoAuto(p); return fila().find((i) => !i.carregando && ((l && mesmoProduto(i, l)) || (p.link && mesmoProduto(i, p.link)))); };
+  /** Achado que aparece: tem foto e ainda não está no site nem na sua lista */
+  const achadoVisivel = (p) => !!(p && p.imagem) && !achadoNoSite(p) && !itemDoAchado(p);
   const achadoNoSite = (p) => { const it = itemDoAchado(p); return vitrineMap.has(idSiteAchado(p)) || (it && vitrineMap.has(it.id)); };
   function decorarAchados() {
     try { pintarSegProd(); } catch (e) { /* segue */ }
@@ -1196,7 +1218,7 @@
   }
   $("#catalogo").addEventListener("click", async (e) => {
     const mais = e.target.closest("#acMais"); if (mais) { acLimite += 100;
-      const visiveis = $("#acBusca").value.trim() && !catBusca ? Infinity : catalogoAtual.filter((p) => (!acSoTop || p.maisVendido) && !achadoNoSite(p)).length;
+      const visiveis = $("#acBusca").value.trim() && !catBusca ? Infinity : catalogoAtual.filter((p) => (!acSoTop || p.maisVendido) && achadoVisivel(p)).length;
       if (visiveis >= acLimite || !catTemMais) { const y = scrollY; pintarAchados(); scrollTo(0, y); } else maisAchados(mais); return; }
     if (e.target.closest("#acBuscarLojas")) { buscarNasLojas($("#acBusca").value.trim()); return; }
     const am = e.target.closest("[data-achado-menu], [data-achado]");
@@ -1271,8 +1293,11 @@
   let stVisiveis = [];
   async function salvarNoSite(p) { await dados.vitrineSalvar(p); vitrineMap.set(p.id, p); }
   async function tirarVariosDoSite(ids) {
+    const guardados = ids.map((id) => vitrineMap.get(id)).filter(Boolean);
     let ok = 0; for (const id of ids) { try { await dados.vitrineApagar(id); vitrineMap.delete(id); ok++; } catch (e) { console.warn(e); } }
-    renderFila(); if (!$("#aba-achados").hidden) pintarAchados(); return ok;
+    renderFila(); if (!$("#aba-achados").hidden) pintarAchados();
+    if (ok) setTimeout(() => toastAcao(`${ok} ${ok === 1 ? "saiu" : "saíram"} do site`, "Desfazer", async () => { for (const p of guardados) { try { await dados.vitrineSalvar(p); vitrineMap.set(p.id, p); } catch (e) { /* segue */ } } renderFila(); toast("Voltaram para o site"); }), 50);
+    return ok;
   }
   $("#stAbrir").addEventListener("click", () => window.open(urlVitrine(), "_blank", "noopener"));
   $("#stBusca").addEventListener("input", (e) => { stEst.q = e.target.value; renderSite(); });
@@ -1365,7 +1390,7 @@
     const p = vitrineMap.get(b.dataset.stMenu || b.dataset.stItem); if (!p) return;
     const op = await escolherOpcao(p.nome || "Produto", [["cat", "Mudar a categoria"], ["para", "Mudar para quem"], ["abrir", "Abrir o link da loja"], ["tirar", "Tirar do site"]], "");
     if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
-    if (op === "tirar") { await tirarVariosDoSite([p.id]); toast("Saiu do site"); return; }
+    if (op === "tirar") { await tirarVariosDoSite([p.id]); return; }
     if (op === "cat") { const c = await escolherCategoria({ sugestao: p.tipo || "outros", nome: p.nome, titulo: "Categoria no site", acao: "Mudar para" }); if (!c) return;
       try { await salvarNoSite({ ...p, tipo: c, atualizadoEm: Date.now() }); renderSite(); toast(`Agora em ${NOME_CAT[c]}`); } catch (err) { toast("Não consegui mudar"); } return; }
     if (op === "para") { const v = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), p.para || "mulher"); if (!v) return;
@@ -1374,7 +1399,7 @@
   $("#stTirarVarios").addEventListener("click", async () => {
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
     const ids = [...stEst.sel], ok = await tirarVariosDoSite(ids); stEst.sel = null; renderSite();
-    toast(ok === ids.length ? `${ok} ${ok === 1 ? "produto saiu" : "produtos saíram"} do site` : "Alguns não saíram. Tente de novo.");
+    if (ok !== ids.length) toast("Alguns não saíram. Tente de novo.");
   });
   $("#stPostar").addEventListener("click", () => {
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
@@ -2102,7 +2127,7 @@
   }
   function contarFila() {
     const n = fila().filter((i) => !foiCompartilhado(i)).length, h = fila().filter(foiCompartilhado).length;
-    let tot = fila().filter((i) => !i.carregando).length; try { tot += vitrineMap.size + catalogoAtual.filter((p) => !achadoNoSite(p)).length; } catch (e) { /* app abrindo */ }
+    let tot = fila().filter((i) => !i.carregando).length; try { tot += vitrineMap.size + catalogoAtual.filter(achadoVisivel).length; } catch (e) { /* app abrindo */ }
     $("#contPostar").hidden = !tot; $("#contPostar").textContent = tot > 999 ? "999+" : tot;
     $("#contHistorico").hidden = !h; $("#contHistorico").textContent = h;
   }
@@ -2114,7 +2139,7 @@
   };
   /** Foto do produto com o ícone da loja no canto: tocar no ícone abre o link */
   const miniLoja = (i, foto) => `<span class="pp-mini">${foto}${i.link && LOGO_LOJA[i.loja] ? `<a class="selo-link" href="${esc(i.link)}" target="_blank" rel="noopener" data-abrir-link title="Abrir na ${esc(NOME_LOJA[i.loja])}">${seloLojaHtml(i.loja)}</a>` : seloLojaHtml(i.loja)}</span>`;
-  const fotoMini = (i) => i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="sem-foto">${i.carregando ? "buscando…" : "sem foto"}</span>`;
+  const fotoMini = (i) => i.imagem ? `<img src="${esc(i.imagem)}" data-original="${esc(i.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : (i.carregando ? '<span class="sem-foto">buscando…</span>' : `<span class="sem-foto sem-foto--bt" data-sem-foto="${esc(i.id)}">+ foto</span>`);
   /* Categorias na Lista: filtro e categoria do produto colado ("auto" adivinha pelo nome) */
   const CATS_LISTA = NOME_CAT;
   /** Folha de escolha: um botão abre a lista de opções (sem um monte de botões na tela) */
@@ -2497,9 +2522,10 @@
   $("#excluirMarcados").addEventListener("click", async () => {
     const l = itensMarcados(); if (!l.length) return;
     if (!(await confirmar({ titulo: `Excluir ${l.length} ${l.length === 1 ? "produto" : "produtos"}?`, texto: "Eles saem do app (da Lista e do Histórico).", ok: "Excluir" }))) return;
-    const ids = new Set(l.map((i) => i.id)); config.fila = fila().filter((i) => !ids.has(i.id)); marcados.clear();
-    l.forEach((i) => { if (i.histId) dados.apagar(i.histId).catch(() => {}); });
-    renderFila(); salvarFila(true); contarFila(); if (!$("#aba-historico").hidden) renderHistorico(); toast("Produtos excluídos");
+    const ids = new Set(l.map((i) => i.id)), antes = fila().slice(); config.fila = fila().filter((i) => !ids.has(i.id)); marcados.clear();
+    renderFila(); salvarFila(true); contarFila(); if (!$("#aba-historico").hidden) renderHistorico();
+    let desfeito = false; const fim = setTimeout(() => { if (!desfeito) l.forEach((i) => { if (i.histId) dados.apagar(i.histId).catch(() => {}); }); }, 6500);
+    toastAcao(`${l.length} ${l.length === 1 ? "produto excluído" : "produtos excluídos"}`, "Desfazer", () => { desfeito = true; clearTimeout(fim); config.fila = antes; salvarFila(true); renderFila(); contarFila(); toast("Voltaram para a lista"); });
   });
   /* ---------- Campanhas prontas: título, cor e chamada iguais em tudo que for criado ---------- */
   const CAMPANHAS = {
@@ -2577,7 +2603,7 @@
   function pintarSegProd(aba) { try { pintarSegProd0(aba); } catch (e) { /* app ainda abrindo */ } }
   function pintarSegProd0(aba) {
     contarFila();
-    const n = { postar: fila().filter((i) => !i.carregando).length, achados: catalogoAtual.filter((p) => !achadoNoSite(p)).length, site: vitrineMap.size };
+    const n = { postar: fila().filter((i) => !i.carregando).length, achados: catalogoAtual.filter(achadoVisivel).length, site: vitrineMap.size };
     document.querySelectorAll(".prod-seg").forEach((sg) => sg.querySelectorAll("[data-prod]").forEach((b) => {
       b.classList.toggle("on", b.dataset.prod === (aba || (document.querySelector(".aba-prod:not([hidden])") || {}).id?.replace("aba-", "")));
       const c = b.querySelector("small"); c.textContent = n[b.dataset.prod] ? n[b.dataset.prod] : "";
@@ -2627,6 +2653,8 @@
   $("#ppLista").addEventListener("click", async (e) => {
     if (e.target.closest("[data-completar]")) { const p = incompletos()[0]; if (p) { modoCompletar = true; abrirItemFila(p, true); } else toast("Todos os produtos estão completos"); return; }
     if (e.target.closest("[data-continuar]")) { continuarProgresso(); return; }
+    { const sf = e.target.closest("[data-sem-foto]"); if (sf && !modoVarios) { e.stopPropagation(); const it = fila().find((x) => x.id === sf.dataset.semFoto); if (!it) return;
+      const op = await escolherOpcao("Produto sem foto", [["foto", "Pôr uma foto"], ["excluir", "Excluir o produto"]], ""); if (op === "foto") { abrirItemFila(it); ppEditando = true; $("#ppSalvar").hidden = false; $("#ppSalvar").textContent = "Salvar alterações"; } else if (op === "excluir") excluirProduto(it); return; } }
     if (e.target.closest("[data-ir-inicio]")) { irPara("postar"); setTimeout(() => $("#inLink").focus(), 150); return; }
     const ph = e.target.closest("[data-ph]");
     if (ph) {
@@ -2744,7 +2772,7 @@
   $("#folhaEst").addEventListener("input", (e) => { if (vsSel && e.target.dataset && e.target.dataset.vsDesc) vsSel.desc[e.target.dataset.vsDesc] = e.target.value; });
   $("#folhaEst").addEventListener("close", () => { vsSel = null; });
   async function tirarDoSite(it) {
-    try { await dados.vitrineApagar(it.id); vitrineMap.delete(it.id); renderFila(); toast("Saiu do site"); } catch (e) { toast("Não consegui tirar do site"); }
+    try { if (!(await tirarVariosDoSite([it.id]))) toast("Não consegui tirar do site"); } catch (e) { toast("Não consegui tirar do site"); }
   }
   async function excluirProduto(it) {
     if (!(await confirmar({ titulo: "Excluir este produto?", texto: `“${limparNome(it.nome || "Produto")}” sai da lista.`, ok: "Excluir" }))) return false;
@@ -2804,8 +2832,11 @@
     const nSite = vitrineMap.size, ch = inSiteCache && inSiteCache.l ? inSiteCache.l.filter((e) => e.tipo === "loja" && new Date(e.em).toDateString() === hoje).length : 0;
     $("#inResumo").innerHTML = [[p, "para postar", "postar", false], [f, f === 1 ? "incompleto" : "incompletos", "incompletos", !!f], [nSite, "no site", "site", nSite > LIMITE_SITE], [ch, "cliques hoje", "cliques", false]].map(([n, t, k, al]) => `<button type="button" class="in-num${al ? " alerta" : ""}" data-in-num="${k}"><b>${n}</b><span>${t}</span></button>`).join("");
     const prog = lerProgresso();
-    $("#inAcoes").innerHTML = ACOES_INICIO.filter(([k]) => k !== "continuar" || prog).map(([k, n, ic]) => `<button type="button" class="in-acao${k === "continuar" ? " in-acao--destaque" : ""}" data-in="${k}"${k === "continuar" && prog ? ` title="${esc(prog.rotulo)}"` : ""}><svg><use href="#${ic}"/></svg>${n}</button>`).join("");
-    $("#inCats").innerHTML = Object.entries(NOME_CAT).map(([k, n]) => blocoCat(k, n, faltamCat(k), false)).join("");
+    const usadas = (() => { try { return JSON.parse(localStorage.getItem("miga_usadas") || "{}"); } catch (e) { return {}; } })();
+    const base = ACOES_INICIO.filter(([k]) => k !== "continuar"), top4 = inMais ? base : base.slice().sort((a, b) => (usadas[b[0]] || 0) - (usadas[a[0]] || 0) || base.indexOf(a) - base.indexOf(b)).slice(0, 4);
+    $("#inAcoes").innerHTML = [...(prog ? ACOES_INICIO.filter(([k]) => k === "continuar") : []), ...top4].map(([k, n, ic]) => `<button type="button" class="in-acao${k === "continuar" ? " in-acao--destaque" : ""}" data-in="${k}"${k === "continuar" && prog ? ` title="${esc(prog.rotulo)}"` : ""}><svg><use href="#${ic}"/></svg>${n}</button>`).join("");
+    $("#inAcoes").insertAdjacentHTML("beforeend", `<button type="button" class="in-acao in-acao--mais" data-in-mais><svg><use href="#${inMais ? "i-x" : "i-pontos"}"/></svg>${inMais ? "Menos" : "Mais"}</button>`);
+    pintarProxInicio();
   }
   $("#inCats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; filtroLista = b.dataset.cat; limparBusca(); irPara("postar"); });
   $("#inResumo").addEventListener("click", (e) => {
@@ -2814,8 +2845,37 @@
     if (k === "cliques") { irPara("acessos"); scrollTo(0, 0); return; }
     filtrarResumo(k);
   });
+  var inMais = false;
+  /** Melhor horário (pelas visitas do site nos últimos 7 dias) */
+  function melhorHoraHtml() {
+    const l = inSiteCache && inSiteCache.l ? inSiteCache.l.filter((e) => e.tipo === "visita") : []; if (l.length < 5) return "";
+    const hs = Array(24).fill(0); l.forEach((e) => hs[new Date(e.em).getHours()]++); const h = hs.indexOf(Math.max(...hs)), agora = new Date().getHours(), falta = (h - agora + 24) % 24;
+    return `<p class="melhor-hora">Seu público entra mais às <b>${h}h</b>${falta === 0 ? ": é agora!" : `. Faltam ${falta} ${falta === 1 ? "hora" : "horas"}.`}</p>`;
+  }
+  /* Início: próximo a postar e aviso do dia */
+  function pintarProxInicio() {
+    const box = $("#inProx"); if (!box) return;
+    const prox = fila().filter((i) => !i.carregando && !foiCompartilhado(i) && i.imagem && i.precoNovo).sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0))[0];
+    if (!prox) { box.hidden = true; } else {
+      const d = diasDesde(prox.criadoEm);
+      box.innerHTML = `<h3 class="in-tit">Próximo a postar</h3><div class="in-prox-c"><img src="${esc(prox.imagem)}" alt="" referrerpolicy="no-referrer"><span><b>${esc(limparNome(prox.nome || "Produto"))}</b><small>${brl(prox.precoNovo)} · ${esc(NOME_LOJA[prox.loja] || "")}${prox.cupom ? " · cupom " + esc(String(prox.cupom).toUpperCase()) : ""}</small><small>${d ? `Na lista há ${d} ${d === 1 ? "dia" : "dias"}` : "Entrou hoje"}</small></span></div>
+        <div class="in-prox-bts"><button type="button" class="btn btn--rosa" data-prox-postar="${esc(prox.id)}">Postar agora</button><button type="button" class="btn btn--branco" data-prox-pular="${esc(prox.id)}">Pular</button></div>`;
+      box.hidden = false;
+    }
+    const semFoto = fila().filter((i) => !i.carregando && !i.imagem).length, incomp = incompletos().length, site = vitrineMap.size;
+    const partes = [semFoto && `<b>${semFoto} ${semFoto === 1 ? "produto sem foto" : "produtos sem foto"}</b>`, incomp > semFoto && `<b>${incomp - semFoto} sem preço</b>`, site > LIMITE_SITE && `<b>site com ${site} produtos</b> (passou de ${LIMITE_SITE})`].filter(Boolean);
+    const av = $("#inAviso"); av.hidden = !partes.length;
+    av.innerHTML = partes.length ? `<button type="button" data-in-num="${semFoto || incomp > semFoto ? "incompletos" : "site"}"><i class="in-aviso-ponto"></i><span>Você tem ${partes.join(" e ")}.</span><b class="in-aviso-ir">Resolver ›</b></button>` : "";
+  }
+  document.addEventListener("click", (e) => {
+    const pp = e.target.closest("[data-prox-postar]"); if (pp) { const it = fila().find((x) => x.id === pp.dataset.proxPostar); if (it) { irPara("postar"); criarAPartirDaLista("roteiro", [it]); } return; }
+    const pj = e.target.closest("[data-prox-pular]"); if (pj) { const it = fila().find((x) => x.id === pj.dataset.proxPular); if (it) { it.criadoEm = Date.now(); salvarFila(true); pintarProxInicio(); } return; }
+    if (e.target.closest("[data-in-mais]")) { inMais = !inMais; renderInicio(); }
+  });
+  $("#inAviso").addEventListener("click", (e) => { const b = e.target.closest("[data-in-num]"); if (!b) return; const k = b.dataset.inNum; if (k === "site") { irPara("site"); scrollTo(0, 0); return; } filtrarResumo(k); });
   $("#inAcoes").addEventListener("click", (e) => {
     const b = e.target.closest("[data-in]"); if (!b) return; const k = b.dataset.in;
+    try { const u = JSON.parse(localStorage.getItem("miga_usadas") || "{}"); u[k] = (u[k] || 0) + 1; localStorage.setItem("miga_usadas", JSON.stringify(u)); } catch (er) { /* segue */ }
     if (k === "video") { abrirVideoLivre(); return; }
     if (k === "cupons") { abrirPostarCupons(); return; }
     if (k === "chamada") { abrirChamada(); return; }
@@ -3508,7 +3568,7 @@
       if (!wz.lugares) wz.lugares = lugaresSalvos();
       c.innerHTML = `<h2 class="wz-titulo">Onde vai postar?</h2>
         ${wz.filaRoteiro && wz.filaRoteiro.length > 1 ? blocoOrdemRoteiro() : `<div class="wz-prod on" style="cursor:default">${miniLoja(item, fotoMini(item))}<span><b>${esc(item.nome || "Sem nome")}</b><small>${item.precoNovo ? brl(item.precoNovo) : "sem preço"}</small>${obsTag(item)}</span></div>`}
-        <p class="nota">Marque tudo de uma vez. O app guarda sua escolha para a próxima.</p>
+        ${melhorHoraHtml()}<p class="nota">Marque tudo de uma vez. O app guarda sua escolha para a próxima.</p>
         <div class="wz-ops">${Object.entries(LUGARES).map(([k, v]) => `<button type="button" class="rt-lugar${v.canal === "whatsapp" ? " rt-lugar--zap" : ""}${wz.lugares.includes(k) ? " on" : ""}" data-lugar="${k}"><i></i><span><b>${v.nome}</b><small>${v.desc}</small></span></button>`).join("")}</div>
         ${botaoContinuar(wz.lugares.length > 0, `Começar (${wz.lugares.length} ${wz.lugares.length === 1 ? "lugar" : "lugares"})`)}`;
       return true;

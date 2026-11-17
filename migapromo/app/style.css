@@ -2534,3 +2534,19 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .aba-prod .barra-filtro > .nota#ppTotal, .aba-prod .barra-filtro > .nota#acTotal, .aba-prod .barra-filtro > .nota#stTotal { flex: 1 0 100% !important; max-width: none !important; overflow: visible !important; white-space: normal !important; }
 #barraMarcados.bs-hist .bs-tres { grid-template-columns: 1fr 1fr 1.3fr !important; }
 #ppListaBloco .barra-filtro { flex-wrap: wrap !important; gap: 6px !important; }
+.sem-foto--bt { color: var(--rosa) !important; font-weight: 700; cursor: pointer; border: 1.5px dashed var(--rosa); }
+/* ===== Início: próximo a postar, aviso do dia, atalhos ===== */
+.in-aviso button { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; border: 0; border-radius: 18px; padding: 12px 14px; background: #fff3c4; color: var(--preto); font: inherit; font-size: 14px; cursor: pointer; margin-bottom: 12px; }
+.in-aviso-ponto { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #e8a400; box-shadow: 0 0 0 4px rgba(232, 164, 0, .2); }
+.in-aviso span { flex: 1; }
+.in-aviso-ir { color: var(--rosa); white-space: nowrap; }
+.in-prox-c { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; }
+.in-prox-c img { width: 72px; height: 72px; border-radius: 14px; object-fit: cover; background: #f7f2e8; }
+.in-prox-c b { display: block; font-size: 15px; line-height: 1.3; }
+.in-prox-c small { display: block; color: var(--cinza); font-size: 12.5px; }
+.in-prox-bts { display: grid; grid-template-columns: 1.6fr 1fr; gap: 8px; margin-top: 12px; }
+.in-acao--mais { background: var(--campo) !important; }
+.in-acao--mais svg { color: var(--cinza); }
+.melhor-hora { margin: 4px 0 10px; padding: 10px 14px; border-radius: 14px; background: var(--rosa-claro); font-size: 14px; }
+.melhor-hora b { color: var(--rosa); }
+#aba-acessos .btn-voltar { margin-bottom: 8px; }
