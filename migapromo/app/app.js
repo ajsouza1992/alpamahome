@@ -2675,8 +2675,8 @@
     if (!l.length) return;
     const ids = l.map((x) => x.id), C = CAMPANHAS[camp === undefined ? campanhaEscolhida : camp] || null;
     wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), idx: 0, res: {}, lugares: lugaresSalvos() };
-    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true }; wz.reels.modelo = (CAMPANHAS[wz.camp] ? "achadinho" : modeloAutomatico(l[0])); wz.passo = ids.length > 1 ? "rOrdem" : "rModelo"; }
-    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.reels.modelo = CAMPANHAS[wz.camp] ? "achadinho" : modeloAutomatico(l[0]); wz.passo = ids.length > 1 ? "rOrdem" : "kCarrossel"; }
+    if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true }; wz.reels.modelo = (CAMPANHAS[wz.camp] ? "achadinho" : modeloAutomatico(l[0])); wz.passo = ids.length > 1 ? "rModelo" : "rModelo"; }
+    else if (canal === "carrossel") { wz.canal = "reels"; wz.reels = { itens: ids.slice(0, 8), modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true, carrossel: true }; wz.reels.modelo = CAMPANHAS[wz.camp] ? "achadinho" : modeloAutomatico(l[0]); wz.passo = ids.length > 1 ? "kCarrossel" : "kCarrossel"; }
     else if (canal === "video") { usarProdutoNoVideo(l[0]); const V = vd(); V.iniciado = true; if (C) { V.titulo = C.titulo; V.cor = C.cor; } if (!V.modelo) { V.modelo = "achadinho"; V.titulo = V.titulo || MODELOS_REELS.achadinho.titulo; } wz.passo = "vArquivo"; }
     else if (canal === "livre") {
       const L = livre(); L.itens = l.slice(0, 6).map((x) => ({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }));
@@ -3153,7 +3153,7 @@
     if (canal === "chamada") return wz && wz.ch && wz.ch.tipo === "seg" ? ["chEditar", "chPronto"] : wz && wz.ch && wz.ch.modo === "img" ? ["chInicio", "chImg", "chImgPostar", "chFim"] : ["chInicio", "chRevisar", "chPostar", "chFim"];
     if (canal === "personagem") return ["peEscolher", "pePrompt", "peMontar", "peLugares", "peRodar", "peResumo"];
     if (canal === "cartas") return ["kaInicio", "kaRevisar", "kaPostar", "kaPronto"];
-    if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", ...(wz.reels.itens.length > 1 ? ["rOrdem"] : []), "kCarrossel", "kPronto", "rDepois"] : ["canal", "rItens", ...((wz.reels && wz.reels.itens.length > 1) ? ["rOrdem"] : []), "rModelo", "rPronto", "rDepois"];
+    if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", "kCarrossel", "kPronto", "rDepois"] : ["canal", "rItens", "rModelo", "rPronto", "rDepois"];
     if (canal === "roteiro") return passosRoteiro();
     const base = ["canal", ...(wz.veioDaLista ? [] : ["produto"])];
     if (canal === "instagram") return [...base, "montagem", "postar"]; // story/post é escolhido no próprio estúdio
@@ -3231,8 +3231,16 @@
     mostrarPasso();
   }
   /* Em todas as etapas de criar/postar: a sua observação do produto aparece no topo (ex.: qual modelo usar) */
+  const SEL_LEG = "#rrLeg, #rLegenda, #peRtLeg, #chLeg, #chLegenda, #kaLeg, #lvLegenda, #wzLegenda, #rtLegFeed, #vdLegenda, #cLegenda, textarea.rr-leg";
+  /** Legenda com o mesmo bloco em todas as telas: título "Legenda", caixa igual e botão Copiar */
+  function padronizarLegendas() {
+    document.querySelectorAll("#wzCorpo " + SEL_LEG.split(", ").join(", #wzCorpo ")).forEach((ta) => {
+      if (ta.tagName !== "TEXTAREA" || ta.dataset.legOk) return; ta.dataset.legOk = "1"; ta.classList.add("leg-caixa");
+      if (!(ta.previousElementSibling && ta.previousElementSibling.classList.contains("leg-rot"))) ta.insertAdjacentHTML("beforebegin", '<b class="leg-rot">Legenda <small>toque no texto para editar</small></b>');
+    });
+  }
   function mostrarPasso() {
-    mostrarPasso0();
+    mostrarPasso0(); try { padronizarLegendas(); } catch (e) { /* segue */ }
     try { const c = $("#wzCorpo"), it = wz && wz.itemId ? wzItem() : null;
       if (c && it && it.obsManual && it.obs && !c.querySelector(".wz-obs")) c.insertAdjacentHTML("afterbegin", `<div class="wz-obs-topo"><b>Sua observação:</b> ${esc(it.obs)}</div>`); } catch (e) { /* segue */ }
   }
@@ -3724,17 +3732,15 @@
     }
     if (wz.passo === "resumo" && wz.rapido) {
       const h = wz.rpHist || [], tudo = h.length && h.every((x) => x.feitos.length === x.total);
-      c.innerHTML = `<div class="rt-fim"><h2 class="wz-titulo">${tudo ? "Tudo postado!" : "Postagem concluída"}</h2>
-        <div class="rt-lista">${h.map((x) => `<div><span>${esc(x.nome)}${x.feitos.length ? " · " + esc(x.feitos.join(", ")) : ""}</span><b class="${x.feitos.length ? "ok" : ""}">${x.feitos.length ? "Postado" : "Pulado"}</b></div>`).join("")}</div></div>
-        <div class="wz-rodape pr-rodape rp-rod2">${botaoSiteFim(h.map((x) => x.id))}<button type="button" class="btn btn--rosa wz-continuar" id="rtLista">Voltar para a lista</button></div>`;
+      c.innerHTML = fimPadrao({ titulo: tudo ? "Tudo postado!" : "Postagem concluída", lista: `<div class="rt-lista">${h.map((x) => `<div><span>${esc(x.nome)}${x.feitos.length ? " · " + esc(x.feitos.join(", ")) : ""}</span><b class="${x.feitos.length ? "ok" : ""}">${x.feitos.length ? "Postado" : "Pulado"}</b></div>`).join("")}</div>`,
+        ids: h.map((x) => x.id), outro: "rtLista", outroTxt: "Voltar para a lista" });
       return true;
     }
     if (wz.passo === "resumo") {
       const prox = fila().find((x) => x.id !== item.id && !x.carregando && !Object.values(x.feito || {}).some(Boolean));
-      c.innerHTML = `<div class="rt-fim"><div class="rt-big rt-big--ok"><svg aria-hidden="true"><use href="#i-check"/></svg></div><h2 class="wz-titulo">${wz.lugares.every((k) => wz.res[k] === "feito") ? "Tudo postado!" : "Roteiro concluído"}</h2>
-        <div class="rt-lista">${wz.lugares.map((k) => `<div><span>${LUGARES[k].nome}</span><b class="${wz.res[k] === "feito" ? "ok" : ""}">${wz.res[k] === "feito" ? "Postado" : "Pulado"}</b></div>`).join("")}</div></div>
-        ${prox ? `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="rtProximo">Próximo produto da lista</button></div><p class="nota wz-centro">Próximo: <b>${esc(prox.nome || "produto")}</b></p>` : '<p class="nota wz-centro">Não há mais produtos para postar na lista.</p>'}
-        ${botaoSiteFim([item.id])}<button type="button" class="btn btn--branco" id="rtLista">Voltar para a lista</button>`;
+      c.innerHTML = fimPadrao({ titulo: wz.lugares.every((k) => wz.res[k] === "feito") ? "Tudo postado!" : "Roteiro concluído",
+        lista: `<div class="rt-lista">${wz.lugares.map((k) => `<div><span>${LUGARES[k].nome}</span><b class="${wz.res[k] === "feito" ? "ok" : ""}">${wz.res[k] === "feito" ? "Postado" : "Pulado"}</b></div>`).join("")}</div>${prox ? `<p class="nota wz-centro">Próximo da lista: <b>${esc(prox.nome || "produto")}</b></p>` : ""}`,
+        ids: [item.id], outro: prox ? "rtProximo" : "rtLista", outroTxt: prox ? "Postar o próximo" : "Voltar para a lista", extra: prox ? '<button type="button" class="btn btn--branco" id="rtLista">Voltar para a lista</button>' : "" });
       return true;
     }
     return false;
@@ -3762,6 +3768,7 @@
       return `<button type="button" role="listitem" class="rt-faixa-it${id === item.id ? " on" : ""}${feitos.has(id) ? " ok" : ""}" data-rt-ir="${esc(id)}" aria-label="Produto ${n + 1}: ${esc(limparNome(it.nome || ""))}">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : `<span>${n + 1}</span>`}${feitos.has(id) ? '<i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></i>' : ""}</button>`; }).join("")}</div>`;
   }
   document.addEventListener("click", (e) => { const b = e.target.closest("[data-rt-ir]"); if (!b || !wz || !wz.filaRoteiro) return; if (b.dataset.rtIr === wz.itemId) return;
+    if ($("#folhaEst").open) $("#folhaEst").close();
     wz.itemId = b.dataset.rtIr; wz.idx = 0; wz.res = {}; wz.rpEditando = false; if (wz.rapido) wz.passo = "rpConferir"; mostrarPasso(); scrollTo(0, 0); });
   const proximoDaFila = () => { if (!wz.filaRoteiro) return null; const i = wz.filaRoteiro.indexOf(wz.itemId); return fila().find((x) => x.id === wz.filaRoteiro[i + 1]) || null; };
   function avancarRoteiro() {
@@ -3775,6 +3782,12 @@
   }
   /** Depois do Reels, Carrossel ou Vídeo: posta os mesmos produtos no WhatsApp (canal e grupos), um por um */
   // "Em movimento" vem ligado por padrão (no domínio novo ainda não havia nada salvo); só desliga se você desmarcar
+  /** Tela final igual em todas as criações: Compartilhar (rosa) · Baixar · Pôr no site · Criar outro */
+  function fimPadrao({ titulo, lista = "", compartilhar = "", baixar = "", ids = [], outro = "wzNovo", outroTxt = "Criar outro", extra = "" }) {
+    const site = ids.length ? botaoSiteFim(ids) : "";
+    return `<div class="rt-fim fim-p"><div class="rt-big rt-big--ok"><svg aria-hidden="true"><use href="#i-check"/></svg></div><h2 class="wz-titulo">${titulo}</h2>${lista}</div>
+      <div class="fim-bts">${compartilhar ? `<button type="button" class="btn btn--rosa" id="${compartilhar}">Compartilhar de novo</button>` : ""}${baixar ? `<button type="button" class="btn btn--branco" id="${baixar}">Baixar</button>` : ""}${site}<button type="button" class="btn ${compartilhar ? "btn--branco" : "btn--rosa"}" id="${outro}">${outroTxt}</button>${extra}</div>`;
+  }
   /** No fim da postagem: botão para pôr no site o que acabou de ser postado */
   function botaoSiteFim(ids) {
     ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) return "";
@@ -3927,8 +3940,7 @@
     c.innerHTML = `<div class="rp-conf">
       ${faixaFila(item)}<p class="rt-etapa">${wz.filaRoteiro ? `Produto ${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length} · ` : ""}${esc(lug)}</p>
       ${temArte ? `<div class="wz-previa rp-prev"><canvas id="rtTela"></canvas></div>` : `<div class="wz-previa rp-prev">${item.imagem ? `<img src="${esc(item.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}</div>`}
-      <button type="button" class="rp-modelo" id="rpTrocarModelo"><span><small>${wz.tituloArte || wz.icone ? "Editado por você" : campanha() ? "Campanha" : wz.rpEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(wz.tituloArte ? tituloDigitado(wz.tituloArte).replace(/\*/g, "").replace(/\n/g, " ") : campanha() ? campanha().nome : nomeModelo)}</b></span><i>Trocar</i></button>
-      ${temArte ? `<div class="rp-linha"><b>Cor</b></div><div class="rp-cores">${CORES_ESCOLHA.map((k) => `<button type="button" data-rp-cor="${k}" class="${wz.cor === k ? "on" : ""}" style="background:${CORES_VIDEO[k].fundo}" aria-label="${CORES_NOME[k]}"></button>`).join("")}</div>` : ""}
+      <div class="est-ctrl est-ctrl--${temArte ? 3 : 2}">${botaoEst("modelo", "Modelo", wz.tituloArte ? tituloDigitado(wz.tituloArte) : campanha() ? campanha().nome : nomeModelo)}${temArte ? botaoEst("cor", "Cor", CORES_NOME[wz.cor] || (CORES_VIDEO[wz.cor] || {}).nome || "") : ""}${botaoEst("produtosRt", "Produtos", wz.filaRoteiro ? `${wz.filaRoteiro.indexOf(item.id) + 1} de ${wz.filaRoteiro.length}` : "1")}</div>
       ${temArte && mov ? `<label class="rp-mov"><input type="checkbox" id="rpMov"${wz.mov ? " checked" : ""}><span><b>Em movimento</b><small id="rpProg">${wz.mov ? (vidMovAtual() ? "Vídeo pronto" : "O vídeo é criado quando você aprovar") : "Desmarcado: vai a imagem parada"}</small></span></label>` : ""}
     </div>${botaoContinuar(true, temArte && mov && wz.mov && !vidMovAtual() ? `<svg class="rp-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>Aprovar e criar o vídeo` : "Continuar").replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
     if (!temArte) return;
@@ -7032,7 +7044,7 @@
     enquadrar: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
     produtos: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>'
   };
-  ICONE_EST.produtosLivre = ICONE_EST.produtos;
+  ICONE_EST.produtosLivre = ICONE_EST.produtos; ICONE_EST.produtosRt = ICONE_EST.produtos;
   const botaoEst = (k, nome, valor) => `<button type="button" class="est-btn" data-est="${k}"><svg viewBox="0 0 24 24">${ICONE_EST[k] || ""}</svg><b>${esc(nome)}</b><small>${esc(String(valor || "").replace(/\*/g, "").replace(/\s*\n\s*/g, " "))}</small></button>`;
   let amostra = null, amostraK = "", amostraT = 0;
   const ICO_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>', ICO_PAUSA = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1"/><rect x="13.5" y="5.5" width="4" height="13" rx="1"/></svg>';
@@ -8919,8 +8931,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       desenharImgCh(false); return true;
     }
     if (wz.passo === "chFim") {
-      c.innerHTML = `<div class="rt-fim"><h2 class="wz-titulo">${CH.postado ? (img ? "Story postado!" : "Reels postado!") : "Pronto"}</h2><div class="rt-lista"><div><span>${img ? "Story · imagem com caixinha" : "Reels · " + Math.round(T_CHAMADA) + " s"}</span><b class="${CH.postado ? "ok" : ""}">${CH.postado ? "Postado" : "Não postado"}</b></div></div></div>
-        ${rod('<button type="button" class="btn btn--rosa wz-continuar" id="chOutro">Criar outro</button><button type="button" class="btn btn--branco rp-outro" id="chIrInicio">Voltar para o início</button>')}`;
+      c.innerHTML = fimPadrao({ titulo: `${CH.postado ? (img ? "Story postado!" : "Reels postado!") : "Pronto"}`, lista: `<div class="rt-lista"><div><span>${img ? "Story · imagem com caixinha" : "Reels · " + Math.round(T_CHAMADA) + " s"}</span><b class="${CH.postado ? "ok" : ""}">${CH.postado ? "Postado" : "Não postado"}</b></div></div>`, outro: "chOutro", extra: `<button type="button" class="btn btn--branco" id="chIrInicio">Voltar para o início</button>` });
       return true;
     }
     return false;
@@ -9242,7 +9253,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   $("#wzCorpo").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-est]"); if (b) {
       const k = b.dataset.est, reels = wz.canal === "reels";
-      if (k === "modelo") folhaModelo();
+      if (k === "modelo") { if (wz.canal === "roteiro" || wz.canal === "reels") abrirFolhaModelo(); else folhaModelo(); }
+      if (k === "produtosRt") { if (wz.filaRoteiro && wz.filaRoteiro.length > 1) folhaEst("Produtos desta postagem", `<p class="nota">Toque num produto para ir até ele.</p>${faixaFila(wzItem())}`); else toast("Só este produto nesta postagem"); return; }
       if (k === "musica" && wz.canal === "reels") folhaMusica();
       if (k === "produtos") folhaProdutos();
       if (k === "estilo") { const v = await escolherOpcao("Estilo da arte", MONTAGENS.map((m) => [m, ESTILO_MONTAGEM[m]]), wz.modelo); if (v) { wz.modelo = v; aposMudarEstudio(); } }
@@ -9492,9 +9504,23 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const f = { menor: (a, b) => p(a) - p(b), maior: (a, b) => (b.precoNovo || 0) - (a.precoNovo || 0), desconto: (a, b) => off(b) - off(a), nome: (a, b) => limparNome(a.nome || "").localeCompare(limparNome(b.nome || ""), "pt-BR") }[k];
     if (!f) return; its.sort(f); R.itens = its.map((x) => x.id); R.ordem = k; R.resultado = null;
   }
+  /** Ordem direto na tela da arte: toque em dois produtos para trocar de lugar */
+  var rrTroca = null;
+  function filaOrdemReels(R, l) {
+    if (l.length < 2) return "";
+    return `<div class="rr-ordem"><div class="rr-ordem-cab"><b>Ordem</b><span>${rrTroca == null ? "toque em dois para trocar de lugar" : "agora toque onde ele vai ficar"}</span></div>
+      <div class="rr-ordem-l">${l.map((it, i) => `<button type="button" class="rr-ord${rrTroca === i ? " on" : ""}" data-rr-troca="${i}" aria-label="${i + 1}: ${esc(limparNome(it.nome || ""))}"><i>${i + 1}</i>${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}</button>`).join("")}</div>
+      <div class="rr-ordem-atalhos">${ORDENS_RT.map(([k, nm]) => `<button type="button" data-rr-ordem="${k}" class="${R.ordem === k ? "on" : ""}">${nm}</button>`).join("")}</div></div>`;
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-rr-troca]"); if (!b || wz.canal !== "reels") return; const i = Number(b.dataset.rrTroca), R = rr();
+    if (rrTroca == null) rrTroca = i; else { if (rrTroca !== i) { const a = R.itens; [a[rrTroca], a[i]] = [a[i], a[rrTroca]]; R.ordem = ""; R.resultado = null; R.legenda = null; } rrTroca = null; }
+    const y = scrollY; mostrarPasso(); scrollTo(0, y);
+  });
   function telaReelsNova(c, R) {
+    if (wz.passo === "rOrdem") { wz.passo = R.carrossel ? "kCarrossel" : "rModelo"; }
     const l = itensReels(), n = l.length, pd = (cls) => `class="wz-rodape pr-rodape${cls ? " " + cls : ""}"`;
-    const cab = `<p class="rt-etapa">${R.carrossel ? "Carrossel" : "Reels"} · ${n} ${n === 1 ? "produto" : "produtos"}</p>`;
+    const cab = `<p class="rt-etapa">${R.carrossel ? "Carrossel" : "Reels"} · ${n} ${n === 1 ? "produto" : "produtos"}</p>${(wz.passo === "rModelo" || wz.passo === "kCarrossel") ? filaOrdemReels(R, l) : ""}`;
     if (wz.passo === "rOrdem") {
       const top = R.modelo === "top";
       c.innerHTML = `${cab}<h2 class="wz-titulo">${top ? "Qual é o ranking?" : R.carrossel ? "Ordem no carrossel" : "Ordem no Reels"}</h2>
@@ -9509,9 +9535,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       c.innerHTML = `${cab}<div class="rr-aprovar">
         <div class="wz-previa rp-prev rr-prev"><canvas id="rQuadro" width="540" height="960"></canvas></div>
         <button type="button" class="rr-ouvir3" id="rPrevia">▶ Ver prévia com música</button>
-        <button type="button" class="rp-modelo" id="rrTrocarModelo"><span><small>${C ? "Campanha" : R.titulo ? "Título" : R.rrEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(C ? C.nome : R.titulo || Mx.nome)}</b></span><i>Trocar</i></button>
-        <button type="button" class="rp-modelo" data-est="musica"><span><small>Música</small><b>${esc(mu[0])}</b></span><i>Trocar</i></button>
-        <div class="rp-cores rr-cores">${CORES_ESCOLHA.map((k) => `<button type="button" data-rr-cor="${k}" class="${R.cor === k ? "on" : ""}" style="background:${CORES_VIDEO[k].fundo}" aria-label="${CORES_NOME[k]}"></button>`).join("")}</div>
+        <div class="est-ctrl">${botaoEst("modelo", "Modelo", C ? C.nome : R.titulo || Mx.nome)}${botaoEst("cor", "Cor", (CORES_VIDEO[R.cor] || {}).nome || "")}${botaoEst("produtos", "Produtos", String(n))}${botaoEst("musica", "Música", mu[0])}</div>
         <label class="campo rr-cta"><span>Chamada no final (opcional)</span><input id="rCta" maxlength="40" value="${esc(R.cta == null ? "Link na bio" : R.cta)}" placeholder="Ex.: Link na bio"></label>
       </div>${botaoContinuar(n > 0, R.resultado ? "Continuar" : `<svg class="rp-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>Aprovar e criar o vídeo`).replace('class="wz-rodape"', pd())}`;
       carregarMarca().then(fotosReels).then((f) => { const cv = $("#rQuadro"); if (cv) quadroReels(cv.getContext("2d"), 540, T_INTRO + 2.6, R, itensReels(), f); });
@@ -9531,8 +9555,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       return true;
     }
     if (wz.passo === "rDepois") {
-      c.innerHTML = `${cab}<div class="rt-fim"><h2 class="wz-titulo">E agora?</h2><p class="nota wz-centro">Quer mandar esses mesmos produtos no WhatsApp, um por um, no fluxo do Postar?</p></div>
-        <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar wz-zap" id="rrWhats">Postar nos Grupos do WhatsApp</button><button type="button" class="btn btn--branco rp-outro" id="wzNovo">Voltar para a lista</button></div>`;
+      c.innerHTML = fimPadrao({ titulo: R.carrossel ? "Carrossel pronto!" : "Reels pronto!", lista: `<p class="nota wz-centro">${l.length} ${l.length === 1 ? "produto" : "produtos"}. Quer mandar esses mesmos produtos nos grupos do WhatsApp, um por um?</p>`,
+        compartilhar: R.resultado && !R.carrossel ? "rPostar" : "", baixar: R.resultado && !R.carrossel ? "rBaixar" : "", ids: l.map((x) => x.id), outroTxt: "Voltar para a lista",
+        extra: `<button type="button" class="btn btn--branco wz-zap-b" id="rrWhats">Postar nos grupos do WhatsApp</button>` });
       return true;
     }
     return false;
@@ -9563,12 +9588,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /* ---------- Carrossel no padrão: aprovar (slides grandes, modelo, cor) → postar (legenda creme) → e agora? ---------- */
   function telaCarrosselNova(c, R) {
     const l = itensReels(), n = l.length, Mx = MODELOS_REELS[R.modelo] || MODELOS_REELS.achadinho, C = CAMPANHAS[R.camp];
-    const cab = `<p class="rt-etapa">Carrossel · ${n + 2} imagens</p>`;
+    const cab = `<p class="rt-etapa">Carrossel · ${n + 2} imagens</p>${wz.passo === "kCarrossel" ? filaOrdemReels(R, l) : ""}`;
     const trilho = `<div class="car-trilho kk-trilho" id="kTrilho"><div class="car-vazio">Montando os slides...</div></div><p class="nota kk-nota">Capa, ${n} ${n === 1 ? "produto" : "produtos"} e o final · arraste para o lado.</p>`;
     if (wz.passo === "kCarrossel") {
       c.innerHTML = `${cab}${trilho}
-        <button type="button" class="rp-modelo" id="rrTrocarModelo"><span><small>${C ? "Campanha" : R.rrEscolheu ? "Modelo" : "Modelo · escolhido pelo app"}</small><b>${esc(C ? C.nome : R.titulo || Mx.nome)}</b></span><i>Trocar</i></button>
-        <div class="rp-cores rr-cores">${CORES_ESCOLHA.map((k) => `<button type="button" data-rr-cor="${k}" class="${R.cor === k ? "on" : ""}" style="background:${CORES_VIDEO[k].fundo}" aria-label="${CORES_NOME[k]}"></button>`).join("")}</div>
+        <div class="est-ctrl est-ctrl--3">${botaoEst("modelo", "Modelo", C ? C.nome : R.titulo || Mx.nome)}${botaoEst("cor", "Cor", (CORES_VIDEO[R.cor] || {}).nome || "")}${botaoEst("produtos", "Produtos", String(n))}</div>
         ${botaoContinuar(n > 0, "Aprovar o carrossel").replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
     } else {
       if (R.legenda == null) R.legenda = legendaReels();
