@@ -67,12 +67,20 @@
   function ordenarAchados() {
     const l = catalogoAtual, ord = catOrdem.valor();
     const por = { comissao: (a, b) => (b.comissao || 0) - (a.comissao || 0), preco: (a, b) => (a.preco || 1e9) - (b.preco || 1e9), vendidos: (a, b) => (b.vendidos || 0) - (a.vendidos || 0), desconto: (a, b) => descontoAchado(b) - descontoAchado(a) };
-    if (por[ord]) { l.sort(por[ord]); return; }
-    if (ord !== "melhores" || l.length < 2) return;
+    if (por[ord]) { l.sort(por[ord]); intercalarLojas(l); return; }
+    if (ord !== "melhores" || l.length < 2) { intercalarLojas(l); return; }
     // posição de cada produto em cada critério (0 = melhor, 1 = pior) com pesos 4, 3, 2 e 1
     const nota = new Map(l.map((p) => [p, 0]));
     [["comissao", 4], ["preco", 3], ["vendidos", 2], ["desconto", 1]].forEach(([k, peso]) => { [...l].sort(por[k]).forEach((p, i) => nota.set(p, nota.get(p) + peso * (i / (l.length - 1)))); });
-    l.sort((a, b) => nota.get(a) - nota.get(b));
+    l.sort((a, b) => nota.get(a) - nota.get(b)); intercalarLojas(l);
+  }
+  /** Em "Todas as lojas": um da Shopee, um do Mercado Livre, intercalados (cada loja na sua ordem) */
+  function intercalarLojas(l) {
+    try { if (catLoja.valor() !== "todas") return; } catch (e) { /* segue */ }
+    const sh = l.filter((p) => p.loja === "shopee"), ml = l.filter((p) => p.loja === "mercadolivre"), outros = l.filter((p) => p.loja !== "shopee" && p.loja !== "mercadolivre");
+    if (!sh.length || !ml.length) return;
+    const r = []; for (let i = 0; i < Math.max(sh.length, ml.length); i++) { if (sh[i]) r.push(sh[i]); if (ml[i]) r.push(ml[i]); }
+    l.splice(0, l.length, ...r, ...outros);
   }
   const descontoAchado = (p) => (p.precoAntigo && p.preco && p.precoAntigo > p.preco ? 1 - p.preco / p.precoAntigo : 0);
   let selosAuto = true; try { selosAuto = localStorage.getItem("miga_selos") !== "0"; } catch (e) { /* segue */ }
