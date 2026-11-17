@@ -157,7 +157,7 @@ textarea { height: auto; padding: 14px 16px; line-height: 1.55; resize: vertical
   background: linear-gradient(to top, var(--fundo) 55%, rgba(255, 248, 228, 0)); }
 .barra > * { pointer-events: auto; }
 .barra__gerar { max-width: 496px; margin: 0 auto; padding: 16px 0 10px; }
-.abas { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 496px; margin: 0 auto; padding: 6px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
+.abas { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 496px; margin: 0 auto; padding: 6px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
 .abas button { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; height: 46px; border: 0; border-radius: 999px; background: none; font-size: 13.5px; font-weight: 600; color: var(--cinza); cursor: pointer; transition: background .2s, color .2s; }
 .abas button svg { width: 21px; height: 21px; }
 .abas button[aria-current="page"] { background: var(--rosa-claro); color: var(--rosa); }
@@ -1465,7 +1465,7 @@ body.modo-selecao main { padding-bottom: 200px; }
 /* Computador: categorias da Lista quebram em linhas (sem precisar rolar de lado) */
 @media (min-width: 960px) { .pp-chips { flex-wrap: wrap; overflow: visible; } }
 /* Celular: menu de baixo com as 3 abas numa linha só */
-@media (max-width: 959px) { .abas { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; } }
+@media (max-width: 959px) { .abas { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; } }
 /* Lista: categoria num botão bem visível (celular) e chips em linhas (computador) */
 #ppCats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; overflow: visible; }
 .cat-sel { flex: 1; display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 0 14px; border: 0; border-radius: 16px; background: var(--branco); box-shadow: inset 0 0 0 1.5px var(--linha); font: inherit; font-size: 14.5px; color: var(--preto); cursor: pointer; text-align: left; }
@@ -2467,3 +2467,32 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 #catOrdem.alternar--ordem::-webkit-scrollbar { display: none; }
 #catOrdem.alternar--ordem button { flex: none; min-height: 0; padding: 7px 14px; border-radius: 999px; background: none; box-shadow: none; font-size: 13.5px; font-weight: 600; color: var(--cinza); white-space: nowrap; grid-column: auto; }
 #catOrdem.alternar--ordem button[aria-checked="true"] { background: var(--preto); color: #fff; }
+
+/* ===== Tela única de Produtos: Minha lista · Achados · No site ===== */
+.prod-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 5px; margin: 0 0 12px; border-radius: 999px; background: var(--branco); box-shadow: var(--sombra); }
+.prod-seg button { border: 0; background: none; border-radius: 999px; padding: 8px 4px; font: 700 13.5px var(--sans); color: var(--cinza); cursor: pointer; line-height: 1.15; }
+.prod-seg button small { display: block; font-size: 11px; font-weight: 600; opacity: .8; }
+.prod-seg button small:empty { display: none; }
+.prod-seg button.on { background: var(--rosa); color: #fff; }
+.aba-prod .cabecalho-aba .passo { display: none; }
+.aba-prod .cabecalho-aba { justify-content: flex-end; min-height: 0; }
+.bs-tres { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+.bs-tres button { padding-left: 6px; padding-right: 6px; font-size: 13.5px; }
+.ac-voltar { font-size: 26px; line-height: 1; margin-right: 8px; padding: 0 6px; vertical-align: -2px; }
+/* Início: resumo do site */
+.in-site .in-tit { display: flex; align-items: center; justify-content: space-between; }
+.in-site .in-tit .link { font-size: 13px; }
+.in-site-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.in-site-nums div { background: var(--rosa-claro); border-radius: 16px; padding: 10px 12px; }
+.in-site-nums b { display: block; font-size: 22px; font-weight: 800; color: var(--rosa); line-height: 1.1; }
+.in-site-nums span { font-size: 12px; color: var(--cinza); }
+.in-site-barras { display: flex; align-items: flex-end; gap: 4px; height: 56px; margin: 10px 0 4px; }
+.in-site-barras i { flex: 1; background: var(--rosa); border-radius: 4px 4px 0 0; min-height: 3px; opacity: .85; }
+.in-site-camp { font-size: 12.5px; color: var(--cinza); margin: 4px 0 0; }
+.in-site-camp b { color: var(--preto); }
+.nav-ajustes { }
+#acCats { margin: 10px -16px 2px; }
+#acCats[hidden] { display: none; }
+#acCats { margin: 10px -16px 2px; }
+#acCats[hidden] { display: none; }
+.aba-prod .cabecalho-aba:not(:has(button:not([hidden]))) { display: none; }

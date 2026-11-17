@@ -633,14 +633,17 @@
     if (modoVarios && (aba === "postar" || aba === "historico")) { modoVarios = false; marcados.clear(); }
     document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-" + aba; });
     document.querySelectorAll(".abas button").forEach((b) => {
-      if (b.dataset.aba === aba) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+      const nav = aba === "achados" || aba === "site" ? "postar" : aba === "acessos" ? "inicio" : aba; // Achados e Site ficam dentro de Produtos
+      if (b.dataset.aba === nav) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
     $("#barraGerar").hidden = true;
     document.dispatchEvent(new CustomEvent("miga-aba", { detail: aba }));
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
     if (aba === "achados" && !catalogoCarregado) carregarCatalogo();
-    if (aba === "site") { renderSite(); carregarCliquesSite(); if (!$("#stTelaAcessos").hidden) carregarAcessos(); }
+    if (aba === "site") { renderSite(); carregarCliquesSite(); }
+    if (aba === "acessos") carregarAcessos();
+    pintarSegProd(aba);
     if (aba === "postar" && !ppAtual) renderFila();
     if (aba === "inicio") renderInicio();
     document.body.dataset.aba = aba;
@@ -955,6 +958,8 @@
   const catFiltro = grupoBotoes("#catFiltro", "v");
   const catLoja = grupoBotoes("#catLoja", "v"), catOrdem = grupoBotoes("#catOrdem", "v");
   let acLimite = 100; // quantos achados aparecem (de 100 em 100)
+  var acCat = ""; // categoria escolhida nos Achados (as mesmas do app)
+  const catDoAchado = (p) => p._cat || (p._cat = adivinharCategoria(p.nome, p.categoria));
   let catalogoAtual = [], catalogoCarregado = false, catPagina = 1, catTemMais = false, catBusca = "";
   const FILTROS_CAT = ["moda", "beleza", "perfumes", "maquiagem", "cabelo", "acessorios", "bolsas", "calcados", "fitness", "saude", "casa", "cozinha", "eletronicos"];
 
@@ -998,8 +1003,17 @@
   }
   /** Achados no mesmo jeito da Lista (foto, nome, preço, loja) com o ⋮ */
   function pintarAchados() { pintarAchadosBase(); decorarAchados(); }
+  function pintarCatsAchados() {
+    const el = $("#acCats"); if (!el) return;
+    const conta = {}; catalogoAtual.forEach((p) => { if (achadoNoSite(p)) return; const c = catDoAchado(p); conta[c] = (conta[c] || 0) + 1; });
+    if (acCat && !conta[acCat]) acCat = "";
+    el.hidden = Object.keys(conta).length < 2;
+    el.innerHTML = [["", "Todas", Object.values(conta).reduce((a, b) => a + b, 0)], ...Object.keys(NOME_CAT).filter((k) => conta[k]).map((k) => [k, NOME_CAT[k], conta[k]])]
+      .map(([k, n, q]) => `<button type="button" role="radio" data-ac-cat="${k}" aria-checked="${acCat === k}">${esc(n)} <small>${q}</small></button>`).join("");
+  }
   function pintarAchadosBase() {
-    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => (!acSoTop || p.maisVendido) && !achadoNoSite(p)).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
+    pintarCatsAchados();
+    let l; const bruto = $("#acBusca").value.trim(), daBusca = catBusca && semAcento(bruto) === semAcento(catBusca), t = daBusca ? "" : semAcento(bruto), l0 = catalogoAtual.map((p, i) => [p, i]).filter(([p]) => (!acSoTop || p.maisVendido) && !achadoNoSite(p) && (!acCat || catDoAchado(p) === acCat)).filter(([p]) => !t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.preco ? brl(p.preco) : ""}`).includes(t)); l = l0;
     const botaoBusca = bruto.length >= 3 && !daBusca ? `<button type="button" class="btn btn--rosa ac-buscar" id="acBuscarLojas"><svg class="ic-mono"><use href="#i-busca"/></svg>Buscar “${esc(bruto)}” nas lojas</button>` : "";
     const total = l.length; l = l.slice(0, acLimite);
     $("#acTotal").textContent = total > l.length ? `${l.length} de ${total} achados` : `${total} ${total === 1 ? "achado" : "achados"}`;
@@ -1044,6 +1058,7 @@
     $("#acTodosCx").classList.toggle("on", !!acSel && !!vis.length && vis.every((i) => acSel.has(chAchado(catalogoAtual[i]))));
   }
   function sairAcSite() { acSel = null; decorarAchados(); }
+  $("#acCats").addEventListener("click", (e) => { const b = e.target.closest("[data-ac-cat]"); if (!b) return; acCat = b.dataset.acCat; acLimite = 100; pintarAchados(); });
   $("#acSoTop").addEventListener("click", () => { acSoTop = !acSoTop; acLimite = 100; pintarAchados(); });
   $("#acSelecionar").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); });
   $("#acTodos").addEventListener("click", () => {
@@ -1095,6 +1110,14 @@
     const c = await categoriaDosAchados(l, "Pôr em"); if (c === null) return;
     const r = trazerParaLista(l, c); sairAcSite(); pintarAchados(); renderFila();
     toastAcao(`${r.itens.length} ${r.itens.length === 1 ? "produto" : "produtos"} na Lista${r.novos < r.itens.length ? ` (${r.itens.length - r.novos} já estavam)` : ""}.${avisoPulados(r.pulados)}`, "Ver na Lista", () => { filtroLista = "todas"; irPara("postar"); });
+  });
+  $("#acPostar").addEventListener("click", () => {
+    if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
+    const l = catalogoAtual.filter((p) => acSel.has(chAchado(p)));
+    if (!l.some(linkAfiliadoAuto)) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
+    const r = trazerParaLista(l, ""); sairAcSite(); if (!r.itens.length) return;
+    if (r.pulados) toast(avisoPulados(r.pulados).trim());
+    irPara("postar"); criarAPartirDaLista("roteiro", r.itens);
   });
   $("#acSiteEnviar").addEventListener("click", async () => {
     if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
@@ -1329,15 +1352,6 @@
   }
   $("#acesPeriodo").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (!b) return; acesPeriodo = b.dataset.v; $("#acesPeriodo").querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b))); carregarAcessos(); });
   $("#acesAtualizar").addEventListener("click", () => carregarAcessos(true));
-  // Duas telas dentro de Site: Produtos e Acessos
-  let stTela = "produtos";
-  function mostrarTelaSite(v) {
-    stTela = v; $("#stTela").querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.v === v)));
-    $("#stTelaProdutos").hidden = v !== "produtos"; $("#stTelaAcessos").hidden = v !== "acessos";
-    if (v === "acessos") { if (stEst.sel) { stEst.sel = null; renderSite(); } carregarAcessos(); }
-    scrollTo(0, 0);
-  }
-  $("#stTela").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (b) mostrarTelaSite(b.dataset.v); });
   $("#stDosAchados").addEventListener("click", () => { irPara("achados"); acSel = new Set(); decorarAchados(); toast("Toque nos produtos que vão para o site"); });
   $("#stDaLista").addEventListener("click", () => { irPara("postar"); entrarModoVarios(); acaoPendente = "site"; pintarMarcados(); toast("Toque nos produtos da Lista que vão para o site"); });
   $("#stLista").addEventListener("click", async (e) => {
@@ -1357,6 +1371,14 @@
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
     const ids = [...stEst.sel], ok = await tirarVariosDoSite(ids); stEst.sel = null; renderSite();
     toast(ok === ids.length ? `${ok} ${ok === 1 ? "produto saiu" : "produtos saíram"} do site` : "Alguns não saíram. Tente de novo.");
+  });
+  $("#stPostar").addEventListener("click", () => {
+    if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
+    const ids = [...stEst.sel], l = ids.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
+    stEst.sel = null; renderSite();
+    if (!l.length) { toast("Esses produtos não estão na sua lista: envie de novo pelos Achados para poder postar"); return; }
+    if (l.length < ids.length) toast(`${ids.length - l.length} não estão na sua lista e ficaram de fora`);
+    irPara("postar"); criarAPartirDaLista("roteiro", l);
   });
   $("#stCatVarios").addEventListener("click", async () => {
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
@@ -2251,7 +2273,7 @@
     : filtroResumo === "hoje" ? !!i.postadoEm && new Date(i.postadoEm).toDateString() === new Date().toDateString() : true);
   function filtrarResumo(k) { filtroResumo = k || ""; filtroLista = "todas"; limparBusca(); if (modoVarios) sairModoVarios(); irPara("postar"); renderFila(); window.scrollTo({ top: 0 }); }
   function renderFila() {
-    renderSite();
+    renderSite(); pintarSegProd();
     migrarCategorias(); renderCatsLista(); pintarMarcados();
     const base = fila().filter((i) => (filtroLista === "todas" || i.carregando || (i.categoria || "outros") === filtroLista) && bateBusca(i) && passaResumo(i));
     { let fb = $("#ppFiltroRes"); if (!fb) { fb = document.createElement("div"); fb.id = "ppFiltroRes"; fb.className = "pp-filtro-res"; $("#ppLista").before(fb); }
@@ -2541,6 +2563,38 @@
     if (b.dataset.criar === "site") { abrirPorNoSite(itensMarcados()); return; }
     const l = itensMarcados(); criarAPartirDaLista(l.length === 1 && b.dataset.criar === "livre" ? "instagram" : b.dataset.criar, l);
   });
+  /* ---------- Tela única de Produtos: Minha lista · Achados · No site ---------- */
+  function pintarSegProd(aba) { try { pintarSegProd0(aba); } catch (e) { /* app ainda abrindo */ } }
+  function pintarSegProd0(aba) {
+    const n = { postar: fila().filter((i) => !i.carregando).length, achados: catalogoAtual.filter((p) => !achadoNoSite(p)).length, site: vitrineMap.size };
+    document.querySelectorAll(".prod-seg").forEach((sg) => sg.querySelectorAll("[data-prod]").forEach((b) => {
+      b.classList.toggle("on", b.dataset.prod === (aba || (document.querySelector(".aba-prod:not([hidden])") || {}).id?.replace("aba-", "")));
+      const c = b.querySelector("small"); c.textContent = n[b.dataset.prod] ? n[b.dataset.prod] : ""; }));
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-prod]"); if (b) { if (b.classList.contains("on")) return; irPara(b.dataset.prod); scrollTo(0, 0); return; }
+    if (e.target.closest("#navAjustes")) { abrirConfig(); return; }
+    if (e.target.closest("[data-ver-acessos]")) { irPara("acessos"); scrollTo(0, 0); return; }
+    if (e.target.closest("[data-voltar-inicio]")) { irPara("inicio"); scrollTo(0, 0); return; }
+  });
+  /* Início: resumo do site (7 dias) */
+  var inSiteCache = { em: 0, l: null }; // var: o Início pode pintar antes desta linha rodar
+  async function pintarSiteInicio() {
+    if (!inSiteCache) inSiteCache = { em: 0, l: null };
+    const box = $("#inSite"); if (!box || !dados.acessosListar) return;
+    try {
+      if (!inSiteCache.l || Date.now() - inSiteCache.em > 120000) inSiteCache = { em: Date.now(), l: await dados.acessosListar(inicioPeriodo("7")) };
+    } catch (e) { box.hidden = true; return; }
+    const l = inSiteCache.l, desde = inicioPeriodo("7"), vis = l.filter((e) => e.tipo === "visita").length, loja = l.filter((e) => e.tipo === "loja").length;
+    if (!l.length && !vitrineMap.size) { box.hidden = true; return; }
+    const dias = Array(7).fill(0); l.forEach((e) => { if (e.tipo === "visita") { const i = Math.floor((e.em - desde) / 864e5); if (i >= 0 && i < 7) dias[i]++; } });
+    const mx = Math.max(1, ...dias), cont = new Map(); l.forEach((e) => { if (e.tipo === "loja" && e.produto) cont.set(e.produto, { n: ((cont.get(e.produto) || {}).n || 0) + 1, nome: e.nome }); });
+    const camp = [...cont.values()].sort((a, b) => b.n - a.n)[0];
+    $("#inSiteCorpo").innerHTML = `<div class="in-site-nums"><div><b>${vis}</b><span>visitas no site</span></div><div><b>${loja}</b><span>cliques na loja</span></div></div>
+      <div class="in-site-barras">${dias.map((v) => `<i style="height:${Math.round((v / mx) * 100)}%" title="${v} visitas"></i>`).join("")}</div>
+      ${camp ? `<p class="in-site-camp">Campeão: <b>${esc(camp.nome || "produto")}</b> · ${camp.n} ${camp.n === 1 ? "clique" : "cliques"}</p>` : ""}`;
+    box.hidden = false;
+  }
   function criarAPartirDaLista(canal, l, camp) {
     if (!l.length) return;
     const ids = l.map((x) => x.id), C = CAMPANHAS[camp === undefined ? campanhaEscolhida : camp] || null;
@@ -2729,6 +2783,7 @@
   let acaoPendente = null;
   const ACOES_INICIO = [["roteiro", "Postar", "i-enviar"], ["reels", "Reels", "i-reels"], ["carrossel", "Carrossel", "i-carrossel"], ["video", "Vídeo", "i-rede-video"], ["cupons", "Cupons", "i-etiqueta"], ["chamada", "Corre pros Stories", "i-rede-insta"], ["seguidores", "Seguidores", "i-festa"], ["livre", "Colagem", "i-rede-grade"], ["criacaoia", "Criação IA", "i-brilho"], ["continuar", "Continuar", "i-continuar"]];
   function renderInicio() {
+    pintarSiteInicio();
     const h = new Date().getHours(); $("#inOla").textContent = `${h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"}, miga! 💖`;
     const p = fila().filter((i) => !i.carregando && !foiCompartilhado(i)).length, f = incompletos().length, s = parados().length;
     const hoje = new Date().toDateString(), ph = fila().filter((i) => i.postadoEm && new Date(i.postadoEm).toDateString() === hoje).length;
