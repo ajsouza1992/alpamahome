@@ -367,8 +367,8 @@
       pegar: (id) => tx("readonly", (s) => s.get(id)),
       apagar: (id) => tx("readwrite", (s) => s.delete(id)),
       limpar: () => tx("readwrite", (s) => s.clear()),
-      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), cupomInfo: ls.lerJson("miga_cupom_info", {}), instagram: ls.ler("miga_instagram") || "", prompts: ls.lerJson("miga_prompts", {}) }),
-      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_cupom_info", JSON.stringify(c.cupomInfo || {})); ls.gravar("miga_instagram", c.instagram || ""); ls.gravar("miga_prompts", JSON.stringify(c.prompts || {})); },
+      lerConfig: async () => ({ grupos: ls.lerJson(CH.grupos, []), convite: ls.ler(CH.convite), cupons: ls.lerJson("miga_cupons", []), cupomInfo: ls.lerJson("miga_cupom_info", {}), instagram: ls.ler("miga_instagram") || "", prompts: ls.lerJson("miga_prompts", {}), mlMattWord: ls.ler("miga_ml_word") || "", mlMattTool: ls.ler("miga_ml_tool") || "", ocultarPostados: ls.ler("miga_ocultar_postados") === "1" }),
+      gravarConfig: async (c) => { ls.gravar(CH.grupos, JSON.stringify(c.grupos)); ls.gravar(CH.convite, c.convite || ""); ls.gravar("miga_cupons", JSON.stringify(c.cupons || [])); ls.gravar("miga_cupom_info", JSON.stringify(c.cupomInfo || {})); ls.gravar("miga_instagram", c.instagram || ""); ls.gravar("miga_prompts", JSON.stringify(c.prompts || {})); ls.gravar("miga_ml_word", c.mlMattWord || ""); ls.gravar("miga_ml_tool", c.mlMattTool || ""); ls.gravar("miga_ocultar_postados", c.ocultarPostados ? "1" : ""); },
       lerFila: async () => ls.lerJson("miga_fila", []),
       gravarFila: async (l) => { ls.gravar("miga_fila", JSON.stringify(l)); },
       // Vitrine (site público): no modo local fica só neste navegador
@@ -409,9 +409,9 @@
       lerConfig: async () => {
         const d = await fs.getDoc(docConfig());
         const x = d.exists() ? d.data() : {};
-        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], cupomInfo: x.cupomInfo || {}, instagram: x.instagram || "", prompts: x.prompts || {}, filaAntiga: x.fila || [] };
+        return { grupos: x.grupos || [], convite: x.convite || "", cupons: x.cupons || [], cupomInfo: x.cupomInfo || {}, instagram: x.instagram || "", prompts: x.prompts || {}, mlMattWord: x.mlMattWord || "", mlMattTool: x.mlMattTool || "", ocultarPostados: !!x.ocultarPostados, filaAntiga: x.fila || [] };
       },
-      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], cupomInfo: c.cupomInfo || {}, instagram: c.instagram || "", prompts: c.prompts || {}, atualizadoEm: Date.now() }, { merge: true }),
+      gravarConfig: (c) => fs.setDoc(docConfig(), { grupos: c.grupos, convite: c.convite || "", cupons: c.cupons || [], cupomInfo: c.cupomInfo || {}, instagram: c.instagram || "", prompts: c.prompts || {}, mlMattWord: c.mlMattWord || "", mlMattTool: c.mlMattTool || "", ocultarPostados: !!c.ocultarPostados, atualizadoEm: Date.now() }, { merge: true }),
       // Lista: um documento por produto em usuarios/{uid}/lista/{id} (as fotos não estouram o limite de 1 MB)
       lerFila: async () => {
         const snap = await fs.getDocs(colLista());
@@ -2326,7 +2326,7 @@
     semAcento(t).split(/\s+/).filter((p) => p.length > 1).forEach((p) => { if (/<mark>/.test(out)) return; const i = semAcento(out).indexOf(p); if (i >= 0) out = out.slice(0, i) + "<mark>" + out.slice(i, i + p.length) + "</mark>" + out.slice(i + p.length); }); return out; };
   const naVisao = (i, v) => v === "todos" || (v === "postados" ? foiCompartilhado(i) : !foiCompartilhado(i));
   $("#ajSalvar").addEventListener("click", () => { clearTimeout(ajInstaTimer); config.instagram = arroba($("#ajInsta").value);
-    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: $("#ajVtInsta").value.trim() || config.instagram || "" }; if (JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; { const mw = $("#ajMlWord").value.trim(), mt = $("#ajMlTool").value.trim(); config.mlMattWord = mw.slice(0, 120); config.mlMattTool = mt.replace(/\D/g, "").slice(0, 20); } gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
+    { const c = { canal: $("#ajVtCanal").value.trim(), grupo: $("#ajVtGrupo").value.trim(), tiktok: $("#ajVtTiktok").value.trim(), instagram: $("#ajVtInsta").value.trim() || config.instagram || "" }; if (vitrineCfgOk && JSON.stringify(c) !== JSON.stringify({ canal: vitrineCfg.canal || "", grupo: vitrineCfg.grupo || "", tiktok: vitrineCfg.tiktok || "", instagram: vitrineCfg.instagram || "" })) { vitrineCfg = { ...vitrineCfg, ...c }; dados.vitrineGravarConfig(c).catch(() => toast("Não consegui salvar os links do site")); } } config.ocultarPostados = $("#ajOcultarPostados").checked; { const mw = $("#ajMlWord").value.trim(), mt = $("#ajMlTool").value.trim(); config.mlMattWord = mw.slice(0, 120); config.mlMattTool = mt.replace(/\D/g, "").slice(0, 20); } gravarConfig(); renderFila(); $("#config").close(); toast("Ajustes salvos"); });
   /* Prompts editáveis (Ajustes) */
   function pintarAjPrompts() {
     $("#ajPrompts").innerHTML = Object.entries(PROMPTS_PADRAO).map(([k, d]) => { const v = modeloPrompt(k), mudou = (config.prompts || {})[k] != null;
@@ -2847,9 +2847,11 @@
     if (mudou) salvarFila(true);
     if (mudou || sumiu) { renderFila(); toast(`Preços do site conferidos: ${mudou} ${mudou === 1 ? "atualizado" : "atualizados"}${sumiu ? ` · ${sumiu} sem resposta da loja` : ""}`); }
   }
+  let vitrineCfgOk = false; // os links do site já vieram da nuvem?
   async function carregarVitrine() {
+    try { vitrineCfg = (await dados.vitrineLerConfig()) || {}; vitrineCfgOk = true; } catch (e) { vitrineCfg = {}; }
+    if (vitrineCfgOk) [["#ajVtCanal", "canal"], ["#ajVtGrupo", "grupo"], ["#ajVtTiktok", "tiktok"], ["#ajVtInsta", "instagram"]].forEach(([sel, k]) => { const el = $(sel); if (el && !el.value && vitrineCfg[k]) el.value = vitrineCfg[k]; });
     try { const l = await dados.vitrineListar(); vitrineMap = new Map(l.map((p) => [p.id, p])); } catch (e) { /* segue */ }
-    try { vitrineCfg = (await dados.vitrineLerConfig()) || {}; } catch (e) { vitrineCfg = {}; }
     if (vitrineMap.size && !vitrineCfg.pacotesEm) agendarPacotes(); // primeira vez: monta os pacotes
     setTimeout(conferirPrecosSite, 8000);
     renderFila();
