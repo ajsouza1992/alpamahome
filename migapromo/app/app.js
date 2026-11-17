@@ -1018,22 +1018,19 @@
     cat.querySelectorAll(".pp-linha").forEach((ln) => {
       const b = ln.querySelector("[data-achado]"); if (!b) return; const i = Number(b.dataset.achado), p = catalogoAtual[i]; if (!p) return; vis.push(i);
       if (!ln.querySelector(".pp-nosite-ac")) { const tags = [achadoNoSite(p) && "No site", itemDoAchado(p) && "Na Lista"].filter(Boolean); const m = ln.querySelector(".meta"); if (m && tags.length) m.insertAdjacentHTML("afterend", `<span class="st-tags">${tags.map((t) => `<b class="pp-nosite-ac${t === "Na Lista" ? " na-lista" : ""}">${t}</b>`).join("")}</span>`); }
-      if (p.maisVendido && !ln.querySelector(".ac-top")) ln.insertAdjacentHTML("afterbegin", `<i class="ac-top" title="${p.maisVendido}º mais vendido da categoria">${p.maisVendido}º mais vendido</i>`);
       ln.classList.toggle("marcado", !!acSel && acSel.has(i));
-      let mk = ln.querySelector(".pp-marcar");
-      if (acSel && !mk) { ln.insertAdjacentHTML("beforeend", `<button type="button" class="pp-marcar" data-ac-marcar="${i}" aria-label="Marcar"></button>`); mk = ln.querySelector(".pp-marcar"); }
+      let mk = ln.querySelector(".pp-caixa");
+      if (acSel && !mk) { ln.insertAdjacentHTML("beforeend", `<button type="button" class="pp-caixa" data-ac-marcar="${i}" aria-label="Marcar"></button>`); mk = ln.querySelector(".pp-caixa"); }
       if (!acSel && mk) mk.remove(); else if (mk) mk.setAttribute("aria-pressed", String(acSel.has(i)));
     });
     const bar = $("#barraAcSite"); bar.hidden = !acSel || $("#aba-achados").hidden;
     document.body.classList.toggle("modo-selecao", !bar.hidden || !$("#barraMarcados").hidden);
     if (acSel) $("#acSiteQtd").textContent = acSel.size ? `${acSel.size} ${acSel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";
     $("#acSelecionar").textContent = acSel ? "Cancelar" : "Selecionar";
-    { const bt = $("#acSoTop"); bt.setAttribute("aria-pressed", String(acSoTop)); bt.hidden = !!acSel || (!acSoTop && !catalogoAtual.some((p) => p.maisVendido)); }
     $("#acTodos").hidden = !acSel; $("#acTotal").hidden = !!acSel;
     $("#acTodosCx").classList.toggle("on", !!acSel && !!vis.length && vis.every((i) => acSel.has(i)));
   }
   function sairAcSite() { acSel = null; decorarAchados(); }
-  $("#acSoTop").addEventListener("click", () => { acSoTop = !acSoTop; pintarAchados(); });
   $("#acSelecionar").addEventListener("click", () => { if (acSel) { sairAcSite(); return; } if (!catalogoAtual.length) { toast("Espere os achados carregarem"); return; } acSel = new Set(); decorarAchados(); });
   $("#acTodos").addEventListener("click", () => {
     if (!acSel) return; const vis = [...document.querySelectorAll("#catalogo [data-achado]")].map((b) => Number(b.dataset.achado));
@@ -1217,7 +1214,7 @@
       return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${nCl ? `<i class="st-bola" title="${k.loja} na loja, ${k.abrir} abriram (30 dias)" aria-label="${nCl} cliques">${nCl > 99 ? "99+" : nCl}</i>` : ""}${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
         <span class="st-tags"><b>${esc(NOME_CAT[p.tipo] || "Outros")}</b><b class="st-para">${esc(PARA_SITE[p.para] || "Mulher")}</b></span></span>
-      </button>${stEst.sel ? `<button type="button" class="pp-marcar" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
+      </button>${stEst.sel ? `<button type="button" class="pp-caixa" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
       : `<p class="vazio-lista">${n ? (stEst.ordem === "top10" && !t ? "Ainda não tem cliques nos últimos 30 dias." : "Nenhum produto com essa busca.") : "Seu site ainda está vazio. Toque em <b>Enviar dos Achados</b> para escolher vários de uma vez."}</p>`;
     const bs = $("#barraSite"); bs.hidden = !stEst.sel;
     if (stEst.sel) $("#stQtd").textContent = stEst.sel.size ? `${stEst.sel.size} ${stEst.sel.size === 1 ? "selecionado" : "selecionados"}` : "Toque nos produtos";

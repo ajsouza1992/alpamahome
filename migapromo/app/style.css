@@ -2441,3 +2441,6 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 .ac-sotop[hidden] { display: none; }
 #stOrdem.on { background: var(--rosa); color: #fff; border-radius: 999px; padding: 5px 12px; }
 #stLista .pp-linha:has(.st-bola) { margin-top: 6px; }
+
+/* Caixinha de seleção sempre no meio do cartão (Lista, Achados e Site) */
+.pp-linha .pp-marcar { top: 50% !important; bottom: auto !important; right: 12px !important; transform: translateY(-50%); }
