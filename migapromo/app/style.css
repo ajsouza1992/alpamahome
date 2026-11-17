@@ -2735,3 +2735,8 @@ dialog:focus { outline: none; }
 .pe-assunto-l { display: flex; gap: 8px; align-items: center; }
 .pe-assunto-l input { flex: 1; min-width: 0; }
 .pe-assunto-l .btn { width: auto; flex: none; margin: 0; min-height: 44px; padding: 0 14px; font-size: 13px; }
+/* Bolinhas de cor encolhem para caber em qualquer celular (sem empurrar a tela para fora) */
+.rp-cores { min-width: 0; max-width: 100%; flex-wrap: nowrap; gap: clamp(6px, 2.4vw, 12px); }
+.rp-cores button { flex: 0 1 40px; width: auto; height: auto; aspect-ratio: 1; min-width: 26px; padding: 0; }
+.pe-cores { flex-wrap: wrap; }
+.pe-cores button { flex: 0 0 36px; width: 36px; height: 36px; }
