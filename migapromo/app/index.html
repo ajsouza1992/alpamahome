@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=368">
+  <link rel="manifest" href="manifest.json?v=369">
   <link rel="icon" type="image/png" href="favicon-redondo.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&family=Roboto+Condensed:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=368">
+  <link rel="stylesheet" href="style.css?v=369">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -68,7 +68,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=368" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=369" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -94,7 +94,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=368" alt="">
+    <img src="logo.png?v=369" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -613,15 +613,19 @@
   <dialog id="config" class="dialogo folha">
     <form method="dialog" class="aj-form">
       <h2>Ajustes</h2>
-
-      <section class="aj-bloco">
-        <h3>Seu @ do Instagram</h3>
+      <div class="aj-saude" id="ajSaude"></div><input type="checkbox" id="ajOcultar" hidden>
+      <details class="aj-bloco aj-det">
+        <summary><i class="aj-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></i><span><b>Seu perfil</b><small>@ do Instagram</small></span></summary>
+        <div class="aj-det-corpo">
+        
         <p class="nota">Aparece nas artes e nas mensagens.</p>
         <input id="ajInsta" maxlength="30" placeholder="@migapromo.oficial" autocomplete="off">
-      </section>
-
-      <section class="aj-bloco">
-        <h3>Site (vitrine)</h3>
+      </div>
+      </details>
+      <details class="aj-bloco aj-det">
+        <summary><i class="aj-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></i><span><b>Site</b><small>Links das redes e produtos do site</small></span></summary>
+        <div class="aj-det-corpo">
+        
         <p class="nota">A página pública com os produtos que você põe no site. Quem entra não vê o app.</p>
         <div class="aj-vt-link"><span><small id="ajVtQtd">Nenhum produto no site ainda</small><b id="ajVtLink">migapromo.com</b></span></div>
         <div class="duas"><button type="button" class="btn btn--branco" id="ajVtAbrir">Abrir o site</button><button type="button" class="btn btn--rosa" id="ajVtCopiar">Copiar o link</button></div>
@@ -630,45 +634,45 @@
         <label class="aj-campo"><span>Link do TikTok (opcional)</span><input id="ajVtTiktok" type="url" inputmode="url" maxlength="200" placeholder="https://www.tiktok.com/@..." autocomplete="off"></label>
         <button type="button" class="btn btn--branco" id="ajVtProdutos">Gerenciar os produtos do site</button>
         <label class="aj-campo"><span>Link do grupo VIP (opcional)</span><input id="ajVtGrupo" type="url" inputmode="url" maxlength="200" placeholder="https://chat.whatsapp.com/..." autocomplete="off"></label>
-      </section>
-
-      <section class="aj-bloco">
-        <h3>Afiliado do Mercado Livre</h3>
+      </div>
+      </details>
+      <details class="aj-bloco aj-det">
+        <summary><i class="aj-ic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></i><span><b>Afiliados</b><small>Código do Mercado Livre</small></span></summary>
+        <div class="aj-det-corpo">
+        
         <p class="nota">Com isso, os achados do Mercado Livre já vão com o seu link de afiliado. Gere um link seu no Mercado Livre, abra ele no navegador e cole aqui o link longo: o app pega os dois códigos sozinho.</p>
         <label class="aj-campo"><span>Etiqueta (matt_word)</span><input id="ajMlWord" maxlength="300" placeholder="Ex.: migapromo" autocomplete="off"></label>
         <label class="aj-campo"><span>Código (matt_tool)</span><input id="ajMlTool" maxlength="40" inputmode="numeric" placeholder="Ex.: 12345678" autocomplete="off"></label>
-      </section>
-
-      <section class="aj-bloco">
-        <h3>Lista</h3>
+      </div>
+      </details>
+      <details class="aj-bloco aj-det">
+        <summary><i class="aj-ic"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></i><span><b>Postagem</b><small>Lista, cupons e onde você posta</small></span></summary>
+        <div class="aj-det-corpo">
+        <h4>Lista</h4>
         <label class="aj-chave"><input type="checkbox" id="ajOcultarPostados"><span><b>Ocultar postados</b><small>Os produtos já postados somem da Lista. Eles continuam salvos e aparecem se você buscar por eles.</small></span><i aria-hidden="true"></i></label>
-      </section>
-
-      <section class="aj-bloco">
-        <h3>Prompts da Criação IA</h3>
-        <p class="nota">Edite os textos e as negativas. As palavras entre chaves, como {roupa} e {fala}, o app preenche sozinho. Vídeo: até 900 caracteres. Imagem: sem limite. Fica salvo na nuvem.</p>
-        <div id="ajPrompts"></div>
-      </section>
-
-      <section class="aj-bloco">
-        <h3>Seus cupons</h3>
+      <hr class="aj-sep">
+        <h4>Seus cupons</h4>
         <p class="nota">Ficam prontos para usar na hora de criar.</p>
         <div class="aj-linha"><input id="ajCupom" maxlength="40" placeholder="Ex.: MIGA10" autocapitalize="characters"><button type="button" class="btn btn--rosa" id="ajAddCupom">Salvar</button></div>
         <div class="aj-cupons" id="ajCupons"></div>
-      </section>
-
-      <section class="aj-bloco">
-        <h3>Onde você costuma postar</h3>
+      <hr class="aj-sep">
+        <h4>Onde você costuma postar</h4>
         <p class="nota">Já vem marcado quando você for compartilhar.</p>
         <div class="opcoes-texto" id="ajLugares"></div>
-      </section>
-
-      <section class="aj-bloco">
-        <label class="aj-chave" hidden><span><b>Esconder os já compartilhados</b><small>A lista mostra só o que falta postar</small></span><input type="checkbox" id="ajOcultar"><i></i></label>
-      </section>
-
-      <section class="aj-bloco conta">
-        <h3>Sua conta</h3>
+      </div>
+      </details>
+      <details class="aj-bloco aj-det">
+        <summary><i class="aj-ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></i><span><b>Criação IA</b><small>Textos dos prompts</small></span></summary>
+        <div class="aj-det-corpo">
+        
+        <p class="nota">Edite os textos e as negativas. As palavras entre chaves, como {roupa} e {fala}, o app preenche sozinho. Vídeo: até 900 caracteres. Imagem: sem limite. Fica salvo na nuvem.</p>
+        <div id="ajPrompts"></div>
+      </div>
+      </details>
+      <details class="aj-bloco aj-det">
+        <summary><i class="aj-ic"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></i><span><b>Conta</b><small>Conta Google, cópia de segurança e sair</small></span></summary>
+        <div class="aj-det-corpo">
+        
         <strong id="contaInfo">—</strong>
         <button type="button" class="btn btn--rosa" id="entrarGoogle">Usar a mesma conta em todos os aparelhos</button>
         <small class="nota" id="notaGoogle">Entre com o seu Google aqui e no outro aparelho: a lista, o histórico e os grupos ficam iguais nos dois.</small>
@@ -676,9 +680,12 @@
           <button type="button" class="link" id="ajAtualizar">Atualizar o app</button>
           <button type="button" class="link link--perigo" id="sair">Sair</button>
         </div>
-      </section>
-
-      <button class="btn btn--rosa" type="button" id="ajSalvar">Salvar</button>
+      
+        <hr class="aj-sep"><h4>Cópia de segurança</h4><p class="nota">Baixe um arquivo com a sua lista, o site e os ajustes. Se der problema, recupere por ele.</p>
+        <div class="duas"><button type="button" class="btn btn--branco" id="ajBackup">Baixar cópia</button><button type="button" class="btn btn--branco" id="ajRestaurar">Recuperar</button></div>
+        <input type="file" id="ajRestaurarArq" accept="application/json,.json" hidden></div>
+      </details>
+      <div class="aj-barra" id="ajBarra" hidden><button type="button" class="btn btn--branco" id="ajCancelar">Cancelar</button><button class="btn btn--rosa" type="button" id="ajSalvar">Salvar</button></div>
       <button class="btn btn--branco" value="fechar" type="submit">Fechar</button>
     </form>
   </dialog>
@@ -886,7 +893,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=368"></script>
-  <script src="app.js?v=368"></script>
+  <script src="firebase-config.js?v=369"></script>
+  <script src="app.js?v=369"></script>
 </body>
 </html>

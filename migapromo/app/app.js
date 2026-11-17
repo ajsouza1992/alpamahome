@@ -2771,10 +2771,24 @@
   /* Pacotes do site: toda mudança nos produtos do site refaz os pacotes (uns segundos depois, uma vez só) */
   function ligarPacotes(d) {
     const sal = d.vitrineSalvar, apa = d.vitrineApagar;
-    d.vitrineSalvar = async (p) => { await sal(p); agendarPacotes(); };
-    d.vitrineApagar = async (id) => { await apa(id); agendarPacotes(); };
+    // Sem internet: guarda e envia sozinho quando a internet voltar
+    const semRede = (e) => !navigator.onLine || /network|failed to fetch|unavailable|offline/i.test(String((e && (e.code || e.message)) || ""));
+    d.vitrineSalvar = async (p) => { try { await sal(p); } catch (e) { if (!semRede(e)) throw e; guardarPendente({ op: "salvar", p }); return; } agendarPacotes(); };
+    d.vitrineApagar = async (id) => { try { await apa(id); } catch (e) { if (!semRede(e)) throw e; guardarPendente({ op: "apagar", id }); return; } agendarPacotes(); };
+    d._sal = sal; d._apa = apa;
     return d;
   }
+  const lerPend = () => { try { return JSON.parse(localStorage.getItem("miga_pendentes") || "[]"); } catch (e) { return []; } };
+  function guardarPendente(x) { const l = lerPend().filter((y) => (y.p ? y.p.id : y.id) !== (x.p ? x.p.id : x.id)); l.push(x); try { localStorage.setItem("miga_pendentes", JSON.stringify(l)); } catch (e) { /* segue */ } try { pintarProxInicio(); } catch (e) { /* segue */ } }
+  async function enviarPendentes() {
+    const l = lerPend(); if (!l.length || !navigator.onLine || !dados._sal) return; const resto = [];
+    for (const x of l) { try { if (x.op === "salvar") await dados._sal(x.p); else await dados._apa(x.id); } catch (e) { resto.push(x); } }
+    try { localStorage.setItem("miga_pendentes", JSON.stringify(resto)); } catch (e) { /* segue */ }
+    if (resto.length < l.length) { agendarPacotes(); toast(`${l.length - resto.length} ${l.length - resto.length === 1 ? "envio feito" : "envios feitos"} agora que a internet voltou`); }
+    try { pintarProxInicio(); } catch (e) { /* segue */ }
+  }
+  window.addEventListener("online", () => setTimeout(enviarPendentes, 1500));
+  setTimeout(enviarPendentes, 5000);
   let pacoteT = 0;
   function agendarPacotes() { clearTimeout(pacoteT); pacoteT = setTimeout(gravarPacotes, 2500); }
   async function gravarPacotes() {
@@ -2784,10 +2798,27 @@
     for (let i = 0; i < l.length; i += 150) pacotes.push(l.slice(i, i + 150));
     try { await dados.vitrineGravarPacotes(pacotes); vitrineCfg = { ...vitrineCfg, pacotes: pacotes.length, pacotesEm: Date.now() }; } catch (e) { console.warn("pacotes", e); }
   }
+  /** Uma vez por dia: confere na loja o preço dos produtos do site (até 40 por dia, dos mais antigos) */
+  async function conferirPrecosSite() {
+    let ultimo = 0; try { ultimo = Number(localStorage.getItem("miga_precos_em") || 0); } catch (e) { /* segue */ }
+    if (Date.now() - ultimo < 20 * 36e5 || !vitrineMap.size || !navigator.onLine) return;
+    try { localStorage.setItem("miga_precos_em", String(Date.now())); } catch (e) { /* segue */ }
+    const l = [...vitrineMap.values()].sort((a, b) => (a.precoConferidoEm || 0) - (b.precoConferidoEm || 0)).slice(0, 40); let mudou = 0, sumiu = 0;
+    for (const p of l) {
+      let d = null; try { d = await api("produto", { url: p.link }); } catch (e) { continue; }
+      const nv = { ...p, precoConferidoEm: Date.now() };
+      if (!d || (!d.preco && !d.nome)) { sumiu++; nv.indisponivel = true; }
+      else if (d.preco && d.preco !== p.preco) { nv.preco = d.preco; nv.precoAntigo = d.precoAntigo && d.precoAntigo > d.preco ? d.precoAntigo : null; nv.indisponivel = false; mudou++; const it = fila().find((x) => x.id === p.id); if (it) { it.precoNovo = d.preco; if (d.precoAntigo) it.precoAntigo = d.precoAntigo; } }
+      try { await dados.vitrineSalvar(nv); vitrineMap.set(p.id, nv); } catch (e) { /* segue */ }
+    }
+    if (mudou) salvarFila(true);
+    if (mudou || sumiu) { renderFila(); toast(`Preços do site conferidos: ${mudou} ${mudou === 1 ? "atualizado" : "atualizados"}${sumiu ? ` · ${sumiu} sem resposta da loja` : ""}`); }
+  }
   async function carregarVitrine() {
     try { const l = await dados.vitrineListar(); vitrineMap = new Map(l.map((p) => [p.id, p])); } catch (e) { /* segue */ }
     try { vitrineCfg = (await dados.vitrineLerConfig()) || {}; } catch (e) { vitrineCfg = {}; }
     if (vitrineMap.size && !vitrineCfg.pacotesEm) agendarPacotes(); // primeira vez: monta os pacotes
+    setTimeout(conferirPrecosSite, 8000);
     renderFila();
   }
   /** Mudou o preço, a foto ou o cupom no app: o site acompanha */
@@ -2921,7 +2952,8 @@
       box.hidden = false;
     }
     const semFoto = fila().filter((i) => !i.carregando && !i.imagem).length, incomp = incompletos().length, site = vitrineMap.size;
-    const partes = [semFoto && `<b>${semFoto} ${semFoto === 1 ? "produto sem foto" : "produtos sem foto"}</b>`, incomp > semFoto && `<b>${incomp - semFoto} sem preço</b>`, site > LIMITE_SITE && `<b>site com ${site} produtos</b> (passou de ${LIMITE_SITE})`].filter(Boolean);
+    const pend = lerPend().length;
+    const partes = [pend && `<b>${pend} ${pend === 1 ? "envio esperando" : "envios esperando"} internet</b>`, semFoto && `<b>${semFoto} ${semFoto === 1 ? "produto sem foto" : "produtos sem foto"}</b>`, incomp > semFoto && `<b>${incomp - semFoto} sem preço</b>`, site > LIMITE_SITE && `<b>site com ${site} produtos</b> (passou de ${LIMITE_SITE})`].filter(Boolean);
     const av = $("#inAviso"); av.hidden = !partes.length;
     av.innerHTML = partes.length ? `<button type="button" data-in-num="${semFoto || incomp > semFoto ? "incompletos" : "site"}"><i class="in-aviso-ponto"></i><span>Você tem ${partes.join(" e ")}.</span><b class="in-aviso-ir">Resolver ›</b></button>` : "";
   }
@@ -9703,7 +9735,44 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     $("#ajLugares").innerHTML = Object.entries(LUGARES).map(([k, l]) => `<button type="button" data-aj-lugar="${k}" class="${marcados.includes(k) ? "on" : ""}">${esc(l.nome)}</button>`).join("");
     $("#ajOcultar").checked = ocultarComp;
   }
+  /* Ajustes: Salvar e Cancelar aparecem fixos embaixo só quando você mexe em algo */
+  let ajMexeu = false;
+  $("#config").addEventListener("input", (e) => { if (e.target.closest("#ajPrompts") || e.target.id === "ajCupom" || e.target.type === "file") return; ajMexeu = true; $("#ajBarra").hidden = false; });
+  $("#config").addEventListener("change", (e) => { if (e.target.closest("#ajPrompts") || e.target.type === "file") return; ajMexeu = true; $("#ajBarra").hidden = false; });
+  $("#ajCancelar").addEventListener("click", () => { ajMexeu = false; $("#ajBarra").hidden = true; abrirConfig(); toast("Alterações descartadas"); });
+  $("#config").addEventListener("close", () => { ajMexeu = false; $("#ajBarra").hidden = true; });
+  /* Saúde do app: Shopee, Mercado Livre, Site e Contador */
+  var saude = { shopee: null, mercadolivre: null, site: null, contador: null };
+  function pintarSaude() {
+    const el = $("#ajSaude"); if (!el) return;
+    const item = (k, n) => { const v = saude[k], c = v === true ? "ok" : v === false ? "erro" : "nd"; return `<span class="sd sd--${c}" title="${v === true ? "Funcionando" : v === false ? "Com problema" : "Ainda não testado"}"><i></i>${n}</span>`; };
+    const ruim = Object.entries(saude).filter(([, v]) => v === false).map(([k]) => ({ shopee: "Shopee", mercadolivre: "Mercado Livre", site: "Site", contador: "Contador" })[k]);
+    el.innerHTML = `<div class="sd-linha">${item("shopee", "Shopee")}${item("mercadolivre", "Mercado Livre")}${item("site", "Site")}${item("contador", "Contador")}</div>${ruim.length ? `<p class="sd-aviso">${ruim.join(", ")} com problema. ${saude.contador === false ? "Para o contador, confira as regras do Firebase. " : ""}${saude.shopee === false || saude.mercadolivre === false ? "Para as lojas, confira as chaves no Cloudflare." : ""}</p>` : ""}`;
+  }
+  async function testarSaude() {
+    try { const st = await api("status", null, "GET"); if (st && st.catalogo) { saude.shopee = !!st.catalogo.shopee; saude.mercadolivre = !!st.catalogo.mercadolivre; } } catch (e) { /* segue */ }
+    try { await dados.vitrineLerConfig(); saude.site = true; } catch (e) { saude.site = false; }
+    try { await dados.acessosListar(Date.now() - 864e5); saude.contador = true; } catch (e) { saude.contador = false; }
+    pintarSaude();
+  }
+  /* Cópia de segurança */
+  $("#ajBackup").addEventListener("click", () => {
+    const copia = { app: "miga-promo", versao: 1, em: new Date().toISOString(), lista: fila(), site: [...vitrineMap.values()], siteConfig: vitrineCfg, ajustes: { ...config, fila: undefined } };
+    baixarBlob(new Blob([JSON.stringify(copia)], { type: "application/json" }), `miga-promo-copia-${new Date().toISOString().slice(0, 10)}.json`); toast("Cópia baixada");
+  });
+  $("#ajRestaurar").addEventListener("click", () => $("#ajRestaurarArq").click());
+  $("#ajRestaurarArq").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+    let c; try { c = JSON.parse(await f.text()); } catch (er) { toast("Esse arquivo não é uma cópia do Miga Promo"); return; }
+    if (!c || c.app !== "miga-promo") { toast("Esse arquivo não é uma cópia do Miga Promo"); return; }
+    const ids = new Set(fila().map((i) => i.id)), novos = (c.lista || []).filter((i) => i && i.id && !ids.has(i.id));
+    if (!(await confirmar({ titulo: "Recuperar a cópia?", texto: `${novos.length} produtos voltam para a lista e ${(c.site || []).filter((p) => !vitrineMap.has(p.id)).length} voltam para o site. Nada do que já existe é apagado.`, ok: "Recuperar" }))) return;
+    config.fila = [...novos, ...fila()]; salvarFila(true);
+    for (const p of c.site || []) if (p && p.id && !vitrineMap.has(p.id)) { try { await dados.vitrineSalvar(p); vitrineMap.set(p.id, p); } catch (er) { /* segue */ } }
+    renderFila(); contarFila(); toast("Cópia recuperada");
+  });
   function abrirConfig() {
+    testarSaude(); pintarSaude();
     mostrarConta();
     $("#ajInsta").value = config.instagram || ""; $("#ajMlWord").value = config.mlMattWord || ""; $("#ajMlTool").value = config.mlMattTool || ""; $("#ajOcultarPostados").checked = !!config.ocultarPostados; pintarAjPrompts();
     $("#ajVtLink").textContent = urlVitrine().replace(/^https?:\/\//, ""); $("#ajVtCanal").value = vitrineCfg.canal || ""; $("#ajVtGrupo").value = vitrineCfg.grupo || ""; $("#ajVtTiktok").value = vitrineCfg.tiktok || ""; $("#ajVtInsta").value = /^https?:/i.test(vitrineCfg.instagram || "") ? vitrineCfg.instagram : ""; $("#ajVtQtd").textContent = vitrineMap.size ? `${vitrineMap.size} ${vitrineMap.size === 1 ? "produto" : "produtos"} no site` : "Nenhum produto no site ainda";
