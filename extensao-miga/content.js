@@ -59,7 +59,9 @@
     document.querySelectorAll("a[href]").forEach((a) => {
       if (a.closest(".miga-barra")) return;
       const link = linkProduto(a.getAttribute("href")); if (!link) return;
-      const card = cartaoDe(a, link); if (!card || card.dataset.miga || card.querySelector("[data-miga]") || card.closest("[data-miga]")) return;
+      const card = cartaoDe(a, link); if (!card) return;
+      // Já tem bolinha neste cartão (mesmo que o site tenha refeito o cartão): não cria outra
+      if (card.querySelector(".miga-bt") || card.closest("[data-miga]") || card.querySelector("[data-miga]")) { if (!card.dataset.miga && card.querySelector(":scope > .miga-bt")) { card.dataset.miga = link; card.classList.add("miga-card"); } return; }
       card.dataset.miga = link; card.classList.add("miga-card");
       const bt = document.createElement("button"); bt.type = "button"; bt.className = "miga-bt"; bt.dataset.migaLink = link; bt.setAttribute("aria-label", "Marcar para a Miga");
       card.appendChild(bt); pintarBotao(bt, link);
@@ -106,7 +108,8 @@
   });
 
   function atualizarTudo() {
-    document.querySelectorAll(".miga-card").forEach((c) => { const bt = c.querySelector(":scope > .miga-bt"); if (bt) pintarBotao(bt, c.dataset.miga); });
+    // Pinta TODAS as bolinhas pelo link guardado nelas (o site às vezes refaz o cartão e a bolinha fica em outro lugar)
+    document.querySelectorAll(".miga-bt").forEach((bt) => pintarBotao(bt, bt.dataset.migaLink));
     const n = marcados.length, aqui = produtoDaPagina();
     barra.querySelector(".miga-n").textContent = n ? `${n} ${n === 1 ? "produto marcado" : "produtos marcados"}` : "Marque os produtos no quadradinho";
     const este = barra.querySelector(".miga-este"); este.hidden = !aqui; if (aqui) este.textContent = marcados.includes(aqui) ? "Tirar este produto" : "+ Este produto";
