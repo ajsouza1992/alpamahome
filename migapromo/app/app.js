@@ -2641,7 +2641,7 @@
       document.querySelectorAll("[data-vs-desc]").forEach((ta) => { vsSel.desc[ta.dataset.vsDesc] = ta.value.trim(); });
       const l = vsSel.ids.map((id) => fila().find((i) => i.id === id)).filter(Boolean); let ok = 0;
       for (const i of l) { const p = produtoSite(i, vsSel.para[i.id], vsSel.desc[i.id], vitrineMap.get(i.id)); try { await dados.vitrineSalvar(p); vitrineMap.set(i.id, p); ok++; } catch (err) { console.warn(err); } }
-      vsSel = null; $("#folhaEst").close(); if (modoVarios) sairModoVarios(); renderFila();
+      vsSel = null; $("#folhaEst").close(); if (modoVarios) sairModoVarios(); renderFila(); if ($("#rtSite")) { const y = scrollY; mostrarPasso(); scrollTo(0, y); }
       toast(ok === l.length ? `${ok} ${ok === 1 ? "produto publicado" : "produtos publicados"} no site` : ok ? `${ok} de ${l.length} publicados. Tente de novo os outros.` : "Não consegui publicar. Confira as regras do Firestore (vitrine).");
     }
   });
@@ -3467,7 +3467,7 @@
       const h = wz.rpHist || [], tudo = h.length && h.every((x) => x.feitos.length === x.total);
       c.innerHTML = `<div class="rt-fim"><h2 class="wz-titulo">${tudo ? "Tudo postado!" : "Postagem concluída"}</h2>
         <div class="rt-lista">${h.map((x) => `<div><span>${esc(x.nome)}${x.feitos.length ? " · " + esc(x.feitos.join(", ")) : ""}</span><b class="${x.feitos.length ? "ok" : ""}">${x.feitos.length ? "Postado" : "Pulado"}</b></div>`).join("")}</div></div>
-        <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="rtLista">Voltar para a lista</button></div>`;
+        <div class="wz-rodape pr-rodape rp-rod2">${botaoSiteFim(h.map((x) => x.id))}<button type="button" class="btn btn--rosa wz-continuar" id="rtLista">Voltar para a lista</button></div>`;
       return true;
     }
     if (wz.passo === "resumo") {
@@ -3475,7 +3475,7 @@
       c.innerHTML = `<div class="rt-fim"><div class="rt-big rt-big--ok"><svg aria-hidden="true"><use href="#i-check"/></svg></div><h2 class="wz-titulo">${wz.lugares.every((k) => wz.res[k] === "feito") ? "Tudo postado!" : "Roteiro concluído"}</h2>
         <div class="rt-lista">${wz.lugares.map((k) => `<div><span>${LUGARES[k].nome}</span><b class="${wz.res[k] === "feito" ? "ok" : ""}">${wz.res[k] === "feito" ? "Postado" : "Pulado"}</b></div>`).join("")}</div></div>
         ${prox ? `<div class="wz-rodape"><button type="button" class="btn btn--rosa wz-continuar" id="rtProximo">Próximo produto da lista</button></div><p class="nota wz-centro">Próximo: <b>${esc(prox.nome || "produto")}</b></p>` : '<p class="nota wz-centro">Não há mais produtos para postar na lista.</p>'}
-        <button type="button" class="btn btn--branco" id="rtLista">Voltar para a lista</button>`;
+        ${botaoSiteFim([item.id])}<button type="button" class="btn btn--branco" id="rtLista">Voltar para a lista</button>`;
       return true;
     }
     return false;
@@ -3507,6 +3507,13 @@
   }
   /** Depois do Reels, Carrossel ou Vídeo: posta os mesmos produtos no WhatsApp (canal e grupos), um por um */
   // "Em movimento" vem ligado por padrão (no domínio novo ainda não havia nada salvo); só desliga se você desmarcar
+  /** No fim da postagem: botão para pôr no site o que acabou de ser postado */
+  function botaoSiteFim(ids) {
+    ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) return "";
+    const fora = ids.filter((id) => !vitrineMap.has(id));
+    if (!fora.length) return `<p class="nota wz-centro rt-nosite"><svg class="ic-mono" aria-hidden="true"><use href="#i-site"/></svg>${ids.length === 1 ? "Já está no site" : "Já estão no site"}</p>`;
+    return `<button type="button" class="btn btn--branco rt-site" id="rtSite" data-ids="${esc(fora.join(","))}"><svg class="ic-mono" aria-hidden="true"><use href="#i-site"/></svg>${fora.length === 1 ? "Enviar para o site" : `Enviar ${fora.length} para o site`}</button>`;
+  }
   const movSalvo = () => { try { const v = localStorage.getItem("miga_mov"); return v === null ? true : v === "1"; } catch (e) { return true; } };
   function postarProdutosNoWhats(ids, base = {}) {
     ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
@@ -3793,6 +3800,7 @@
     if (t.closest("#rtPular")) { const k = wz.lugares[wz.idx]; if (wz.res[k] !== "feito") wz.res[k] = "pulado"; avancarRoteiro(); return; }
     if (t.closest("#rtCopiarTexto")) { const it = wzItem(); const k = wz.lugares[wz.idx]; if (await copiarTexto(k === "telegram" ? it.texto.replace(/[*~_]/g, "") : it.texto)) toast("Texto copiado"); return; }
     if (t.closest("#rtLista")) { irPara("postar"); iniciarCriar(); return; }
+    { const bs = t.closest("#rtSite"); if (bs) { const l = String(bs.dataset.ids || "").split(",").map((id) => fila().find((x) => x.id === id)).filter(Boolean); if (l.length) abrirPorNoSite(l); return; } }
     if (t.closest("#rtProximo")) {
       const atualId = wz.itemId;
       const prox = fila().find((x) => x.id !== atualId && !x.carregando && !Object.values(x.feito || {}).some(Boolean));

@@ -2444,3 +2444,6 @@ textarea.rr-leg:focus { outline: 2px solid #e8336d; }
 
 /* Caixinha de seleção sempre no meio do cartão (Lista, Achados e Site) */
 .pp-linha .pp-marcar { top: 50% !important; bottom: auto !important; right: 12px !important; transform: translateY(-50%); }
+.rt-site { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-bottom: 8px; }
+.rt-site svg, .rt-nosite svg { width: 18px; height: 18px; color: var(--rosa); }
+.rt-nosite { display: flex; align-items: center; justify-content: center; gap: 6px; }
