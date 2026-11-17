@@ -2701,10 +2701,16 @@
     ac: [["todos", "Todos"], ["desconto", "Com desconto"], ["frete", "Frete grátis"], ["oficial", "Loja oficial"], ["vendidos", "Mais vendidos"], ["comissao", "Comissão alta (10%+)"]],
     st: [["todos", "Todos"], ["nalista", "Também na Minha lista"], ["sosite", "Só no site"], ["fav", "Favoritos"], ["comcliques", "Com cliques"], ["semcliques", "Sem cliques"], ["cupom", "Com cupom"], ["desconto", "Com desconto"]]
   };
-  const filtroAba = { pp: "todos", ac: "todos", st: "todos" };
+  const filtroAba = { pp: new Set(), ac: new Set(), st: new Set() };
+  // Opções do mesmo grupo somam (OU); grupos diferentes se juntam (E)
+  const GRUPO_F = { postar: "estado", postados: "estado", nosite: "site", forasite: "site", nalista: "lista", sosite: "lista", comcliques: "cliques", semcliques: "cliques" };
   const descFiltro = (novo, antigo) => (antigo && novo && antigo > novo ? 1 - novo / antigo : 0);
   function passaFiltro(aba, x) {
-    const f = filtroAba[aba]; if (!f || f === "todos" || !x) return true;
+    const sel = filtroAba[aba]; if (!sel || !sel.size || !x) return true;
+    const grupos = {}; sel.forEach((f) => { const g = GRUPO_F[f] || f; (grupos[g] = grupos[g] || []).push(f); });
+    return Object.values(grupos).every((fs) => fs.some((f) => passaUm(aba, x, f)));
+  }
+  function passaUm(aba, x, f) {
     if (aba === "pp") {
       if (x.carregando) return true;
       if (f === "postar") return !foiCompartilhado(x); if (f === "postados") return foiCompartilhado(x);
@@ -2727,15 +2733,25 @@
     return true;
   }
   function pintarBotoesFiltro() {
-    [["pp", "#fLista"], ["ac", "#fAchados"], ["st", "#fSite"]].forEach(([aba, sel]) => { const b = $(sel); if (!b) return; const f = filtroAba[aba];
-      b.querySelector("span").textContent = f === "todos" ? "Filtrar" : "Filtro: " + (FILTROS[aba].find(([k]) => k === f) || ["", ""])[1]; b.classList.toggle("on", f !== "todos"); });
+    [["pp", "#fLista"], ["ac", "#fAchados"], ["st", "#fSite"]].forEach(([aba, sel]) => { const b = $(sel); if (!b) return; const n = filtroAba[aba].size;
+      b.querySelector("span").textContent = "Filtrar"; b.classList.toggle("on", n > 0);
+      let bo = b.querySelector(".f-n"); if (!bo) { bo = document.createElement("b"); bo.className = "f-n"; b.appendChild(bo); } bo.textContent = n; bo.hidden = !n; });
   }
-  document.addEventListener("click", async (e) => {
-    const b = e.target.closest("#fLista, #fAchados, #fSite"); if (!b) return;
-    const aba = { fLista: "pp", fAchados: "ac", fSite: "st" }[b.id];
-    const v = await escolherOpcao("Filtrar", FILTROS[aba], filtroAba[aba]); if (!v) return;
-    filtroAba[aba] = v; pintarBotoesFiltro();
-    if (aba === "pp") renderFila(); else if (aba === "ac") pintarAchados(); else { if (v === "comcliques" || v === "semcliques") carregarCliquesSite(true); renderSite(); }
+  let abaFiltro = "pp";
+  function aplicarFiltroAba(aba) { pintarBotoesFiltro(); if (aba === "pp") renderFila(); else if (aba === "ac") pintarAchados(); else { if (filtroAba.st.has("comcliques") || filtroAba.st.has("semcliques")) carregarCliquesSite(true); renderSite(); } }
+  function pintarFolhaFiltro() {
+    const box = $("#flLista"); if (!box) return; const sel = filtroAba[abaFiltro];
+    box.innerHTML = FILTROS[abaFiltro].filter(([k]) => k !== "todos").map(([k, n]) => `<button type="button" class="fl-op${sel.has(k) ? " on" : ""}" data-fl="${k}"><span>${esc(n)}</span><span class="pp-caixa" aria-pressed="${sel.has(k)}"></span></button>`).join("");
+    const bt = $("#flVer"); if (bt) bt.textContent = sel.size ? `Ver produtos (${sel.size} ${sel.size === 1 ? "filtro" : "filtros"})` : "Ver todos os produtos";
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("#fLista, #fAchados, #fSite");
+    if (b) { abaFiltro = { fLista: "pp", fAchados: "ac", fSite: "st" }[b.id];
+      folhaEst("Filtrar", `<p class="nota">Toque em quantos quiser.</p><div class="fl-lista" id="flLista"></div><div class="cx-pe"><button type="button" class="btn btn--branco" id="flLimpar">Limpar</button><button type="button" class="btn btn--rosa" id="flVer">Ver produtos</button></div>`);
+      pintarFolhaFiltro(); return; }
+    const op = e.target.closest("[data-fl]"); if (op) { const sel = filtroAba[abaFiltro], k = op.dataset.fl; if (sel.has(k)) sel.delete(k); else sel.add(k); pintarFolhaFiltro(); aplicarFiltroAba(abaFiltro); return; }
+    if (e.target.closest("#flLimpar")) { filtroAba[abaFiltro].clear(); pintarFolhaFiltro(); aplicarFiltroAba(abaFiltro); return; }
+    if (e.target.closest("#flVer")) { $("#folhaEst").close(); aplicarFiltroAba(abaFiltro); }
   });
   setTimeout(pintarBotoesFiltro, 0);
   /* Filtro de loja sempre à vista (Todas · Mercado Livre · Shopee) nas três telas de Produtos */
@@ -3316,7 +3332,7 @@
     $("#ppSeloLoja").innerHTML = it && LOGO_LOJA[it.loja] ? (it.link ? `<a class="selo-link" href="${esc(it.link)}" target="_blank" rel="noopener" data-abrir-link title="Abrir na ${esc(NOME_LOJA[it.loja])}">${seloLojaHtml(it.loja)}</a>` : seloLojaHtml(it.loja)) : "";
   }
   function abrirItemFila(item, pedirFalta) {
-    ppAtual = item; $("#ppDescartar").hidden = true; document.querySelector(".pp-postar").hidden = false;
+    ppAtual = item; $("#ppDescartar").hidden = true; document.querySelector(".pp-postar").hidden = false; $("#ppSalvar").classList.remove("btn--rosa"); $("#ppSalvar").classList.add("btn--branco");
     $("#ppListaBloco").hidden = !ehPC(); $("#ppItem").hidden = false; if (ehPC()) renderFila();
     mostrarFotoPp();
     $("#ppNome").value = item.nome || "";
@@ -3388,8 +3404,10 @@
   $("#ppObs").addEventListener("input", () => { if (ppAtual) ppAtual.obsManual = !!$("#ppObs").value.trim(); });
   function pintarUsarCupom(it) { const box = $("#ppUsarCupomBox"); if (!box) return; box.hidden = !(it && it.precoCupom); box.querySelectorAll("[data-v]").forEach((b) => b.setAttribute("aria-checked", String((b.dataset.v === "1") === !!(it && it.usarCupom)))); }
   $("#ppUsarCupom").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (!b || !ppAtual) return; ppAtual.usarCupom = b.dataset.v === "1"; ppAtual.texto = ""; aplicarCamposPp(true); toast(ppAtual.usarCupom ? "As postagens vão usar o preço com cupom" : "As postagens vão usar o preço sem cupom"); });
-  ["#ppNome", "#ppNovo", "#ppAntigo", "#ppCupom", "#ppLinkItem", "#ppPrecoCupom", "#ppObs"].forEach((s) => $(s).addEventListener("input", () => { clearTimeout(aplicarCamposPp.d); aplicarCamposPp.d = setTimeout(() => aplicarCamposPp(), 500); }));
-  $("#ppCategoria").addEventListener("click", () => setTimeout(() => aplicarCamposPp(), 0));
+  ["#ppNome", "#ppNovo", "#ppAntigo", "#ppCupom", "#ppLinkItem", "#ppPrecoCupom", "#ppObs"].forEach((s) => $(s).addEventListener("input", () => { mostrarSalvarPp(); clearTimeout(aplicarCamposPp.d); aplicarCamposPp.d = setTimeout(() => aplicarCamposPp(), 500); }));
+  /** Ao mexer em qualquer campo do produto aparece "Salvar alterações" (as mudanças também são guardadas sozinhas) */
+  function mostrarSalvarPp() { if (!ppAtual || ppNovo || modoCompletar) return; const b = $("#ppSalvar"); if (b.hidden || b.textContent !== "Salvar alterações") { ppEditando = true; b.hidden = false; b.textContent = "Salvar alterações"; b.classList.add("btn--rosa"); b.classList.remove("btn--branco"); } }
+  $("#ppCategoria").addEventListener("click", () => setTimeout(() => { aplicarCamposPp(); mostrarSalvarPp(); }, 0));
   // Completando vários: vai para o próximo que falta
   /** Produto novo: abre a mesma tela de editar para conferir foto, preços, cupom e categoria antes de salvar */
   let ppNovo = false, ppEditando = false;
@@ -3406,7 +3424,7 @@
   });
   $("#ppSalvar").addEventListener("click", () => {
     const it = ppAtual; if (!it) return; aplicarCamposPp(true);
-    if (ppEditando) { ppEditando = false; fecharItemFila(true); toast("Alterações salvas"); return; }
+    if (ppEditando) { ppEditando = false; $("#ppSalvar").classList.remove("btn--rosa"); $("#ppSalvar").classList.add("btn--branco"); fecharItemFila(true); toast(vitrineMap.has(it.id) ? "Alterações salvas (no site também)" : "Alterações salvas"); return; }
     if (ppNovo) { ppNovo = false; $("#ppNovoTopo").hidden = true; fecharItemFila(true); toast(`Salvo em ${NOME_CAT[it.categoria] || "Outros"}`); return; }
     const p = incompletos().find((x) => x !== it);
     if (p) { abrirItemFila(p, true); toast("Próximo para completar"); } else { modoCompletar = false; fecharItemFila(); toast("Pronto! Todos completos"); }
