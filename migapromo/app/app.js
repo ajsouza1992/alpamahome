@@ -1176,9 +1176,14 @@
     if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
     const l = catalogoAtual.filter((p) => acSel.has(chAchado(p)));
     if (!l.some(linkAfiliadoAuto)) { toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes"); return; }
-    const r = trazerParaLista(l, ""); sairAcSite(); if (!r.itens.length) return;
-    if (r.pulados) toast(avisoPulados(r.pulados).trim());
-    irPara("postar"); criarAPartirDaLista("roteiro", r.itens);
+    const itens = []; let pulados = 0;
+    for (const p of l) { const link = linkAfiliadoAuto(p); if (!link) { pulados++; continue; }
+      const naLista = itemDoAchado(p); if (naLista) { itens.push(naLista); continue; }
+      itens.push(paraPostarTemp({ ...extrasDe(p), id: idSiteAchado(p), link, loja: p.loja || detectarLoja(link) || "mercadolivre", nome: limparNome(p.nome), precoNovo: p.preco || null, precoAntigo: p.precoAntigo || null, imagem: p.imagem || "", cupom: "",
+        categoria: adivinharCategoria(p.nome, p.categoria), catV2: true, texto: "", feito: {}, criadoEm: Date.now() })); }
+    sairAcSite(); if (!itens.length) return;
+    if (pulados) toast(avisoPulados(pulados).trim());
+    irPara("postar"); criarAPartirDaLista("roteiro", itens);
   });
   $("#acSiteEnviar").addEventListener("click", async () => {
     if (!acSel || !acSel.size) { toast("Toque nos produtos primeiro"); return; }
@@ -1319,7 +1324,7 @@
     $("#stFiltro").innerHTML = [["", "Todas"], ...cats.map((k) => [k, NOME_CAT[k] || "Outros"])].map(([k, nome]) => `<button type="button" class="chip-cat${stEst.cat === k ? " on" : ""}" data-st-cat="${k}">${k ? `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONE_CAT[k] || ""}</svg>` : ""}${esc(nome)} <i>${k ? todos.filter((p) => (p.tipo || "outros") === k).length : n}</i></button>`).join("");
     const t = semAcento(stEst.q.trim()); let l = todos.filter((p) => (stEst.loja === "todas" || p.loja === stEst.loja) && (!stEst.cat || (p.tipo || "outros") === stEst.cat) && (!t || semAcento(`${p.nome} ${NOME_LOJA[p.loja] || ""} ${p.cupom || ""}`).includes(t)));
     if (soFav) l = l.filter(ehFavSite);
-    if (stEst.ordem === "comissao" || stEst.ordem === "vendidos") { const f = stEst.ordem === "comissao" ? comissaoDe : vendidosDe, it = (p) => fila().find((x) => x.id === p.id) || {}; l = l.slice().sort((a, b) => f(it(b)) - f(it(a))); }
+    if (stEst.ordem === "comissao" || stEst.ordem === "vendidos") { const f = stEst.ordem === "comissao" ? comissaoDe : vendidosDe, it = (p) => itemPorId(p.id) || {}; l = l.slice().sort((a, b) => f(it(b)) - f(it(a))); }
     else if (stEst.ordem !== "recentes") { const k = (p) => cliquesSite.mapa.get(p.id) || { loja: 0, abrir: 0 }, tot = (p) => k(p).loja + k(p).abrir; l = l.slice().sort((a, b) => tot(b) - tot(a) || k(b).loja - k(a).loja); if (stEst.ordem === "top10") l = l.filter((p) => tot(p) > 0).slice(0, 10); }
     $("#stOrdem").textContent = "Ordenar: " + ({ cliques: "Mais clicados", top10: "Top 10 cliques", comissao: "Maior comissão", vendidos: "Mais vendidos" }[stEst.ordem] || "Mais novos"); $("#stOrdem").classList.toggle("on", stEst.ordem === "top10"); $("#stOrdem").hidden = !!stEst.sel || !n; $("#stLoja").hidden = !!stEst.sel || !n; $("#stLojaTxt").textContent = { todas: "Lojas", mercadolivre: "Mercado Livre", shopee: "Shopee" }[stEst.loja] || "Lojas"; $("#stLoja").classList.toggle("on", stEst.loja !== "todas");
     const lista = $("#stLista"); lista.classList.toggle("st-sel", !!stEst.sel);
@@ -1437,13 +1442,13 @@
     if (mk) { const id = mk.dataset.stMarcar || mk.dataset.stItem; if (stEst.sel.has(id)) stEst.sel.delete(id); else stEst.sel.add(id); renderSite(); return; }
     const b = e.target.closest("[data-st-menu], [data-st-item]"); if (!b) return;
     const p = vitrineMap.get(b.dataset.stMenu || b.dataset.stItem); if (!p) return;
-    const naLista = fila().find((x) => x.id === p.id);
+    const naLista = itemPorId(p.id);
     const op = await new Promise((ok) => { menuPadrao(p.nome || "Produto", [p.preco && brl(p.preco), NOME_LOJA[p.loja], NOME_CAT[p.tipo]].filter(Boolean).join(" · "),
-      [["postar", "Postar", "i-enviar", !naLista], ["cat", "Categoria", "i-lapis"], ["tirar", "Tirar do site", "i-site"], ["fav", ehFavSite(p) ? "Tirar dos favoritos" : "Favoritar", "fav"], ["abrir", "Abrir link", "i-abrir"], ["excluir", "Excluir", "i-lixo", true]], ok); $("#folhaItem").addEventListener("close", () => setTimeout(() => ok(null), 0), { once: true }); });
-    if (op === "postar" && naLista) { irPara("postar"); criarAPartirDaLista("roteiro", [naLista]); return; }
+      [["postar", "Postar", "i-enviar"], ["cat", "Categoria", "i-lapis"], ["tirar", "Tirar do site", "i-site"], ["fav", ehFavSite(p) ? "Tirar dos favoritos" : "Favoritar", "fav"], ["abrir", "Abrir link", "i-abrir"], ["excluir", "Excluir", "i-lixo", true]], ok); $("#folhaItem").addEventListener("close", () => setTimeout(() => ok(null), 0), { once: true }); });
+    if (op === "postar") { if (naLista) { irPara("postar"); criarAPartirDaLista("roteiro", [naLista]); } else { stEst.sel = new Set([p.id]); $("#stPostar").click(); } return; }
     if (op === "abrir") { window.open(p.link, "_blank", "noopener"); return; }
     if (op === "tirar") { await tirarVariosDoSite([p.id]); return; }
-    if (op === "fav") { const it = fila().find((x) => x.id === p.id); if (it) { await alternarFav(it); } else { const nv = { ...p, fav: !p.fav }; try { await salvarNoSite(nv); renderSite(); toast(nv.fav ? "Nos favoritos" : "Saiu dos favoritos"); } catch (e) { /* segue */ } } return; }
+    if (op === "fav") { const it = itemPorId(p.id); if (it) { await alternarFav(it); } else { const nv = { ...p, fav: !p.fav }; try { await salvarNoSite(nv); renderSite(); toast(nv.fav ? "Nos favoritos" : "Saiu dos favoritos"); } catch (e) { /* segue */ } } return; }
     if (op === "cat") { const c = await escolherCategoria({ sugestao: p.tipo || "outros", nome: p.nome, titulo: "Categoria no site", acao: "Mudar para" }); if (!c) return;
       try { await salvarNoSite({ ...p, tipo: c, atualizadoEm: Date.now() }); renderSite(); toast(`Agora em ${NOME_CAT[c]}`); } catch (err) { toast("Não consegui mudar"); } return; }
     if (op === "para") { const v = await escolherOpcao("Para quem?", Object.entries(PARA_SITE), p.para || "mulher"); if (!v) return;
@@ -1471,10 +1476,11 @@
   });
   $("#stPostar").addEventListener("click", () => {
     if (!stEst.sel || !stEst.sel.size) { toast("Toque nos produtos primeiro"); return; }
-    const ids = [...stEst.sel], l = ids.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
+    const ids = [...stEst.sel], l = ids.map((id) => { const na = fila().find((x) => x.id === id); if (na) return na; const sp = vitrineMap.get(id); if (!sp || !sp.link) return null;
+      return paraPostarTemp({ id: sp.id, link: sp.link, loja: sp.loja || detectarLoja(sp.link) || "mercadolivre", nome: sp.nome || "", precoNovo: sp.preco || null, precoAntigo: sp.precoAntigo || null, imagem: sp.imagem || "", cupom: sp.cupom || "",
+        categoria: sp.tipo || "outros", catV2: true, descricao: sp.descricao || "", fav: !!sp.fav, texto: "", feito: {}, criadoEm: Date.now() }); }).filter(Boolean);
     stEst.sel = null; renderSite();
-    if (!l.length) { toast("Esses produtos não estão na sua Lista: toque em Pôr na Lista primeiro"); return; }
-    if (l.length < ids.length) toast(`${ids.length - l.length} não estão na sua Lista e ficaram de fora (use Pôr na Lista)`);
+    if (!l.length) { toast("Não consegui abrir esses produtos"); return; }
     irPara("postar"); criarAPartirDaLista("roteiro", l);
   });
   $("#stCatVarios").addEventListener("click", async () => {
@@ -2182,6 +2188,10 @@
   const ppCategoria = grupoBotoes("#ppCategoria", "v");
   let ppAtual = null;          // produto aberto na edição
   const ppFotos = {};          // fotos já abertas (por produto), para as montagens
+  /* Produtos que só estão sendo postados (vieram dos Achados ou do Site): não entram na Lista */
+  const temporarios = new Map();
+  const itemPorId = (id) => fila().find((i) => i.id === id) || temporarios.get(id);
+  const paraPostarTemp = (it) => { const ja = fila().find((i) => i.id === it.id); if (ja) return ja; const t = temporarios.get(it.id) || it; temporarios.set(it.id, t); return t; };
   const fila = () => { const f = (config.fila = config.fila || []); if (f._obsOk !== f) { f.forEach((i) => { if (i && i.obs && !i.obsManual) delete i.obs; }); Object.defineProperty(f, "_obsOk", { value: f, configurable: true }); } return f; }; // tira a observação que o app tinha escrito sozinho
   let ppSalvarTimer;
   function salvarFila(logo) {
@@ -2758,7 +2768,7 @@
   $("#ppLista").addEventListener("click", async (e) => {
     if (e.target.closest("[data-completar]")) { const p = incompletos()[0]; if (p) { modoCompletar = true; abrirItemFila(p, true); } else toast("Todos os produtos estão completos"); return; }
     if (e.target.closest("[data-continuar]")) { continuarProgresso(); return; }
-    { const sf = e.target.closest("[data-sem-foto]"); if (sf && !modoVarios) { e.stopPropagation(); const it = fila().find((x) => x.id === sf.dataset.semFoto); if (!it) return;
+    { const sf = e.target.closest("[data-sem-foto]"); if (sf && !modoVarios) { e.stopPropagation(); const it = itemPorId(sf.dataset.semFoto); if (!it) return;
       const op = await escolherOpcao("Produto sem foto", [["foto", "Pôr uma foto"], ["excluir", "Excluir o produto"]], ""); if (op === "foto") { abrirItemFila(it); ppEditando = true; $("#ppSalvar").hidden = false; $("#ppSalvar").textContent = "Salvar alterações"; } else if (op === "excluir") excluirProduto(it); return; } }
     if (e.target.closest("[data-ir-inicio]")) { irPara("postar"); setTimeout(() => $("#inLink").focus(), 150); return; }
     const ph = e.target.closest("[data-ph]");
@@ -2767,10 +2777,10 @@
     }
     if (e.target.closest("[data-abrir-link]")) { e.stopPropagation(); return; } // o link abre sozinho
     const ed = e.target.closest("[data-editar]");
-    if (ed) { const it = fila().find((i) => i.id === ed.dataset.editar); if (it) abrirItemFila(it); return; }
+    if (ed) { const it = itemPorId(ed.dataset.editar); if (it) abrirItemFila(it); return; }
     const rs = e.target.closest("[data-restaurar]"); if (rs) { restaurarNaLista([rs.dataset.restaurar]); return; }
     const ex = e.target.closest("[data-excluir]");
-    if (ex) { const it = fila().find((i) => i.id === ex.dataset.excluir); if (!it) return;
+    if (ex) { const it = itemPorId(ex.dataset.excluir); if (!it) return;
       const linha = ex.closest(".pp-linha"); if (linha) linha.classList.add("saindo");
       config.fila = fila().filter((i) => i !== it); setTimeout(() => { renderFila(); contarFila(); }, 180); salvarFila(true);
       toastAcao(`“${limparNome(it.nome || "Produto").slice(0, 28)}” saiu da lista`, "Desfazer", () => { if (!fila().includes(it)) { fila().unshift(it); salvarFila(true); renderFila(); contarFila(); toast("Voltou para a lista"); } });
@@ -2778,11 +2788,11 @@
     const mc = e.target.closest("[data-marcar]");
     if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); mc.setAttribute("aria-pressed", String(marcados.has(id))); mc.parentElement.classList.toggle("marcado", marcados.has(id)); pintarMarcados(); return; }
     const menu = e.target.closest("[data-menu-item]");
-    if (menu) { const it = fila().find((i) => i.id === menu.dataset.menuItem); if (it) abrirMenuItem(it, "opcoes"); return; }
+    if (menu) { const it = itemPorId(menu.dataset.menuItem); if (it) abrirMenuItem(it, "opcoes"); return; }
     const b = e.target.closest("[data-pp]");
     if (!b) return;
     if (modoVarios) { const id = b.dataset.pp; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); renderFila(); return; }
-    const item = fila().find((i) => i.id === b.dataset.pp);
+    const item = itemPorId(b.dataset.pp);
     if (item && !item.carregando) { if (ehPC()) abrirItemFila(item); else abrirMenuItem(item); }
   });
   const ehPC = () => window.matchMedia("(min-width: 1100px)").matches;
@@ -2823,7 +2833,7 @@
     return "mulher";
   }
   /** Só o que aparece no site */
-  const ehFavSite = (p) => !!(p && (p.fav || (fila().find((x) => x.id === p.id) || {}).fav));
+  const ehFavSite = (p) => !!(p && (p.fav || (itemPorId(p.id) || {}).fav));
   /** Favoritar: na lista fica marcado e no site vai para o topo */
   async function alternarFav(it) {
     it.fav = !it.fav; salvarFila(true);
@@ -2876,7 +2886,7 @@
       let d = null; try { d = await api("produto", { url: p.link }); } catch (e) { continue; }
       const nv = { ...p, precoConferidoEm: Date.now() };
       if (!d || (!d.preco && !d.nome)) { sumiu++; nv.indisponivel = true; }
-      else if (d.preco && d.preco !== p.preco) { nv.preco = d.preco; nv.precoAntigo = d.precoAntigo && d.precoAntigo > d.preco ? d.precoAntigo : null; nv.indisponivel = false; mudou++; const it = fila().find((x) => x.id === p.id); if (it) { it.precoNovo = d.preco; if (d.precoAntigo) it.precoAntigo = d.precoAntigo; } }
+      else if (d.preco && d.preco !== p.preco) { nv.preco = d.preco; nv.precoAntigo = d.precoAntigo && d.precoAntigo > d.preco ? d.precoAntigo : null; nv.indisponivel = false; mudou++; const it = itemPorId(p.id); if (it) { it.precoNovo = d.preco; if (d.precoAntigo) it.precoAntigo = d.precoAntigo; } }
       try { await dados.vitrineSalvar(nv); vitrineMap.set(p.id, nv); } catch (e) { /* segue */ }
     }
     if (mudou) salvarFila(true);
@@ -2909,7 +2919,7 @@
       catch (e) { /* escreve à mão */ } finally { const ta = document.querySelector(`[data-vs-desc="${i.id}"]`); if (ta) ta.placeholder = "Escreva uma descrição curta (opcional)"; } });
   }
   function pintarPorNoSite() {
-    const l = vsSel.ids.map((id) => fila().find((i) => i.id === id)).filter(Boolean);
+    const l = vsSel.ids.map((id) => itemPorId(id)).filter(Boolean);
     folhaEst(`Pôr no site · ${l.length}`, `<p class="nota">O app escolhe para quem pelo nome do produto. Confira e publique: aparece na hora no site.</p>
       ${l.map((i) => `<div class="vs-item"><div class="vs-cab">${fotoMini(i)}<span><b>${esc(limparNome(i.nome || "Produto"))}</b><small>Tipo: ${esc(NOME_CAT[i.categoria] || "Outros")} · ${esc(NOME_LOJA[i.loja] || "Loja")}${i.cupom ? " · cupom " + esc(String(i.cupom).toUpperCase()) : ""}${vitrineMap.has(i.id) ? " · já está no site" : ""}</small></span></div>
         <div class="pe-seg vs-para">${Object.entries(PARA_SITE).map(([k, n]) => `<button type="button" data-vs-para="${esc(i.id)}:${k}" class="${vsSel.para[i.id] === k ? "on" : ""}">${n}</button>`).join("")}</div>
@@ -2921,7 +2931,7 @@
     const pq = t.closest("[data-vs-para]"); if (pq) { const [id, k] = pq.dataset.vsPara.split(":"); vsSel.para[id] = k; pq.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === pq)); return; }
     if (t.closest("#vsPublicar")) { const b = t.closest("#vsPublicar"); b.disabled = true; b.textContent = "Publicando…";
       document.querySelectorAll("[data-vs-desc]").forEach((ta) => { vsSel.desc[ta.dataset.vsDesc] = ta.value.trim(); });
-      const l = vsSel.ids.map((id) => fila().find((i) => i.id === id)).filter(Boolean); let ok = 0;
+      const l = vsSel.ids.map((id) => itemPorId(id)).filter(Boolean); let ok = 0;
       for (const i of l) { const p = produtoSite(i, vsSel.para[i.id], vsSel.desc[i.id], vitrineMap.get(i.id)); try { await dados.vitrineSalvar(p); vitrineMap.set(i.id, p); ok++; } catch (err) { console.warn(err); } }
       vsSel = null; $("#folhaEst").close(); if (modoVarios) sairModoVarios(); renderFila(); if ($("#rtSite")) { const y = scrollY; mostrarPasso(); scrollTo(0, y); }
       toast(ok === l.length ? `${ok} ${ok === 1 ? "produto publicado" : "produtos publicados"} no site` : ok ? `${ok} de ${l.length} publicados. Tente de novo os outros.` : "Não consegui publicar. Confira as regras do Firestore (vitrine).");
@@ -3028,8 +3038,8 @@
     av.innerHTML = partes.length ? `<button type="button" data-in-num="${semFoto || incomp > semFoto ? "incompletos" : "site"}"><i class="in-aviso-ponto"></i><span>Você tem ${partes.join(" e ")}.</span><b class="in-aviso-ir">Resolver ›</b></button>` : "";
   }
   document.addEventListener("click", (e) => {
-    const pp = e.target.closest("[data-prox-postar]"); if (pp) { const it = fila().find((x) => x.id === pp.dataset.proxPostar); if (it) { irPara("postar"); criarAPartirDaLista("roteiro", [it]); } return; }
-    const pj = e.target.closest("[data-prox-pular]"); if (pj) { const it = fila().find((x) => x.id === pj.dataset.proxPular); if (it) { it.criadoEm = Date.now(); salvarFila(true); pintarProxInicio(); } return; }
+    const pp = e.target.closest("[data-prox-postar]"); if (pp) { const it = itemPorId(pp.dataset.proxPostar); if (it) { irPara("postar"); criarAPartirDaLista("roteiro", [it]); } return; }
+    const pj = e.target.closest("[data-prox-pular]"); if (pj) { const it = itemPorId(pj.dataset.proxPular); if (it) { it.criadoEm = Date.now(); salvarFila(true); pintarProxInicio(); } return; }
     if (e.target.closest("[data-in-mais]")) { inMais = !inMais; renderInicio(); }
   });
   $("#inAviso").addEventListener("click", (e) => { const b = e.target.closest("[data-in-num]"); if (!b) return; const k = b.dataset.inNum; if (k === "site") { irPara("site"); scrollTo(0, 0); return; } filtrarResumo(k); });
@@ -3207,7 +3217,7 @@
   const NOME_MONTAGEM = { achadinho: "Achadinho do dia", relampago: "Oferta relâmpago", baixou: "Baixou o preço", ultimas: "Últimas horas", novidade: "Chegou novidade", enquete: "Você usaria?" };
   const CORES_NOME = { creme: "Creme", rosa: "Rosa", branco: "Branco", preto: "Preto", rose: "Rosê", verde: "Verde pastel" };
   let wz = {};
-  const wzItem = () => fila().find((i) => i.id === wz.itemId);
+  const wzItem = () => itemPorId(wz.itemId);
   const NOME_PASSO = { canal: "Tipo", produto: "Produto", rItens: "Produtos", rOrdem: "Ordem", rModelo: "Arte", rPronto: "Vídeo", rDepois: "Postar", kCarrossel: "Arte", kPronto: "Pronto",
     grade: "Formato", itens: "Produtos", tema: "Arte", livre: "Pronto", vDados: "Dados", vArquivo: "Vídeo", vTema: "Estilo", vPronto: "Pronto", cEscolher: "Cupons", cPronto: "Pronto",
     chEditar: "Editar", chPronto: "Pronto", chInicio: "Assunto", chImg: "Arte", chImgPostar: "Postar", chFim: "Pronto", chRevisar: "Revisar", chPostar: "Postar",
@@ -3279,7 +3289,7 @@
       // Voltar para a lista (ou abrir o app de novo) NÃO apaga onde você parou
       if (!wz.canal || !wz.passo || PASSOS_FINAIS.includes(wz.passo)) return;
       const ids = wz.canal === "reels" ? (wz.reels && wz.reels.itens) || [] : wz.canal === "livre" ? (wz.livre ? wz.livre.itens.filter((x) => x.itemId).map((x) => x.itemId) : []) : wz.canal === "cupons" ? [] : wz.canal === "video" ? [wz.video && wz.video.itemId].filter(Boolean) : [wz.itemId].filter(Boolean);
-      const nomes = ids.map((id) => (fila().find((x) => x.id === id) || {}).nome).filter(Boolean);
+      const nomes = ids.map((id) => (itemPorId(id) || {}).nome).filter(Boolean);
       const rotulo = `${CANAIS[wz.canal] ? CANAIS[wz.canal].nome : ""}${nomes.length ? " · " + (nomes.length > 1 ? nomes.length + " produtos" : limparNome(nomes[0]).slice(0, 40)) : ""}`;
       localStorage.setItem("miga_progresso", JSON.stringify({ canal: wz.canal, passo: wz.passo, ids, camp: wz.camp || "", modelo: wz.modelo, cor: wz.cor, lugares: wz.lugares, reels: wz.reels ? { modelo: wz.reels.modelo, cor: wz.reels.cor } : null, cup: wz.cup ? { sel: wz.cup.sel, cor: wz.cup.cor } : null, rotulo, quando: Date.now() }));
     } catch (e) { /* segue */ }
@@ -3291,7 +3301,7 @@
   function continuarProgresso() {
     const p = lerProgresso(); if (!p) return;
     if (p.canal === "cupons") { abrirPostarCupons(); if (p.cup) Object.assign(wz.cup, p.cup); wz.passo = p.passo; mostrarPasso(); return; }
-    const l = p.ids.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
+    const l = p.ids.map((id) => itemPorId(id)).filter(Boolean);
     // Vídeo: o arquivo de vídeo não fica guardado, então volta para a escolha do vídeo (com o produto, se tiver)
     if (p.canal === "video") { if (l.length) criarAPartirDaLista("video", l, p.camp); else abrirVideoLivre(); return; }
     if (!l.length) { try { localStorage.removeItem("miga_progresso"); } catch (e) { /* segue */ } renderFila(); toast("Os produtos dessa criação não estão mais na lista"); return; }
@@ -3468,7 +3478,7 @@
     const op = t.closest("[data-canal]"); if (op) { wz.canal = op.dataset.canal; wz.formato = "story"; wz.tipoWhats = "mensagem"; mostrarPasso(); return; }
     const wm = t.closest("[data-wz-menu]");
     if (wm) {
-      const it = fila().find((i) => i.id === wm.dataset.wzMenu); if (!it) return;
+      const it = itemPorId(wm.dataset.wzMenu); if (!it) return;
       escolherOpcao(it.nome || "Produto", [["usar", "Usar este produto"], ["editar", "Editar"], ["excluir", "Excluir"]], "").then(async (op) => {
         if (op === "usar") { wz.itemId = it.id; mostrarPasso(); }
         if (op === "editar") { irPara("postar"); abrirItemFila(it); }
@@ -3820,12 +3830,12 @@
   /** Postar vários: escolher a ordem (menor preço, maior preço, maior desconto ou na mão com ↑ ↓) */
   const ORDENS_RT = [["menor", "Menor preço"], ["maior", "Maior preço"], ["desconto", "Maior desconto"], ["nome", "A a Z"]];
   function ordenarRoteiro(k) {
-    const its = wz.filaRoteiro.map((id) => fila().find((x) => x.id === id)).filter(Boolean), p = (x) => x.precoNovo || Infinity, off = (x) => x.precoAntigo && x.precoNovo ? (x.precoAntigo - x.precoNovo) / x.precoAntigo : 0;
+    const its = wz.filaRoteiro.map((id) => itemPorId(id)).filter(Boolean), p = (x) => x.precoNovo || Infinity, off = (x) => x.precoAntigo && x.precoNovo ? (x.precoAntigo - x.precoNovo) / x.precoAntigo : 0;
     const f = { menor: (a, b) => p(a) - p(b), maior: (a, b) => (b.precoNovo || 0) - (a.precoNovo || 0), desconto: (a, b) => off(b) - off(a), nome: (a, b) => limparNome(a.nome || "").localeCompare(limparNome(b.nome || ""), "pt-BR") }[k];
     if (!f) return; its.sort(f); wz.filaRoteiro = its.map((x) => x.id); wz.ordemRt = k; wz.itemId = wz.filaRoteiro[0];
   }
   function blocoOrdemRoteiro() {
-    const its = wz.filaRoteiro.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
+    const its = wz.filaRoteiro.map((id) => itemPorId(id)).filter(Boolean);
     return `<div class="rt-ordem"><b class="rt-ordem-tit">Ordem de postagem · ${its.length} produtos</b>
       <div class="ed-chips rt-ordem-chips">${ORDENS_RT.map(([k, n]) => `<button type="button" data-rt-ordem="${k}" class="${wz.ordemRt === k ? "on" : ""}">${n}</button>`).join("")}</div>
       <p class="nota">Ou use as setinhas para mudar a ordem do seu jeito.</p>
@@ -3835,13 +3845,13 @@
   function faixaFila(item) {
     if (!wz.filaRoteiro || wz.filaRoteiro.length < 2) return "";
     const feitos = new Set((wz.rpHist || []).filter((x) => x.feitos.length).map((x) => x.id));
-    return `<div class="rt-faixa" role="list">${wz.filaRoteiro.map((id, n) => { const it = fila().find((x) => x.id === id); if (!it) return "";
+    return `<div class="rt-faixa" role="list">${wz.filaRoteiro.map((id, n) => { const it = itemPorId(id); if (!it) return "";
       return `<button type="button" role="listitem" class="rt-faixa-it${id === item.id ? " on" : ""}${feitos.has(id) ? " ok" : ""}" data-rt-ir="${esc(id)}" aria-label="Produto ${n + 1}: ${esc(limparNome(it.nome || ""))}">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : `<span>${n + 1}</span>`}${feitos.has(id) ? '<i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></i>' : ""}</button>`; }).join("")}</div>`;
   }
   document.addEventListener("click", (e) => { const b = e.target.closest("[data-rt-ir]"); if (!b || !wz || !wz.filaRoteiro) return; if (b.dataset.rtIr === wz.itemId) return;
     if ($("#folhaEst").open) $("#folhaEst").close();
     wz.itemId = b.dataset.rtIr; wz.idx = 0; wz.res = {}; wz.rpEditando = false; if (wz.rapido) wz.passo = "rpConferir"; mostrarPasso(); scrollTo(0, 0); });
-  const proximoDaFila = () => { if (!wz.filaRoteiro) return null; const i = wz.filaRoteiro.indexOf(wz.itemId); return fila().find((x) => x.id === wz.filaRoteiro[i + 1]) || null; };
+  const proximoDaFila = () => { if (!wz.filaRoteiro) return null; const i = wz.filaRoteiro.indexOf(wz.itemId); return itemPorId(wz.filaRoteiro[i + 1]) || null; };
   function avancarRoteiro() {
     wz.aguardando = false;
     if (wz.idx < wz.lugares.length - 1) { wz.idx++; mostrarPasso(); return; }
@@ -3861,17 +3871,17 @@
   }
   /** No fim da postagem: botão para pôr no site o que acabou de ser postado */
   function botaoSiteFim(ids) {
-    ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) return "";
+    ids = ids.filter((id) => !!itemPorId(id)); if (!ids.length) return "";
     const fora = ids.filter((id) => !vitrineMap.has(id));
     if (!fora.length) return `<p class="nota wz-centro rt-nosite"><svg class="ic-mono" aria-hidden="true"><use href="#i-site"/></svg>${ids.length === 1 ? "Já está no site" : "Já estão no site"}</p>`;
     return `<button type="button" class="btn btn--branco rt-site" id="rtSite" data-ids="${esc(fora.join(","))}"><svg class="ic-mono" aria-hidden="true"><use href="#i-site"/></svg>${fora.length === 1 ? "Enviar para o site" : `Enviar ${fora.length} para o site`}</button>`;
   }
   const movSalvo = () => { try { const v = localStorage.getItem("miga_mov"); return v === null ? true : v === "1"; } catch (e) { return true; } };
   function postarProdutosNoWhats(ids, base = {}) {
-    ids = ids.filter((id) => fila().some((x) => x.id === id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
+    ids = ids.filter((id) => !!itemPorId(id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
     const lug = lugaresSalvos().filter((k) => LUGARES[k].texto);
     wz = { canal: "roteiro", passo: "rpConferir", rapido: true, rpPulaLugares: true, rpItemModelo: ids[0], mov: movSalvo(), veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
-    ids.forEach((id) => { const it = fila().find((x) => x.id === id); if (it && !it.textoEditado) it.texto = ""; });
+    ids.forEach((id) => { const it = itemPorId(id); if (it && !it.textoEditado) it.texto = ""; });
     mostrarPasso(); scrollTo(0, 0);
   }
   async function compartilharArquivo(arq, texto) {
@@ -4153,7 +4163,7 @@
     if (t.closest("#rtPular")) { const k = wz.lugares[wz.idx]; if (wz.res[k] !== "feito") wz.res[k] = "pulado"; avancarRoteiro(); return; }
     if (t.closest("#rtCopiarTexto")) { const it = wzItem(); const k = wz.lugares[wz.idx]; if (await copiarTexto(k === "telegram" ? it.texto.replace(/[*~_]/g, "") : it.texto)) toast("Texto copiado"); return; }
     if (t.closest("#rtLista")) { irPara("postar"); iniciarCriar(); return; }
-    { const bs = t.closest("#rtSite"); if (bs) { const l = String(bs.dataset.ids || "").split(",").map((id) => fila().find((x) => x.id === id)).filter(Boolean); if (l.length) abrirPorNoSite(l); return; } }
+    { const bs = t.closest("#rtSite"); if (bs) { const l = String(bs.dataset.ids || "").split(",").map((id) => itemPorId(id)).filter(Boolean); if (l.length) abrirPorNoSite(l); return; } }
     if (t.closest("#rtProximo")) {
       const atualId = wz.itemId;
       const prox = fila().find((x) => x.id !== atualId && !x.carregando && !Object.values(x.feito || {}).some(Boolean));
@@ -4255,7 +4265,7 @@
   }
   async function fotosDaLista() {
     await carregarMarca();
-    for (const it of livre().itens) if (it.itemId) { const x = fila().find((f) => f.id === it.itemId); if (x) await prepararFoto(x); }
+    for (const it of livre().itens) if (it.itemId) { const x = itemPorId(it.itemId); if (x) await prepararFoto(x); }
   }
   function telaLivre(c) {
     const L = livre();
@@ -4313,7 +4323,7 @@
       const i = L.itens.findIndex((x) => x.itemId === li.dataset.lvItem);
       if (i >= 0) L.itens.splice(i, 1);
       else if (L.itens.length >= L.n) toast(`Já escolheu ${L.n} produtos (mude a grade para mais)`);
-      else { const x = fila().find((y) => y.id === li.dataset.lvItem); L.itens.push({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }); }
+      else { const x = itemPorId(li.dataset.lvItem); L.itens.push({ id: novoId(), itemId: x.id, nome: limparNome(x.nome), preco: x.precoNovo, link: x.link }); }
       mostrarPasso(); return;
     }
     const tr = t.closest("[data-lv-tirar]"); if (tr) { L.itens = L.itens.filter((x) => x.id !== tr.dataset.lvTirar); mostrarPasso(); return; }
@@ -4828,10 +4838,10 @@
   $("#wzCorpo").addEventListener("click", async (e) => {
     const b = e.target.closest("#rpWhats"); if (!b || b.dataset.ocupado) return;
     const S = wz.canal === "reels" ? rr() : wz.canal === "video" ? vd() : null; if (!S) return;
-    const ids = (wz.canal === "reels" ? [...S.itens] : [S.itemId]).filter((id) => fila().some((x) => x.id === id));
+    const ids = (wz.canal === "reels" ? [...S.itens] : [S.itemId]).filter((id) => !!itemPorId(id));
     if (!ids.length) { toast("Esse produto não está mais na lista"); return; }
     const base = wz.canal === "reels" ? { modelo: S.modelo, camp: S.camp, titulo: S.titulo } : { modelo: S.modelo, camp: S.camp, titulo: S.tituloProp };
-    const k = (S.zapIdx || 0) % ids.length, it = fila().find((x) => x.id === ids[k]);
+    const k = (S.zapIdx || 0) % ids.length, it = itemPorId(ids[k]);
     b.dataset.ocupado = "1";
     try { if (await enviarProdutoNoWhats(it, base)) S.zapIdx = k + 1; } finally { delete b.dataset.ocupado; }
     pintarBotaoWhats(b, ids.length, S.zapIdx || 0);
@@ -4869,7 +4879,7 @@
     if (id === "vtNome") V.nome = v; if (id === "vtCupom") V.cupom = v.trim(); if (id === "vtBotao") V.botao = v.trim();
     if (id === "vtAntigo") V.antigo = lerPreco(v) || null; if (id === "vtNovo") V.novo = lerPreco(v) || null;
   });
-  const vdItem = () => fila().find((i) => i.id === vd().itemId);
+  const vdItem = () => itemPorId(vd().itemId);
   function usarProdutoNoVideo(it) {
     const V = vd(); V.itemId = it ? it.id : null; V.loja = it ? it.loja || "" : "";
     if (it) { V.nome = limparNome(it.nome || ""); V.antigo = it.precoAntigo || null; V.novo = it.precoNovo || null; V.cupom = it.cupom || ""; }
@@ -5671,7 +5681,7 @@
       if (it) { usarProdutoNoVideo(it); mostrarPasso(); }
       return;
     }
-    const vi = t.closest("[data-vd-item]"); if (vi) { const it = fila().find((x) => x.id === vi.dataset.vdItem); usarProdutoNoVideo(V.itemId === it.id ? null : it); mostrarPasso(); return; }
+    const vi = t.closest("[data-vd-item]"); if (vi) { const it = itemPorId(vi.dataset.vdItem); usarProdutoNoVideo(V.itemId === it.id ? null : it); mostrarPasso(); return; }
     const te = t.closest("[data-vd-tema]"); if (te) { V.tema = te.dataset.vdTema; document.querySelectorAll("[data-vd-tema]").forEach((b) => b.classList.toggle("on", b === te)); return; }
     const co = t.closest("[data-vd-cor]"); if (co) { V.cor = co.dataset.vdCor; document.querySelectorAll("[data-vd-cor]").forEach((b) => b.setAttribute("aria-checked", String(b === co))); pintarTemasVideo(); return; }
     const cp = t.closest("[data-vd-capa]");
@@ -5918,7 +5928,7 @@
     const mc = e.target.closest("[data-marcar]");
     if (mc) { const id = mc.dataset.marcar; if (marcados.has(id)) marcados.delete(id); else marcados.add(id); renderHistorico(); return; }
     const b = e.target.closest("[data-editar], [data-pp]"); if (!b) return;
-    const it = fila().find((i) => i.id === (b.dataset.editar || b.dataset.pp)); if (!it) return;
+    const it = itemPorId((b.dataset.editar || b.dataset.pp)); if (!it) return;
     if (modoVarios) { if (marcados.has(it.id)) marcados.delete(it.id); else marcados.add(it.id); renderHistorico(); return; }
     irPara("postar"); abrirItemFila(it);
   });
@@ -6336,7 +6346,7 @@
   }
   const limiteReels = () => (wz.reels && wz.reels.carrossel ? 8 : 5);
   function rr() { if (!wz.reels) wz.reels = { itens: [], modelo: "achadinho", cor: "rosa", resultado: null }; return wz.reels; }
-  const itensReels = () => rr().itens.map((id) => fila().find((x) => x.id === id)).filter(Boolean);
+  const itensReels = () => rr().itens.map((id) => itemPorId(id)).filter(Boolean);
   const duracaoReelsProdutos = () => { temposDoModelo(rr()); return T_INTRO + T_PROD * Math.max(1, itensReels().length) + T_FIM; };
   async function fotosReels() {
     const l = itensReels(), cache = rr().fotos || (rr().fotos = {});
@@ -9301,7 +9311,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   $("#folhaEst").addEventListener("input", (e) => { if (e.target.id === "campBarra") mudarCorCampanha("h" + e.target.value); });
   $("#folhaEst").addEventListener("close", () => { if (wz && wz.corMudou) { wz.corMudou = false; aposMudarEstudio(); } });
   async function pintarMinis(R) {
-    const lista = wz.canal === "reels" ? itensReels() : wz.canal === "livre" ? livre().itens.map((x) => fila().find((y) => y.id === x.itemId)).filter(Boolean) : wz.canal === "video" ? [vdItem()].filter(Boolean) : wz.canal === "cupons" ? fila().slice(0, 1) : [wzItem()].filter(Boolean);
+    const lista = wz.canal === "reels" ? itensReels() : wz.canal === "livre" ? livre().itens.map((x) => itemPorId(x.itemId)).filter(Boolean) : wz.canal === "video" ? [vdItem()].filter(Boolean) : wz.canal === "cupons" ? fila().slice(0, 1) : [wzItem()].filter(Boolean);
     const it = lista[0] || { nome: "Seu achadinho", precoNovo: 29.9, precoAntigo: 49.9, imagem: "", loja: "" };
     await carregarMarca(); let bmp = null;
     if (it.id && it.imagem) { await prepararFoto(it); bmp = ppFotos[it.id]; }
