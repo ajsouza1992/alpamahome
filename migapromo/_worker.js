@@ -241,16 +241,26 @@ async function completarPelaApiShopee(dados, env, html, urlColado) {
 }
 
 /** Mercado Livre: completa preço e foto pela API oficial (quando as chaves estão cadastradas) */
-async function completarPelaApiML(dados, env) {
+async function completarPelaApiML(dados, env, urlPedida = "") {
   if (!(env.ML_APP_ID && env.ML_SECRET)) return dados;
-  const u = dados.urlFinal || "";
+  // O ML às vezes manda o servidor para a verificação de robô (/gz/account-verification?go=...): o endereço do produto vem no "go"
+  let go = ""; try { const f = new URL(dados.urlFinal || urlPedida); go = f.searchParams.get("go") || ""; } catch (e) { go = ""; }
+  const u = [dados.urlFinal || "", go, urlPedida].join(" ");
+  const idUP = ((u.match(/\b(MLBU\d{6,})/i) || [])[1] || "").toUpperCase();
   const norm = (s) => s ? s.toUpperCase().replace("-", "") : null;
   const idProduto = norm((u.match(/\/p\/(MLB\d+)/i) || [])[1]);
-  const idItem = norm((u.match(/[?&#](?:item_id|wid)=(MLB-?\d+)/i) || [])[1] || (!idProduto && (u.match(/(MLB-?\d{6,})/i) || [])[1]));
+  const idItem = norm((u.match(/[?&#](?:item_id|wid)=(MLB-?\d+)/i) || [])[1] || (!idProduto && (u.match(/(MLB-?\d{6,})(?!\d)/i) || [])[1]));
   try {
     chamadasML = 0;
     const token = await tokenML(env);
-    if (idItem) {
+    if (idUP && !idItem && !idProduto) {
+      // Produto "de usuário" (MLBU): nome e fotos; o preço vem de um anúncio dele
+      const r = await getML(`/user-products/${idUP}`, token); const b = r.dados || {};
+      if (b.name && !dados.nome) dados.nome = limparTitulo(b.name);
+      if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url || b.pictures[0].secure_url);
+      const it = await getML(`/sites/MLB/search?user_product_id=${idUP}&limit=1`, token); const x = ((it.dados && it.dados.results) || [])[0];
+      if (x && x.price) { dados.preco = x.price; if (x.original_price && x.original_price > x.price) dados.precoAntigo = x.original_price; }
+    } else if (idItem) {
       const v = await precoML(idItem, token);
       if (v) { dados.preco = v.preco; if (v.precoAntigo && v.precoAntigo > v.preco) dados.precoAntigo = v.precoAntigo; }
       const r = await getML(`/items/${idItem}`, token);
@@ -595,8 +605,8 @@ async function rotaProduto(request, env) {
     if (guardado) return json({ ...guardado, doCache: true });
     let dados;
     try { dados = await extrairProduto(url); }
-    catch (e) { if (lojaDaUrl(url) !== "shopee") throw e; dados = { loja: "shopee", urlFinal: url, pista: "" }; } // a Shopee às vezes bloqueia a página: a API resolve
-    if (dados.loja === "mercadolivre") dados = await completarPelaApiML(dados, env);
+    catch (e) { const lj = lojaDaUrl(url); if (lj !== "shopee" && lj !== "mercadolivre") throw e; dados = { loja: lj, urlFinal: url, pista: "" }; } // a loja às vezes bloqueia a página: a API resolve // a Shopee às vezes bloqueia a página: a API resolve
+    if (dados.loja === "mercadolivre") dados = await completarPelaApiML(dados, env, url);
     if (dados.loja === "shopee") dados = await completarPelaApiShopee(dados, env, dados.pista, url);
     delete dados.pista;
     if (dados.nome) await gravarCache("produto", url, dados, 1800); // 30 minutos

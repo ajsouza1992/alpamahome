@@ -2598,8 +2598,8 @@
   let lendoCaixa = false;
   async function lerCaixa() {
     if (lendoCaixa) return; lendoCaixa = true;
-    try { for (let k = 0; k < caixa.length; k++) { const x = caixa[k]; if (x.lido || x.erro) continue; x.lendo = true; pintarCaixa();
-        try { const d = await api("produto", { url: x.link }); x.nome = limparNome(d.nome || x.nome || ""); x.preco = d.preco || null; x.precoAntigo = d.precoAntigo || null; x.imagem = d.imagem || ""; x.loja = d.loja || x.loja; x.urlFinal = d.urlFinal || ""; x.extras = extrasDe(d); if (d.descricao) x.descricao = d.descricao; if (d.linkAfiliado) x.linkAfiliado = d.linkAfiliado; x.lido = true;
+    try { for (let k = 0; k < caixa.length; k++) { const x = caixa[k]; if (x.erro || (x.lido && (x.nome || (x.tentativas || 0) >= 3))) continue; x.tentativas = (x.tentativas || 0) + 1; x.lendo = true; pintarCaixa();
+        try { const d = await api("produto", { url: x.link }); x.nome = limparNome(d.nome || x.nome || ""); x.preco = d.preco || x.preco || null; x.precoAntigo = d.precoAntigo || x.precoAntigo || null; x.imagem = d.imagem || x.imagem || ""; x.loja = d.loja || x.loja; x.urlFinal = d.urlFinal || ""; x.extras = extrasDe(d); if (d.descricao) x.descricao = d.descricao; if (d.linkAfiliado) x.linkAfiliado = d.linkAfiliado; x.lido = true;
           if (fila().some((i) => mesmoProduto(i, x.urlFinal || x.link))) { x.naLista = true; x.marcado = false; } }
         catch (e) { x.erro = true; x.marcado = false; }
         delete x.lendo; guardarCaixa(); pintarCaixa(); } }
@@ -2614,8 +2614,8 @@
     const nMarc = caixa.filter((x) => x.marcado).length, lendo = caixa.some((x) => !x.lido && !x.erro);
     box.innerHTML = caixa.length ? `<div class="cx-topo"><button type="button" class="link" id="cxTodos">${caixa.every((x) => x.marcado || x.erro || x.naLista) ? "Desmarcar todos" : "Marcar todos"}</button><span class="nota">${caixa.length} ${caixa.length === 1 ? "produto" : "produtos"}${lendo ? " · lendo…" : ""}</span></div>
       <div class="cx-lista">${caixa.map((x, i) => `<button type="button" class="cx-item${x.marcado ? " on" : ""}${x.erro || x.naLista ? " off" : ""}" data-cx="${i}">
-        <span class="cx-foto">${x.imagem ? `<img src="${esc(x.imagem)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ""}</span>
-        <span class="cx-txt"><b>${esc(x.nome || (x.lendo || !x.lido && !x.erro ? "Lendo o produto…" : "Produto"))}</b><small>${x.erro ? "Não consegui ler este link" : x.naLista ? "Já está na Minha lista" : [x.preco ? brl(x.preco) : "", NOME_LOJA[x.loja] || ""].filter(Boolean).join(" · ")}</small></span>
+        <span class="cx-foto">${x.imagem ? `<img src="${esc(x.imagem)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : `<img class="cx-loja" src="${x.loja === "shopee" ? "loja-shopee.png" : "loja-mercadolivre.png"}" alt="">`}</span>
+        <span class="cx-txt"><b>${esc(x.nome || (x.lendo || !x.lido && !x.erro ? "Lendo o produto…" : "Produto " + ((x.link.match(/MLBU?-?\d{6,}/i) || [""])[0].replace("-", "") || "")))}</b><small>${x.erro ? "Não consegui ler este link" : x.naLista ? "Já está na Minha lista" : [x.preco ? brl(x.preco) : "", NOME_LOJA[x.loja] || ""].filter(Boolean).join(" · ")}</small></span>
         <span class="pp-caixa" aria-pressed="${!!x.marcado}"></span><span class="cx-x" data-cx-tirar="${i}" role="button" aria-label="Tirar da caixa">${'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>'}</span></button>`).join("")}</div>
       <div class="cx-pe"><button type="button" class="btn btn--branco" id="cxLimpar">Limpar caixa</button><button type="button" class="btn btn--rosa" id="cxAdicionar"${nMarc ? "" : " disabled"}>Adicionar ${nMarc || ""} à lista</button></div>`
       : '<p class="vazio-lista">A caixa está vazia. Compartilhe produtos do Mercado Livre com a Miga Promo, cole vários links ou use a extensão do Chrome.</p>';
