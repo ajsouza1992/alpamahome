@@ -2715,3 +2715,5 @@ textarea.leg-caixa { width: 100%; min-height: 150px; border: 1.5px solid var(--l
 .pe-sem-ic svg { width: 22px; height: 22px; fill: none; stroke: var(--rosa, #d6426e); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .lp-item.pe-sem > .pe-sem-ic { width: 44px; flex: 0 0 44px; padding: 0; }
 .lp-item.pe-sem > span:last-child { flex: 1; min-width: 0; text-align: left; }
+.pe-cores { flex-wrap: wrap; gap: 10px; margin: 4px 0 6px; }
+.pe-cores button { width: 36px; height: 36px; flex: none; }
