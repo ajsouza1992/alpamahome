@@ -267,6 +267,7 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
       if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url || b.pictures[0].secure_url);
       const it = await getML(`/sites/MLB/search?user_product_id=${idUP}&limit=1`, token); const x = ((it.dados && it.dados.results) || [])[0];
       if (x && x.price) { dados.preco = x.price; if (x.original_price && x.original_price > x.price) dados.precoAntigo = x.original_price; }
+      dados.linkML = `https://www.mercadolivre.com.br/up/${idUP}`;
     } else if (idItem) {
       const v = await precoML(idItem, token);
       if (v) { dados.preco = v.preco; dados.precoAntigo = v.precoAntigo && v.precoAntigo > v.preco ? v.precoAntigo : null; dados.fontePreco = "anúncio " + idItem; }
@@ -274,10 +275,12 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
       try { const de = await getML(`/items/${idItem}/description`, token); if (de.status === 200 && de.dados && de.dados.plain_text) dados.descricao = limparDescricao(de.dados.plain_text); } catch (e) { /* sem descrição */ }
       if (r.status === 200 && !v && r.dados.price) { dados.fontePreco = "anúncio " + idItem; dados.preco = r.dados.price; dados.precoAntigo = r.dados.original_price && r.dados.original_price > r.dados.price ? r.dados.original_price : null; }
       if (r.status === 200 && dados.precoDaPagina && r.dados.title) dados.nome = limparTitulo(r.dados.title); // na página de afiliada o nome também pode ser de outro
+      if (r.status === 200 && r.dados.permalink) dados.linkML = String(r.dados.permalink).split("#")[0];
       if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); Object.assign(dados, extrasML(r.dados)); }
       Object.assign(dados, await notaML(idItem, token));
     } else if (idProduto) {
       const r = await getML(`/products/${idProduto}`, token);
+      dados.linkML = `https://www.mercadolivre.com.br/p/${idProduto}`;
       const b = r.dados || {};
       let preco = (b.buy_box_winner || {}).price, antigo = (b.buy_box_winner || {}).original_price;
       if (!preco) {

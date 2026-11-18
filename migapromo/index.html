@@ -391,7 +391,7 @@
 
     /* ---------- Cartões ---------- */
     const botaoLoja = (p, grande) => {
-      const lj = LOJAS[p.loja] ? p.loja : "", link = urlOk(p.link) ? p.link : "";
+      const lj = LOJAS[p.loja] ? p.loja : "", link = p.loja === "mercadolivre" && urlOk(p.linkML) ? p.linkML : urlOk(p.link) ? p.link : "";
       if (!link) return "";
       const txt = grande ? ({ shopee: "Comprar na Shopee", mercadolivre: "Comprar no Mercado Livre", amazon: "Comprar na Amazon", magalu: "Comprar no Magalu" }[lj] || "Ir para a loja") : "Ver oferta";
       return `<a class="bt-loja ${lj}" href="${esc(link)}" target="_blank" rel="noopener nofollow sponsored">${LOGO[lj] ? `<img src="${LOGO[lj]}" alt="" width="24" height="24">` : ""}${txt}</a>`;
