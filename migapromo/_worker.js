@@ -157,6 +157,13 @@ async function extrairProduto(url) {
   // Página genérica da loja (sem o produto): não usa nome nem a logo da loja como se fossem do produto
   if (/^(shopee|mercado livre|amazon|magalu|magazine luiza)\b/i.test(d.nome || "") || /ofertas incr[ií]veis|compre online|melhores pre[cç]os/i.test(d.nome || "")) { d.nome = ""; d.imagem = ""; }
   const dados = { loja, ...d, urlFinal: pagina.atual };
+  if (loja === "mercadolivre" && !/MLBU?-?\d{6,}/i.test(pagina.atual)) {
+    // Ex.: mercadolivre.com/sec/... abre a sua página de afiliada com o produto em cima e "Você também pode gostar" embaixo:
+    // o preço lido dessa página pode ser de outro produto, então pega o código do produto principal (o primeiro que aparece)
+    const h = pagina.html.replace(/\\u002F/gi, "/").replace(/\\\//g, "/");
+    const m = h.match(/(?:item_id|itemId|"id")["']?\s*[:=]\s*["'](MLBU?\d{6,})["']/i) || h.match(/\/(?:p|up)\/(MLBU?\d{6,})/i) || h.match(/(MLBU?-?\d{6,})/i);
+    if (m) { dados.pistaML = m[1].toUpperCase().replace("-", ""); dados.precoDaPagina = true; }
+  }
   if (loja === "shopee") dados.pista = (pagina.html.match(/-i\.\d{3,}\.\d{3,}/) || pagina.html.match(/shopid=\d+[^"'<]{0,60}itemid=\d+/i) || pagina.html.match(/itemid=\d+[^"'<]{0,60}shopid=\d+/i) || [])[0] || "";
   if (dados.imagem && dados.imagem.startsWith("//")) dados.imagem = "https:" + dados.imagem;
   if (dados.precoAntigo && dados.preco && dados.precoAntigo <= dados.preco) dados.precoAntigo = null;
@@ -245,7 +252,7 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
   if (!(env.ML_APP_ID && env.ML_SECRET)) return dados;
   // O ML às vezes manda o servidor para a verificação de robô (/gz/account-verification?go=...): o endereço do produto vem no "go"
   let go = ""; try { const f = new URL(dados.urlFinal || urlPedida); go = f.searchParams.get("go") || ""; } catch (e) { go = ""; }
-  const u = [dados.urlFinal || "", go, urlPedida].join(" ");
+  const u = [dados.urlFinal || "", go, urlPedida, dados.pistaML || ""].join(" ");
   const idUP = ((u.match(/\b(MLBU\d{6,})/i) || [])[1] || "").toUpperCase();
   const norm = (s) => s ? s.toUpperCase().replace("-", "") : null;
   const idProduto = norm((u.match(/\/p\/(MLB\d+)/i) || [])[1]);
@@ -262,9 +269,11 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
       if (x && x.price) { dados.preco = x.price; if (x.original_price && x.original_price > x.price) dados.precoAntigo = x.original_price; }
     } else if (idItem) {
       const v = await precoML(idItem, token);
-      if (v) { dados.preco = v.preco; if (v.precoAntigo && v.precoAntigo > v.preco) dados.precoAntigo = v.precoAntigo; }
+      if (v) { dados.preco = v.preco; dados.precoAntigo = v.precoAntigo && v.precoAntigo > v.preco ? v.precoAntigo : null; }
       const r = await getML(`/items/${idItem}`, token);
       try { const de = await getML(`/items/${idItem}/description`, token); if (de.status === 200 && de.dados && de.dados.plain_text) dados.descricao = limparDescricao(de.dados.plain_text); } catch (e) { /* sem descrição */ }
+      if (r.status === 200 && !v && r.dados.price) { dados.preco = r.dados.price; dados.precoAntigo = r.dados.original_price && r.dados.original_price > r.dados.price ? r.dados.original_price : null; }
+      if (r.status === 200 && dados.precoDaPagina && r.dados.title) dados.nome = limparTitulo(r.dados.title); // na página de afiliada o nome também pode ser de outro
       if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); Object.assign(dados, extrasML(r.dados)); }
       Object.assign(dados, await notaML(idItem, token));
     } else if (idProduto) {
@@ -276,7 +285,7 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
         const x = ((it.dados && it.dados.results) || [])[0];
         if (x) { preco = x.price; antigo = x.original_price; }
       }
-      if (preco) { dados.preco = preco; if (antigo && antigo > preco) dados.precoAntigo = antigo; }
+      if (preco) { dados.preco = preco; dados.precoAntigo = antigo && antigo > preco ? antigo : null; }
       if (!dados.nome && b.name) dados.nome = b.name;
       if (!dados.descricao) { const sd = (b.short_description && b.short_description.content) || ""; const mf = (b.main_features || []).map((f) => f.text).filter(Boolean).join("\n"); if (sd || mf) dados.descricao = limparDescricao(sd || mf); }
       if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url);
@@ -609,7 +618,8 @@ async function rotaProduto(request, env) {
     if (dados.loja === "mercadolivre") dados = await completarPelaApiML(dados, env, url);
     if (dados.loja === "shopee") dados = await completarPelaApiShopee(dados, env, dados.pista, url);
     delete dados.pista;
-    if (dados.nome) await gravarCache("produto", url, dados, 1800); // 30 minutos
+    delete dados.pistaML; const soPagina = dados.precoDaPagina && !dados.completo; delete dados.precoDaPagina;
+    if (dados.nome && !soPagina) await gravarCache("produto", url, dados, 1800); // 30 minutos
     return json(dados);
   } catch (e) {
     return json({ erro: e.message || "Não consegui ler o produto." }, 422);

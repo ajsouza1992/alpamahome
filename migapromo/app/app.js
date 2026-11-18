@@ -1509,9 +1509,20 @@
     const b = e.target.closest("[data-enviar-para]"); if (!b) return;
     const aba = b.dataset.enviarPara, n = aba === "pp" ? marcados.size : aba === "ac" ? (acSel ? acSel.size : 0) : (stEst.sel ? stEst.sel.size : 0);
     if (!n) { toast("Toque nos produtos primeiro"); return; }
-    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria no site"]] }[aba];
+    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"], ["preco", "Atualizar o preço (da loja)"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria no site"]] }[aba];
     const v = await escolherOpcao(`Enviar ${n} ${n === 1 ? "produto" : "produtos"} para…`, ops, ""); if (!v) return;
     // Mudar a categoria em massa (Minha lista e Achados; o Site usa a escolha de várias categorias)
+    // Atualizar o preço dos selecionados direto da loja (corrige preço errado)
+    if (v === "preco" && aba === "pp") {
+      const l = itensMarcados(); if (!l.length) return; sairModoVarios(); renderFila(); toast(`Conferindo o preço de ${l.length} ${l.length === 1 ? "produto" : "produtos"}…`);
+      let mudou = 0, falhou = 0;
+      for (const it of l) {
+        try { const d = await api("produto", { url: it.link });
+          if (d && d.preco) { if (d.preco !== it.precoNovo || (d.precoAntigo || null) !== (it.precoAntigo || null)) mudou++; it.precoNovo = d.preco; it.precoAntigo = d.precoAntigo && d.precoAntigo > d.preco ? d.precoAntigo : null; if (!it.textoEditado) it.texto = ""; }
+          else falhou++; } catch (e) { if (e.codigo === "senha") break; falhou++; }
+      }
+      salvarFila(true); renderFila(); toast(`${mudou} ${mudou === 1 ? "preço atualizado" : "preços atualizados"}${falhou ? ` · ${falhou} sem resposta da loja` : ""}`); return;
+    }
     if (v === "categoria" && aba !== "st") {
       if (aba === "pp") { const l = itensMarcados(); if (!l.length) return; const c = await escolherCategoria({ sugestao: l[0].categoria || "outros", titulo: `Categoria de ${l.length} ${l.length === 1 ? "produto" : "produtos"}`, acao: "Mudar para" }); if (!c) return;
         l.forEach((it) => { it.categoria = c; it.catV2 = true; if (!it.textoEditado) it.texto = ""; }); salvarFila(true); sairModoVarios(); renderFila(); toast(`${l.length} ${l.length === 1 ? "produto foi" : "produtos foram"} para ${NOME_CAT[c]}${l.some((it) => vitrineMap.has(it.id)) ? " (no site também)" : ""}`); return; }
