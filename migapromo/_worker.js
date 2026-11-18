@@ -269,10 +269,10 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
       if (x && x.price) { dados.preco = x.price; if (x.original_price && x.original_price > x.price) dados.precoAntigo = x.original_price; }
     } else if (idItem) {
       const v = await precoML(idItem, token);
-      if (v) { dados.preco = v.preco; dados.precoAntigo = v.precoAntigo && v.precoAntigo > v.preco ? v.precoAntigo : null; }
+      if (v) { dados.preco = v.preco; dados.precoAntigo = v.precoAntigo && v.precoAntigo > v.preco ? v.precoAntigo : null; dados.fontePreco = "anúncio " + idItem; }
       const r = await getML(`/items/${idItem}`, token);
       try { const de = await getML(`/items/${idItem}/description`, token); if (de.status === 200 && de.dados && de.dados.plain_text) dados.descricao = limparDescricao(de.dados.plain_text); } catch (e) { /* sem descrição */ }
-      if (r.status === 200 && !v && r.dados.price) { dados.preco = r.dados.price; dados.precoAntigo = r.dados.original_price && r.dados.original_price > r.dados.price ? r.dados.original_price : null; }
+      if (r.status === 200 && !v && r.dados.price) { dados.fontePreco = "anúncio " + idItem; dados.preco = r.dados.price; dados.precoAntigo = r.dados.original_price && r.dados.original_price > r.dados.price ? r.dados.original_price : null; }
       if (r.status === 200 && dados.precoDaPagina && r.dados.title) dados.nome = limparTitulo(r.dados.title); // na página de afiliada o nome também pode ser de outro
       if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); Object.assign(dados, extrasML(r.dados)); }
       Object.assign(dados, await notaML(idItem, token));
@@ -285,7 +285,7 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
         const x = ((it.dados && it.dados.results) || [])[0];
         if (x) { preco = x.price; antigo = x.original_price; }
       }
-      if (preco) { dados.preco = preco; dados.precoAntigo = antigo && antigo > preco ? antigo : null; }
+      if (preco) { dados.preco = preco; dados.precoAntigo = antigo && antigo > preco ? antigo : null; dados.fontePreco = "catálogo " + idProduto; }
       if (!dados.nome && b.name) dados.nome = b.name;
       if (!dados.descricao) { const sd = (b.short_description && b.short_description.content) || ""; const mf = (b.main_features || []).map((f) => f.text).filter(Boolean).join("\n"); if (sd || mf) dados.descricao = limparDescricao(sd || mf); }
       if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url);

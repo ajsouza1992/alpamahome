@@ -1518,10 +1518,12 @@
       let mudou = 0, falhou = 0;
       for (const it of l) {
         try { const d = await api("produto", { url: it.link });
-          if (d && d.preco) { if (d.preco !== it.precoNovo || (d.precoAntigo || null) !== (it.precoAntigo || null)) mudou++; it.precoNovo = d.preco; it.precoAntigo = d.precoAntigo && d.precoAntigo > d.preco ? d.precoAntigo : null; if (!it.textoEditado) it.texto = ""; }
+          if (d && d.preco) { it._fonte = d.fontePreco || "página da loja"; if (d.preco !== it.precoNovo || (d.precoAntigo || null) !== (it.precoAntigo || null)) mudou++; it.precoNovo = d.preco; it.precoAntigo = d.precoAntigo && d.precoAntigo > d.preco ? d.precoAntigo : null; if (!it.textoEditado) it.texto = ""; }
           else falhou++; } catch (e) { if (e.codigo === "senha") break; falhou++; }
       }
-      salvarFila(true); renderFila(); toast(`${mudou} ${mudou === 1 ? "preço atualizado" : "preços atualizados"}${falhou ? ` · ${falhou} sem resposta da loja` : ""}`); return;
+      salvarFila(true); renderFila();
+      const um = l.length === 1 ? l[0] : null;
+      toast(um && um.precoNovo ? `Preço da loja: ${brl(um.precoNovo)}${um.precoAntigo ? ` (antes ${brl(um.precoAntigo)})` : ""}${um._fonte ? ` · ${um._fonte}` : ""}` : `${mudou} ${mudou === 1 ? "preço atualizado" : "preços atualizados"}${falhou ? ` · ${falhou} sem resposta da loja` : ""}`); return;
     }
     if (v === "categoria" && aba !== "st") {
       if (aba === "pp") { const l = itensMarcados(); if (!l.length) return; const c = await escolherCategoria({ sugestao: l[0].categoria || "outros", titulo: `Categoria de ${l.length} ${l.length === 1 ? "produto" : "produtos"}`, acao: "Mudar para" }); if (!c) return;
