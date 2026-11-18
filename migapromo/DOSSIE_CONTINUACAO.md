@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=421` → próxima `?v=422`
-- `app/sw.js`: `VERSAO = "miga-promo-v424"` → próxima `v425`
-- Comando usado: `sed -i 's/?v=421/?v=422/g' app/index.html app/sw.js && sed -i 's/miga-promo-v424/miga-promo-v425/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=422` → próxima `?v=423`
+- `app/sw.js`: `VERSAO = "miga-promo-v425"` → próxima `v426`
+- Comando usado: `sed -i 's/?v=422/?v=423/g' app/index.html app/sw.js && sed -i 's/miga-promo-v425/miga-promo-v426/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -165,3 +165,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 ## Atualização (18/11/2026)
 - **Preços automáticos:** `conferirPrecosSite` agora confere, ao abrir o app e a cada 30 min, TODOS os produtos da Minha lista e do Site sem conferência nas últimas 3 h (3 de cada vez). Datas guardadas em `localStorage.miga_precos_conf`.
 - **Link direto do ML (`linkML`):** o link `/sec/` abre a página de afiliada (perfil MIGAPROMO), que no app do ML aparece vazia. O worker devolve `linkML` (permalink do anúncio, `/p/` ou `/up/`); o app guarda no item e no produto do site com `matt_word`/`matt_tool` (`linkDiretoML`). O botão "Comprar no Mercado Livre" do site usa `p.linkML` quando existe.
+- **Postagens:** `linkPost(it)` usa o link direto (`linkML` + código) em WhatsApp, Telegram, Instagram, story e status; sem `linkML`, usa `it.link`.

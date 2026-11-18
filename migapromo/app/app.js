@@ -1108,6 +1108,8 @@
   }
   /** Link direto do produto no ML, só com o seu código de afiliado (sem o código, o site continua com o link /sec/) */
   function linkDiretoML(u) { const l = u ? comCodigoML(u) : ""; return /[?&]matt_word=/.test(l) ? l : ""; }
+  /** Link para postar: no Mercado Livre, o link direto do produto com o seu código (o /sec/ abre o seu perfil vazio no app do ML) */
+  function linkPost(it) { return (it && it.loja === "mercadolivre" && linkDiretoML(it.linkML)) || (it && it.link) || ""; }
   function linkAfiliadoAuto(p) {
     if (!p || !p.link) return "";
     if (p.afiliado || linkOficialML(p.link)) return p.link;
@@ -3132,7 +3134,7 @@
           conf[t.id] = Date.now();
           if (!t.site) {
             const it = itemPorId(t.id); if (!it || !d || !d.preco) continue;
-            if (d.linkML && d.linkML !== it.linkML) { it.linkML = d.linkML; mudouLink = true; }
+            if (d.linkML && d.linkML !== it.linkML) { it.linkML = d.linkML; if (!it.textoEditado) it.texto = ""; mudouLink = true; }
             if (d.preco !== it.precoNovo || novoAntigo(d) !== (it.precoAntigo || null)) { it.precoNovo = d.preco; it.precoAntigo = novoAntigo(d); if (!it.textoEditado) it.texto = ""; mudouLista++; }
             continue;
           }
@@ -3864,7 +3866,7 @@
   }
   /** Mensagem do WhatsApp (grupos e canal) de um produto, no modelo/campanha escolhidos */
   function mensagemWhats(it, base = {}) {
-    const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
+    const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: linkPost(it), categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
     const LG = LEGENDA_REELS[base.modelo] || LEGENDA_REELS.achadinho, C = CAMPANHAS[base.camp];
     const abre = base.titulo ? `✨ *${String(base.titulo).replace(/[*]/g, "").replace(/\s*\n\s*/g, " ")}*` : C ? C.chamada : LG.um("").replace(/\s{2,}/g, " ").trim();
     const preco = p.precoAntigo ? `~de ${brl(p.precoAntigo)}~ por *${brl(p.precoNovo)}*` : `por apenas *${brl(p.precoNovo)}*`;
@@ -3876,7 +3878,7 @@
   async function enviarProdutoNoWhats(it, base) {
     const texto = it.textoEditado && it.texto ? it.texto : mensagemWhats(it, base);
     let foto = null; try { if (it.imagem) foto = await converterImagem(await arquivoDaImagem(it.imagem)); /* grupo e canal: foto limpa, sem o selo da loja */ } catch (e) { foto = null; }
-    let r = await compartilharArquivo(foto, comLoja(texto, it.loja, it.link));
+    let r = await compartilharArquivo(foto, comLoja(texto, it.loja, linkPost(it)));
     if (r === "sem") { await copiarTexto(texto); abrirWhatsApp(texto); r = "aberto"; }
     if (r === "cancelado") return false;
     marcarPostado(it, "whatsapp", "WhatsApp"); return true;
@@ -3901,7 +3903,7 @@
     try { guardarCorUsada(estLer().cor); } catch (e) { /* segue */ }
     const it = wzItem(); if (!it) return;
     marcarPostado(it, canal, onde);
-    const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: it.link, categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
+    const p = { nome: limparNome(it.nome), precoAntigo: it.precoAntigo, precoNovo: it.precoNovo, link: linkPost(it), categoria: it.categoria || "outros", loja: it.loja, cupom: it.cupom || "" };
     try {
       let h = it.histId ? await dados.pegar(it.histId) : null;
       if (!h) { h = { id: novoId(), criadoEm: Date.now(), produto: p, texto: it.texto || "", imagem: it.imagem || "", enviadoPara: [] }; it.histId = h.id; salvarFila(true); }
@@ -3948,8 +3950,8 @@
   }
   function abrirTelegram() {
     const it = wzItem();
-    const texto = textoCanal(it.texto).split(it.link).join("").trim();
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(it.link)}&text=${encodeURIComponent(texto)}`, "_blank", "noopener");
+    const texto = textoCanal(it.texto).split(it.link).join("").split(linkPost(it)).join("").trim();
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(linkPost(it))}&text=${encodeURIComponent(texto)}`, "_blank", "noopener");
     registrarCompartilhado("telegram", "Telegram");
   }
 
@@ -4013,7 +4015,7 @@
     if (wz.canal === "whatsapp") {
       // Status do WhatsApp: imagem + texto com o link (no Status o link fica clicável)
       const tela = document.createElement("canvas"); desenharMontagem(tela, false);
-      const texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
+      const texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, linkPost(it))}`;
       tela.toBlob(async (blob) => {
         const arq = blob && new File([blob], nomeArquivo(it.nome), { type: "image/jpeg" });
         if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: texto })) {
@@ -4026,10 +4028,10 @@
       }, "image/jpeg", 0.92);
       return;
     }
-    if (wz.formato === "story") { if (await copiarTexto(it.link)) toast("Link copiado: no story, toque no adesivo de Link e cole"); }
+    if (wz.formato === "story") { if (await copiarTexto(linkPost(it))) toast("Link copiado: no story, toque no adesivo de Link e cole"); }
     else {
       const base = it.texto || `${limparNome(it.nome)}${it.precoNovo ? "\n\nPor " + brl(it.precoNovo) : ""}`;
-      if (await copiarTexto(legendaInstagram(base, it.loja, it.link))) toast("Legenda copiada: cole na legenda do post");
+      if (await copiarTexto(legendaInstagram(base, it.loja, linkPost(it)))) toast("Legenda copiada: cole na legenda do post");
     }
     const tela = document.createElement("canvas"); desenharMontagem(tela, false);
     compartilharTela(tela, nomeArquivo(it.nome));
@@ -4221,16 +4223,16 @@
       if (!v && wz.rapido) { toast("O vídeo ainda está sendo criado"); rpGravarFundo(); return; }
       if (!v) { const b = $("#rtPostar"); if (b) b.disabled = true; const novo = await gravarArteMovimento(b); if (novo) wz.vidMov = novo; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
       const arq = new File([v.blob], v.nome, { type: v.blob.type }); let texto = "";
-      if (k === "story") { await copiarTexto(it.link); prepararAdesivo(it); }
-      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
+      if (k === "story") { await copiarTexto(linkPost(it)); prepararAdesivo(it); }
+      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, linkPost(it))}`;
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { baixarBlob(v.blob, v.nome); if (texto) await copiarTexto(texto); toast("Vídeo salvo: abra o app e escolha da galeria"); }
     } else if (L.arte) {
       const tela = document.createElement("canvas"); desenharMontagem(tela, false, null, null, L.arte);
       const arq = await telaParaArquivo(tela, nomeArquivo(it.nome));
       let texto = "";
-      if (k === "story") { await copiarTexto(it.link); prepararAdesivo(it); }
-      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
+      if (k === "story") { await copiarTexto(linkPost(it)); prepararAdesivo(it); }
+      if (k === "status") texto = `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, linkPost(it))}`;
       if (k === "feed") { const el = $("#rtLegFeed"); await copiarTexto(el ? el.value : legendaFeed(it)); toast("Legenda copiada: é só colar no Instagram"); }
       r = await compartilharArquivo(arq, texto);
       if (r === "sem") { if (arq) baixarBlob(arq, arq.name); if (texto) await copiarTexto(texto); toast("Imagem salva: abra o app e escolha da galeria"); }
@@ -4239,7 +4241,7 @@
     } else {
       if (!it.texto) { it.texto = mensagemWhats(it, { modelo: wz.modelo, camp: wz.camp, titulo: wz.tituloArte }); it.textoEditado = false; salvarFila(); } // nunca vai sem a mensagem
       const foto = it.imagem ? await converterImagem(await arquivoDaImagem(it.imagem)) : null;
-      r = await compartilharArquivo(foto, comLoja(it.texto || "", it.loja, it.link));
+      r = await compartilharArquivo(foto, comLoja(it.texto || "", it.loja, linkPost(it)));
       if (r === "sem") { await copiarTexto(it.texto); abrirWhatsApp(it.texto); r = "aberto"; }
     }
     if (r !== "ok") adesivoPendente = "";
@@ -4272,7 +4274,7 @@
     marcados.clear(); modoVarios = false;
     irPara("criar"); mostrarPasso(); scrollTo(0, 0);
   }
-  const textoStatus = (it) => `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, it.link)}`;
+  const textoStatus = (it) => `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, linkPost(it))}`;
   /** Guarda o que foi postado de cada produto (para o resumo no fim) */
   function rpFecharProduto() {
     const it = wzItem(); if (!it) return; const h = wz.rpHist || (wz.rpHist = []);
@@ -8286,7 +8288,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       let meio = fotoProd ? (it && it.imagem ? `<div class="rp-foto"><img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer"></div>` : "") : vid ? `<div class="wz-previa rt-video rp-prev ${k === "grupo" ? "pe-prev-grupo" : k === "feed" ? "rr-pronto" : "rp-prev--grande"}"><video src="${vid.url}" playsinline loop autoplay muted controls></video></div>` : varias ? `<div class="pe-carr${k === "grupo" ? " pe-carr--grupo" : ""}">${sel.map((m, i) => `<canvas data-pe-rod="${i}"></canvas>`).join("")}</div>` : `<div class="wz-previa rp-prev ${k === "grupo" ? "pe-prev-grupo" : k === "feed" ? "pe-prev-feed" : "rp-prev--grande"}"><canvas data-pe-rod="${k === "story" ? st : 0}"></canvas></div>`;
       if (k === "feed") meio += `<textarea id="peRtLeg" class="rr-leg" aria-label="Legenda (toque para editar)">${esc(P.legenda)}</textarea><div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopLeg">Copiar legenda</button><button type="button" class="btn btn--branco rp-adesivo" id="peRtBaixar">${vid ? "Baixar vídeo" : nf > 1 ? "Baixar fotos" : "Baixar imagem"}</button></div>`
         + (vid ? "" : `<label class="ka2-campo pe-alt"><span>Texto alternativo (cole o que a IA escreveu)</span><textarea id="peRtAlt" rows="3">${esc(altIA(P, it))}</textarea></label><div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="peRtColarAlt">Colar da IA</button><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopAlt">Copiar texto alternativo</button></div>`);
-      if (k === "story" && it) meio += `<button type="button" class="btn btn--branco rp-adesivo" id="peRtCopLink">Copiar link<small>${esc(it.link || "")}</small></button><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopAdesivo">Copiar texto do adesivo<small>${esc(textoAdesivo(it))}</small></button>`;
+      if (k === "story" && it) meio += `<button type="button" class="btn btn--branco rp-adesivo" id="peRtCopLink">Copiar link<small>${esc(linkPost(it))}</small></button><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopAdesivo">Copiar texto do adesivo<small>${esc(textoAdesivo(it))}</small></button>`;
       if (k === "status") meio += `<button type="button" class="btn btn--branco rp-adesivo" id="peRtCopStatus">Copiar texto do Status<small>${esc((it ? textoStatus(it) : P.legenda).replace(/\s+/g, " ").slice(0, 80))}</small></button>`;
       if (k === "grupo") meio += (P.peEditTx ? `<textarea id="peRtTexto" class="rp-texto">${esc(P.txGrupo)}</textarea>` : `<div class="balao wz-balao rp-balao">${formatarWhats(P.txGrupo)}</div>`)
         + `<div class="rp-duas"><button type="button" class="btn btn--branco rp-adesivo" id="peRtEditTx">${P.peEditTx ? "Pronto" : "Editar texto"}</button><button type="button" class="btn btn--branco rp-adesivo" id="peRtCopTx">Copiar o texto</button></div>`;
@@ -8345,9 +8347,9 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     const arqs = fotoProd ? [it && it.imagem ? await converterImagem(await arquivoDaImagem(it.imagem)) : null].filter(Boolean) : vid ? [new File([vid.blob], vid.nome, { type: vid.blob.type })] : await Promise.all(lista.map((m, i) => telaParaArquivo(arteLugarIA(k, m.bmp), nomeBase.replace(/(\.jpe?g)?$/i, lista.length > 1 ? `-${i + 1}.jpg` : ".jpg"))));
     let texto = "";
     if (k === "feed") await copiarTexto(P.legenda || legendaCriacao(P, it));
-    if (k === "story" && it) { await copiarTexto(it.link); adesivoPendente = textoAdesivo(it); adesivoSaiu = false; }
+    if (k === "story" && it) { await copiarTexto(linkPost(it)); adesivoPendente = textoAdesivo(it); adesivoSaiu = false; }
     if (k === "status") texto = it ? textoStatus(it) : P.legenda;
-    if (k === "grupo") texto = it ? comLoja(P.txGrupo || "", it.loja, it.link) : P.txGrupo || "";
+    if (k === "grupo") texto = it ? comLoja(P.txGrupo || "", it.loja, linkPost(it)) : P.txGrupo || "";
     const r = await compartilharVarios(arqs, texto);
     if (r === "sem") { if (k === "grupo") { await copiarTexto(texto); abrirWhatsApp(texto); } else { arqs.forEach((a) => a && baixarBlob(a, a.name)); if (texto) await copiarTexto(texto); toast(vid ? "Vídeo salvo: abra o app e escolha da galeria" : arqs.length > 1 ? "Fotos salvas: abra o app e escolha da galeria" : "Imagem salva: abra o app e escolha da galeria"); } }
     if (r !== "ok") adesivoPendente = "";
@@ -8381,7 +8383,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       P.alt = txt.slice(0, 600); const ta = $("#peRtAlt"); if (ta) ta.value = P.alt; toast("Texto alternativo colado"); return; }
     if (t.closest("#peRtEditLeg")) { P.peEditLeg = !P.peEditLeg; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     if (t.closest("#peRtBaixar")) { const v = videoIA(); if (v) { baixarBlob(v.blob, v.nome); toast("Vídeo salvo"); return; } await carregarMarca(); const sel = fotosIA(); for (let i = 0; i < sel.length; i++) { const a = await telaParaArquivo(arteLugarIA("feed", sel[i].bmp), nomeArquivo(it.nome).replace(/(\.jpe?g)?$/i, sel.length > 1 ? `-${i + 1}.jpg` : ".jpg")); if (a) baixarBlob(a, a.name); } toast(sel.length > 1 ? "Fotos salvas" : "Imagem salva"); return; }
-    if (t.closest("#peRtCopLink")) { if (await copiarTexto(it.link)) toast("Link copiado: cole no adesivo de Link"); return; }
+    if (t.closest("#peRtCopLink")) { if (await copiarTexto(linkPost(it))) toast("Link copiado: cole no adesivo de Link"); return; }
     if (t.closest("#peRtCopAdesivo")) { if (await copiarTexto(textoAdesivo(it))) toast("Texto do adesivo copiado: no adesivo de link, toque em Personalizar texto e cole"); return; }
     if (t.closest("#peRtCopStatus")) { if (await copiarTexto(it ? textoStatus(it) : P.legenda)) toast("Texto do Status copiado"); return; }
     if (t.closest("#peRtEditTx")) { P.peEditTx = !P.peEditTx; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
