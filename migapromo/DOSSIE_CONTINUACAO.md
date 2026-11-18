@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=422` → próxima `?v=423`
-- `app/sw.js`: `VERSAO = "miga-promo-v425"` → próxima `v426`
-- Comando usado: `sed -i 's/?v=422/?v=423/g' app/index.html app/sw.js && sed -i 's/miga-promo-v425/miga-promo-v426/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=423` → próxima `?v=424`
+- `app/sw.js`: `VERSAO = "miga-promo-v426"` → próxima `v427`
+- Comando usado: `sed -i 's/?v=423/?v=424/g' app/index.html app/sw.js && sed -i 's/miga-promo-v426/miga-promo-v427/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -166,3 +166,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Preços automáticos:** `conferirPrecosSite` agora confere, ao abrir o app e a cada 30 min, TODOS os produtos da Minha lista e do Site sem conferência nas últimas 3 h (3 de cada vez). Datas guardadas em `localStorage.miga_precos_conf`.
 - **Link direto do ML (`linkML`):** o link `/sec/` abre a página de afiliada (perfil MIGAPROMO), que no app do ML aparece vazia. O worker devolve `linkML` (permalink do anúncio, `/p/` ou `/up/`); o app guarda no item e no produto do site com `matt_word`/`matt_tool` (`linkDiretoML`). O botão "Comprar no Mercado Livre" do site usa `p.linkML` quando existe.
 - **Postagens:** `linkPost(it)` usa o link direto (`linkML` + código) em WhatsApp, Telegram, Instagram, story e status; sem `linkML`, usa `it.link`.
+- **Situação do anúncio (`statusML`):** o worker devolve active/paused/closed/under_review/inactive/sumiu. `aplicarConferencia`: encerrado (closed/inactive) sai do site; pausado/sumiu fica com `pausado: true` (o site esconde). Cache do worker agora é `produto2`; `fresco: true` ignora o cache. ML sem `linkML` é conferido de novo a cada 1 h. Site › selecionar › "Conferir na loja (preço e link)".

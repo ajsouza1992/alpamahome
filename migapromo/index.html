@@ -500,7 +500,7 @@
     /* Ao rolar, a barra de busca gruda no topo e mostra o logo da Miga */
     if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => $(".busca-bar").classList.toggle("fixo", !e.isIntersecting)).observe($(".faixa"));
     $(".mini-marca").addEventListener("click", (e) => { e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); });
-    carregar().then(() => { pintar(); pintarRedes(); pintarCapa(); const m = /^#p=(.+)$/.exec(location.hash); if (m) abrirProduto(decodeURIComponent(m[1]), false); })
+    carregar().then(() => { produtos = produtos.filter((p) => p && !p.pausado); /* anúncio pausado na loja: some do site até voltar */ pintar(); pintarRedes(); pintarCapa(); const m = /^#p=(.+)$/.exec(location.hash); if (m) abrirProduto(decodeURIComponent(m[1]), false); })
       .catch(() => { $("#grade").setAttribute("aria-busy", "false"); $("#grade").innerHTML = '<p class="vazio"><b>Não consegui carregar os achadinhos agora</b>Tente de novo em instantes.</p>'; $("#contagem").textContent = ""; });
   })();
   </script>

@@ -276,6 +276,8 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
       if (r.status === 200 && !v && r.dados.price) { dados.fontePreco = "anúncio " + idItem; dados.preco = r.dados.price; dados.precoAntigo = r.dados.original_price && r.dados.original_price > r.dados.price ? r.dados.original_price : null; }
       if (r.status === 200 && dados.precoDaPagina && r.dados.title) dados.nome = limparTitulo(r.dados.title); // na página de afiliada o nome também pode ser de outro
       if (r.status === 200 && r.dados.permalink) dados.linkML = String(r.dados.permalink).split("#")[0];
+      if (r.status === 200 && r.dados.status) dados.statusML = r.dados.status; // active, paused, closed, under_review, inactive
+      else if (r.status === 404) dados.statusML = "sumiu";
       if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); Object.assign(dados, extrasML(r.dados)); }
       Object.assign(dados, await notaML(idItem, token));
     } else if (idProduto) {
@@ -289,6 +291,7 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
         if (x) { preco = x.price; antigo = x.original_price; }
       }
       if (preco) { dados.preco = preco; dados.precoAntigo = antigo && antigo > preco ? antigo : null; dados.fontePreco = "catálogo " + idProduto; }
+      if (r.status === 404) dados.statusML = "sumiu"; else if (r.status === 200) dados.statusML = preco ? "active" : (b.status === "inactive" ? "closed" : "paused");
       if (!dados.nome && b.name) dados.nome = b.name;
       if (!dados.descricao) { const sd = (b.short_description && b.short_description.content) || ""; const mf = (b.main_features || []).map((f) => f.text).filter(Boolean).join("\n"); if (sd || mf) dados.descricao = limparDescricao(sd || mf); }
       if (!dados.imagem && b.pictures && b.pictures[0]) dados.imagem = mlHttps(b.pictures[0].url);
@@ -316,7 +319,7 @@ async function rotaDescricao(request, env) {
   let descricao = "", fonte = "";
   try {
     if (lojaDaUrl(url) === "mercadolivre" && env.ML_APP_ID && env.ML_SECRET) {
-      let d = await lerCache("produto", url);
+      let d = await lerCache("produto2", url);
       if (!d || !d.descricao) { d = await extrairProduto(url).catch(() => ({ loja: "mercadolivre", urlFinal: url })); d = await completarPelaApiML(d, env); }
       if (d && d.descricao) { descricao = d.descricao; fonte = "loja"; }
     }
@@ -613,7 +616,7 @@ async function rotaProduto(request, env) {
   try { b = await request.json(); } catch (e) { return json({ erro: "Requisição inválida." }, 400); }
   const url = String(b.url || "").trim();
   try {
-    const guardado = await lerCache("produto", url);
+    const guardado = b.fresco ? null : await lerCache("produto2", url); // produto2: as respostas agora trazem o link direto e a situação do anúncio
     if (guardado) return json({ ...guardado, doCache: true });
     let dados;
     try { dados = await extrairProduto(url); }
@@ -622,7 +625,7 @@ async function rotaProduto(request, env) {
     if (dados.loja === "shopee") dados = await completarPelaApiShopee(dados, env, dados.pista, url);
     delete dados.pista;
     delete dados.pistaML; const soPagina = dados.precoDaPagina && !dados.completo; delete dados.precoDaPagina;
-    if (dados.nome && !soPagina) await gravarCache("produto", url, dados, 1800); // 30 minutos
+    if (dados.nome && !soPagina) await gravarCache("produto2", url, dados, 1800); // 30 minutos
     return json(dados);
   } catch (e) {
     return json({ erro: e.message || "Não consegui ler o produto." }, 422);

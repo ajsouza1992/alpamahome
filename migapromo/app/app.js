@@ -1513,10 +1513,26 @@
     const b = e.target.closest("[data-enviar-para]"); if (!b) return;
     const aba = b.dataset.enviarPara, n = aba === "pp" ? marcados.size : aba === "ac" ? (acSel ? acSel.size : 0) : (stEst.sel ? stEst.sel.size : 0);
     if (!n) { toast("Toque nos produtos primeiro"); return; }
-    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"], ["preco", "Atualizar o preço (da loja)"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria no site"]] }[aba];
+    const ops = { pp: [["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"], ["preco", "Atualizar o preço (da loja)"]], ac: [["lista", "Minha lista"], ["site", "Site"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria"]], st: [["lista", "Minha lista"], ["postar", "Postar agora"], ["categoria", "Mudar a categoria no site"], ["preco", "Conferir na loja (preço e link)"]] }[aba];
     const v = await escolherOpcao(`Enviar ${n} ${n === 1 ? "produto" : "produtos"} para…`, ops, ""); if (!v) return;
     // Mudar a categoria em massa (Minha lista e Achados; o Site usa a escolha de várias categorias)
     // Atualizar o preço dos selecionados direto da loja (corrige preço errado)
+    if (v === "preco" && aba === "st") {
+      const ids = [...stEst.sel]; stEst.sel = null; renderSite(); toast(`Conferindo ${ids.length} ${ids.length === 1 ? "produto" : "produtos"} na loja…`);
+      let ult = "", saiu = 0, falhou = 0;
+      for (const id of ids) {
+        const p = vitrineMap.get(id); if (!p || !p.link) continue; const naLista = fila().some((x) => x.id === id);
+        let d = null; try { d = await api("produto", { url: p.link, fresco: true }); } catch (e) { if (e.codigo === "senha") break; falhou++; continue; }
+        const r = await aplicarConferencia({ id, link: p.link, site: !naLista }, d); if (naLista) salvarFila(true);
+        try { const c = precosConferidos(); c[id] = Date.now(); localStorage.setItem("miga_precos_conf", JSON.stringify(c)); } catch (e) { /* segue */ }
+        if (r.saiu) { saiu++; ult = "Anúncio encerrado na loja: saiu do site"; }
+        else if (r.pausado) ult = "Anúncio pausado na loja: escondido no site até voltar";
+        else if (!d || !d.preco) { falhou++; ult = "A loja não respondeu. Tente de novo mais tarde."; }
+        else ult = `Preço da loja: ${brl(d.preco)} · ${(vitrineMap.get(id) || {}).linkML || linkDiretoML(d.linkML) ? "o botão Comprar abre o produto direto" : "link direto não encontrado (fica o link de afiliado)"}`;
+      }
+      renderFila(); try { renderSite(); } catch (e) { /* segue */ }
+      toast(ids.length === 1 ? ult : `${ids.length - falhou} ${ids.length - falhou === 1 ? "conferido" : "conferidos"}${saiu ? ` · ${saiu} ${saiu === 1 ? "saiu" : "saíram"} do site` : ""}${falhou ? ` · ${falhou} sem resposta da loja` : ""}`); return;
+    }
     if (v === "preco" && aba === "pp") {
       const l = itensMarcados(); if (!l.length) return; sairModoVarios(); renderFila(); toast(`Conferindo o preço de ${l.length} ${l.length === 1 ? "produto" : "produtos"}…`);
       let mudou = 0, falhou = 0;
@@ -3079,7 +3095,7 @@
     const img = String(it.imagem || ""), imgOk = img && (!img.startsWith("data:") || img.length < 600000) ? img : "";
     return { id: it.id, nome: limparNome(it.nome || ""), preco: it.precoNovo || null, precoAntigo: it.precoAntigo && it.precoNovo && it.precoAntigo > it.precoNovo ? it.precoAntigo : null,
       cupom: it.cupom ? String(it.cupom).toUpperCase() : "", loja: it.loja || "", link: it.link || "", imagem: imgOk, tipo: it.categoria || "outros", tipos: [...new Set([it.categoria || "outros", ...((antes && Array.isArray(antes.tipos)) ? antes.tipos : [])])], para: PARA_SITE[para] ? para : "mulher",
-      descricao: String(descricao || "").slice(0, 1200), linkML: linkDiretoML(it.linkML) || (antes && antes.linkML) || "", fav: !!it.fav, frete: !!it.freteGratis, oficial: !!it.lojaOficial, maisVendido: it.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
+      descricao: String(descricao || "").slice(0, 1200), linkML: linkDiretoML(it.linkML) || (antes && antes.linkML) || "", pausado: !!it.pausadoML, fav: !!it.fav, frete: !!it.freteGratis, oficial: !!it.lojaOficial, maisVendido: it.maisVendido || null, publicadoEm: (antes && antes.publicadoEm) || Date.now(), atualizadoEm: Date.now() };
   }
   /* Pacotes do site: toda mudança nos produtos do site refaz os pacotes (uns segundos depois, uma vez só) */
   function ligarPacotes(d) {
@@ -3116,40 +3132,57 @@
   let conferindoPrecos = false;
   const VALIDADE_PRECO = 3 * 36e5;
   function precosConferidos() { try { return JSON.parse(localStorage.getItem("miga_precos_conf") || "{}") || {}; } catch (e) { return {}; } }
+  const ML_FORA = ["closed", "inactive"], ML_PAUSADO = ["paused", "under_review", "sumiu"];
+  const novoAntigo = (d) => (d.precoAntigo && d.precoAntigo > d.preco ? d.precoAntigo : null);
+  /** Aplica o que veio da loja num produto (Minha lista ou Site). Anúncio encerrado no ML sai do site; pausado fica escondido no site. */
+  async function aplicarConferencia(t, d) {
+    const res = { preco: false, link: false, saiu: false, pausado: false };
+    const st = d && d.statusML, fora = ML_FORA.includes(st), pausado = ML_PAUSADO.includes(st);
+    if (!t.site) {
+      const it = itemPorId(t.id); if (!it || !d) return res;
+      if (d.linkML && d.linkML !== it.linkML) { it.linkML = d.linkML; if (!it.textoEditado) it.texto = ""; res.link = true; }
+      if (!!it.pausadoML !== (fora || pausado)) { it.pausadoML = fora || pausado; res.link = true; }
+      if (d.preco && (d.preco !== it.precoNovo || novoAntigo(d) !== (it.precoAntigo || null))) { it.precoNovo = d.preco; it.precoAntigo = novoAntigo(d); if (!it.textoEditado) it.texto = ""; res.preco = true; }
+      if (fora && vitrineMap.has(t.id)) { try { await dados.vitrineApagar(t.id); vitrineMap.delete(t.id); res.saiu = true; } catch (e) { /* tenta na próxima */ } }
+      res.pausado = pausado; return res;
+    }
+    const p = vitrineMap.get(t.id); if (!p) return res;
+    if (fora) { try { await dados.vitrineApagar(t.id); vitrineMap.delete(t.id); res.saiu = true; } catch (e) { /* tenta na próxima */ } return res; }
+    let nv = null;
+    if (!d || (!d.preco && !d.nome)) { if (!p.indisponivel) nv = { ...p, indisponivel: true }; }
+    else if (d.preco && (d.preco !== p.preco || novoAntigo(d) !== (p.precoAntigo || null) || p.indisponivel)) nv = { ...p, preco: d.preco, precoAntigo: novoAntigo(d), indisponivel: false };
+    const lm = linkDiretoML(d && d.linkML); if (lm && lm !== p.linkML) nv = { ...(nv || p), linkML: lm };
+    if (d && !!p.pausado !== pausado) nv = { ...(nv || p), pausado };
+    if (nv) { res.preco = nv.preco !== p.preco; res.link = true; nv.precoConferidoEm = Date.now(); try { await dados.vitrineSalvar(nv); vitrineMap.set(t.id, nv); } catch (e) { /* tenta na próxima */ } }
+    res.pausado = pausado; return res;
+  }
   async function conferirPrecosSite() {
     if (conferindoPrecos || !navigator.onLine || document.visibilityState === "hidden") return;
     conferindoPrecos = true;
     try {
-      const conf = precosConferidos(), agora = Date.now(), velho = (id, em) => agora - Math.max(conf[id] || 0, em || 0) > VALIDADE_PRECO;
+      const conf = precosConferidos(), agora = Date.now();
+      // Produto do ML ainda sem o link direto: tenta de novo a cada hora (os outros, a cada 3 horas)
+      const velho = (id, em, semLink) => agora - Math.max(conf[id] || 0, semLink ? 0 : em || 0) > (semLink ? 36e5 : VALIDADE_PRECO);
+      const ehML = (x) => (x.loja || detectarLoja(x.link)) === "mercadolivre";
       const tarefas = [], naLista = new Set();
-      for (const it of fila()) { if (it.carregando || !it.link || !it.id) continue; naLista.add(it.id); if (velho(it.id)) tarefas.push({ id: it.id, link: it.link }); }
-      for (const p of vitrineMap.values()) { if (!p.link || naLista.has(p.id)) continue; if (velho(p.id, p.precoConferidoEm)) tarefas.push({ id: p.id, link: p.link, site: true }); }
+      for (const it of fila()) { if (it.carregando || !it.link || !it.id) continue; naLista.add(it.id); if (velho(it.id, 0, ehML(it) && !it.linkML)) tarefas.push({ id: it.id, link: it.link }); }
+      for (const p of vitrineMap.values()) { if (!p.link || naLista.has(p.id)) continue; if (velho(p.id, p.precoConferidoEm, ehML(p) && !p.linkML)) tarefas.push({ id: p.id, link: p.link, site: true }); }
       if (!tarefas.length) return;
-      let mudouLista = 0, mudouSite = 0, mudouLink = false, parar = false, i = 0;
-      const novoAntigo = (d) => (d.precoAntigo && d.precoAntigo > d.preco ? d.precoAntigo : null);
+      let precos = 0, saiu = 0, mudouLista = false, parar = false, i = 0;
       const umPorVez = async () => {
         while (!parar && i < tarefas.length) {
           const t = tarefas[i++]; let d = null;
           try { d = await api("produto", { url: t.link }); } catch (e) { if (e.codigo === "senha") { parar = true; break; } continue; }
           conf[t.id] = Date.now();
-          if (!t.site) {
-            const it = itemPorId(t.id); if (!it || !d || !d.preco) continue;
-            if (d.linkML && d.linkML !== it.linkML) { it.linkML = d.linkML; if (!it.textoEditado) it.texto = ""; mudouLink = true; }
-            if (d.preco !== it.precoNovo || novoAntigo(d) !== (it.precoAntigo || null)) { it.precoNovo = d.preco; it.precoAntigo = novoAntigo(d); if (!it.textoEditado) it.texto = ""; mudouLista++; }
-            continue;
-          }
-          const p = vitrineMap.get(t.id); if (!p) continue;
-          let nv = null;
-          if (!d || (!d.preco && !d.nome)) { if (!p.indisponivel) nv = { ...p, indisponivel: true }; }
-          else if (d.preco && (d.preco !== p.preco || novoAntigo(d) !== (p.precoAntigo || null) || p.indisponivel)) nv = { ...p, preco: d.preco, precoAntigo: novoAntigo(d), indisponivel: false };
-          const lm = linkDiretoML(d && d.linkML); if (lm && lm !== p.linkML) nv = { ...(nv || p), linkML: lm };
-          if (nv) { const precoMudou = nv.preco !== p.preco || nv.indisponivel !== p.indisponivel; nv.precoConferidoEm = Date.now(); try { await dados.vitrineSalvar(nv); vitrineMap.set(t.id, nv); if (precoMudou) mudouSite++; } catch (e) { /* tenta na próxima */ } }
+          const r = await aplicarConferencia(t, d);
+          if (r.preco) precos++; if (r.saiu) saiu++; if (!t.site && (r.preco || r.link)) mudouLista = true;
         }
       };
       await Promise.all([umPorVez(), umPorVez(), umPorVez()]);
       try { const lim = Date.now() - 30 * 864e5; Object.keys(conf).forEach((k) => { if (conf[k] < lim) delete conf[k]; }); localStorage.setItem("miga_precos_conf", JSON.stringify(conf)); } catch (e) { /* segue */ }
-      if (mudouLista || mudouLink) salvarFila(true); // o site acompanha os da lista sozinho
-      if (mudouLista || mudouSite) { renderFila(); try { renderSite(); } catch (e) { /* segue */ } toast(`Preços atualizados das lojas: ${mudouLista + mudouSite} ${mudouLista + mudouSite === 1 ? "mudou" : "mudaram"}`); }
+      if (mudouLista) salvarFila(true); // o site acompanha os da lista sozinho
+      if (precos || saiu || mudouLista) { renderFila(); try { renderSite(); } catch (e) { /* segue */ } }
+      if (precos || saiu) toast([precos ? `Preços atualizados das lojas: ${precos} ${precos === 1 ? "mudou" : "mudaram"}` : "", saiu ? `${saiu} ${saiu === 1 ? "produto encerrado saiu" : "produtos encerrados saíram"} do site` : ""].filter(Boolean).join(" · "));
     } finally { conferindoPrecos = false; }
   }
   setInterval(conferirPrecosSite, 30 * 6e4);
@@ -3195,7 +3228,7 @@
   /** Mudou o preço, a foto ou o cupom no app: o site acompanha */
   function sincronizarVitrine() {
     for (const it of fila()) { const v = vitrineMap.get(it.id); if (!v || it.carregando) continue;
-      const novo = produtoSite(it, v.para, v.descricao, v), muda = ["nome", "preco", "precoAntigo", "cupom", "loja", "link", "linkML", "imagem", "tipo"].some((k) => (novo[k] || "") !== (v[k] || ""));
+      const novo = produtoSite(it, v.para, v.descricao, v), muda = ["nome", "preco", "precoAntigo", "cupom", "loja", "link", "linkML", "imagem", "tipo", "pausado"].some((k) => (novo[k] || "") !== (v[k] || ""));
       if (muda) { vitrineMap.set(it.id, novo); dados.vitrineSalvar(novo).catch(() => {}); } }
   }
   let vsSel = null;
