@@ -419,7 +419,7 @@
     /* ---------- Compartilhar ---------- */
     async function compartilhar(id) {
       const p = produtos.find((x) => x.id === id); if (!p) return; registrar("compartilhar", p);
-      const url = location.origin + location.pathname + "#p=" + encodeURIComponent(id), d = desconto(p),
+      const url = location.origin + "/p/" + encodeURIComponent(id), d = desconto(p),
         texto = [`Olha esse achadinho que eu encontrei na Miga Promo 💖`, ``, `🛍️ ${p.nome}`, p.preco ? `💰 ${d >= 5 ? `De ${brl(p.precoAntigo)} por ` : "Por "}${brl(p.preco)}${d >= 5 ? ` (-${d}%)` : ""}` : "", p.cupom ? `🎟️ Cupom: ${p.cupom}` : "", ``, `👉 Veja aqui:`].filter((x, i, a) => x || (i && a[i - 1])).join("\n");
       if (navigator.share) { try { await navigator.share({ title: p.nome, text: texto, url }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
       try { await navigator.clipboard.writeText(texto + "\n" + url); toast("Link copiado: é só colar e mandar"); } catch (e) { toast(url); }

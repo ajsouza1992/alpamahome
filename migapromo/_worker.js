@@ -987,6 +987,40 @@ async function rotaAfiliado(request, env) {
   catch (e) { return json({ erro: e.message }, 502); }
 }
 
+/* ======================= Link de produto para compartilhar (/p/ID) =======================
+   O WhatsApp não lê o que vem depois do "#", então o link /#p=ID mostrava a imagem geral do site.
+   /p/ID devolve o site com a foto, o nome e o preço do produto na prévia e abre o produto. */
+function valorFS(v) {
+  if (!v) return null; if ("stringValue" in v) return v.stringValue; if ("doubleValue" in v) return Number(v.doubleValue); if ("integerValue" in v) return Number(v.integerValue);
+  if ("booleanValue" in v) return v.booleanValue; if ("nullValue" in v) return null;
+  if ("arrayValue" in v) return (v.arrayValue.values || []).map(valorFS);
+  if ("mapValue" in v) return Object.fromEntries(Object.entries(v.mapValue.fields || {}).map(([k, x]) => [k, valorFS(x)]));
+  return null;
+}
+const escHtml = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const brlTxt = (n) => "R$ " + Number(n).toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+async function rotaLinkProduto(request, env, id) {
+  const site = new URL("/", request.url);
+  const pagina = await env.ASSETS.fetch(new Request(site.href, { headers: request.headers }));
+  let html = await pagina.text(), p = null;
+  try {
+    const projeto = env.FIREBASE_PROJECT_ID || "miga-promo-d4f51";
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${projeto}/databases/(default)/documents/vitrine/miga/produtos/${encodeURIComponent(id)}`, { cf: { cacheTtl: 300 } });
+    if (r.ok) { const d = await r.json(); p = Object.fromEntries(Object.entries(d.fields || {}).map(([k, v]) => [k, valorFS(v)])); }
+  } catch (e) { p = null; }
+  const abrir = `<base href="/"><script>history.replaceState(null,"","/#p=${encodeURIComponent(id)}")</script>`;
+  if (p && p.nome) {
+    const desc = p.preco ? (p.precoAntigo && p.precoAntigo > p.preco ? `De ${brlTxt(p.precoAntigo)} por ${brlTxt(p.preco)} (-${Math.round((1 - p.preco / p.precoAntigo) * 100)}%)` : `Por ${brlTxt(p.preco)}`) + " · Achadinho da Miga Promo" : "Achadinho da Miga Promo";
+    const img = /^https:\/\//.test(p.imagem || "") ? p.imagem : "";
+    const trocar = (prop, valor) => { const re = new RegExp(`(<meta (?:property|name)="${prop}" content=")[^"]*(")`); html = re.test(html) ? html.replace(re, `$1${escHtml(valor)}$2`) : html; };
+    trocar("og:title", p.nome); trocar("og:description", desc); trocar("og:url", new URL("/p/" + encodeURIComponent(id), request.url).href); trocar("twitter:card", img ? "summary_large_image" : "summary");
+    if (img) { trocar("og:image", img); html = html.replace(/<meta property="og:image:(width|height)"[^>]*>\s*/g, ""); }
+    html = html.replace(/<title>[^<]*<\/title>/, `<title>${escHtml(p.nome)} · Miga Promo</title>`);
+  }
+  html = html.replace(/<head>/i, "<head>" + abrir);
+  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300" } });
+}
+
 /* ======================= Roteador ======================= */
 export default {
   async fetch(request, env) {
@@ -994,7 +1028,9 @@ export default {
     const metodo = request.method;
     // Aceita /miga/api/... (site alpama.app), /app/api/... (domínio próprio da Miga) e /api/...
     const m = pathname.match(/^(?:\/miga|\/app)?\/api\/([a-z]+)$/);
+    const lp = pathname.match(/^\/p\/([\w-]{1,80})\/?$/);
     try {
+      if (lp && metodo === "GET") return await rotaLinkProduto(request, env, lp[1]);
       if (m && m[1] === "produto" && metodo === "POST") return await rotaProduto(request, env);
       if (m && m[1] === "gerar" && metodo === "POST") return await rotaGerar(request, env);
       if (m && m[1] === "imagem" && metodo === "GET") return await rotaImagem(request);
