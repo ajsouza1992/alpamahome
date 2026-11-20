@@ -129,6 +129,10 @@
     dialog { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; width: 100%; height: 100%; margin: 0; }
     dialog::backdrop { background: rgba(40, 30, 20, .45); }
     .folha { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92dvh; overflow: auto; background: #fff; border-radius: 26px 26px 0 0; padding: 14px 18px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+    .share-ops { display: grid; gap: 8px; padding-top: 6px; }
+    .share-ops a, .share-ops button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 10px 14px; border: 1.4px solid #f1eadb; border-radius: 16px; background: #fff; font: inherit; font-size: 15px; font-weight: 700; color: var(--preto); text-decoration: none; text-align: left; cursor: pointer; }
+    .share-ops img { width: 30px; height: 30px; border-radius: 8px; }
+    .share-ops .ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 800; flex: none; }
     .alca { width: 40px; height: 4px; border-radius: 9px; background: #e2d8c4; margin: 0 auto 2px; }
     .folha-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .folha-cab h2 { margin: 0; font-size: 18px; font-weight: 800; }
@@ -254,6 +258,11 @@
     <div class="folha-cab"><h2 id="tFiltros">Filtros</h2><button type="button" class="fechar" data-fechar-f aria-label="Fechar">✕</button></div>
     <div id="filtros"></div>
     <div class="bts"><button type="button" data-limpar>Limpar</button><button type="button" class="ver-n" id="verN">Ver achadinhos</button></div>
+  </div></dialog>
+  <dialog id="dlgShare" aria-labelledby="tShare"><div class="folha">
+    <div class="alca"></div>
+    <div class="folha-cab"><h2 id="tShare">Compartilhar</h2><button type="button" class="fechar" data-fechar-s aria-label="Fechar">✕</button></div>
+    <div class="share-ops" id="shareOps"></div>
   </div></dialog>
   <dialog id="dlgProd" aria-label="Produto"><div class="folha prod" id="prod"></div></dialog>
   <div class="toast" id="toast" role="status"></div>
@@ -422,7 +431,13 @@
       const url = location.origin + "/p/" + encodeURIComponent(id), d = desconto(p),
         texto = [`Olha esse achadinho que eu encontrei na Miga Promo 💖`, ``, `🛍️ ${p.nome}`, p.preco ? `💰 ${d >= 5 ? `De ${brl(p.precoAntigo)} por ` : "Por "}${brl(p.preco)}${d >= 5 ? ` (-${d}%)` : ""}` : "", p.cupom ? `🎟️ Cupom: ${p.cupom}` : "", ``, `👉 Veja aqui:`].filter((x, i, a) => x || (i && a[i - 1])).join("\n");
       if (navigator.share) { try { await navigator.share({ title: p.nome, text: texto, url }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
-      try { await navigator.clipboard.writeText(texto + "\n" + url); toast("Link copiado: é só colar e mandar"); } catch (e) { toast(url); }
+      // Navegador sem o compartilhar do celular (ex.: navegador dentro do Instagram): abre as opções da Miga
+      const tudo = texto + "\n" + url, en = encodeURIComponent;
+      $("#shareOps").innerHTML = `<a href="https://wa.me/?text=${en(tudo)}" target="_blank" rel="noopener"><img src="app/rede-whatsapp.png" alt="">WhatsApp</a>
+        <a href="https://t.me/share/url?url=${en(url)}&text=${en(texto)}" target="_blank" rel="noopener"><span class="ic" style="background:#229ed9">T</span>Telegram</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=${en(url)}" target="_blank" rel="noopener"><span class="ic" style="background:#1877f2">f</span>Facebook</a>
+        <button type="button" data-copiar-share="${esc(tudo)}"><span class="ic" style="background:var(--rosa)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>Copiar o link</button>`;
+      $("#dlgShare").showModal();
     }
 
     /* ---------- Produto aberto ---------- */
@@ -469,6 +484,9 @@
       const ab = t.closest("[data-id]"); if (ab) { abrirProduto(ab.dataset.id); return; }
       if (t.closest("[data-fechar]")) { fecharProduto(); return; }
       if (t.closest("[data-fechar-f]")) { $("#dlgFiltros").close(); return; }
+      if (t.closest("[data-fechar-s]")) { $("#dlgShare").close(); return; }
+      const cs = t.closest("[data-copiar-share]"); if (cs) { try { await navigator.clipboard.writeText(cs.dataset.copiarShare); toast("Link copiado: é só colar e mandar"); } catch (er) { toast("Não consegui copiar"); } $("#dlgShare").close(); return; }
+      if (t.closest("#shareOps a")) { setTimeout(() => $("#dlgShare").close(), 300); return; }
       if (t.closest("#abrirFiltros")) { $("#filtros").innerHTML = htmlFiltros(); $("#dlgFiltros").showModal(); return; }
       if (t.closest("#verN")) { $("#dlgFiltros").close(); $(".busca-bar").scrollIntoView({ behavior: "smooth" }); return; }
       if (t.closest("[data-limpar]")) { est.para = ""; est.tipos.clear(); est.lojas.clear(); est.preco = ""; est.vant.clear(); est.grupo = ""; est.ordem = "destaque"; pintar(); return; }
@@ -485,7 +503,7 @@
       const vt = t.closest("[data-vant]"); if (vt) { alterna(est.vant, vt.dataset.vant); pintar(); return; }
       const od = t.closest("[data-ordem]"); if (od) { est.ordem = od.dataset.ordem; pintar(); return; }
     });
-    ["dlgFiltros", "dlgProd"].forEach((id) => $("#" + id).addEventListener("click", (e) => { if (e.target.id === id) e.target.close(); }));
+    ["dlgFiltros", "dlgProd", "dlgShare"].forEach((id) => $("#" + id).addEventListener("click", (e) => { if (e.target.id === id) e.target.close(); }));
     let buscaT = 0;
     $("#busca").addEventListener("input", (e) => { est.q = e.target.value; clearTimeout(buscaT); buscaT = setTimeout(pintar, 150); });
 
