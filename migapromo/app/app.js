@@ -1112,6 +1112,48 @@
   function linkPost(it) { return (it && it.loja === "mercadolivre" && linkDiretoML(it.linkML)) || (it && it.link) || ""; }
   /** Produto da Shopee que ainda está com o link comum (a comissão não viria para você) */
   function semAfiliado(i) { return !!i && (i.loja || detectarLoja(i.link)) === "shopee" && !i.afOk && !i.linkOriginal && !/(^|\/\/)s\.shopee\.com\.br\//.test(String(i.link || "")); }
+  /** Situação do link de afiliado de um produto: "ok", "falta" (comissão não viria) ou "outra" (loja sem conferência automática) */
+  function situacaoAfiliado(i) {
+    if (!i || !i.link) return "falta"; const lj = i.loja || detectarLoja(i.link), l = String(i.link);
+    if (lj === "shopee") return semAfiliado(i) ? "falta" : "ok";
+    if (lj === "mercadolivre") return linkOficialML(l) || /[?&]matt_word=/.test(l) ? "ok" : "falta";
+    return "outra";
+  }
+  /** Tenta pôr o seu link de afiliado agora (Shopee pela API; Mercado Livre com o seu código) */
+  async function trocarAfiliadoAgora(i) {
+    const lj = i.loja || detectarLoja(i.link);
+    if (lj === "mercadolivre") { const n = comCodigoML(i.link); if (n !== i.link) { i.link = n; if (!i.textoEditado) i.texto = ""; } }
+    else if (lj === "shopee") { const n = await linkShopeeAfiliado(i.urlFinal || i.linkOriginal || i.link); if (n) { if (n !== i.link) { i.linkOriginal = i.link; i.link = n; if (!i.textoEditado) i.texto = ""; } i.afOk = true; shopeeFalhou.delete(i.link); } }
+    return situacaoAfiliado(i) !== "falta";
+  }
+  /** Antes de postar: confere o link de afiliado; tenta trocar e, se não der, pergunta */
+  async function liberarAfiliado(itens) {
+    const falta = itens.filter((i) => i && situacaoAfiliado(i) === "falta"); if (!falta.length) return true;
+    toast("Conferindo o seu link de afiliado…");
+    for (const i of falta) { try { await trocarAfiliadoAgora(i); } catch (e) { /* segue */ } }
+    const resto = falta.filter((i) => situacaoAfiliado(i) === "falta");
+    salvarFila(true); renderFila(); if (ppAtual) mostrarAfPp();
+    if (!resto.length) { toast("Link de afiliado confirmado"); return true; }
+    return await confirmar({ titulo: resto.length === 1 ? "Produto sem o seu link de afiliado" : `${resto.length} produtos sem o seu link de afiliado`,
+      texto: `${resto.length === 1 ? `"${limparNome(resto[0].nome || "Produto")}" está` : "Eles estão"} com o link comum da loja. Se alguém comprar por ele, a comissão não vem para você.${(resto[0].loja || detectarLoja(resto[0].link)) === "mercadolivre" && !(config.mlMattWord && config.mlMattTool) ? " Preencha o seu código do Mercado Livre em Ajustes → Afiliados." : ""}`,
+      ok: "Postar mesmo assim" });
+  }
+  /** Tela do produto: mostra se o link é o seu de afiliado */
+  function mostrarAfPp() {
+    const box = $("#ppAf"); if (!box) return; const it = ppAtual; if (!it || !it.link) { box.hidden = true; return; }
+    const s = situacaoAfiliado(it); box.hidden = false; box.className = "pp-af pp-af--" + s;
+    box.innerHTML = s === "ok" ? `<b>Link de afiliado confirmado</b><small>${(it.loja || detectarLoja(it.link)) === "shopee" ? "Link da Shopee no seu nome (s.shopee.com.br)" : "Link do Mercado Livre com o seu código de afiliado"}</small>`
+      : s === "falta" ? `<span><b>Sem o seu link de afiliado</b><small>Se alguém comprar por este link, a comissão não vem para você.</small></span><button type="button" class="btn btn--branco" id="ppAfTrocar">Trocar agora</button>`
+      : `<b>Confira o link de afiliado</b><small>O app não confere links da ${esc(NOME_LOJA[it.loja] || "loja")}. Use o link que a loja gera no seu painel de afiliado.</small>`;
+  }
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("#ppAfTrocar"); if (!b || !ppAtual) return;
+    b.disabled = true; b.textContent = "Trocando…";
+    let ok = false; try { ok = await trocarAfiliadoAgora(ppAtual); } catch (er) { ok = false; }
+    if (ok) { $("#ppLinkItem").value = ppAtual.link; salvarFila(true); renderFila(); toast("Link de afiliado confirmado"); }
+    else toast((ppAtual.loja || detectarLoja(ppAtual.link)) === "mercadolivre" ? "Preencha o seu código do Mercado Livre em Ajustes → Afiliados" : "A Shopee não gerou o link de afiliado para este produto. Ele pode não estar no programa de afiliados.");
+    mostrarAfPp();
+  });
   function linkAfiliadoAuto(p) {
     if (!p || !p.link) return "";
     if (p.afiliado || linkOficialML(p.link)) return p.link;
@@ -3002,8 +3044,8 @@
     box.hidden = false;
     { const ch = l.filter((e) => e.tipo === "loja" && new Date(e.em).toDateString() === new Date().toDateString()).length, b = document.querySelector('[data-in-num="cliques"] b'); if (b) b.textContent = ch; }
   }
-  function criarAPartirDaLista(canal, l, camp) {
-    if (!l.length) return;
+  async function criarAPartirDaLista(canal, l, camp) {
+    if (!l.length) return; if (!(await liberarAfiliado(l))) return;
     const ids = l.map((x) => x.id), C = CAMPANHAS[camp === undefined ? campanhaEscolhida : camp] || null;
     wz = { canal, passo: null, itemId: ids[0], veioDaLista: true, camp: C ? (camp === undefined ? campanhaEscolhida : camp) : "", formato: "story", modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), idx: 0, res: {}, lugares: lugaresSalvos() };
     if (canal === "reels") { wz.reels = { itens: ids, modelo: "achadinho", cor: C ? (corCampanha || C.cor) : proximaCor(), camp: wz.camp, resultado: null, iniciado: true }; wz.reels.modelo = (CAMPANHAS[wz.camp] ? "achadinho" : modeloAutomatico(l[0])); wz.passo = ids.length > 1 ? "rModelo" : "rModelo"; }
@@ -3430,7 +3472,7 @@
     $("#ppPrecoCupom").value = item.precoCupom ? paraCampo(item.precoCupom) : "";
     if (item.usarCupom && item.precoCupom && item.precoSemCupom) $("#ppNovo").value = paraCampo(item.precoSemCupom); // o campo "Preço novo" mostra o preço sem cupom
     if (!item.obsManual) item.obs = ""; $("#ppObs").value = item.obs || ""; pintarUsarCupom(item); // vem limpa: só o que você digitar
-    $("#ppLinkItem").value = item.link || "";
+    $("#ppLinkItem").value = item.link || ""; mostrarAfPp();
     ppCategoria.marcar(item.categoria || "outros"); pintarCatPp(item.categoria || "outros");
     mostrarFalta(pedirFalta);
     ajustarObs();
@@ -3461,7 +3503,7 @@
     salvarFila(true); fecharItemFila();
   });
   [["#ppNome", (v) => { ppAtual.nome = v.trim(); ppAtual.texto = ""; }], ["#ppAntigo", (v) => { ppAtual.precoAntigo = lerPreco(v); ppAtual.texto = ""; }], ["#ppNovo", (v) => { ppAtual.precoNovo = lerPreco(v); ppAtual.texto = ""; }],
-    ["#ppCupom", (v) => { ppAtual.cupom = v.trim(); ppAtual.texto = ""; }], ["#ppLinkItem", (v) => { if (urlOk(v)) { ppAtual.link = v.trim(); ppAtual.texto = ""; } }]]
+    ["#ppCupom", (v) => { ppAtual.cupom = v.trim(); ppAtual.texto = ""; }], ["#ppLinkItem", (v) => { if (urlOk(v)) { ppAtual.link = v.trim(); ppAtual.texto = ""; delete ppAtual.afOk; delete ppAtual.linkOriginal; mostrarAfPp(); } }]]
     .forEach(([id, f]) => $(id).addEventListener("input", () => { if (!ppAtual) return; f($(id).value); salvarFila(); mostrarFalta(false); }));
   $("#ppCategoria").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && ppAtual) { ppAtual.categoria = b.dataset.v; ppAtual.texto = ""; salvarFila(); } });
   async function trocarFotoPp(arquivo) {
@@ -3588,7 +3630,8 @@
     return [...base, "tipoWhats", "mensagem", "enviar"];
   }
   const filtroCatWz = () => `<button type="button" class="chip-filtro chip-filtro--largo" data-wz-cat><small>Categoria</small><b>${(wz.filtroCat && wz.filtroCat !== "todas") ? CATS_LISTA[wz.filtroCat] : "Todas"}</b><span class="seta">▾</span></button>`;
-  function iniciarCriar(op = {}) {
+  async function iniciarCriar(op = {}) {
+    if (op.itemId && !(await liberarAfiliado([itemPorId(op.itemId)].filter(Boolean)))) return;
     wz = { passo: op.itemId ? "lugares" : "canal", canal: op.itemId ? "roteiro" : null, itemId: op.itemId || null, veioDaLista: !!op.itemId, formato: "story", modelo: "achadinho", cor: op.itemId ? proximaCor() : "auto", idx: 0, res: {}, lugares: lugaresSalvos(), rapido: !!op.itemId, mov: movSalvo() };
     mostrarPasso();
   }
@@ -4221,8 +4264,9 @@
     return `<button type="button" class="btn btn--branco rt-site" id="rtSite" data-ids="${esc(fora.join(","))}"><svg class="ic-mono" aria-hidden="true"><use href="#i-site"/></svg>${fora.length === 1 ? "Enviar para o site" : `Enviar ${fora.length} para o site`}</button>`;
   }
   const movSalvo = () => { try { const v = localStorage.getItem("miga_mov"); return v === null ? true : v === "1"; } catch (e) { return true; } };
-  function postarProdutosNoWhats(ids, base = {}) {
+  async function postarProdutosNoWhats(ids, base = {}) {
     ids = ids.filter((id) => !!itemPorId(id)); if (!ids.length) { toast("Esses produtos não estão mais na lista"); return; }
+    if (!(await liberarAfiliado(ids.map(itemPorId)))) return;
     const lug = lugaresSalvos().filter((k) => LUGARES[k].texto);
     wz = { canal: "roteiro", passo: "rpConferir", rapido: true, rpPulaLugares: true, rpItemModelo: ids[0], mov: movSalvo(), veioDaLista: true, itemId: ids[0], filaRoteiro: ids.length > 1 ? ids : null, idx: 0, res: {}, lugares: lug.length ? lug : ["grupo"], modelo: base.modelo || "achadinho", camp: base.camp || "", tituloArte: base.titulo || "", cor: base.cor || "rosa", formato: "story" };
     ids.forEach((id) => { const it = itemPorId(id); if (it && !it.textoEditado) it.texto = ""; });
@@ -4297,9 +4341,10 @@
   }
   function htmlRapido(attr) { return rpLer().on ? `<div class="rp-bloco"><b>Postar rápido</b><div class="rp-botoes">${[["story", "Story"], ["status", "Status"], ["grupo", "Grupos"], ["feed", "Feed"], ["tudo", "Tudo"]].map(([k, n]) => `<button type="button" ${attr}="${k}">${n}</button>`).join("")}</div></div>` : ""; }
   /** Um toque: já abre a tela de postar com modelo, cor e (se ligado) o vídeo sendo criado */
-  function postarRapido(it, onde) {
+  async function postarRapido(it, onde) {
     if (!it || it.carregando) return;
     if (!it.nome) { toast("Complete o nome do produto primeiro"); return; }
+    if (!(await liberarAfiliado([it]))) return;
     const P = rpLer(), lug = onde === "tudo" ? lugaresSalvos() : LUGARES[onde] ? [onde] : ["story"];
     const C = CAMPANHAS[campanhaEscolhida] || null;
     const modelo = P.modelo === "auto" || !MODELOS_REELS[P.modelo] ? modeloAutomatico(it) : P.modelo;

@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=424` → próxima `?v=425`
-- `app/sw.js`: `VERSAO = "miga-promo-v427"` → próxima `v428`
-- Comando usado: `sed -i 's/?v=424/?v=425/g' app/index.html app/sw.js && sed -i 's/miga-promo-v427/miga-promo-v428/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=425` → próxima `?v=426`
+- `app/sw.js`: `VERSAO = "miga-promo-v428"` → próxima `v429`
+- Comando usado: `sed -i 's/?v=425/?v=426/g' app/index.html app/sw.js && sed -i 's/miga-promo-v428/miga-promo-v429/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -168,3 +168,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Postagens:** `linkPost(it)` usa o link direto (`linkML` + código) em WhatsApp, Telegram, Instagram, story e status; sem `linkML`, usa `it.link`.
 - **Situação do anúncio (`statusML`):** o worker devolve active/paused/closed/under_review/inactive/sumiu. `aplicarConferencia`: encerrado (closed/inactive) sai do site; pausado/sumiu fica com `pausado: true` (o site esconde). Cache do worker agora é `produto2`; `fresco: true` ignora o cache. ML sem `linkML` é conferido de novo a cada 1 h. Site › selecionar › "Conferir na loja (preço e link)".
 - **Shopee sem afiliado:** itens da extensão (já com nome e preço) não passam pelo worker, então dependem de `garantirAfiliados`. Agora ele continua sozinho (de 25 em 25) até trocar todos, limpa o texto automático e guarda os recusados em `shopeeFalhou`. Na Minha lista, o selo vermelho "Sem link de afiliado" (`semAfiliado`) mostra o que falta.
+- **Conferência do afiliado:** `situacaoAfiliado` (ok / falta / outra). A tela do produto mostra o quadro `#ppAf` (verde, vermelho com "Trocar agora", ou bege nas outras lojas). `liberarAfiliado` roda antes de postar (`criarAPartirDaLista`, `postarProdutosNoWhats`, `postarRapido`, `iniciarCriar` com produto): tenta trocar e, se não der, pede confirmação ("Postar mesmo assim").

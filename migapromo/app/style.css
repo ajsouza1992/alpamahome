@@ -2842,4 +2842,11 @@ body.modo-selecao .lojas-seg { display: none; }
 .pp-filtro .f-n { position: absolute; top: -8px; right: -6px; margin: 0; min-width: 20px; height: 20px; padding: 0 5px; border: 2px solid #fff; box-sizing: border-box; box-shadow: 0 2px 6px rgba(232, 51, 109, .35); }
 #ppItem > .cabecalho-aba { justify-content: space-between !important; } #ppItem > .cabecalho-aba #ppVoltar { margin-left: 0 !important; margin-right: auto !important; order: 0; }
 
+.pp-af { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -4px 0 12px; padding: 10px 12px; border-radius: 12px; font-size: 13px; }
+.pp-af b { display: block; font-size: 13.5px; }
+.pp-af small { display: block; font-size: 12px; opacity: .85; margin-top: 2px; }
+.pp-af .btn { flex: none; min-height: 36px; padding: 6px 12px; font-size: 13px; }
+.pp-af--ok { background: #e7f7ec; color: #16803c; }
+.pp-af--falta { background: #fdeaea; color: #b42318; }
+.pp-af--outra { background: #f3eee2; color: var(--preto); }
 .pp-semaf { display: inline-block; padding: 1px 7px; border-radius: 999px; background: #fdeaea; color: #b42318; font-size: 10.5px; font-weight: 800; }
