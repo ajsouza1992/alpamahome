@@ -1110,6 +1110,8 @@
   function linkDiretoML(u) { const l = u ? comCodigoML(u) : ""; return /[?&]matt_word=/.test(l) ? l : ""; }
   /** Link para postar: no Mercado Livre, o link direto do produto com o seu código (o /sec/ abre o seu perfil vazio no app do ML) */
   function linkPost(it) { return (it && it.loja === "mercadolivre" && linkDiretoML(it.linkML)) || (it && it.link) || ""; }
+  /** Produto da Shopee que ainda está com o link comum (a comissão não viria para você) */
+  function semAfiliado(i) { return !!i && (i.loja || detectarLoja(i.link)) === "shopee" && !i.afOk && !i.linkOriginal && !/(^|\/\/)s\.shopee\.com\.br\//.test(String(i.link || "")); }
   function linkAfiliadoAuto(p) {
     if (!p || !p.link) return "";
     if (p.afiliado || linkOficialML(p.link)) return p.link;
@@ -2516,7 +2518,7 @@
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${i.fav ? FAV_IC : ""}${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           ${i.precoNovo ? `<span class="pp-preco">${brl(i.precoNovo)}${i.precoAntigo && i.precoAntigo > i.precoNovo ? `<s>${brl(i.precoAntigo)}</s>` : ""}</span>` : ""}
-          <span class="meta"><b class="pp-cat-tag">${esc(NOME_CAT[i.categoria] || "Outros")}</b>${vitrineMap.has(i.id) ? '<b class="pp-nosite">No site</b> ' : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
+          <span class="meta"><b class="pp-cat-tag">${esc(NOME_CAT[i.categoria] || "Outros")}</b>${vitrineMap.has(i.id) ? '<b class="pp-nosite">No site</b> ' : ""}${semAfiliado(i) ? '<b class="pp-semaf">Sem link de afiliado</b> ' : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
           ${i.obs && i.obsManual ? `<span class="pp-obs">${marcaBusca(i.obs)}</span>` : ""}
           ${post ? `<span class="pp-onde">${onde.length ? esc(onde.join(", ")) + " · " : ""}${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
@@ -3191,29 +3193,30 @@
   /* ---------- Seu link de afiliado em TODOS os produtos (Minha lista e Site) ----------
      Mercado Livre: põe matt_word/matt_tool (links oficiais /sec/ e meli.la ficam como estão).
      Shopee: troca pelo seu link de afiliado (aos poucos, para não pesar). Roda sozinho ao abrir o app. */
-  let garantindo = false, avisouCodigoML = false;
+  let garantindo = false, avisouCodigoML = false, shopeeFalhou = new Set(); // links da Shopee que a Shopee recusou nesta sessão
   const ehAfiliadoML = (u) => linkOficialML(u) || /[?&]matt_word=/.test(String(u || ""));
   async function linkShopeeAfiliado(u) { try { const d = await api("afiliado", { url: u }); return d && d.link ? d.link : ""; } catch (e) { if (e.codigo === "senha") throw e; return ""; } }
   async function garantirAfiliados() {
     if (garantindo) return; garantindo = true;
     try {
       if (!(config.mlMattWord && config.mlMattTool) && !avisouCodigoML && [...fila(), ...vitrineMap.values()].some((x) => (x.loja || detectarLoja(x.link)) === "mercadolivre" && !ehAfiliadoML(x.link))) { avisouCodigoML = true; toast("Preencha o seu código de afiliado do Mercado Livre em Ajustes → Afiliados"); }
-      let mudouFila = false, chamadas = 0; const LIMITE = 25;
+      let mudouFila = false, chamadas = 0, falta = false; const LIMITE = 25;
       for (const it of fila()) {
         if (it.carregando || !it.link) continue; const lj = it.loja || detectarLoja(it.link);
         if (lj === "mercadolivre") { const n = comCodigoML(it.link); if (n !== it.link) { it.link = n; mudouFila = true; } }
-        else if (lj === "shopee" && !it.afOk && !it.linkOriginal && chamadas < LIMITE) { chamadas++; const n = await linkShopeeAfiliado(it.urlFinal || it.link); if (n) { if (n !== it.link) { it.linkOriginal = it.link; it.link = n; } it.afOk = true; mudouFila = true; } }
+        else if (lj === "shopee" && !it.afOk && !it.linkOriginal && !shopeeFalhou.has(it.link)) { if (chamadas >= LIMITE) { falta = true; continue; } chamadas++; const n = await linkShopeeAfiliado(it.urlFinal || it.link); if (n) { if (n !== it.link) { it.linkOriginal = it.link; it.link = n; if (!it.textoEditado) it.texto = ""; } it.afOk = true; mudouFila = true; } else shopeeFalhou.add(it.link); }
       }
       if (mudouFila) { salvarFila(true); renderFila(); }
       const mudar = [];
       for (const p of [...vitrineMap.values()]) {
         if (!p.link) continue; const lj = p.loja || detectarLoja(p.link), naLista = fila().find((i) => i.id === p.id); let novo = p.link, ok = p.afOk;
         if (lj === "mercadolivre") { novo = naLista && ehAfiliadoML(naLista.link) ? naLista.link : comCodigoML(p.link); }
-        else if (lj === "shopee" && !p.afOk) { if (naLista && (naLista.afOk || naLista.linkOriginal)) { novo = naLista.link; ok = true; } else if (chamadas < LIMITE) { chamadas++; const n = await linkShopeeAfiliado(p.link); if (n) { novo = n; ok = true; } } }
+        else if (lj === "shopee" && !p.afOk) { if (naLista && (naLista.afOk || naLista.linkOriginal)) { novo = naLista.link; ok = true; } else if (!naLista && !shopeeFalhou.has(p.link)) { if (chamadas >= LIMITE) falta = true; else { chamadas++; const n = await linkShopeeAfiliado(p.link); if (n) { novo = n; ok = true; } else shopeeFalhou.add(p.link); } } }
         if (novo !== p.link || ok !== p.afOk) mudar.push({ ...p, link: novo, ...(ok ? { afOk: true } : {}), atualizadoEm: Date.now() });
       }
       for (const p of mudar) { try { await salvarNoSite(p); } catch (e) { /* tenta na próxima vez */ } }
       if (mudar.length) renderSite();
+      if (falta) setTimeout(garantirAfiliados, 2000); // ainda tem link da Shopee para trocar: continua já, sem esperar abrir o app de novo
     } catch (e) { /* tenta na próxima vez que abrir */ }
     finally { garantindo = false; }
   }
