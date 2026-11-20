@@ -1090,7 +1090,7 @@
     const total = l.length; l = l.slice(0, acLimite);
     $("#acTotal").textContent = total > l.length ? `${l.length} de ${total} achados` : `${total} ${total === 1 ? "achado" : "achados"}`;
     $("#catalogo").innerHTML = botaoBusca + (daBusca ? `<p class="nota ac-busca-info">Resultados das lojas para “${esc(catBusca)}”. Apague a busca para voltar aos achados.</p>` : "") + (l.length ? `<div class="pp-lista">${l.map(([p, i]) => { const desc = p.precoAntigo && p.preco && p.precoAntigo > p.preco ? Math.round((1 - p.preco / p.precoAntigo) * 100) : 0;
-      return `<div class="pp-linha"><button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
+      return `<div class="pp-linha">${pontoAf({ loja: p.loja, link: linkAfiliadoAuto(p) || p.link, afOk: !!p.afiliado })}<button type="button" class="pp-item" data-achado="${i}">${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" data-original="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${esc(limparNome(p.nome))}</strong>${p.semPreco ? '<span class="pp-preco pp-sem-preco">Preço na loja</span>' : ""}${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta"><b class="pp-cat-tag">${esc(NOME_CAT[catDoAchado(p)] || "Outros")}</b>${esc(NOME_LOJA[p.loja] || "")}${desc ? ` · -${desc}%` : ""}</span>${infoExtras(p, true)}</span>
       </button><button type="button" class="pp-pontos" data-achado-menu="${i}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button></div>`; }).join("")}</div>${total > l.length || (catTemMais && !t) ? `<button type="button" class="btn btn--branco ac-mais" id="acMais">Carregar mais 100 ${daBusca ? `de “${esc(catBusca)}”` : "achados"}</button>` : ""}` : `<p class="vazio-lista">${bruto && !daBusca ? "Nada com essa palavra nos achados carregados: toque em Buscar nas lojas." : "Nada encontrado nos achados."}</p>`);
   }
@@ -1138,6 +1138,12 @@
       texto: `${resto.length === 1 ? `"${limparNome(resto[0].nome || "Produto")}" está` : "Eles estão"} com o link comum da loja. Se alguém comprar por ele, a comissão não vem para você.${(resto[0].loja || detectarLoja(resto[0].link)) === "mercadolivre" && !(config.mlMattWord && config.mlMattTool) ? " Preencha o seu código do Mercado Livre em Ajustes → Afiliados." : ""}`,
       ok: "Postar mesmo assim" });
   }
+  /** Link trocado à mão: põe o seu link de afiliado sozinho (sem precisar tocar em nada) */
+  async function afiliarLinkManual(it) {
+    if (!it || situacaoAfiliado(it) !== "falta") return; const antes = it.link;
+    try { await trocarAfiliadoAgora(it); } catch (e) { return; }
+    if (it.link !== antes || situacaoAfiliado(it) === "ok") { if (ppAtual === it) $("#ppLinkItem").value = it.link; salvarFila(true); renderFila(); if (ppAtual === it) mostrarAfPp(); if (situacaoAfiliado(it) === "ok") toast("Link trocado pelo seu link de afiliado"); }
+  }
   /** Tela do produto: mostra se o link é o seu de afiliado */
   function mostrarAfPp() {
     const box = $("#ppAf"); if (!box) return; const it = ppAtual; if (!it || !it.link) { box.hidden = true; return; }
@@ -1154,6 +1160,11 @@
     else toast((ppAtual.loja || detectarLoja(ppAtual.link)) === "mercadolivre" ? "Preencha o seu código do Mercado Livre em Ajustes → Afiliados" : "A Shopee não gerou o link de afiliado para este produto. Ele pode não estar no programa de afiliados.");
     mostrarAfPp();
   });
+  /** Bolinha no canto do card: verde = link de afiliado seu; vermelha = link comum (comissão não viria) */
+  function pontoAf(i) {
+    const s = situacaoAfiliado(i); if (s === "outra") return "";
+    return `<i class="af-ponto af-ponto--${s}" title="${s === "ok" ? "Com o seu link de afiliado" : "Sem o seu link de afiliado"}" aria-label="${s === "ok" ? "Com o seu link de afiliado" : "Sem o seu link de afiliado"}"></i>`;
+  }
   function linkAfiliadoAuto(p) {
     if (!p || !p.link) return "";
     if (p.afiliado || linkOficialML(p.link)) return p.link;
@@ -1421,7 +1432,7 @@
     const lista = $("#stLista"); lista.classList.toggle("st-sel", !!stEst.sel);
     lista.innerHTML = l.length ? `<div class="pp-lista">${l.map((p) => { const on = stEst.sel && stEst.sel.has(p.id);
       const k = cliquesSite.mapa.get(p.id), nCl = k ? k.loja + k.abrir : 0;
-      return `<div class="pp-linha${on ? " marcado" : ""}"><button type="button" class="pp-item" data-st-item="${esc(p.id)}">${nCl ? `<span class="st-bolas">${k.loja ? `<i class="st-bola st-bola--loja" data-bola="loja" data-n="${k.loja}">${k.loja > 99 ? "99+" : k.loja}</i>` : ""}${k.abrir ? `<i class="st-bola st-bola--abriu" data-bola="abriu" data-n="${k.abrir}">${k.abrir > 99 ? "99+" : k.abrir}</i>` : ""}</span>` : ""}${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
+      return `<div class="pp-linha${on ? " marcado" : ""}">${pontoAf(p)}<button type="button" class="pp-item" data-st-item="${esc(p.id)}">${nCl ? `<span class="st-bolas">${k.loja ? `<i class="st-bola st-bola--loja" data-bola="loja" data-n="${k.loja}">${k.loja > 99 ? "99+" : k.loja}</i>` : ""}${k.abrir ? `<i class="st-bola st-bola--abriu" data-bola="abriu" data-n="${k.abrir}">${k.abrir > 99 ? "99+" : k.abrir}</i>` : ""}</span>` : ""}${miniLoja({ loja: p.loja, link: p.link }, p.imagem ? `<img src="${esc(p.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="sem-foto">sem foto</span>')}
         <span><strong>${ehFavSite(p) ? FAV_IC : ""}${esc(p.nome || "Produto")}</strong>${p.preco ? `<span class="pp-preco">${brl(p.preco)}${p.precoAntigo && p.precoAntigo > p.preco ? `<s>${brl(p.precoAntigo)}</s>` : ""}</span>` : ""}<span class="meta">${esc(NOME_LOJA[p.loja] || "")}${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span>
         <span class="st-tags">${tiposDe(p).map((k) => `<b>${esc(NOME_CAT[k] || "Outros")}</b>`).join("")}</span></span>
       </button>${stEst.sel ? `<button type="button" class="pp-caixa" data-st-marcar="${esc(p.id)}" aria-pressed="${!!on}" aria-label="Marcar"></button>` : `<button type="button" class="pp-pontos" data-st-menu="${esc(p.id)}" aria-label="Opções"><svg><use href="#i-pontos"/></svg></button>`}</div>`; }).join("")}</div>`
@@ -2556,11 +2567,11 @@
     $("#ppOrdemTxt").textContent = "Ordenar: " + (({ recentes: "Mais novos", antigos: "Mais antigos", preco: "Menor preço", desconto: "Maior desconto", comissao: "Maior comissão", vendidos: "Mais vendidos" })[ordemLista] || "Mais novos");
     $("#ppTotal").textContent = verArquivo ? `Arquivo: ${l.length} ${l.length === 1 ? "produto" : "produtos"}` : termoBusca.trim() ? `${l.length} ${l.length === 1 ? "encontrado" : "encontrados"}` : `${np} para postar${nd ? ` · ${nd} ${nd === 1 ? "postado" : "postados"}` : ""}${ocultos ? ` · ${ocultos} ${ocultos === 1 ? "postado oculto" : "postados ocultos"}` : ""}`;
     const linha = (i) => { const post = foiCompartilhado(i), onde = (i.ondePostou && i.ondePostou.length ? i.ondePostou : Object.keys(i.feito || {}).filter((k) => i.feito[k] && k !== "historico").map((k) => ({ whatsapp: "WhatsApp", instagram: "Instagram", telegram: "Telegram" }[k] || k)));
-      return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}${ppAtual === i ? " aberto" : ""}">${post ? '<span class="selo-canto"><svg><use href="#i-check"/></svg>Postado</span>' : ""}<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
+      return `<div class="pp-linha${marcados.has(i.id) ? " marcado" : ""}${post ? " postado" : ""}${ppAtual === i ? " aberto" : ""}">${post ? '<span class="selo-canto"><svg><use href="#i-check"/></svg>Postado</span>' : ""}${i.carregando ? "" : pontoAf(i)}<button type="button" class="pp-item${i.carregando ? " carregando" : ""}" data-pp="${esc(i.id)}">
         ${miniLoja(i, fotoMini(i))}
         <span><strong>${i.fav ? FAV_IC : ""}${i.nome ? marcaBusca(i.nome) : esc(i.carregando ? "Buscando o produto…" : "Toque para completar o nome")}</strong>
           ${i.precoNovo ? `<span class="pp-preco">${brl(i.precoNovo)}${i.precoAntigo && i.precoAntigo > i.precoNovo ? `<s>${brl(i.precoAntigo)}</s>` : ""}</span>` : ""}
-          <span class="meta"><b class="pp-cat-tag">${esc(NOME_CAT[i.categoria] || "Outros")}</b>${vitrineMap.has(i.id) ? '<b class="pp-nosite">No site</b> ' : ""}${semAfiliado(i) ? '<b class="pp-semaf">Sem link de afiliado</b> ' : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
+          <span class="meta"><b class="pp-cat-tag">${esc(NOME_CAT[i.categoria] || "Outros")}</b>${vitrineMap.has(i.id) ? '<b class="pp-nosite">No site</b> ' : ""}${marcaBusca(NOME_LOJA[i.loja] || "")}${i.cupom ? ` · cupom ${marcaBusca(String(i.cupom).toUpperCase())}${i.usarCupom && i.precoCupom ? " (preço com cupom)" : ""}` : ""}${!post && diasDesde(i.criadoEm) >= 1 && !i.carregando ? ` · há ${diasDesde(i.criadoEm)} ${diasDesde(i.criadoEm) === 1 ? "dia" : "dias"}` : ""}</span>${infoExtras({ ...i, preco: i.precoNovo }, true)}
           ${i.obs && i.obsManual ? `<span class="pp-obs">${marcaBusca(i.obs)}</span>` : ""}
           ${post ? `<span class="pp-onde">${onde.length ? esc(onde.join(", ")) + " · " : ""}${dataCurta(i.postadoEm || i.criadoEm)}</span>` : ""}
         </span>
@@ -3503,7 +3514,7 @@
     salvarFila(true); fecharItemFila();
   });
   [["#ppNome", (v) => { ppAtual.nome = v.trim(); ppAtual.texto = ""; }], ["#ppAntigo", (v) => { ppAtual.precoAntigo = lerPreco(v); ppAtual.texto = ""; }], ["#ppNovo", (v) => { ppAtual.precoNovo = lerPreco(v); ppAtual.texto = ""; }],
-    ["#ppCupom", (v) => { ppAtual.cupom = v.trim(); ppAtual.texto = ""; }], ["#ppLinkItem", (v) => { if (urlOk(v)) { ppAtual.link = v.trim(); ppAtual.texto = ""; delete ppAtual.afOk; delete ppAtual.linkOriginal; mostrarAfPp(); } }]]
+    ["#ppCupom", (v) => { ppAtual.cupom = v.trim(); ppAtual.texto = ""; }], ["#ppLinkItem", (v) => { if (urlOk(v)) { ppAtual.link = v.trim(); ppAtual.texto = ""; delete ppAtual.afOk; delete ppAtual.linkOriginal; mostrarAfPp(); afiliarLinkManual(ppAtual); } }]]
     .forEach(([id, f]) => $(id).addEventListener("input", () => { if (!ppAtual) return; f($(id).value); salvarFila(); mostrarFalta(false); }));
   $("#ppCategoria").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && ppAtual) { ppAtual.categoria = b.dataset.v; ppAtual.texto = ""; salvarFila(); } });
   async function trocarFotoPp(arquivo) {

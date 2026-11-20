@@ -2850,3 +2850,6 @@ body.modo-selecao .lojas-seg { display: none; }
 .pp-af--falta { background: #fdeaea; color: #b42318; }
 .pp-af--outra { background: #f3eee2; color: var(--preto); }
 .pp-semaf { display: inline-block; padding: 1px 7px; border-radius: 999px; background: #fdeaea; color: #b42318; font-size: 10.5px; font-weight: 800; }
+.af-ponto { position: absolute; right: 9px; bottom: 9px; z-index: 3; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; pointer-events: none; }
+.af-ponto--ok { background: #1f9d55; }
+.af-ponto--falta { background: #e02424; }
