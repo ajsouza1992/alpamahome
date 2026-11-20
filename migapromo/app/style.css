@@ -2850,6 +2850,18 @@ body.modo-selecao .lojas-seg { display: none; }
 .pp-af--falta { background: #fdeaea; color: #b42318; }
 .pp-af--outra { background: #f3eee2; color: var(--preto); }
 .pp-semaf { display: inline-block; padding: 1px 7px; border-radius: 999px; background: #fdeaea; color: #b42318; font-size: 10.5px; font-weight: 800; }
-.af-ponto { position: absolute; right: 9px; bottom: 9px; z-index: 3; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; pointer-events: none; }
+.af-ponto { position: absolute; right: -3px; bottom: -3px; z-index: 3; width: 13px; height: 13px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; pointer-events: none; }
 .af-ponto--ok { background: #1f9d55; }
 .af-ponto--falta { background: #e02424; }
+/* Botão Selecionar: preto nas três abas; selecionando ("Cancelar"), rosa */
+.aba-prod .barra-filtro #acSelecionar, .aba-prod .barra-filtro #stSelecionar, .aba-prod .barra-filtro #ppSelecionar { color: var(--preto); }
+.aba-prod .barra-filtro #acSelecionar.ativo, .aba-prod .barra-filtro #stSelecionar.ativo, body.modo-selecao .aba-prod .barra-filtro #ppSelecionar { color: var(--rosa); }
+/* Carrossel › Postar: cada imagem com o texto alternativo embaixo; a legenda é a última "tela" do trilho */
+.ka-post-trilho { align-items: flex-start; }
+.ka-slide { flex: none; width: min(82%, 40dvh, 430px); display: flex; flex-direction: column; gap: 8px; scroll-snap-align: center; }
+.kk-trilho .ka-slide canvas { width: 100% !important; height: auto !important; aspect-ratio: 1 / 1 !important; }
+.ka-slide .ka2-alt { background: #fff; }
+.ka-slide .ka2-alt span { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.ka-slide--leg textarea.rr-leg { width: 100%; height: auto !important; aspect-ratio: 1 / 1; margin: 0; border-radius: 12px; }
+.ka-slide--leg .leg-rot { display: none; }
+.ka-slide--leg .ka2-alt span b { color: var(--preto); }

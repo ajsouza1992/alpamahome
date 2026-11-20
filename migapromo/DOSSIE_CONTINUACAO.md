@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=426` → próxima `?v=427`
-- `app/sw.js`: `VERSAO = "miga-promo-v429"` → próxima `v430`
-- Comando usado: `sed -i 's/?v=426/?v=427/g' app/index.html app/sw.js && sed -i 's/miga-promo-v429/miga-promo-v430/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=427` → próxima `?v=428`
+- `app/sw.js`: `VERSAO = "miga-promo-v430"` → próxima `v431`
+- Comando usado: `sed -i 's/?v=427/?v=428/g' app/index.html app/sw.js && sed -i 's/miga-promo-v430/miga-promo-v431/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -171,4 +171,5 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Conferência do afiliado:** `situacaoAfiliado` (ok / falta / outra). A tela do produto mostra o quadro `#ppAf` (verde, vermelho com "Trocar agora", ou bege nas outras lojas). `liberarAfiliado` roda antes de postar (`criarAPartirDaLista`, `postarProdutosNoWhats`, `postarRapido`, `iniciarCriar` com produto): tenta trocar e, se não der, pede confirmação ("Postar mesmo assim").
 - **Bolinha de afiliado (`pontoAf`):** canto inferior direito dos cards da Minha lista, Achados e Site; verde = link de afiliado, vermelha = link comum (lojas sem conferência não mostram). O selo de texto "Sem link de afiliado" saiu. Link trocado à mão na tela do produto é afiliado sozinho (`afiliarLinkManual`).
 - **Compartilhar do site com a foto do produto:** o botão Compartilhar do site usa `/p/ID`. O worker (`rotaLinkProduto`, rota em `_routes.json`) lê `vitrine/miga/produtos/ID` no Firestore e devolve o index.html com og:title, og:description e og:image do produto; depois troca o endereço para `/#p=ID` e abre o produto. Antes, o link `/#p=ID` mostrava a imagem geral do site no WhatsApp.
-- **Compartilhar sem o compartilhar do celular** (navegador dentro do WhatsApp ou do Instagram): abre a folha `#dlgShare` com WhatsApp, Telegram, Facebook e Copiar o link.
+- **Compartilhar sem o compartilhar do celular** (navegador dentro do WhatsApp ou do Instagram): copia o link (a folha de opções foi tirada a pedido).
+- **Bolinha de afiliado** agora fica no canto inferior direito da FOTO (dentro de `miniLoja`, 3º parâmetro ou `_ponto`). Botão Selecionar preto nas três abas (rosa quando é "Cancelar"). **Carrossel › Postar:** cada imagem com o texto alternativo e Copiar embaixo; a legenda é a última tela do trilho (`.ka-slide--leg`).
