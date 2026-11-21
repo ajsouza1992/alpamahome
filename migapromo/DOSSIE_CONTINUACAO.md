@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=427` → próxima `?v=428`
-- `app/sw.js`: `VERSAO = "miga-promo-v430"` → próxima `v431`
-- Comando usado: `sed -i 's/?v=427/?v=428/g' app/index.html app/sw.js && sed -i 's/miga-promo-v430/miga-promo-v431/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=428` → próxima `?v=429`
+- `app/sw.js`: `VERSAO = "miga-promo-v431"` → próxima `v432`
+- Comando usado: `sed -i 's/?v=428/?v=429/g' app/index.html app/sw.js && sed -i 's/miga-promo-v431/miga-promo-v432/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -173,3 +173,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Compartilhar do site com a foto do produto:** o botão Compartilhar do site usa `/p/ID`. O worker (`rotaLinkProduto`, rota em `_routes.json`) lê `vitrine/miga/produtos/ID` no Firestore e devolve o index.html com og:title, og:description e og:image do produto; depois troca o endereço para `/#p=ID` e abre o produto. Antes, o link `/#p=ID` mostrava a imagem geral do site no WhatsApp.
 - **Compartilhar sem o compartilhar do celular** (navegador dentro do WhatsApp ou do Instagram): copia o link (a folha de opções foi tirada a pedido).
 - **Bolinha de afiliado** agora fica no canto inferior direito da FOTO (dentro de `miniLoja`, 3º parâmetro ou `_ponto`). Botão Selecionar preto nas três abas (rosa quando é "Cancelar"). **Carrossel › Postar:** cada imagem com o texto alternativo e Copiar embaixo; a legenda é a última tela do trilho (`.ka-slide--leg`).
+- **Limite do site:** `LIMITE_SITE = 500` (só aviso no app). O site desenha os cards com `content-visibility: auto`; testado com 500 produtos (cerca de 1,3 s).

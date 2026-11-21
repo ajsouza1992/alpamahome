@@ -3009,7 +3009,7 @@
     const l = itensMarcados(); criarAPartirDaLista(l.length === 1 && b.dataset.criar === "livre" ? "instagram" : b.dataset.criar, l);
   });
   /* ---------- Tela única de Produtos: Minha lista · Achados · No site ---------- */
-  var LIMITE_SITE = 300; // recomendado: até 300 produtos no site
+  var LIMITE_SITE = 500; // recomendado: até 500 produtos no site
   function pintarSegProd(aba) { try { pintarSegProd0(aba); } catch (e) { /* app ainda abrindo */ } }
   /* Busca única: o mesmo texto vale para Minha lista, Achados e No site */
   var buscaProd = "";

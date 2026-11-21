@@ -89,6 +89,7 @@
     .res .limpar { border: 0; background: none; color: var(--rosa); font-weight: 700; font-size: 12.5px; padding: 0; }
     .grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-top: 10px; padding-bottom: 30px; }
     .card { position: relative; display: flex; flex-direction: column; background: #fff; border: 1.4px solid #f0e8d8; border-radius: 20px; overflow: hidden; }
+    .card { content-visibility: auto; contain-intrinsic-size: auto 330px; } /* até 500 achados: o celular só desenha os cards que estão na tela */
     .card .abrir { display: block; border: 0; background: none; padding: 0; text-align: left; }
     .card .foto { position: relative; display: block; aspect-ratio: 1 / 1; background: #fff; }
     .card .foto img { width: 100%; height: 100%; object-fit: cover; }
