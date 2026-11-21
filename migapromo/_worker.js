@@ -18,6 +18,7 @@
  *
  * Variáveis no Cloudflare (Configurações → Variáveis e segredos):
  *   GEMINI_API_KEY (chave da IA)   APP_SENHA (código de acesso do app)   GEMINI_MODEL (opcional)
+ *   ROBO_CHAVE (chave do robô do Google Apps Script, 24+ caracteres; só ele usa, no cabeçalho x-robo-chave)
  *   Catálogo (opcionais — cada loja só aparece quando as duas chaves dela existirem):
  *     ML_APP_ID, ML_SECRET           → Mercado Livre Developers (Minhas aplicações)
  *     SHOPEE_APP_ID, SHOPEE_SECRET   → Shopee Afiliados → Open API
@@ -590,7 +591,8 @@ async function contaGoogleOk(request, env) {
   } catch (e) { return false; }
 }
 const senhaOk = async (request, env) =>
-  (await contaGoogleOk(request, env)) || (!!env.APP_SENHA && request.headers.get("x-app-senha") === env.APP_SENHA);
+  (await contaGoogleOk(request, env)) || (!!env.APP_SENHA && request.headers.get("x-app-senha") === env.APP_SENHA)
+  || (!!env.ROBO_CHAVE && String(env.ROBO_CHAVE).length >= 24 && request.headers.get("x-robo-chave") === env.ROBO_CHAVE); // robô do Google Apps Script
 
 /* Cache do Cloudflare (Cache API): guarda leituras e contadores por um tempo, sem banco de dados */
 const temCache = () => typeof caches !== "undefined" && caches.default;
