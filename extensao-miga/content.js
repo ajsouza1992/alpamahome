@@ -136,12 +136,54 @@
     const hls = performance.getEntriesByType("resource").some((e) => /\.m3u8(\?|$)|\.m4s(\?|$)|\.ts(\?|$)/i.test(e.name));
     return { url: "", pedacos: (top && /^blob:/.test(top.u)) || hls, semVideo: !document.querySelector("video") };
   }
+  /** Vídeo em pedacinhos (HLS .m3u8, como no Mercado Livre): baixa os pedaços e junta num MP4 */
+  async function baixarPedacos(bt, nome) {
+    const lista = performance.getEntriesByType("resource").map((e) => e.name).filter((u) => /\.m3u8(\?|$)/i.test(u));
+    if (!lista.length) return "sem-lista";
+    const abs = (u, base) => new URL(u, base).href;
+    const texto = async (u) => { const r = await fetch(u, { credentials: "omit" }); if (!r.ok) throw new Error("http " + r.status); return r.text(); };
+    let url = lista[lista.length - 1], m3u = await texto(url);
+    if (/#EXT-X-STREAM-INF/.test(m3u)) { // lista principal: escolhe a melhor qualidade
+      const ls = m3u.split(/\r?\n/); let melhor = null, bw = -1;
+      ls.forEach((l, i) => { const k = /#EXT-X-STREAM-INF:.*?BANDWIDTH=(\d+)/.exec(l); if (k) { const prox = ls.slice(i + 1).find((x) => x && !x.startsWith("#")); if (prox && +k[1] > bw) { bw = +k[1]; melhor = prox; } } });
+      if (!melhor) return "erro"; url = abs(melhor.trim(), url); m3u = await texto(url);
+    }
+    if (/#EXT-X-KEY:METHOD=(?!NONE)/.test(m3u)) return "protegido";
+    const ls = m3u.split(/\r?\n/), mapa = /#EXT-X-MAP:URI="([^"]+)"/.exec(m3u), segs = ls.filter((l) => l && !l.startsWith("#")).map((l) => abs(l.trim(), url));
+    if (!segs.length) return "erro";
+    const pedaco = async (u) => { const r = await fetch(u, { credentials: "omit" }); if (!r.ok) throw new Error("http " + r.status); return new Uint8Array(await r.arrayBuffer()); };
+    const partes = [];
+    if (mapa) partes.push(await pedaco(abs(mapa[1], url)));
+    for (let i = 0; i < segs.length; i++) { bt.textContent = `Baixando ${Math.round((i / segs.length) * 100)}%`; partes.push(await pedaco(segs[i])); }
+    let blob;
+    if (mapa || /\.(m4s|mp4)(\?|$)/i.test(segs[0])) blob = new Blob(partes, { type: "video/mp4" }); // já é MP4 em pedaços: só juntar
+    else { // pedaços .ts: converte para MP4
+      if (!window.muxjs) return "erro";
+      const tm = new muxjs.mp4.Transmuxer(), saida = []; let ini = null;
+      tm.on("data", (seg) => { if (!ini && seg.initSegment) ini = seg.initSegment; saida.push(seg.data); });
+      partes.forEach((p) => { tm.push(p); tm.flush(); });
+      if (!ini || !saida.length) return "erro";
+      blob = new Blob([ini, ...saida], { type: "video/mp4" });
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome + ".mp4"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    return "ok";
+  }
   function nomeDoArquivo() {
     const n = (document.querySelector("h1") || {}).textContent || document.title || "video";
     return n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "video";
   }
-  barra.querySelector(".miga-video").addEventListener("click", () => {
+  barra.querySelector(".miga-video").addEventListener("click", async () => {
     const v = videoAberto();
+    if (!v.url && v.pedacos) {
+      const bt = barra.querySelector(".miga-video"); bt.disabled = true; bt.textContent = "Baixando…";
+      let r = "erro"; try { r = await baixarPedacos(bt, nomeDoArquivo()); } catch (e) { r = "erro"; }
+      bt.disabled = false; bt.textContent = r === "ok" ? "Vídeo baixado" : "Baixar vídeo"; setTimeout(() => { bt.textContent = "Baixar vídeo"; }, 3000);
+      if (r === "ok") return;
+      if (r === "sem-lista") { alert("Dê o play no vídeo do produto, espere uns segundos tocando e clique em Baixar vídeo de novo."); return; }
+      alert(r === "protegido" ? "Este vídeo é protegido pela loja e não dá para baixar. Use a gravação de tela ou peça o vídeo ao vendedor." : "Não consegui juntar os pedaços deste vídeo. Use a gravação de tela ou peça o vídeo ao vendedor.");
+      return;
+    }
     if (!v.url) {
       alert(v.pedacos
         ? "Esta loja entrega o vídeo em pedacinhos protegidos e o navegador não deixa baixar (é o caso do Mercado Livre). Use a gravação de tela ou peça o vídeo ao vendedor."

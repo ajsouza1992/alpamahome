@@ -27,12 +27,14 @@ Também funciona no Microsoft Edge (`edge://extensions`, mesmo caminho).
 
 Se o app mudar de endereço, troque a linha `const APP = "https://www.migapromo.com/app/";` no `content.js`.
 
-## Baixar o vídeo do anúncio (versão 1.7.1)
+## Baixar o vídeo do anúncio (versão 1.8)
 
 1. Abra a página do produto na **Shopee** ou no **Mercado Livre**.
 2. Se o anúncio tiver vídeo, aparece o botão **Baixar vídeo** na barra da Miga, embaixo.
 3. **Dê o play no vídeo do produto** e clique em **Baixar vídeo** enquanto ele toca. Baixa só esse vídeo, na pasta **Downloads → miga-videos**, com o nome do produto.
-4. No **Mercado Livre**, o vídeo vem em pedacinhos protegidos e o navegador não deixa baixar. Use a gravação de tela ou peça o vídeo ao vendedor.
+4. No **Mercado Livre**, o vídeo vem em pedacinhos. Dê o play, espere uns segundos tocando e clique em **Baixar vídeo**: a extensão baixa os pedaços e junta tudo num MP4 (a barra mostra a porcentagem). Se a loja proteger o vídeo, aparece um aviso: aí use a gravação de tela ou peça o vídeo ao vendedor.
+
+A extensão usa a biblioteca **mux.js** (licença Apache-2.0, arquivo `mux.min.js`) para transformar os pedaços em MP4.
 
 Depois, no app da Miga, em **Publicar vídeo**: escolha o vídeo, ligue **Sem o som original**, escolha a música e coloque o preço.
 
