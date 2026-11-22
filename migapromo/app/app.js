@@ -5410,7 +5410,7 @@
         const prod = modo === "produto" ? `<div class="vd-prod"><span class="pp-mini">${fotoMini(it)}</span><span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${obsTag(it)}${it.imagem ? `<button type="button" class="vd-baixar-foto" id="vdBaixarFoto"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar foto</button>` : ""}</span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
         const video = `<div class="vd-arquivo">
             ${V.url ? `<video class="vd-previa" src="${V.url}" playsinline controls${V.somOriginal === false ? " muted" : ""}></video>
-            <label class="aj-chave vd-som"><span><b>Som original do vídeo</b><small>desligue para tirar a voz e o barulho e ficar só a música do app</small></span><input type="checkbox" data-vd-op="somOriginal"${V.somOriginal === false ? "" : " checked"}><i></i></label>` : ""}
+            <button type="button" class="btn btn--branco${V.somOriginal === false ? " on-borda" : ""}" id="vdSemSom">Sem o som original</button>` : ""}
             <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher o vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
             ${modo === "produto" && it.imagem ? `<button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>` : ""}
           </div>`;
@@ -6110,6 +6110,12 @@
       }
       baixarBlob(arq, arq.name); toast("Foto salva: abra a IA e anexe a foto");
       return;
+    }
+    if (t.closest("#vdSemSom")) { // tira (ou devolve) o som original; sem ele, a música do app toca
+      const V = vd(); V.somOriginal = V.somOriginal === false; V.resultado = null; if (V.somOriginal === false && !V.musica) V.musica = true;
+      const b = t.closest("#vdSemSom"); b.classList.toggle("on-borda", V.somOriginal === false);
+      document.querySelectorAll("video.vd-previa").forEach((x) => { x.muted = V.somOriginal === false; });
+      toast(V.somOriginal === false ? "Som original tirado: fica só a música do app" : "Som original de volta"); return;
     }
     if (t.closest("#vdSemVideo")) {
       if (!V.semVideo && !(vdItem() && vdItem().imagem)) { toast("Escolha antes um produto com foto (passo anterior)"); return; }
@@ -9767,7 +9773,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="aj-chave"><span><b>Abertura</b></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Final</b></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Música no vídeo</b></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
-        <label class="aj-chave"><span><b>Som original do vídeo</b><small>desligue para ficar só a música do app</small></span><input type="checkbox" data-vd-op="somOriginal"${V.somOriginal === false ? "" : " checked"}><i></i></label>
+        <label class="aj-chave"><span><b>Som original do vídeo</b></span><input type="checkbox" data-vd-op="somOriginal"${V.somOriginal === false ? "" : " checked"}><i></i></label>
       </div>`);
   }
   $("#folhaEst").addEventListener("change", (e) => { if (e.target.dataset && e.target.dataset.vdOp) { const V = vd(); V[e.target.dataset.vdOp] = e.target.checked; V.resultado = null; semSomPedeMusica(e.target); } });

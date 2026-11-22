@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=430` → próxima `?v=431`
-- `app/sw.js`: `VERSAO = "miga-promo-v433"` → próxima `v434`
-- Comando usado: `sed -i 's/?v=430/?v=431/g' app/index.html app/sw.js && sed -i 's/miga-promo-v433/miga-promo-v434/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=431` → próxima `?v=432`
+- `app/sw.js`: `VERSAO = "miga-promo-v434"` → próxima `v435`
+- Comando usado: `sed -i 's/?v=431/?v=432/g' app/index.html app/sw.js && sed -i 's/miga-promo-v434/miga-promo-v435/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -176,4 +176,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Limite do site:** `LIMITE_SITE = 500` (só aviso no app). O site desenha os cards com `content-visibility: auto`; testado com 500 produtos (cerca de 1,3 s).
 - **Robô (Google Apps Script):** `robo-miga/` (Codigo.gs, appsscript.json, LEIA-robo.md). Roda a cada 30 min com a conta dona do Firebase (REST do Firestore, sem regras) e chama o worker com o cabeçalho `x-robo-chave` (segredo `ROBO_CHAVE` no Cloudflare, 24+ caracteres). Confere o Site e a Minha lista (6 h; ML sem `linkML`, 1 h), põe os links de afiliado, tira os encerrados, esconde os pausados, refaz os pacotes e manda e-mail de queda de preço (≥ QUEDA_MIN %). A memória fica em `espacos/miga/robo/estado`. Teste com Firestore de mentira: scratchpad `robo_teste.js`.
 - **Criação IA › Escolha o produto:** barra de busca (`#peBuscaProd`) que filtra por nome, loja e categoria, sem acentos e com várias palavras.
-- **Publicar vídeo › Som original do vídeo** (`V.somOriginal`, chave embaixo da prévia e nos Ajustes do vídeo): desligado, o vídeo grava mudo e a música do app toca no volume cheio; a música liga sozinha (`semSomPedeMusica`).
+- **Publicar vídeo › Som original do vídeo** (`V.somOriginal`: botão "Sem o som original" (`#vdSemSom`) embaixo da prévia e chave nos Ajustes do vídeo): desligado, o vídeo grava mudo e a música do app toca no volume cheio; a música liga sozinha (`semSomPedeMusica`).
