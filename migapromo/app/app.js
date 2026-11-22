@@ -7556,6 +7556,7 @@
     carregarSons(ac, E).then(() => { if (saida.vivo) tocarTrilha(ac, g, dur, [], [], null, E, null); }).catch(() => {});
     return saida;
   }
+  let peNarrAudio = null;
   const pararSaida = (x) => { if (!x) return; x.vivo = false; try { x.g.gain.setValueAtTime(0, x.g.context.currentTime); x.g.disconnect(); } catch (e) { /* segue */ } };
   function tocarAmostra(k) {
     const agora = Date.now(); if (k && k === ultToque.k && agora - ultToque.t < 400) return; // o mesmo toque chegou duas vezes
@@ -7963,6 +7964,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     imagem: { nome: "Imagem com a modelo (post)", chaves: "{roupa} {cenario} {enquadramento} {pose}", txt: `Foto quadrada 1:1 para post do feed do Instagram, hiper-realista, estilo influenciadora. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). {roupa} Cenário: {cenario}. {enquadramento} Ela posa {pose}, olhando para a câmera com sorriso natural; produto sempre visível e em foco, idêntico ao da foto do produto (formato, cor, rótulo, tamanho). Sem textos, logos ou marca d'água adicionados; foco nítido, alta resolução. Formato obrigatório: quadrado 1:1.` },
     video: { nome: "Vídeo com a modelo", chaves: "{formato} {roupa} {cenario} {enquadramento} {acao} {fala}", txt: `Vídeo hiper-realista {formato}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). {roupa} Cenário: {cenario}. {enquadramento} Produto: o da foto anexada, idêntico. Ação: ela {acao}. Fala em português do Brasil, voz natural e animada: "{fala}" No final, posa com o produto visível, sorrindo. Sem textos, logos ou legendas; sem cortes ou zoom; mãos naturais; produto não muda.` },
     perfume: { nome: "Vídeo de perfume", chaves: "{formato} {cenario} {enquadramento} {nome}", txt: `Vídeo hiper-realista {formato}, 8 s, tomada única, sem cortes. Modelo fictícia (IA), a mesma das fotos anexadas, roupa nova combinando com o fundo. Cenário: {cenario}. {enquadramento} Segura o perfume da foto na mão direita o vídeo todo. Fala: "Oi, miga! Hoje vim mostrar esse perfume maravilhoso, o {nome}!" Borrifa uma vez para o alto (névoa só do bico), fecha os olhos, aspira no ar e sorri: "Nossa, miga! Que perfume delicioso!" Finaliza: "Segue a Miga Promo pra encontrar produtos incríveis no melhor precinho!" Sem legendas ou textos. Não borrifar no rosto nem no corpo, não trocar de mão, não duplicar o frasco, sem tampa. Voz natural.` },
+    narracao: { nome: "Narração (Google AI Studio)", chaves: "{fala}", txt: `Leia o texto abaixo em português do Brasil, com sotaque brasileiro neutro, voz feminina jovem, animada e simpática, como uma amiga contando um achado incrível para outra. Ritmo de vídeo de Instagram: rápido, mas claro, com energia no começo e um tom convidativo no final. Sorria enquanto fala. Faça pausas curtas nas vírgulas e nos pontos. Leia preços e números por extenso, do jeito que se fala no Brasil. Não acrescente nada, leia apenas o texto:
+
+{fala}` },
     semproduto: { nome: "Vídeo sem produto", chaves: "{formato} {cenario} {enquadramento} {fala}", txt: `Vídeo hiper-realista {formato}, 8 segundos, tomada única, câmera parada. Mesma mulher das fotos de referência anexadas (mesmo rosto e cabelo). Roupa: look estiloso e atual, combinando com o fundo. Cenário: {cenario}. {enquadramento} Ela olha para a câmera, sorri e fala em português do Brasil, voz feminina natural e animada: "{fala}" Gesticula de forma natural e, no final, acena e fica parada sorrindo. Sem textos, logos ou legendas; sem cortes nem zoom; mãos naturais.` }
   };
   const modeloPrompt = (k) => ((config.prompts || {})[k] || PROMPTS_PADRAO[k].txt);
@@ -8355,6 +8359,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
         ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}`}
         ${P.midia && P.midia.tipo === "video" ? `<div class="pe-roupa ch-musica"><span><b>${P.semSom ? "Música" : "Música baixinha ao fundo"}:</b> ${P.musica && NOMES_MUSICA[P.musica] ? esc(NOMES_MUSICA[P.musica][0]) : "sem música"}</span>${P.musica ? `<button type="button" class="mus-play" data-ouvir="${P.musica}" aria-label="Ouvir">${ICO_PLAY}</button>` : ""}<button type="button" class="btn btn--branco" id="peTrocarMus">${P.musica ? "Trocar" : "Escolher"}</button></div>` : ""}
         ${P.midia && P.midia.tipo === "video" ? `<label class="aj-chave chave-som pe-som"><span><b>Sem o som original</b></span><input type="checkbox" id="peSemSom"${P.semSom ? " checked" : ""}><i></i></label>` : ""}
+        ${P.midia && P.midia.tipo === "video" ? blocoNarracao(P) : ""}
         ${P.midia && P.midia.tipo === "video" ? `<div><b class="ch-rot">Onde o final entra</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-corte="auto" aria-checked="${P.corte == null}">Automático</button><button type="button" role="radio" data-pe-corte="manual" aria-checked="${P.corte != null}">Eu escolho</button></div>
           ${P.corte != null ? `<input type="range" class="pe-corte" id="peCorte" min="0.5" max="${(P.midia.video && isFinite(P.midia.video.duration) ? P.midia.video.duration : 15).toFixed(2)}" step="0.05" value="${P.corte}"><p class="nota wz-centro">O final entra em <b id="peCorteTxt">${P.corte.toFixed(1).replace(".", ",")} s</b>. Arraste até a última cena boa (a prévia mostra ela).</p>` : `<p class="nota">O app acha sozinho o fim do vídeo e corta a tela preta.${P.corteAuto ? ` No último vídeo, o final entrou em ${P.corteAuto.toFixed(1).replace(".", ",")} s.` : ""}</p>`}</div>` : ""}
         ${P.midia && P.midia.tipo === "video" ? `
@@ -8507,6 +8512,9 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     if (wz.canal !== "personagem") return; const P = pe();
     const m = e.target.closest("[data-pe-mostra]"); if (m) { P["sem" + m.dataset.peMostra] = !m.checked; const lb = m.closest("label"); if (lb) lb.classList.toggle("on", m.checked); lsPers.gravar("mostrar", { semLogo: !!P.semLogo, semArroba: !!P.semArroba, semSelo: !!P.semSelo }); P.resultado = null; desenharMinisIA(); return; }
     if (e.target.id === "peLimpa") P.grupoLimpa = e.target.checked;
+    if (e.target.id === "peNarrArq" && e.target.files && e.target.files[0]) { const f = e.target.files[0];
+      f.arrayBuffer().then((dados) => { P.narr = { nome: f.name, dados, url: URL.createObjectURL(f), ini: 0 }; P.resultado = null; toast("Narração inserida"); const y = scrollY; mostrarPasso(); scrollTo(0, y); }); return; }
+    if (e.target.id === "peMusIni") { P.musIni = +e.target.value || 0; P.resultado = null; const tx = $("#peMusIniTxt"); if (tx) tx.textContent = segTxt(P.musIni) + " s"; return; }
     if (e.target.id === "peSemSom") { // sem o som original: fica só a música do app (no volume normal)
       P.semSom = e.target.checked; P.resultado = null; if (P.midia && P.midia.video) P.midia.video.muted = true;
       if (P.semSom && !(P.musica && MUSICAS[P.musica])) { P.musica = Object.keys(NOMES_MUSICA).find((k) => MUSICAS[k]) || P.musica; const y = scrollY; mostrarPasso(); scrollTo(0, y); }
@@ -8695,12 +8703,39 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     let o = 44; for (let i = 0; i < n; i++) for (let c = 0; c < nc; c++) { const v = Math.max(-1, Math.min(1, ch[c][i])); dv.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2; }
     return new Uint8Array(dv.buffer);
   }
+  /* ---------- Narração (áudio do Google AI Studio) e trecho da música ---------- */
+  const segTxt = (x) => String(Math.round((x || 0) * 10) / 10).replace(".", ",");
+  function falaDaNarracao(P) { const it = wzItem(); return it ? falaPersonagem(it) : (P.tx && P.tx.chamada) || ""; }
+  function blocoNarracao(P) {
+    const N = P.narr;
+    return `<div class="pe-narr">
+      <div class="pe-roupa"><span><b>Narração:</b> ${N ? esc(N.nome) : "nenhuma"}</span>${N ? `<button type="button" class="mus-play" id="peNarrOuvir" aria-label="Ouvir a narração">${ICO_PLAY}</button><button type="button" class="btn btn--branco" id="peNarrTirar">Tirar</button>` : `<label class="btn btn--branco">Inserir áudio<input type="file" id="peNarrArq" accept="audio/*,.wav,.mp3,.m4a,.ogg" hidden></label>`}</div>
+      ${N ? `<div class="pe-passo"><b>Narração começa em</b><span><button type="button" data-pe-narr-ini="-0.5" aria-label="Antes">−</button><i>${segTxt(N.ini)} s</i><button type="button" data-pe-narr-ini="0.5" aria-label="Depois">+</button></span></div>` : ""}
+      ${P.musica && MUSICAS[P.musica] ? `<label class="pe-passo pe-trecho"><b>Música começa em <i id="peMusIniTxt">${segTxt(P.musIni || 0)} s</i></b><input type="range" id="peMusIni" min="0" max="30" step="1" value="${Math.round(P.musIni || 0)}"></label>` : ""}
+      <button type="button" class="btn btn--branco" id="peCopiarNarr">Copiar prompt da narração</button>
+    </div>`;
+  }
+  /** Música já pronta (com o trecho escolhido): renderiza a partir de "musIni" e entrega o pedaço que vai no vídeo */
+  async function musicaRenderizada(P, dur, SR) {
+    const E = MUSICAS[P.musica]; if (!E) return null; const ini = Math.max(0, +P.musIni || 0);
+    const ac = new OfflineAudioContext(2, Math.ceil((dur + ini + 0.5) * SR), SR);
+    try { await carregarSons(ac, E); tocarTrilha(ac, ac.destination, dur + ini + 0.4, [], [], null, E, null); } catch (e) { return null; }
+    const b = await ac.startRendering(); if (!ini) return b;
+    const out = new AudioBuffer({ numberOfChannels: 2, length: Math.ceil(dur * SR), sampleRate: SR }), pula = Math.floor(ini * SR);
+    for (let c = 0; c < 2; c++) out.getChannelData(c).set(b.getChannelData(c).subarray(pula, pula + out.length));
+    return out;
+  }
+  async function bufferNarracao(ac, P) { if (!P.narr || !P.narr.dados) return null; try { return await ac.decodeAudioData(P.narr.dados.slice(0)); } catch (e) { return null; } }
   /** Áudio extra: música bem baixinha (se escolheu) + o plim do @ no fechamento */
   async function audioFechamento(P, dur) {
     const tot = dur + FECHO.total, SR = 44100, ac = new OfflineAudioContext(2, Math.ceil(tot * SR), SR);
-    if (P.musica && MUSICAS[P.musica]) { const E = MUSICAS[P.musica], g = ac.createGain(); g.connect(ac.destination);
-      const vol = P.semSom ? 0.6 : 0.13; g.gain.setValueAtTime(vol, 0); g.gain.setValueAtTime(vol, Math.max(0, tot - 1)); g.gain.linearRampToValueAtTime(0.0001, tot);
-      try { await carregarSons(ac, E); tocarTrilha(ac, g, tot, [], [], null, E, null); } catch (e) { /* sem música */ } }
+    const narr = await bufferNarracao(ac, P), nIni = narr ? Math.max(0, +P.narr.ini || 0) : 0, nFim = narr ? nIni + narr.duration : 0;
+    if (P.musica && MUSICAS[P.musica]) { const g = ac.createGain(); g.connect(ac.destination);
+      const vol = P.semSom ? 0.6 : 0.13, baixo = P.semSom ? 0.18 : 0.06; g.gain.setValueAtTime(vol, 0);
+      if (narr) { g.gain.setValueAtTime(vol, Math.max(0, nIni - 0.3)); g.gain.linearRampToValueAtTime(baixo, nIni); g.gain.setValueAtTime(baixo, nFim); g.gain.linearRampToValueAtTime(vol, nFim + 0.4); }
+      g.gain.setValueAtTime(vol, Math.max(0, tot - 1)); g.gain.linearRampToValueAtTime(0.0001, tot);
+      const mb = await musicaRenderizada(P, tot, SR); if (mb) { const src = ac.createBufferSource(); src.buffer = mb; src.connect(g); src.start(0); } }
+    if (narr) { const src = ac.createBufferSource(), gn = ac.createGain(); gn.gain.value = 1; src.buffer = narr; src.connect(gn).connect(ac.destination); src.start(nIni); }
     const tp = dur + FECHO.plim; [[1568, 0, 0.42], [2093, 0.11, 0.38]].forEach(([f, d, v]) => { [[1, 1], [2.01, 0.4], [3, 0.16]].forEach(([h, gh]) => {
       const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; const t = tp + d;
       g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v * gh, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
@@ -9010,8 +9045,15 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     const ml = t.closest("[data-pe-moldura]"); if (ml) { P.moldura = ml.dataset.peMoldura; lsPers.gravar("moldura", P.moldura); if (P.resultado) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; } ml.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ml)); return; }
     if (t.closest("#peSom") && P.midia && P.midia.video) { const v = P.midia.video, b = t.closest("#peSom");
       if ((!v.muted || P.somFundo) && !v.paused) { v.muted = true; pararSaida(P.somFundo); P.somFundo = null; b.textContent = "▶ Ouvir prévia com som"; return; }
-      pararSaida(P.somFundo); P.somFundo = P.musica && MUSICAS[P.musica] ? tocarMusicaPrevia(P.musica, Math.min(60, (isFinite(v.duration) ? v.duration : 15) + 1), P.semSom ? 0.6 : 0.16) : null; // música baixinha, como no vídeo final
+      pararSaida(P.somFundo); P.somFundo = null; const durV = Math.min(60, (isFinite(v.duration) ? v.duration : 15) + 1);
+      if ((P.musica && MUSICAS[P.musica] && (+P.musIni || 0) > 0) || P.narr) { // trecho escolhido ou narração: toca a mistura pronta (igual ao vídeo final)
+        b.textContent = "Preparando o som…"; try { const ac = ctxPrevia(), buf = await ac.decodeAudioData((await audioFechamento(P, durV)).buffer.slice(0)); const g = ac.createGain(); g.connect(ac.destination); const s = ac.createBufferSource(); s.buffer = buf; s.connect(g); s.start(); P.somFundo = { g, vivo: true }; } catch (er) { P.somFundo = null; } }
+      else P.somFundo = P.musica && MUSICAS[P.musica] ? tocarMusicaPrevia(P.musica, durV, P.semSom ? 0.6 : 0.16) : null; // música baixinha, como no vídeo final
       try { v.currentTime = 0; v.muted = !!P.semSom; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; const fundo = P.somFundo; v.addEventListener("ended", () => pararSaida(fundo), { once: true }); } catch (er) { v.muted = true; pararSaida(P.somFundo); P.somFundo = null; toast("Não consegui tocar o som"); } return; }
+    if (t.closest("#peNarrTirar")) { if (P.narr && P.narr.url) URL.revokeObjectURL(P.narr.url); P.narr = null; P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peNarrOuvir") && P.narr) { if (!peNarrAudio) peNarrAudio = new Audio(); if (!peNarrAudio.paused && peNarrAudio.src === P.narr.url) { peNarrAudio.pause(); return; } peNarrAudio.src = P.narr.url; peNarrAudio.currentTime = 0; peNarrAudio.play().catch(() => toast("Não consegui tocar este áudio")); return; }
+    const ni = t.closest("[data-pe-narr-ini]"); if (ni && P.narr) { P.narr.ini = Math.max(0, Math.round(((+P.narr.ini || 0) + +ni.dataset.peNarrIni) * 10) / 10); P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peCopiarNarr")) { const fala = falaDaNarracao(P); if (await copiarTexto(modeloPrompt("narracao").replace("{fala}", fala || "[COLE A FALA AQUI]"))) toast(fala ? "Prompt da narração copiado com a fala do vídeo" : "Prompt copiado: troque [COLE A FALA AQUI] pela fala"); return; }
     if (t.closest("#peCopiarLeg")) { if (await copiarTexto($("#peLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
     { const q = t.closest("[data-pe-corte]"); if (q) { const v = P.midia && P.midia.video, d = v && isFinite(v.duration) ? v.duration : 15;

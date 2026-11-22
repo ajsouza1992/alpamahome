@@ -2879,3 +2879,15 @@ body.modo-selecao .lojas-seg { display: none; }
 .aj-chave.pe-som { display: grid !important; grid-template-columns: minmax(0, 1fr) 52px !important; align-items: center; gap: 12px; width: 100% !important; max-width: none !important; height: auto !important; min-height: 64px; box-sizing: border-box; margin: 10px 0 0 !important; padding: 10px 14px !important; border-radius: 16px !important; background: var(--campo) !important; color: var(--preto) !important; box-shadow: none !important; position: relative; transform: none !important; }
 .aj-chave.pe-som b { color: var(--preto) !important; font-size: 15px; }
 .chave-som { position: relative !important; left: auto !important; bottom: auto !important; transform: none !important; height: auto !important; border: 0; }
+/* Montar o vídeo: narração (áudio do AI Studio) e trecho da música */
+.pe-narr { display: grid; gap: 10px; margin-top: 10px; }
+.pe-narr .pe-roupa { margin: 0; }
+.pe-narr .pe-roupa span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-narr label.btn { flex: none; width: auto !important; }
+.pe-passo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 16px; background: var(--campo); font-size: 14px; }
+.pe-passo span { display: inline-flex; align-items: center; gap: 8px; }
+.pe-passo span button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: #fff; font: inherit; font-size: 18px; font-weight: 800; color: var(--preto); box-shadow: var(--sombra); cursor: pointer; }
+.pe-passo i { font-style: normal; font-weight: 700; min-width: 44px; text-align: center; }
+.pe-trecho { flex-direction: column; align-items: stretch; }
+.pe-trecho b i { color: var(--rosa); }
+.pe-trecho input[type=range] { width: 100%; accent-color: var(--rosa); }

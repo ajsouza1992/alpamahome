@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=433` → próxima `?v=434`
-- `app/sw.js`: `VERSAO = "miga-promo-v436"` → próxima `v437`
-- Comando usado: `sed -i 's/?v=433/?v=434/g' app/index.html app/sw.js && sed -i 's/miga-promo-v436/miga-promo-v437/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=434` → próxima `?v=435`
+- `app/sw.js`: `VERSAO = "miga-promo-v437"` → próxima `v438`
+- Comando usado: `sed -i 's/?v=434/?v=435/g' app/index.html app/sw.js && sed -i 's/miga-promo-v437/miga-promo-v438/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -181,3 +181,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Extensão 1.7.0:** botão **Baixar vídeo** na barra (página de produto com vídeo): pega os `.mp4` das lojas (o `<video>` da página e os endereços no HTML; filtra `susercontent`, `mlstatic`, `mercadoli`) e baixa pelo `fundo.js` (service worker com `chrome.downloads`) em `Downloads/miga-videos/`. Vídeo em `blob:` (em pedaços) não dá para baixar.
 - **Extensão 1.7.1:** baixa só o vídeo ABERTO (`videoAberto`: o `<video>` tocando ou o maior visível; senão o último `.mp4` das lojas em `performance`). Vídeo em `blob:`/HLS (Mercado Livre) não dá para baixar: avisa para usar a gravação de tela.
 - **Extensão 1.8.0:** vídeo em pedaços (HLS) também baixa: `baixarPedacos` acha o último `.m3u8` em `performance`, escolhe a maior qualidade, baixa os segmentos e junta (fMP4: concatena; `.ts`: converte com `mux.min.js`, Apache-2.0). Com chave de criptografia (`EXT-X-KEY`), avisa que é protegido. Testado com HLS gerado pelo ffmpeg (ts e fmp4).
+- **Montar o vídeo › Narração e trecho da música** (`blocoNarracao`): "Inserir áudio" (`P.narr` = {nome, dados, url, ini}), ouvir, tirar e "Narração começa em" (de 0,5 em 0,5 s); "Música começa em" de 0 a 30 s (`P.musIni`, `musicaRenderizada` renderiza a partir do ponto); a música abaixa enquanto a narração fala (no `audioFechamento`). "Copiar prompt da narração" usa o prompt `narracao` (editável em Ajustes › Prompts) com `{fala}`. A prévia com som toca a mistura pronta.
