@@ -2894,3 +2894,18 @@ body.modo-selecao .lojas-seg { display: none; }
 .pe-narr-copiar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pe-narr-copiar .btn { padding-left: 8px; padding-right: 8px; }
 .pe-narr .nota { margin: -2px 0 0; text-align: center; }
+/* Montar o vídeo: bloco "Som do vídeo" (música, trecho, sem o som original e narração), tudo alinhado */
+.pe-audio { display: grid; gap: 8px; margin-top: 6px; }
+.pe-audio > .ch-rot { margin: 0 0 2px; }
+.pe-audio .pe-roupa, .pe-audio .pe-passo, .pe-audio .aj-chave.pe-som { margin: 0 !important; min-height: 60px; padding: 8px 10px 8px 14px !important; border-radius: 16px !important; background: var(--campo) !important; box-sizing: border-box; }
+.pe-audio .pe-roupa { display: flex; align-items: center; gap: 8px; }
+.pe-audio .pe-roupa > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-audio .pe-roupa .btn { flex: none; width: auto !important; min-height: 40px; padding: 0 16px; }
+.pe-audio .pe-trecho { margin-top: -4px !important; padding-top: 10px !important; display: grid; gap: 6px; }
+.pe-trecho-cab { display: flex; justify-content: space-between; align-items: center; }
+.pe-trecho-cab i { font-style: normal; font-weight: 800; color: var(--rosa); }
+.pe-audio .pe-narr { margin: 0; gap: 8px; }
+.pe-audio .pe-trecho { grid-template-columns: minmax(0, 1fr); justify-items: stretch; }
+.pe-audio .pe-trecho-cab { width: 100%; }
+.pe-audio .pe-trecho input[type=range] { width: 100% !important; margin: 0; }
+.pe-audio .pe-passo > b { white-space: nowrap; }
