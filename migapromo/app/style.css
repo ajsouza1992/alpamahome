@@ -2951,3 +2951,5 @@ html, body { overflow-x: clip; }
 .pe-tela > *, .pe-tipos > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
 .pe-tipo-card, .pe-prod-esc { box-sizing: border-box; max-width: 100%; }
 .pe-tipo-card > span:last-child { min-width: 0; }
+/* Botão de destaque (rosa) nas duplas de botões: o fundo branco das duplas apagava o texto branco */
+.btn.rp-adesivo.btn--rosa, .btn.rp-adesivo.btn--rosa:hover, .btn.rp-adesivo.btn--rosa:focus, .btn.rp-adesivo.btn--rosa:active { background: var(--rosa) !important; color: #fff !important; }
