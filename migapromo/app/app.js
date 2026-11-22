@@ -6783,12 +6783,10 @@
   }
   /** Arte parada (Status, Story, feed) com o mesmo modelo dos Reels */
   let telaArte = null;
-  /** Story e Status: "Preço e promoção podem mudar a qualquer momento." em letra pequena, numa pílula clara (lê em qualquer cor de fundo) */
-  function avisoPrecoArte(ctx, W, H) {
-    const txt = "Promoção pode mudar a qualquer momento.";
-    ctx.save(); ctx.font = "600 24px Poppins, sans-serif"; const w = ctx.measureText(txt).width + 40, h = 44, x = (W - w) / 2, y = H - 244;
-    ctx.globalAlpha = 0.9; retArredondado(ctx, x, y, w, h, h / 2); ctx.fillStyle = "#ffffff"; ctx.fill();
-    ctx.globalAlpha = 1; ctx.fillStyle = "#5c5450"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, W / 2, y + h / 2 + 1); ctx.restore();
+  /** Story e Status: "Promoção pode mudar a qualquer momento." em letra pequena, na cor suave do tema escolhido (a mesma do "antes R$") */
+  function avisoPrecoArte(ctx, W, H, C) {
+    ctx.save(); ctx.font = "600 26px Poppins, sans-serif"; ctx.fillStyle = (C && (C.antigo || C.texto)) || "#8a817b"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("Promoção pode mudar a qualquer momento.", W / 2, H - 222); ctx.restore();
   }
   function artePost(tela, R, it, bmp, formato, tAnim) {
     const W = 1080, H = formato === "post" ? 1350 : formato === "quadrado" ? 1080 : 1920;
@@ -6802,10 +6800,10 @@
       semEntrada = storyComLink;
       try { if (H === 1920) produtoReels(ctx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor); else comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor)); }
       finally { ctx.restore(); pulsoTela = 0; acentoCena = null; flutua = null; semEntrada = false; }
-      if (H === 1920) avisoPrecoArte(ctx, W, H);
+      if (H === 1920) avisoPrecoArte(ctx, W, H, C);
       return;
     }
-    if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); avisoPrecoArte(ctx, W, H); return; }
+    if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); avisoPrecoArte(ctx, W, H, C); return; }
     // Feed/quadrado: fundo no tamanho certo e o conteúdo um pouco menor no meio
     comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor));
   }
