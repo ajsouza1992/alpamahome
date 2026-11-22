@@ -5410,7 +5410,7 @@
         const prod = modo === "produto" ? `<div class="vd-prod"><span class="pp-mini">${fotoMini(it)}</span><span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${obsTag(it)}${it.imagem ? `<button type="button" class="vd-baixar-foto" id="vdBaixarFoto"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar foto</button>` : ""}</span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
         const video = `<div class="vd-arquivo">
             ${V.url ? `<video class="vd-previa" src="${V.url}" playsinline controls${V.somOriginal === false ? " muted" : ""}></video>
-            <button type="button" class="btn btn--branco${V.somOriginal === false ? " on-borda" : ""}" id="vdSemSom">Sem o som original</button>` : ""}
+            <label class="aj-chave vd-som"><span><b>Sem o som original</b></span><input type="checkbox" id="vdSemSom"${V.somOriginal === false ? " checked" : ""}><i></i></label>` : ""}
             <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher o vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
             ${modo === "produto" && it.imagem ? `<button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>` : ""}
           </div>`;
@@ -6111,12 +6111,6 @@
       baixarBlob(arq, arq.name); toast("Foto salva: abra a IA e anexe a foto");
       return;
     }
-    if (t.closest("#vdSemSom")) { // tira (ou devolve) o som original; sem ele, a música do app toca
-      const V = vd(); V.somOriginal = V.somOriginal === false; V.resultado = null; if (V.somOriginal === false && !V.musica) V.musica = true;
-      const b = t.closest("#vdSemSom"); b.classList.toggle("on-borda", V.somOriginal === false);
-      document.querySelectorAll("video.vd-previa").forEach((x) => { x.muted = V.somOriginal === false; });
-      toast(V.somOriginal === false ? "Som original tirado: fica só a música do app" : "Som original de volta"); return;
-    }
     if (t.closest("#vdSemVideo")) {
       if (!V.semVideo && !(vdItem() && vdItem().imagem)) { toast("Escolha antes um produto com foto (passo anterior)"); return; }
       V.semVideo = !V.semVideo; if (V.semVideo) V.tema = "moldura"; if (V.semVideo && V.url) { URL.revokeObjectURL(V.url); V.url = ""; V.quadro = null; }
@@ -6153,6 +6147,10 @@
   });
   $("#wzCorpo").addEventListener("change", async (e) => {
     if (e.target.dataset && e.target.dataset.vdOp) { vd()[e.target.dataset.vdOp] = e.target.checked; vd().resultado = null; semSomPedeMusica(e.target); return; }
+    if (e.target.id === "vdSemSom") { // chave ligada: tira o som original; a música do app toca no lugar
+      const V = vd(); V.somOriginal = !e.target.checked; V.resultado = null; if (!V.somOriginal && !V.musica) V.musica = true;
+      document.querySelectorAll("video.vd-previa").forEach((x) => { x.muted = V.somOriginal === false; }); return;
+    }
     if (e.target.id === "vdFotoNova") {
       const f = e.target.files && e.target.files[0]; const it = vdItem();
       if (!f) return;
