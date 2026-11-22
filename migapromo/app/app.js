@@ -5410,7 +5410,7 @@
         const prod = modo === "produto" ? `<div class="vd-prod"><span class="pp-mini">${fotoMini(it)}</span><span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${obsTag(it)}${it.imagem ? `<button type="button" class="vd-baixar-foto" id="vdBaixarFoto"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar foto</button>` : ""}</span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
         const video = `<div class="vd-arquivo">
             ${V.url ? `<video class="vd-previa" src="${V.url}" playsinline controls${V.somOriginal === false ? " muted" : ""}></video>
-            <label class="aj-chave vd-som"><span><b>Sem o som original</b></span><input type="checkbox" id="vdSemSom"${V.somOriginal === false ? " checked" : ""}><i></i></label>` : ""}
+            <label class="aj-chave chave-som"><span><b>Sem o som original</b></span><input type="checkbox" id="vdSemSom"${V.somOriginal === false ? " checked" : ""}><i></i></label>` : ""}
             <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher o vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
             ${modo === "produto" && it.imagem ? `<button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>` : ""}
           </div>`;
@@ -8353,7 +8353,8 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
         ${cenasN(P) > 1 && P.midia ? '<button type="button" class="btn btn--branco pe-escolher" id="peTrocarCenas">Trocar as cenas</button>' : `<label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>`}
         ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
         ${P.midia && P.midia.tipo === "video" ? '<button type="button" class="btn btn--branco btn-previa" id="peSom">▶ Ouvir prévia com som</button>' : ""}`}
-        ${P.midia && P.midia.tipo === "video" ? `<div class="pe-roupa ch-musica"><span><b>Música baixinha ao fundo:</b> ${P.musica && NOMES_MUSICA[P.musica] ? esc(NOMES_MUSICA[P.musica][0]) : "sem música"}</span>${P.musica ? `<button type="button" class="mus-play" data-ouvir="${P.musica}" aria-label="Ouvir">${ICO_PLAY}</button>` : ""}<button type="button" class="btn btn--branco" id="peTrocarMus">${P.musica ? "Trocar" : "Escolher"}</button></div>` : ""}
+        ${P.midia && P.midia.tipo === "video" ? `<div class="pe-roupa ch-musica"><span><b>${P.semSom ? "Música" : "Música baixinha ao fundo"}:</b> ${P.musica && NOMES_MUSICA[P.musica] ? esc(NOMES_MUSICA[P.musica][0]) : "sem música"}</span>${P.musica ? `<button type="button" class="mus-play" data-ouvir="${P.musica}" aria-label="Ouvir">${ICO_PLAY}</button>` : ""}<button type="button" class="btn btn--branco" id="peTrocarMus">${P.musica ? "Trocar" : "Escolher"}</button></div>` : ""}
+        ${P.midia && P.midia.tipo === "video" ? `<label class="aj-chave chave-som pe-som"><span><b>Sem o som original</b></span><input type="checkbox" id="peSemSom"${P.semSom ? " checked" : ""}><i></i></label>` : ""}
         ${P.midia && P.midia.tipo === "video" ? `<div><b class="ch-rot">Onde o final entra</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-pe-corte="auto" aria-checked="${P.corte == null}">Automático</button><button type="button" role="radio" data-pe-corte="manual" aria-checked="${P.corte != null}">Eu escolho</button></div>
           ${P.corte != null ? `<input type="range" class="pe-corte" id="peCorte" min="0.5" max="${(P.midia.video && isFinite(P.midia.video.duration) ? P.midia.video.duration : 15).toFixed(2)}" step="0.05" value="${P.corte}"><p class="nota wz-centro">O final entra em <b id="peCorteTxt">${P.corte.toFixed(1).replace(".", ",")} s</b>. Arraste até a última cena boa (a prévia mostra ela).</p>` : `<p class="nota">O app acha sozinho o fim do vídeo e corta a tela preta.${P.corteAuto ? ` No último vídeo, o final entrou em ${P.corteAuto.toFixed(1).replace(".", ",")} s.` : ""}</p>`}</div>` : ""}
         ${P.midia && P.midia.tipo === "video" ? `
@@ -8506,6 +8507,11 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     if (wz.canal !== "personagem") return; const P = pe();
     const m = e.target.closest("[data-pe-mostra]"); if (m) { P["sem" + m.dataset.peMostra] = !m.checked; const lb = m.closest("label"); if (lb) lb.classList.toggle("on", m.checked); lsPers.gravar("mostrar", { semLogo: !!P.semLogo, semArroba: !!P.semArroba, semSelo: !!P.semSelo }); P.resultado = null; desenharMinisIA(); return; }
     if (e.target.id === "peLimpa") P.grupoLimpa = e.target.checked;
+    if (e.target.id === "peSemSom") { // sem o som original: fica só a música do app (no volume normal)
+      P.semSom = e.target.checked; P.resultado = null; if (P.midia && P.midia.video) P.midia.video.muted = true;
+      if (P.semSom && !(P.musica && MUSICAS[P.musica])) { P.musica = Object.keys(NOMES_MUSICA).find((k) => MUSICAS[k]) || P.musica; const y = scrollY; mostrarPasso(); scrollTo(0, y); }
+      return;
+    }
     if (e.target.id === "pePose") { P.poseLivre = e.target.checked; lsPers.gravar("pose", P.poseLivre); P.promptEd = null; }
   });
   /** Legenda pronta do post: produto (nome, preço, cupom) ou o assunto do vídeo sem produto, com 5 hashtags */
@@ -8693,7 +8699,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
   async function audioFechamento(P, dur) {
     const tot = dur + FECHO.total, SR = 44100, ac = new OfflineAudioContext(2, Math.ceil(tot * SR), SR);
     if (P.musica && MUSICAS[P.musica]) { const E = MUSICAS[P.musica], g = ac.createGain(); g.connect(ac.destination);
-      g.gain.setValueAtTime(0.13, 0); g.gain.setValueAtTime(0.13, Math.max(0, tot - 1)); g.gain.linearRampToValueAtTime(0.0001, tot);
+      const vol = P.semSom ? 0.6 : 0.13; g.gain.setValueAtTime(vol, 0); g.gain.setValueAtTime(vol, Math.max(0, tot - 1)); g.gain.linearRampToValueAtTime(0.0001, tot);
       try { await carregarSons(ac, E); tocarTrilha(ac, g, tot, [], [], null, E, null); } catch (e) { /* sem música */ } }
     const tp = dur + FECHO.plim; [[1568, 0, 0.42], [2093, 0.11, 0.38]].forEach(([f, d, v]) => { [[1, 1], [2.01, 0.4], [3, 0.16]].forEach(([h, gh]) => {
       const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; o.frequency.value = f * h; const t = tp + d;
@@ -8800,8 +8806,8 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       const D = (c / fps).toFixed(3), tot = ((c + nF) / fps).toFixed(3); if (P.corte == null) P.corteAuto = c / fps;
       await ff.writeFile("v.mp4", new Uint8Array(bruto)); await ff.writeFile("v.h264", h264); await ff.writeFile("a.wav", await audioFechamento(P, c / fps));
       const ent = ["-framerate", String(fps), "-i", "v.h264", "-i", "v.mp4", "-i", "a.wav"], saida = ["-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
-      await ff.exec([...ent, "-filter_complex", `[1:a]atrim=end=${D},apad[v0];[v0][2:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "0:v", "-map", "[a]", ...saida]);
-      let d = await ff.readFile("s.mp4").catch(() => null);
+      if (!P.semSom) await ff.exec([...ent, "-filter_complex", `[1:a]atrim=end=${D},apad[v0];[v0][2:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "0:v", "-map", "[a]", ...saida]);
+      let d = P.semSom ? null : await ff.readFile("s.mp4").catch(() => null); // sem o som original: só a música do app
       if (!d || d.length < 2000) { await ff.exec([...ent, "-map", "0:v", "-map", "2:a", ...saida]); d = await ff.readFile("s.mp4").catch(() => null); } // vídeo sem som
       ["v.mp4", "v.h264", "a.wav", "s.mp4"].forEach((x) => ff.deleteFile(x).catch(() => {}));
       if (!d || d.length < 2000) throw new Error("junção vazia");
@@ -8836,8 +8842,8 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     const tot = (dur + FECHO.total).toFixed(3), D = dur.toFixed(3);
     const vf = `[0:v]scale=1080:${H}:force_original_aspect_ratio=increase,crop=1080:${H},setsar=1,fps=30,trim=end=${D},setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=${FECHO.total}[b];[b][1:v]overlay=0:0:enable='lt(t,${D})'[c];[2:v]setpts=PTS-STARTPTS+${D}/TB[f];[c][f]overlay=0:0:eof_action=repeat,format=yuv420p[o]`;
     const ent = ["-i", "v.mp4", "-i", "m.png", "-framerate", "30", "-i", "f%03d.png", "-i", "a.wav"], saida = ["-c:v", "libx264", "-preset", "ultrafast", "-crf", P.qualidade === "rapido" ? "24" : "19", "-r", "30", "-c:a", "aac", "-b:a", "160k", "-t", tot, "-movflags", "+faststart", "s.mp4"];
-    await ff.exec([...ent, "-filter_complex", vf + `;[0:a]atrim=end=${D},apad[v0];[v0][3:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "[o]", "-map", "[a]", ...saida]);
-    let d = await ff.readFile("s.mp4").catch(() => null);
+    if (!P.semSom) await ff.exec([...ent, "-filter_complex", vf + `;[0:a]atrim=end=${D},apad[v0];[v0][3:a]amix=inputs=2:duration=longest:normalize=0[a]`, "-map", "[o]", "-map", "[a]", ...saida]);
+    let d = P.semSom ? null : await ff.readFile("s.mp4").catch(() => null); // sem o som original: só a música do app
     if (!d || d.length < 2000) { await ff.exec([...ent, "-filter_complex", vf, "-map", "[o]", "-map", "3:a", ...saida]); d = await ff.readFile("s.mp4").catch(() => null); } // vídeo sem som
     ffCarregado = null; ff.terminate();
     if (!d || d.length < 2000) throw new Error("ffmpeg vazio");
@@ -9003,9 +9009,9 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     const ci = t.closest("[data-pe-circ]"); if (ci) { P.circulo = ci.dataset.peCirc === "logo" ? "logo" : ci.dataset.peCirc === "1"; lsPers.gravar("circulo", P.circulo); P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const ml = t.closest("[data-pe-moldura]"); if (ml) { P.moldura = ml.dataset.peMoldura; lsPers.gravar("moldura", P.moldura); if (P.resultado) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; } ml.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === ml)); return; }
     if (t.closest("#peSom") && P.midia && P.midia.video) { const v = P.midia.video, b = t.closest("#peSom");
-      if (!v.muted && !v.paused) { v.muted = true; pararSaida(P.somFundo); P.somFundo = null; b.textContent = "▶ Ouvir prévia com som"; return; }
-      pararSaida(P.somFundo); P.somFundo = P.musica && MUSICAS[P.musica] ? tocarMusicaPrevia(P.musica, Math.min(60, (isFinite(v.duration) ? v.duration : 15) + 1), 0.16) : null; // música baixinha, como no vídeo final
-      try { v.currentTime = 0; v.muted = false; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; const fundo = P.somFundo; v.addEventListener("ended", () => pararSaida(fundo), { once: true }); } catch (er) { v.muted = true; pararSaida(P.somFundo); P.somFundo = null; toast("Não consegui tocar o som"); } return; }
+      if ((!v.muted || P.somFundo) && !v.paused) { v.muted = true; pararSaida(P.somFundo); P.somFundo = null; b.textContent = "▶ Ouvir prévia com som"; return; }
+      pararSaida(P.somFundo); P.somFundo = P.musica && MUSICAS[P.musica] ? tocarMusicaPrevia(P.musica, Math.min(60, (isFinite(v.duration) ? v.duration : 15) + 1), P.semSom ? 0.6 : 0.16) : null; // música baixinha, como no vídeo final
+      try { v.currentTime = 0; v.muted = !!P.semSom; v.volume = 1; await v.play(); b.textContent = "■ Tirar o som"; const fundo = P.somFundo; v.addEventListener("ended", () => pararSaida(fundo), { once: true }); } catch (er) { v.muted = true; pararSaida(P.somFundo); P.somFundo = null; toast("Não consegui tocar o som"); } return; }
     if (t.closest("#peCopiarLeg")) { if (await copiarTexto($("#peLegenda").value)) toast("Legenda copiada"); return; }
     if (t.closest("#peGravar")) { gravarPersonagem(); return; }
     { const q = t.closest("[data-pe-corte]"); if (q) { const v = P.midia && P.midia.video, d = v && isFinite(v.duration) ? v.duration : 15;
