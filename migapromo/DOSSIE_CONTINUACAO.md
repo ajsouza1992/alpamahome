@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=439` → próxima `?v=440`
-- `app/sw.js`: `VERSAO = "miga-promo-v442"` → próxima `v443`
-- Comando usado: `sed -i 's/?v=439/?v=440/g' app/index.html app/sw.js && sed -i 's/miga-promo-v442/miga-promo-v443/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=440` → próxima `?v=441`
+- `app/sw.js`: `VERSAO = "miga-promo-v443"` → próxima `v444`
+- Comando usado: `sed -i 's/?v=440/?v=441/g' app/index.html app/sw.js && sed -i 's/miga-promo-v443/miga-promo-v444/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.

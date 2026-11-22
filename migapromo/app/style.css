@@ -2940,3 +2940,11 @@ html, body { overflow-x: clip; }
   .arq-item .bt-icone { width: 36px; height: 36px; }
   .arq-info b { font-size: 13.5px; }
 }
+/* Som do vídeo: nada passa da largura no celular */
+.pe-audio { grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.pe-audio > *, .pe-audio .pe-narr > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.pe-audio .pe-narr { grid-template-columns: minmax(0, 1fr); }
+.pe-audio .pe-roupa > span { flex: 1 1 auto; min-width: 0; }
+.pe-audio .pe-roupa .mus-play { flex: none; }
+@media (max-width: 420px) { .pe-audio .pe-roupa .btn { padding: 0 12px; } .pe-audio .pe-roupa > span b { display: block; } }
+@media (max-width: 420px) { .pe-audio .pe-passo span { gap: 4px; } .pe-audio .pe-passo span button { width: 32px; height: 32px; font-size: 16px; } .pe-audio .pe-passo i { min-width: 36px; } .pe-audio .pe-passo { gap: 8px; } }
