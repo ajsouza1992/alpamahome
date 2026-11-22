@@ -2909,3 +2909,6 @@ body.modo-selecao .lojas-seg { display: none; }
 .pe-audio .pe-trecho-cab { width: 100%; }
 .pe-audio .pe-trecho input[type=range] { width: 100% !important; margin: 0; }
 .pe-audio .pe-passo > b { white-space: nowrap; }
+/* Computador: nada pode empurrar a página para o lado (o topo com o logo andava e ficava desalinhado do menu) */
+html, body { overflow-x: clip; }
+@media (min-width: 960px) { .conteudo, main { min-width: 0; overflow-x: clip; } }
