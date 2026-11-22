@@ -3625,7 +3625,7 @@
   const NOME_PASSO = { canal: "Tipo", produto: "Produto", rItens: "Produtos", rOrdem: "Ordem", rModelo: "Arte", rPronto: "Vídeo", rDepois: "Postar", kCarrossel: "Arte", kPronto: "Pronto",
     grade: "Formato", itens: "Produtos", tema: "Arte", livre: "Pronto", vDados: "Dados", vArquivo: "Vídeo", vTema: "Estilo", vPronto: "Pronto", cEscolher: "Cupons", cPronto: "Pronto",
     chEditar: "Editar", chPronto: "Pronto", chInicio: "Assunto", chImg: "Arte", chImgPostar: "Postar", chFim: "Pronto", chRevisar: "Revisar", chPostar: "Postar",
-    peEscolher: "Escolher", pePrompt: "Pedido", peMontar: "Montar", peLugares: "Lugares", peRodar: "Postar", peResumo: "Pronto", kaInicio: "Telas", kaRevisar: "Revisar", kaPostar: "Postar", kaPronto: "Pronto",
+    peEscolher: "Escolher", peFoto: "Foto", pePrompt: "Vídeo", peMontar: "Montar", peLugares: "Lugares", peRodar: "Postar", peResumo: "Pronto", kaInicio: "Telas", kaRevisar: "Revisar", kaPostar: "Postar", kaPronto: "Pronto",
     lugares: "Lugares", mensagem: "Mensagem", rpConferir: "Arte", rodar: "Postar", resumo: "Pronto", montagem: "Arte", postar: "Postar", tipoWhats: "Tipo", enviar: "Enviar", telegram: "Enviar" };
   function passosDe(canal) {
     const l = passosBase(canal);
@@ -3636,7 +3636,8 @@
     if (canal === "video") return ["canal", "vDados", "vArquivo", "vTema", "vPronto"];
     if (canal === "cupons") return ["cEscolher", "cPronto"];
     if (canal === "chamada") return wz && wz.ch && wz.ch.tipo === "seg" ? ["chEditar", "chPronto"] : wz && wz.ch && wz.ch.modo === "img" ? ["chInicio", "chImg", "chImgPostar", "chFim"] : ["chInicio", "chRevisar", "chPostar", "chFim"];
-    if (canal === "personagem") return ["peEscolher", "pePrompt", "peMontar", "peLugares", "peRodar", "peResumo"];
+    if (canal === "personagem") { const t = wz && wz.pe ? wz.pe.tipo : "imagem"; // Foto com produto · Vídeo com produto · Vídeo sem produto
+      return t === "chamada" ? ["peEscolher", "pePrompt", "peMontar", "peLugares", "peRodar", "peResumo"] : t === "imagem" ? ["peEscolher", "peFoto", "peMontar", "peLugares", "peRodar", "peResumo"] : ["peEscolher", "peFoto", "pePrompt", "peMontar", "peLugares", "peRodar", "peResumo"]; }
     if (canal === "cartas") return ["kaInicio", "kaRevisar", "kaPostar", "kaPronto"];
     if (canal === "reels") return wz.reels && wz.reels.carrossel ? ["canal", "rItens", "kCarrossel", "kPronto", "rDepois"] : ["canal", "rItens", "rModelo", "rPronto", "rDepois"];
     if (canal === "roteiro") return passosRoteiro();
@@ -8053,6 +8054,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     return p.slice(0, max).join(" ");
   }
   function falaPersonagem(it, max = 5) {
+    if (wz.pe && wz.pe.falaEd && wz.pe.falaEdItem === (it && it.id)) return wz.pe.falaEd.trim();
     const C = CENAS_PERS[it.categoria] || CENAS_PERS.outros;
     return `Oi, miga! Olha esse ${nomeFala(it.nome, max)}, ${C.frase}. Segue a Miga Promo pra mais promoções!`;
   }
@@ -8260,6 +8262,20 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="peJuntar"${nOk >= 2 && !P.juntando ? "" : " disabled"}>${P.juntando ? "Juntando as cenas… 0%" : nOk >= 2 ? `Juntar e editar (${Math.round(tot)} s)` : "Juntar e editar"}</button></div>`;
   }
   document.addEventListener("toggle", (e) => { if (e.target && e.target.classList && e.target.classList.contains("pe-mais")) { try { pe().maisAberto = e.target.open; } catch (er) { /* segue */ } } }, true);
+  const duracaoChips = (P) => `<b class="ch-rot">Duração do vídeo</b><div class="pe-seg">${[[1, "10 s", "1 cena"], [2, "20 s", "2 cenas"], [3, "30 s", "3 cenas"]].map(([q, a, b]) => `<button type="button" data-pe-cenas="${q}" class="${cenasN(P) === q ? "on" : ""}">${a}<small>${b}</small></button>`).join("")}</div>`;
+  /** Prompt da foto que junta o produto com a Miga, para virar vídeo depois (1 foto, sem pedir texto alternativo) */
+  function promptFotoBase(it, P) {
+    const q0 = P.qtd, t0 = P.tipo; P.tipo = "imagem"; P.qtd = 1;
+    try { return promptPersonagem(it, "imagem").split("\n\n" + ALT_PEDIDO)[0] + " Esta foto vai virar o primeiro quadro de um vídeo: produto bem visível e no tamanho real."; } finally { P.tipo = t0; P.qtd = q0; }
+  }
+  /** Vídeo a partir da foto do passo 2: a IA anima a foto (mesma mulher, roupa, cenário e produto, no mesmo tamanho) */
+  function promptVideoDaFoto(p, P) {
+    if (!P || P.tipo !== "video" || !P.fotoBase) return p;
+    let q = p.replace(/Mesma mulher das fotos de referência anexadas \(mesmo rosto e cabelo\)\.?/, "Anime a foto anexada: a mesma mulher, a mesma roupa, o mesmo cenário e o mesmo produto, no mesmo tamanho e posição.")
+      .replace(/Roupa: [^.]*\.\s*/, "").replace(/Ela veste a roupa da foto do produto anexada\.\s*/, "").replace(/Cenário: [^.]*\.\s*/, "");
+    if (q === p) q = "Anime a foto anexada (mesma mulher, roupa, cenário e produto, no mesmo tamanho). " + p;
+    return q.slice(0, LIMITE_PROMPT);
+  }
   function telaPersonagem(c) {
     const it = wzItem(), P = pe();
     const f = P.fotosAgora || fotosPers(), tipoTxt = P.tipo === "video" ? "vídeo" : "imagem";
@@ -8267,28 +8283,49 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     const nav = (cont, txt = "Continuar", rosa = true) => `<div class="duas pe-nav"><button type="button" class="btn btn--branco" id="peVoltar">Voltar</button><button type="button" class="btn ${rosa ? "btn--rosa" : "btn--branco"}" id="${cont}">${txt}</button></div>`;
     const etapa = (n, txt, acao) => `<div class="pe-etapa"><b class="pe-num">${n}</b><span class="pe-etxt">${txt}</span>${acao}</div>`;
     const segFmt = () => `<b class="ch-rot">Formato</b><div class="pe-seg">${[["quadrado", "Quadrado 1:1"], ["vertical", "Em pé 9:16"]].map(([k, n]) => `<button type="button" data-pe-formato="${k}" class="${fmtPers(P) === k ? "on" : ""}">${n}</button>`).join("")}</div>`;
+    const ICO_TIPO = { imagem: '<rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>', video: '<rect x="3" y="5" width="13" height="14" rx="3"/><path d="M16 10l5-3v10l-5-3"/>', chamada: '<path d="M3 11l14-5v12L3 13z"/><path d="M11 16a3 3 0 1 1-5.8-1.6"/>' };
+    const cabPasso = (titulo) => { const l = passosDe("personagem"), k = l.indexOf(wz.passo); return `<p class="pe-etapa-rot">Passo ${k + 1} de ${l.indexOf("peMontar") + 2} · ${NOME_PASSO[wz.passo]}</p><h2 class="wz-titulo pe-titulo">${titulo}</h2>`; };
     if (wz.passo === "peEscolher") {
       const comProd = P.tipo !== "chamada";
-      c.innerHTML = `<div class="pe-tela">
-        <div class="est-ctrl${comProd ? "" : " est-ctrl--3"}">${botaoEst("peTipo", "Criar", { imagem: "Imagem", video: "Vídeo", chamada: "Vídeo" }[P.tipo] || "Imagem")}${botaoEst("peProduto", "Produto", !comProd ? "Sem produto" : it ? limparNome(it.nome || "") : "Escolher")}${botaoEst("peFormato", "Formato", fmtPers(P) === "quadrado" ? "Quadrado 1:1" : "Em pé 9:16")}${comProd ? botaoEst("peCenario", "Cenário", nomeCenario(P)) : ""}</div>
-        ${P.tipo === "chamada" ? '<p class="nota">Vídeo sem produto: ela chama a galera (canal, grupo, stories…). Você só copia o prompt.</p>' : P.tipo === "video" && !it ? '<p class="nota">Sem produto escolhido, o vídeo fica só com ela chamando a galera.</p>' : ""}
-
-
-        ${P.tipo === "imagem" ? `<b class="ch-rot">Quantas fotos?</b><div class="pe-seg">${[1, 2, 3].map((q) => `<button type="button" data-pe-qtd="${q}" class="${qtdPers(P) === q ? "on" : ""}">${q} ${q === 1 ? "foto" : "fotos"}</button>`).join("")}</div>` : ""}
-
-        ${comProd ? `<details class="pe-mais"${P.maisAberto ? " open" : ""}><summary>Mais opções <small>duração, cor do fundo, pose e enquadramento</small></summary><div class="pe-mais-c">${comProd ? `${P.tipo === "video" ? `<b class="ch-rot">Duração do vídeo</b><div class="pe-seg">${[[1, "10 s", "1 cena"], [2, "20 s", "2 cenas"], [3, "30 s", "3 cenas"]].map(([q, a, b]) => `<button type="button" data-pe-cenas="${q}" class="${cenasN(P) === q ? "on" : ""}">${a}<small>${b}</small></button>`).join("")}</div>` : ""}` : ""}` : ""}
-        ${comProd && cenarioPers(P) === "estudio" ? `<div class="pe-fundo2"><button type="button" data-pe-fundo="auto" class="pe-auto${(P.fundo || "auto") === "auto" ? " on" : ""}">Automático</button>${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="pe-bola${P.fundo === k ? " on" : ""}" style="background:${x[1]}" aria-label="${x[0]}" title="${x[0]}"></button>`).join("")}</div>` : ""}
-        ${P.tipo === "imagem" ? `<label class="pe-pose"><input type="checkbox" id="pePose"${P.poseLivre === false ? "" : " checked"}><span><b>Pose livre</b> <small>· ela posa à vontade</small></span></label>` : ""}
-        ${comProd && qtdPers(P) === 1 ? `<b class="ch-rot">Enquadramento</b><div class="ed-chips pe-enq">${Object.entries(ENQUAD_PERS).map(([k, [n]]) => `<button type="button" data-pe-enquad="${k}" class="${enquadDe(P, it) === k ? "on" : ""}">${n}</button>`).join("")}</div>` : ""}
-        ${comProd ? "</div></details>" : ""}
-        </div>${botaoContinuar(true).replace('id="wzContinuar"', 'id="peIr2"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
+      c.innerHTML = `<div class="pe-tela">${cabPasso("O que vamos criar?")}
+        <div class="pe-tipos">${[["imagem", "Foto com produto", "A Miga segurando ou usando o produto"], ["video", "Vídeo com produto", "A foto da Miga com o produto vira vídeo, com fala"], ["chamada", "Vídeo sem produto", "A Miga chamando para o canal, o grupo, os stories…"]].map(([k, n, d]) => `<button type="button" class="pe-tipo-card${P.tipo === k ? " on" : ""}" data-pe-tipo-card="${k}"><span class="pe-tipo-ic"><svg viewBox="0 0 24 24">${ICO_TIPO[k]}</svg></span><span><b>${n}</b><small>${d}</small></span></button>`).join("")}</div>
+        ${comProd ? `<b class="ch-rot">Produto</b><button type="button" class="pe-prod-esc" id="peEscolherProd">${it ? `${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : '<span class="pe-prod-sem"></span>'}<span><b>${esc(limparNome(it.nome || ""))}</b><small>${it.precoNovo ? brl(it.precoNovo) + " · " : ""}${esc(NOME_LOJA[it.loja] || NOME_CAT[it.categoria] || "")}</small></span><i>Trocar</i>` : '<span class="pe-prod-sem"></span><span><b>Escolher o produto</b><small>Com busca por nome, loja ou categoria</small></span><i>Escolher</i>'}</button>` : ""}
+        ${segFmt()}
+        </div>${botaoContinuar(comProd ? !!it : true).replace('id="wzContinuar"', 'id="peIr2"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
+      return;
+    }
+    // ---- passo 2: juntar a foto do produto com a Miga (foto com produto e vídeo com produto) ----
+    if (wz.passo === "peFoto") {
+      if (!it) { wz.passo = "peEscolher"; telaPersonagem(c); return; }
+      const ehVideo = P.tipo === "video", fb = P.fotoBase, fotosMiga = (f || []).filter(Boolean);
+      const prImg = ehVideo ? promptFotoBase(it, P) : promptPersonagem(it, "imagem");
+      c.innerHTML = `<div class="pe-tela">${cabPasso("Juntar o produto com a Miga")}
+        <div class="pe-junta">
+          <span class="pe-j">${it.imagem ? `<img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer">` : ""}<small>Produto</small></span><b>+</b>
+          <span class="pe-j pe-j--miga">${fotosMiga.length ? `<img src="${esc(fotosMiga[0])}" alt="">` : ""}<small>Fotos da Miga</small></span><b>=</b>
+          <span class="pe-j pe-j--res">${fb ? `<img src="${fb.url}" alt="">` : (P.midias && P.midias[0] ? "" : "")}<small>${fb || (P.midias && P.midias.length) ? "Pronta" : "Miga com o produto"}</small></span>
+        </div>
+        <b class="ch-rot">Cenário e roupa</b><button type="button" class="pe-prod-esc pe-cen" id="peCenario"><span class="pe-prod-sem pe-prod-sem--cen"></span><span><b>${esc(nomeCenario(P) || "Estúdio")}</b><small>Toque para trocar o cenário e a roupa</small></span><i>Trocar</i></button>
+        ${cenarioPers(P) === "estudio" ? `<div class="pe-fundo2"><button type="button" data-pe-fundo="auto" class="pe-auto${(P.fundo || "auto") === "auto" ? " on" : ""}">Automático</button>${Object.entries(FUNDOS_PERS).map(([k, x]) => `<button type="button" data-pe-fundo="${k}" class="pe-bola${P.fundo === k ? " on" : ""}" style="background:${x[1]}" aria-label="${x[0]}" title="${x[0]}"></button>`).join("")}</div>` : ""}
+        ${qtdPers(P) === 1 ? `<b class="ch-rot">Enquadramento</b><div class="ed-chips pe-enq">${Object.entries(ENQUAD_PERS).map(([k, [n]]) => `<button type="button" data-pe-enquad="${k}" class="${enquadDe(P, it) === k ? "on" : ""}">${n}</button>`).join("")}</div>` : ""}
+        ${!ehVideo ? `<b class="ch-rot">Quantas fotos?</b><div class="pe-seg">${[1, 2, 3].map((q) => `<button type="button" data-pe-qtd="${q}" class="${qtdPers(P) === q ? "on" : ""}">${q} ${q === 1 ? "foto" : "fotos"}</button>`).join("")}</div>
+        <label class="pe-pose"><input type="checkbox" id="pePose"${P.poseLivre === false ? "" : " checked"}><span><b>Pose livre</b> <small>· ela posa à vontade</small></span></label>` : ""}
+        <div class="pe-etp"><b>1</b><span>Baixe a foto do produto</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peLimparBaixar">Baixar</button></div>
+        <div class="pe-etp"><b>2</b><span>No Gemini, anexe a foto do produto e as fotos da Miga e cole o prompt${!ehVideo && qtdPers(P) > 1 ? ` (pede ${qtdPers(P)} fotos)` : ""}</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="${ehVideo ? "peCopiarFoto" : "peCopiar"}">Copiar</button></div>
+        <div class="pe-etp"><b>3</b><span>Anexe aqui a foto que o Gemini criou</span><label class="pe-etp-bt pe-etp-bt--b">${fb || (!ehVideo && P.midias && P.midias.length) ? "Trocar" : "Anexar"}<input type="file" accept="image/*" id="peFotoArq"${ehVideo ? "" : " multiple"} hidden></label></div>
+        <details class="pe-ver"><summary>Ver e editar os prompts</summary>
+          <div class="campo"><span>Prompt da foto</span><textarea id="${ehVideo ? "peFotoPrompt" : "pePrompt"}" rows="8">${esc(ehVideo ? (P.fotoPromptEd != null ? P.fotoPromptEd : prImg) : (P.promptEd != null ? P.promptEd : prImg))}</textarea></div>
+          <div class="campo pe-pr-limpar"><span>Se a foto do produto for ruim: prompt para refazer a foto do produto antes</span><textarea id="peLimparTxt" rows="4">${esc(P.limparTxt != null ? P.limparTxt : promptLimparProduto(it))}</textarea></div>
+          <button type="button" class="btn btn--branco" id="peLimparCopiar">Copiar o prompt de refazer a foto do produto</button>
+        </details>
+        </div>${ehVideo ? botaoContinuar(true, fb ? "Continuar para o vídeo" : "Continuar sem a foto", "").replace('id="wzContinuar"', 'id="peFotoIr"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"') : botaoContinuar(!!(P.midias && P.midias.length), "Continuar para montar").replace('id="wzContinuar"', 'id="peFotoIr"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
       return;
     }
     if (semProduto()) {
       if (!P.tx) { const a = assuntoDe(P); P.tx = { chamada: a[3], nome: "", de: "", por: "", cupom: "", selo: "" }; }
       if (wz.passo === "pePrompt") {
         const a = assuntoDe(P), pr = promptChamadaPers(P);
-        c.innerHTML = `<h2 class="wz-titulo">Vídeo sem produto</h2>
+        c.innerHTML = `${cabPasso("Vídeo sem produto")}
           <p class="nota">Ela chama a galera. Começa com "Oi, miga!" e termina com "Segue a Miga Promo pra mais promoções!".</p>
           <div class="campo pe-assunto"><span>Assunto do vídeo</span><div class="pe-assunto-l"><input type="text" id="peAssuntoTxt" maxlength="60" placeholder="Escreva o assunto" value="${esc(P.assuntoLivre != null ? P.assuntoLivre : a[1])}"><button type="button" class="btn btn--branco" id="peAssunto">Prontos</button></div></div>
           <div class="campo"><span>Sobre o que ela vai falar?</span><textarea id="peFalaMeio" rows="2" maxlength="140">${esc(P.falaMeio != null ? P.falaMeio : a[2])}</textarea></div>
@@ -8298,30 +8335,29 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
           <p class="nota pe-roupa-nota">Roupa: a IA escolhe um look que combina com o fundo.</p>
           <div class="campo"><span>Prompt (pode editar · ${(P.promptEd != null ? P.promptEd : pr).length}/${LIMITE_PROMPT})</span><textarea id="pePrompt" rows="9" maxlength="${LIMITE_PROMPT}">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
           <button type="button" class="btn btn--rosa" id="peCopiar">Copiar prompt</button>
-          <p class="nota">Cole o prompt na IA de vídeo. Não precisa de foto de produto.</p>
-          ${nav("peJaCriei", "Continuar")}`;
+          <p class="nota">Cole o prompt no Gemini. Não precisa de foto de produto.</p>
+          ${botaoContinuar(true, "Já criei, anexar o vídeo").replace('id="wzContinuar"', 'id="peJaCriei"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
         return;
       }
     }
     else if (!it) { wz.passo = "peEscolher"; telaPersonagem(c); return; }
     if (!P.tx && it) P.tx = txPersonagem(it);
     if ((it || semProduto()) && telaPersPostar(c, it, P)) return;
-    if (wz.passo === "pePrompt" && cenasN(P) > 1) { telaCenasPrompt(c, it, P); return; }
+    if (wz.passo === "pePrompt" && cenasN(P) > 1) { telaCenasPrompt(c, it, P); c.insertAdjacentHTML("afterbegin", `<div class="pe-tela">${cabPasso("A foto vira vídeo")}${duracaoChips(P)}</div>`); return; }
     if (wz.passo === "peMontar" && cenasN(P) > 1 && !P.midia) { telaCenasAnexar(c, P); return; }
     if (wz.passo === "pePrompt") {
-      const pr = promptPersonagem(it, P.tipo);
-      c.innerHTML = `<h2 class="wz-titulo">Faça na IA em 3 passos</h2>
-        <div class="pe-etp"><b>1</b><span>Baixe a foto do produto</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peLimparBaixar">Baixar</button></div>
-        <div class="pe-etp"><b>2</b><span>Envie a foto para a IA com este prompt, para refazer a foto</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peLimparCopiar">Copiar</button></div>
-        <div class="pe-etp"><b>3</b><span>Envie a foto refeita e as fotos da modelo com o prompt principal${qtdPers(P) > 1 && P.tipo === "imagem" ? ` (pede ${qtdPers(P)} imagens separadas)` : ""}</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peCopiar">Copiar</button></div>
-        <details class="pe-ver"><summary>Ver e editar os prompts</summary>
-          <div class="campo pe-pr-limpar"><span>Prompt da foto do produto</span><textarea id="peLimparTxt" rows="5">${esc(P.limparTxt != null ? P.limparTxt : promptLimparProduto(it))}</textarea></div>
-          <div class="campo"><span>Prompt principal${P.tipo === "video" ? ` (${(P.promptEd != null ? P.promptEd : pr).length}/${LIMITE_PROMPT})` : ""}</span><textarea id="pePrompt" rows="8"${P.tipo === "video" ? ` maxlength="${LIMITE_PROMPT}"` : ""}>${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
-          <p class="nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto." : "Roupa: a IA escolhe um look que combina com o fundo e com o produto."}</p>
-          ${P.tipo === "video" ? `<div class="pe-fala"><b>Fala:</b> ${esc(falaPersonagem(it))}<small>sem preço na fala</small></div>` : ""}
+      const pr = promptVideoDaFoto(promptPersonagem(it, P.tipo), P), fb = P.fotoBase;
+      c.innerHTML = `<div class="pe-tela">${cabPasso("A foto vira vídeo")}
+        <div class="pe-prod-esc pe-base">${fb ? `<img src="${fb.url}" alt="">` : '<span class="pe-prod-sem"></span>'}<span><b>${fb ? "Foto da Miga com o produto" : "Sem a foto do passo 2"}</b><small>${fb ? "O vídeo começa nesta foto" : "O vídeo usa as fotos da Miga e a do produto"}</small></span><button type="button" class="rp-link" id="peVoltarFoto">${fb ? "Trocar" : "Fazer a foto"}</button></div>
+        ${duracaoChips(P)}
+        <div class="campo"><span>Fala (dá para editar · sem preço na fala)</span><textarea id="peFalaEd" rows="3" maxlength="220">${esc(P.falaEd != null ? P.falaEd : falaPersonagem(it))}</textarea></div>
+        <div class="pe-etp"><b>1</b><span>${fb ? "No Gemini, anexe a foto do passo 2 e cole o prompt" : "No Gemini, anexe a foto do produto e as fotos da Miga e cole o prompt"}</span><button type="button" class="pe-etp-bt pe-etp-bt--b" id="peCopiar">Copiar</button></div>
+        <div class="pe-etp"><b>2</b><span>Baixe o vídeo que o Gemini criou e anexe na próxima tela</span></div>
+        <details class="pe-ver"><summary>Ver e editar o prompt do vídeo</summary>
+          <div class="campo"><span>Prompt do vídeo (${(P.promptEd != null ? P.promptEd : pr).length}/${LIMITE_PROMPT})</span><textarea id="pePrompt" rows="8" maxlength="${LIMITE_PROMPT}">${esc(P.promptEd != null ? P.promptEd : pr)}</textarea></div>
+          <p class="nota">${cenaDoItem(it, "").roupa === null ? "Roupa: ela veste o próprio produto." : "Roupa: a do passo 2 (ou a IA escolhe um look que combina)."}</p>
         </details>
-        <p class="nota pe-prev-pr">${esc((P.promptEd != null ? P.promptEd : pr).slice(0, 150))}…</p>
-        ${botaoContinuar(true, "Já criei, anexar").replace('id="wzContinuar"', 'id="peJaCriei"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
+        </div>${botaoContinuar(true, "Já criei, anexar o vídeo").replace('id="wzContinuar"', 'id="peJaCriei"').replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"')}`;
       return;
     }
     if (wz.passo === "peMontar") {
@@ -8334,7 +8370,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       const chk = `<b class="ch-rot">Mostrar na arte</b><div class="pe-mostra">${[["Logo", "logo", "Logo"], ["Arroba", "arroba", "@ da Miga"], ["Selo", "selo", "Selo %"]].map(([K, k, n]) => `<label class="${P["sem" + K] ? "" : "on"}"><input type="checkbox" data-pe-mostra="${K}"${P["sem" + K] ? "" : " checked"} hidden><span>${n}</span></label>`).join("")}</div>`;
       if (P.tipo === "imagem") { // Aprovar a arte: prévia, caixinhas e seguir para onde postar
         const fs = P.midias || [], nSel = fotosIA().length;
-        c.innerHTML = `<div class="pe-aprovar">
+        c.innerHTML = `${cabPasso("Aprovar a foto")}<div class="pe-aprovar">
           <div class="wz-previa rp-prev pe-prev${fs.length ? " pe-prev--fotos" : ""}"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
           ${fs.length ? `<div class="pe-grade">${[0, 1, 2].map((i) => { const m = fs[i]; return m ? `<div class="pe-gq${i === (P.edIdx || 0) ? " ver" : ""}"><button type="button" class="pe-gq-img" data-pe-ver="${i}" aria-label="Ver a foto ${i + 1}"><canvas data-pe-mini="${i}" width="160" height="${Math.round(altPers(P) / 1080 * 160)}"></canvas></button><button type="button" class="pe-gq-x" data-pe-tirar="${i}" aria-label="Tirar a foto ${i + 1}">✕</button></div>`
             : `<label class="pe-gq pe-gq--vazio"><input type="file" accept="image/*" id="${i === fs.length ? "peMidiaMais" : "peMidiaMais" + i}" multiple hidden><span>+ Anexar</span></label>`; }).join("")}</div>`
@@ -8344,13 +8380,13 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
         carregarMarca().then(() => { loopPersonagem(); desenharMinisIA(); }); return;
       }
       if (r && P.tipo !== "imagem") { // vídeo pronto: só o vídeo e seguir para onde postar
-        c.innerHTML = `<h2 class="wz-titulo">Vídeo pronto</h2>
+        c.innerHTML = `${cabPasso("Vídeo pronto")}
           <div class="wz-previa rt-video rp-prev rp-prev--grande"><video src="${r.url}" playsinline loop autoplay muted controls></video></div>
           <div class="pe-roupa ch-musica"><span><b>Música ao fundo:</b> ${P.musica && NOMES_MUSICA[P.musica] ? esc(NOMES_MUSICA[P.musica][0]) : "sem música"}</span><button type="button" class="btn btn--branco" id="peTrocarMus">Trocar</button></div>
           <div class="wz-rodape pr-rodape rp-rod2"><button type="button" class="btn btn--rosa wz-continuar" id="peAprovar">Escolher onde postar</button><button type="button" class="rp-link" id="peRefazerV">Mudar e gravar de novo</button></div>`;
         return;
       }
-      c.innerHTML = `<h2 class="wz-titulo">Montar o vídeo</h2>
+      c.innerHTML = `${cabPasso(P.tipo === "imagem" ? "Montar a foto" : "Montar o vídeo")}
         ${P.midia ? "" : `<p class="nota">Anexe ${P.tipo === "imagem" ? "a foto" : "o vídeo"} que a IA criou para começar a edição.</p>`}
         ${cenasN(P) > 1 && P.midia ? '<button type="button" class="btn btn--branco pe-escolher" id="peTrocarCenas">Trocar as cenas</button>' : `<label class="btn ${P.midia ? "btn--branco" : "btn--rosa"} pe-escolher"><input type="file" accept="${P.tipo === "imagem" ? "image/*" : "video/*,image/*"}" id="peMidia" hidden>${P.tipo === "imagem" ? (P.midia ? "Trocar foto" : "Anexar a foto que a IA criou") : (P.midia ? "Trocar vídeo" : "Anexar o vídeo que a IA criou")}</label>`}
         ${r ? `<div class="wz-previa pe-pronto"><video src="${r.url}" controls playsinline></video></div><p class="nota wz-centro">Vídeo pronto.</p>` : `<div class="wz-previa"><canvas id="peQuadro" width="540" height="${altPers(P) / 2}"></canvas></div>
@@ -8954,6 +8990,9 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       try { it.imagem = await compactarArquivo(f); ppFotos[it.id] = await createImageBitmap(f); wz.pe.fundoAuto = fundoAuto(ppFotos[it.id]); it.fotoLimpa = true; salvarFila(true); toast("Foto do produto refeita: agora copie o prompt"); const y = scrollY; mostrarPasso(); scrollTo(0, y); } catch (err) { toast("Não consegui abrir a foto"); }
       return;
     }
+    if (e.target.id === "peFotoArq" && e.target.files[0]) {
+      if (P.tipo === "imagem") { wz.passo = "peMontar"; await anexarFotosIA(e.target.files, false); e.target.value = ""; scrollTo(0, 0); return; }
+      const fl = e.target.files[0]; if (P.fotoBase && P.fotoBase.url) URL.revokeObjectURL(P.fotoBase.url); P.fotoBase = { url: URL.createObjectURL(fl), nome: fl.name }; P.promptEd = null; e.target.value = ""; toast("Foto anexada: agora ela vira vídeo"); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     if ((e.target.id === "peMidia" || /^peMidiaMais/.test(e.target.id)) && e.target.files[0] && P.tipo === "imagem") { await anexarFotosIA(e.target.files, /^peMidiaMais/.test(e.target.id)); e.target.value = ""; return; }
     if (e.target.id === "peMidia" && e.target.files[0]) { pe().corte = null; pe().corteAuto = null;
       const arq = e.target.files[0]; if (P.midia && P.midia.url) URL.revokeObjectURL(P.midia.url); P.resultado = null;
@@ -8969,6 +9008,8 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     if (e.target.id === "peCorte") { P.corte = parseFloat(e.target.value); const tx = $("#peCorteTxt"); if (tx) tx.textContent = P.corte.toFixed(1).replace(".", ",") + " s";
       const v = P.midia && P.midia.video; if (v) { v.pause(); v.currentTime = Math.max(0, P.corte - 0.03); }
       if (P.resultado) { P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
+    if (e.target.id === "peFotoPrompt") { P.fotoPromptEd = e.target.value; return; }
+    if (e.target.id === "peFalaEd") { const it0 = wzItem(); P.falaEd = e.target.value; P.falaEdItem = it0 && it0.id; P.promptEd = null; const ta = $("#pePrompt"); if (ta && it0) { ta.value = promptVideoDaFoto(promptPersonagem(it0, P.tipo), P); const sp = ta.previousElementSibling; if (sp) sp.textContent = `Prompt do vídeo (${ta.value.length}/${LIMITE_PROMPT})`; } return; }
     if (e.target.id === "pePrompt") { P.promptEd = e.target.value; const sp = e.target.previousElementSibling; if (sp) sp.textContent = P.tipo === "imagem" ? "Prompt principal" : `Prompt (pode editar · ${e.target.value.length}/${LIMITE_PROMPT})`; return; }
     if (e.target.id === "peLimparTxt") { P.limparTxt = e.target.value; return; }
     if (e.target.id === "peAssuntoTxt") { P.assuntoLivre = e.target.value; if (!P.tx) P.tx = { chamada: "", nome: "", de: "", por: "", cupom: "", selo: "" }; P.tx.chamada = e.target.value.trim() || assuntoDe(P)[3]; return; }
@@ -8979,7 +9020,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
   $("#wzCorpo").addEventListener("click", async (e) => {
     if (wz.canal !== "personagem") return; const t = e.target, P = pe(), it = wzItem();
     const tp = t.closest("[data-pe-tipo]"); if (tp) { P.tipo = tp.dataset.peTipo; P.tx = null; P.promptEd = null; P.livre = null; mostrarPasso(); return; }
-    if (t.closest("#peIr2")) { if (semProduto()) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; } if (!it) { if (P.tipo === "video") { P.tipo = "chamada"; P.tx = null; P.promptEd = null; P.livre = null; wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; } toast("Escolha o produto"); return; } wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#peIr2")) { if (semProduto()) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; } if (!it) { if (P.tipo === "video") { P.tipo = "chamada"; P.tx = null; P.promptEd = null; P.livre = null; wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; } toast("Escolha o produto"); return; } wz.passo = "peFoto"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#peVoltar")) { const l = passosDe("personagem"), i = l.indexOf(wz.passo); if (i > 0) { wz.passo = l[i - 1]; mostrarPasso(); scrollTo(0, 0); } else irPara("inicio"); return; }
     if (t.closest("#peIr3")) { wz.passo = "pePrompt"; mostrarPasso(); scrollTo(0, 0); return; }
     { const eb = t.closest('[data-est="peTipo"], [data-est="peFormato"]'); if (eb) { const P = pe();
@@ -9013,6 +9054,10 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     if (t.closest("#peAbrirGPT")) { window.open("https://chatgpt.com/", "_blank", "noopener"); return; }
     if (t.closest("#peAbrirGemini")) { window.open("https://gemini.google.com/app", "_blank", "noopener"); return; }
     if (t.closest("#peJaCriei")) { wz.passo = "peMontar"; mostrarPasso(); scrollTo(0, 0); return; }
+    const tc = t.closest("[data-pe-tipo-card]"); if (tc) { const v = tc.dataset.peTipoCard; if (v !== P.tipo) { P.tipo = v; P.tx = null; P.promptEd = null; P.livre = null; P.resultado = null; if (v === "chamada") wz.itemId = null; } const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
+    if (t.closest("#peFotoIr")) { if (P.tipo === "imagem" && !(P.midias && P.midias.length)) { toast("Anexe a foto que o Gemini criou"); return; } wz.passo = P.tipo === "imagem" ? "peMontar" : "pePrompt"; P.promptEd = null; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#peVoltarFoto")) { wz.passo = "peFoto"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#peCopiarFoto")) { const ta = $("#peFotoPrompt"); if (await copiarTexto(ta ? ta.value : promptFotoBase(it, P))) toast("Prompt da foto copiado: cole no Gemini com a foto do produto e as fotos da Miga"); return; }
     const qc = t.closest("[data-pe-cenas]"); if (qc) { P.cenas = +qc.dataset.peCenas; lsPers.gravar("cenas", P.cenas); P.cenasResp = null; P.cenasCop = null; P.cenasVid = null; if (P.midia && P.midia.url) URL.revokeObjectURL(P.midia.url); P.midia = null; P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     if (t.closest("#peCenasCopiar")) { if (!it) return; if (await copiarTexto(promptCenas(it, P))) toast("Prompt copiado: cole no ChatGPT ou no Gemini"); return; }
     if (t.closest("#peCenasColar")) {
