@@ -2891,3 +2891,6 @@ body.modo-selecao .lojas-seg { display: none; }
 .pe-trecho { flex-direction: column; align-items: stretch; }
 .pe-trecho b i { color: var(--rosa); }
 .pe-trecho input[type=range] { width: 100%; accent-color: var(--rosa); }
+.pe-narr-copiar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pe-narr-copiar .btn { padding-left: 8px; padding-right: 8px; }
+.pe-narr .nota { margin: -2px 0 0; text-align: center; }
