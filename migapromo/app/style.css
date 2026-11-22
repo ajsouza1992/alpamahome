@@ -2865,3 +2865,7 @@ body.modo-selecao .lojas-seg { display: none; }
 .ka-slide--leg textarea.rr-leg { width: 100%; height: auto !important; aspect-ratio: 1 / 1; margin: 0; border-radius: 12px; }
 .ka-slide--leg .leg-rot { display: none; }
 .ka-slide--leg .ka2-alt span b { color: var(--preto); }
+/* Criação IA: busca na lista de produtos */
+.pe-busca { margin: 0 0 10px; position: sticky; top: 0; z-index: 2; }
+.pe-busca-nada { margin: 8px 0; text-align: center; }
+#folhaEst .lp-item[hidden] { display: none !important; }

@@ -3317,6 +3317,13 @@
       toast(ok === l.length ? `${ok} ${ok === 1 ? "produto publicado" : "produtos publicados"} no site` : ok ? `${ok} de ${l.length} publicados. Tente de novo os outros.` : "Não consegui publicar. Confira as regras do Firestore (vitrine).");
     }
   });
+  $("#folhaEst").addEventListener("input", (e) => {
+    if (e.target.id !== "peBuscaProd") return;
+    const termos = semAcento(e.target.value).split(/\s+/).filter(Boolean); let n = 0;
+    document.querySelectorAll("#folhaEst [data-pe-prod]").forEach((b) => { const ok = termos.every((t) => b.dataset.busca.includes(t)); b.hidden = !ok; if (ok) n++; });
+    const sem = document.querySelector("#folhaEst [data-pe-sem-prod]"); if (sem) sem.hidden = termos.length > 0;
+    $("#peBuscaNada").hidden = n > 0 || !termos.length;
+  });
   $("#folhaEst").addEventListener("input", (e) => { if (vsSel && e.target.dataset && e.target.dataset.vsDesc) vsSel.desc[e.target.dataset.vsDesc] = e.target.value; });
   $("#folhaEst").addEventListener("close", () => { vsSel = null; });
   async function tirarDoSite(it) {
@@ -8933,7 +8940,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
       if (eb.dataset.est === "peTipo") { const v0 = await escolherOpcao("Criar", [["imagem", "Imagem"], ["video", "Vídeo"]], P.tipo === "chamada" ? "video" : P.tipo); const v = v0 === "video" && P.tipo === "chamada" ? null : v0; if (v && v !== P.tipo) { P.tipo = v; P.tx = null; P.promptEd = null; P.livre = null; mostrarPasso(); } return; }
       const v = await escolherOpcao("Formato", [["vertical", "Em pé 9:16"], ["quadrado", "Quadrado 1:1"]], fmtPers(P)); if (v) { P.formato = v; P.promptEd = null; P.livre = null; P.resultado = null; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; } }
     if (t.closest("#peEscolherProd") || t.closest('[data-est="peProduto"]')) { const l = fila().filter((x) => !x.carregando && x.nome);
-      folhaEst("Escolha o produto", `<div class="lista-prod"><button type="button" class="lp-item pe-esc pe-sem" data-pe-sem-prod="1"><span class="pe-sem-ic"><svg viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><span><b>Sem produto</b> · vídeo dela chamando a galera</span></button>${l.map((x) => `<button type="button" class="lp-item pe-esc" data-pe-prod="${esc(x.id)}">${miniLoja(x, fotoMini(x))}<span>${esc(limparNome(x.nome))}</span></button>`).join("")}</div>`); return; }
+      folhaEst("Escolha o produto", `<div class="colar prod-busca pe-busca"><svg class="colar__lupa" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-busca"/></svg><input class="prod-busca-in" id="peBuscaProd" type="search" enterkeyhint="search" placeholder="Buscar produto, loja ou categoria…" autocomplete="off" aria-label="Buscar produto"></div><p class="nota pe-busca-nada" id="peBuscaNada" hidden>Nenhum produto com esse nome.</p><div class="lista-prod"><button type="button" class="lp-item pe-esc pe-sem" data-pe-sem-prod="1"><span class="pe-sem-ic"><svg viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><span><b>Sem produto</b> · vídeo dela chamando a galera</span></button>${l.map((x) => `<button type="button" class="lp-item pe-esc" data-pe-prod="${esc(x.id)}" data-busca="${esc(semAcento([x.nome, NOME_LOJA[x.loja] || "", NOME_CAT[x.categoria] || ""].join(" ")))}">${miniLoja(x, fotoMini(x))}<span>${esc(limparNome(x.nome))}</span></button>`).join("")}</div>`); return; }
     if (t.closest("#peAssunto")) { const v = await escolherOpcao("Assunto do vídeo", ASSUNTOS_PERS.map(([k, n, f]) => [k, `${n} · “${f}”`]), P.assunto || "canal"); if (v) { P.assunto = v; P.assuntoLivre = null; P.falaMeio = null; P.promptEd = null; const a = assuntoDe(P); P.tx = { chamada: a[3], nome: "", de: "", por: "", cupom: "", selo: "" }; const y = scrollY; mostrarPasso(); scrollTo(0, y); } return; }
     if (t.closest("#peRoupa")) { sortearRoupa(P); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const selRoupa = async (id) => {
