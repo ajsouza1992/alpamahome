@@ -882,7 +882,11 @@
     };
     return comConvite(comLoja((MODELOS_TEXTO[estilo] || MODELOS_TEXTO.amiga).f(p, x), p.loja, p.link));
   }
+  /* Aviso de que a promoção pode mudar (vai nas mensagens do WhatsApp, no Status e no story) */
+  const AVISO_PRECO = "⚠️ _Preço e promoção podem mudar a qualquer momento._";
+  const comAviso = (t) => (/mudar a qualquer momento/i.test(String(t || "")) ? t : `${t}\n\n${AVISO_PRECO}`);
   function comConvite(texto) {
+    texto = comAviso(texto);
     const g = config.grupos.find((x) => x.id === config.convite);
     if (!g || !g.link || texto.includes(g.link)) return texto;
     return `${texto}\n\n💬 Entre no grupo ${g.nome}: ${g.link}`;
@@ -3974,7 +3978,7 @@
   }
   /** Manda direto para o WhatsApp: a foto do produto (limpa, sem selo) + a mensagem pronta */
   async function enviarProdutoNoWhats(it, base) {
-    const texto = it.textoEditado && it.texto ? it.texto : mensagemWhats(it, base);
+    const texto = it.textoEditado && it.texto ? comAviso(it.texto) : mensagemWhats(it, base);
     let foto = null; try { if (it.imagem) foto = await converterImagem(await arquivoDaImagem(it.imagem)); /* grupo e canal: foto limpa, sem o selo da loja */ } catch (e) { foto = null; }
     let r = await compartilharArquivo(foto, comLoja(texto, it.loja, linkPost(it)));
     if (r === "sem") { await copiarTexto(texto); abrirWhatsApp(texto); r = "aberto"; }
@@ -4374,7 +4378,7 @@
     marcados.clear(); modoVarios = false;
     irPara("criar"); mostrarPasso(); scrollTo(0, 0);
   }
-  const textoStatus = (it) => `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, linkPost(it))}`;
+  const textoStatus = (it) => `${limparNome(it.nome)}${it.precoNovo ? " por " + brl(it.precoNovo) : ""}\n${linkLoja(it.loja, linkPost(it))}\n${AVISO_PRECO}`;
   /** Guarda o que foi postado de cada produto (para o resumo no fim) */
   function rpFecharProduto() {
     const it = wzItem(); if (!it) return; const h = wz.rpHist || (wz.rpHist = []);
@@ -6779,6 +6783,13 @@
   }
   /** Arte parada (Status, Story, feed) com o mesmo modelo dos Reels */
   let telaArte = null;
+  /** Story e Status: "Preço e promoção podem mudar a qualquer momento." em letra pequena, numa pílula clara (lê em qualquer cor de fundo) */
+  function avisoPrecoArte(ctx, W, H) {
+    const txt = "Promoção pode mudar a qualquer momento.";
+    ctx.save(); ctx.font = "600 24px Poppins, sans-serif"; const w = ctx.measureText(txt).width + 40, h = 44, x = (W - w) / 2, y = H - 244;
+    ctx.globalAlpha = 0.9; retArredondado(ctx, x, y, w, h, h / 2); ctx.fillStyle = "#ffffff"; ctx.fill();
+    ctx.globalAlpha = 1; ctx.fillStyle = "#5c5450"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, W / 2, y + h / 2 + 1); ctx.restore();
+  }
   function artePost(tela, R, it, bmp, formato, tAnim) {
     const W = 1080, H = formato === "post" ? 1350 : formato === "quadrado" ? 1080 : 1920;
     if (tela.width !== W) tela.width = W; if (tela.height !== H) tela.height = H; const ctx = tela.getContext("2d"); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
@@ -6791,9 +6802,10 @@
       semEntrada = storyComLink;
       try { if (H === 1920) produtoReels(ctx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor); else comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, Math.max(0.001, tAnim), it, bmp, 0, 1, R.modelo, M, C, R.cor)); }
       finally { ctx.restore(); pulsoTela = 0; acentoCena = null; flutua = null; semEntrada = false; }
+      if (H === 1920) avisoPrecoArte(ctx, W, H);
       return;
     }
-    if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); return; }
+    if (H === 1920) { produtoReels(ctx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor); avisoPrecoArte(ctx, W, H); return; }
     // Feed/quadrado: fundo no tamanho certo e o conteúdo um pouco menor no meio
     comporPost(ctx, W, H, R, C, (tx) => produtoReels(tx, 9, it, bmp, 0, 1, R.modelo, M, C, R.cor));
   }
