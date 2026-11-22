@@ -26,3 +26,15 @@ Também funciona no Microsoft Edge (`edge://extensions`, mesmo caminho).
 - A extensão não lê nada por conta própria nem manda dados para outro lugar: só abre o app da Miga com os links que você marcou.
 
 Se o app mudar de endereço, troque a linha `const APP = "https://www.migapromo.com/app/";` no `content.js`.
+
+## Baixar o vídeo do anúncio (versão 1.7)
+
+1. Abra a página do produto na **Shopee** ou no **Mercado Livre**.
+2. Se o anúncio tiver vídeo, aparece o botão **Baixar vídeo** na barra da Miga, embaixo.
+3. Clique nele. O vídeo do vendedor vai para a pasta **Downloads → miga-videos**, com o nome do produto.
+4. Se aparecer "Não achei vídeo neste anúncio", abra o vídeo nas fotos do produto (toque no play) e clique de novo.
+5. Se aparecer "o navegador não deixa baixar direto", esse vídeo vem em pedacinhos. Use a gravação de tela ou peça o vídeo ao vendedor.
+
+Depois, no app da Miga, em **Publicar vídeo**: escolha o vídeo, ligue **Sem o som original**, escolha a música e coloque o preço.
+
+**Ao atualizar para esta versão:** em `chrome://extensions`, clique em **Atualizar** (ou remova e carregue de novo a pasta). O Chrome vai pedir a permissão **"Gerenciar seus downloads"**: é ela que deixa a extensão salvar o vídeo.
