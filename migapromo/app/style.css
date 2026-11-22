@@ -2869,3 +2869,9 @@ body.modo-selecao .lojas-seg { display: none; }
 .pe-busca { margin: 0 0 10px; position: sticky; top: 0; z-index: 2; }
 .pe-busca-nada { margin: 8px 0; text-align: center; }
 #folhaEst .lp-item[hidden] { display: none !important; }
+/* Publicar vídeo: chave "Som original do vídeo" embaixo da prévia, sem encavalar */
+.vd-arquivo .vd-previa { box-sizing: border-box; height: auto; object-fit: contain; }
+.vd-arquivo .vd-som { position: relative; width: 100%; max-width: 420px; box-sizing: border-box; padding: 10px 14px; border-radius: 16px; background: var(--campo); justify-self: center; }
+.vd-arquivo .vd-som small { display: block; font-size: 12px; color: var(--cinza); font-weight: 500; margin-top: 2px; }
+.vd-arquivo .vd-som { display: grid !important; grid-template-columns: minmax(0, 1fr) 52px !important; height: auto !important; min-height: 64px; align-items: center; }
+.vd-arquivo .vd-som span { min-width: 0; }

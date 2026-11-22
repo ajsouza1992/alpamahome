@@ -5409,7 +5409,8 @@
       } else if (modo) {
         const prod = modo === "produto" ? `<div class="vd-prod"><span class="pp-mini">${fotoMini(it)}</span><span><b>${esc(it.nome || "Sem nome")}</b><small>${it.precoNovo ? brl(it.precoNovo) : "sem preço"}</small>${obsTag(it)}${it.imagem ? `<button type="button" class="vd-baixar-foto" id="vdBaixarFoto"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar foto</button>` : ""}</span><button type="button" class="link-sel" id="vdTrocarProd">Trocar</button></div>` : "";
         const video = `<div class="vd-arquivo">
-            ${V.url ? `<video class="vd-previa" src="${V.url}" playsinline controls></video>` : ""}
+            ${V.url ? `<video class="vd-previa" src="${V.url}" playsinline controls${V.somOriginal === false ? " muted" : ""}></video>
+            <label class="aj-chave vd-som"><span><b>Som original do vídeo</b><small>desligue para tirar a voz e o barulho e ficar só a música do app</small></span><input type="checkbox" data-vd-op="somOriginal"${V.somOriginal === false ? "" : " checked"}><i></i></label>` : ""}
             <label class="btn ${V.url ? "btn--branco" : "btn--rosa"}">${V.url ? "Trocar o vídeo" : "Escolher o vídeo"}<input type="file" id="vdArquivo" accept="video/*" hidden></label>
             ${modo === "produto" && it.imagem ? `<button type="button" class="btn btn--branco${V.semVideo ? " on-borda" : ""}" id="vdSemVideo">${V.semVideo ? "Usando só a foto do produto" : "Fazer sem vídeo (só a foto do produto)"}</button>` : ""}
           </div>`;
@@ -6018,7 +6019,8 @@
       if (!ac) throw new Error("sem som");
       if (ac.state === "suspended") await ac.resume();
       const dest = ac.createMediaStreamDestination();
-      if (v) ac.createMediaElementSource(v).connect(dest);
+      const semSom = V.somOriginal === false; // "Som original do vídeo" desligado: fica só a música do app
+      if (v && semSom) v.muted = true; else if (v) ac.createMediaElementSource(v).connect(dest);
       const pops = [], whooshes = [];
       if (V.abertura) { [0.1, 0.35, 0.9, 1.6].forEach((s) => pops.push(noTempo(s))); if (V.antigo > V.novo) pops.push(noTempo(1.35)); }
       if (V.final) { const f = tA + tM; [0.1, 0.55, 1.6].forEach((s) => pops.push(f + noTempo(s))); whooshes.push(f - 0.3); }
@@ -6026,7 +6028,7 @@
       // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
       const temTrilha = V.abertura || V.final || V.musica;
       if (temTrilha) { btn.textContent = "Preparando a música…"; await carregarSons(ac, MUSICAS[V.batida || "house"]); }
-      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + acentosDe(MUSICAS[V.batida || "house"], tA + tM, 8)[arroba(config.instagram) ? 2 : 3] : null);
+      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v && !semSom ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + acentosDe(MUSICAS[V.batida || "house"], tA + tM, 8)[arroba(config.instagram) ? 2 : 3] : null);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
     } catch (e) { if (v) v.muted = true; }
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
@@ -6043,7 +6045,7 @@
         const t = Math.min(agora(), total + 0.5);
         if (t >= total + 0.45) { ok(); return; } // folga: segura a tela final um pouco, o celular às vezes perde os últimos quadros
         if (t >= total) { quadroFinal(ctx, W, total - tA - tM, V); previa.drawImage(tela, 0, 0, 540, 960); requestAnimationFrame(passo); return; }
-        if (t < tA) { quadroAbertura(ctx, W, Math.max(0, t), V); if (v && !videoTocando && t > tA - 0.15) { videoTocando = true; v.play().catch(() => { v.muted = true; v.play().catch(() => {}); }); } } // começa um tiquinho antes, para cair no tempo
+        if (t < tA) { quadroAbertura(ctx, W, Math.max(0, t), V); if (v && !videoTocando && t > tA - 0.15) { videoTocando = true; v.play().catch(() => { v.muted = true; v.play().catch(() => {}); }); if (V.somOriginal === false) v.muted = true; } } // começa um tiquinho antes, para cair no tempo
         else if (t < tA + tM) {
           if (v && !videoTocando) { videoTocando = true; try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) { /* segue */ } } }
           const fonteV = v ? (v.readyState >= 2 && v.currentTime > 0 ? v : V.quadroImg || v) : fotoComZoom(V.fotoBmp, (t - tA) / tM);
@@ -6144,7 +6146,7 @@
     if (id === "vdBotao") V.botao = v.trim();
   });
   $("#wzCorpo").addEventListener("change", async (e) => {
-    if (e.target.dataset && e.target.dataset.vdOp) { vd()[e.target.dataset.vdOp] = e.target.checked; vd().resultado = null; return; }
+    if (e.target.dataset && e.target.dataset.vdOp) { vd()[e.target.dataset.vdOp] = e.target.checked; vd().resultado = null; semSomPedeMusica(e.target); return; }
     if (e.target.id === "vdFotoNova") {
       const f = e.target.files && e.target.files[0]; const it = vdItem();
       if (!f) return;
@@ -9765,9 +9767,16 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="aj-chave"><span><b>Abertura</b></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Final</b></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Música no vídeo</b></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
+        <label class="aj-chave"><span><b>Som original do vídeo</b><small>desligue para ficar só a música do app</small></span><input type="checkbox" data-vd-op="somOriginal"${V.somOriginal === false ? "" : " checked"}><i></i></label>
       </div>`);
   }
-  $("#folhaEst").addEventListener("change", (e) => { if (e.target.dataset && e.target.dataset.vdOp) { const V = vd(); V[e.target.dataset.vdOp] = e.target.checked; V.resultado = null; } });
+  $("#folhaEst").addEventListener("change", (e) => { if (e.target.dataset && e.target.dataset.vdOp) { const V = vd(); V[e.target.dataset.vdOp] = e.target.checked; V.resultado = null; semSomPedeMusica(e.target); } });
+  /** Tirou o som original do vídeo: a música do app liga sozinha (senão o vídeo fica mudo) */
+  function semSomPedeMusica(el) {
+    const V = vd(); if (el.dataset.vdOp !== "somOriginal") return;
+    document.querySelectorAll('video.vd-previa').forEach((x) => { x.muted = V.somOriginal === false; });
+    if (V.somOriginal === false && !V.musica) { V.musica = true; const m = document.querySelector('[data-vd-op="musica"]'); if (m) m.checked = true; toast("Som do vídeo tirado. A música do app vai tocar no lugar"); }
+  }
   function aposMudarEstudio() { if (wz.rapido && wz.passo === "rpConferir") { const y = scrollY; rpMudou(); scrollTo(0, y); return; } if (wz.canal === "reels") { const R = rr(); R.legenda = null; R.resultado = null; } if (wz.canal === "livre") livre().legenda = ""; const y = scrollY; mostrarPasso(); scrollTo(0, y); }
   $("#wzCorpo").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-est]"); if (b) {
