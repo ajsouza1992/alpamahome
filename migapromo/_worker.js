@@ -1023,36 +1023,6 @@ async function rotaLinkProduto(request, env, id) {
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300" } });
 }
 
-/* ======================= Arquivos (pasta no Cloudflare R2, binding ARQUIVOS) =======================
-   GET /api/arquivos → lista · PUT /api/arquivos?nome=… (corpo = o arquivo) → guarda · GET ?k=… → baixa · DELETE ?k=… → apaga */
-async function rotaArquivos(request, env) {
-  if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
-  if (!env.ARQUIVOS) return json({ erro: "A pasta de arquivos ainda não foi ligada no Cloudflare (R2).", codigo: "sem-r2" }, 503);
-  const url = new URL(request.url), k = url.searchParams.get("k") || "", m = request.method;
-  if (m === "GET" && !k) {
-    const itens = []; let cursor, usado = 0;
-    do { const l = await env.ARQUIVOS.list({ cursor, limit: 1000, include: ["httpMetadata", "customMetadata"] });
-      l.objects.forEach((o) => { usado += o.size; itens.push({ k: o.key, nome: (o.customMetadata && o.customMetadata.nome) || o.key, tam: o.size, tipo: (o.httpMetadata && o.httpMetadata.contentType) || "", em: o.uploaded ? new Date(o.uploaded).getTime() : 0 }); });
-      cursor = l.truncated ? l.cursor : undefined; } while (cursor);
-    itens.sort((a, b) => b.em - a.em);
-    return json({ itens, usado });
-  }
-  if (m === "GET") {
-    const o = await env.ARQUIVOS.get(k); if (!o) return json({ erro: "Arquivo não encontrado." }, 404);
-    const nome = (o.customMetadata && o.customMetadata.nome) || k;
-    return new Response(o.body, { headers: { "content-type": (o.httpMetadata && o.httpMetadata.contentType) || "application/octet-stream", "content-length": String(o.size), "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(nome)}`, "cache-control": "private, no-store" } });
-  }
-  if (m === "PUT") {
-    const nome = String(url.searchParams.get("nome") || "arquivo").slice(0, 160);
-    const tam = Number(request.headers.get("content-length") || 0); if (!tam) return json({ erro: "Arquivo vazio." }, 400);
-    const chave = Date.now().toString(36) + "-" + (nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.-]+/g, "-").slice(-80) || "arquivo");
-    await env.ARQUIVOS.put(chave, request.body, { httpMetadata: { contentType: request.headers.get("content-type") || "application/octet-stream" }, customMetadata: { nome } });
-    return json({ ok: true, k: chave });
-  }
-  if (m === "DELETE" && k) { await env.ARQUIVOS.delete(k); return json({ ok: true }); }
-  return json({ erro: "Pedido inválido." }, 400);
-}
-
 /* ======================= Roteador ======================= */
 export default {
   async fetch(request, env) {
@@ -1063,7 +1033,6 @@ export default {
     const lp = pathname.match(/^\/p\/([\w-]{1,80})\/?$/);
     try {
       if (lp && metodo === "GET") return await rotaLinkProduto(request, env, lp[1]);
-      if (m && m[1] === "arquivos") return await rotaArquivos(request, env);
       if (m && m[1] === "produto" && metodo === "POST") return await rotaProduto(request, env);
       if (m && m[1] === "gerar" && metodo === "POST") return await rotaGerar(request, env);
       if (m && m[1] === "imagem" && metodo === "GET") return await rotaImagem(request);

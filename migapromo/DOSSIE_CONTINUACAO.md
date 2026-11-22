@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=438` → próxima `?v=439`
-- `app/sw.js`: `VERSAO = "miga-promo-v441"` → próxima `v442`
-- Comando usado: `sed -i 's/?v=438/?v=439/g' app/index.html app/sw.js && sed -i 's/miga-promo-v441/miga-promo-v442/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=439` → próxima `?v=440`
+- `app/sw.js`: `VERSAO = "miga-promo-v442"` → próxima `v443`
+- Comando usado: `sed -i 's/?v=439/?v=440/g' app/index.html app/sw.js && sed -i 's/miga-promo-v442/miga-promo-v443/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -184,4 +184,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Montar o vídeo › Narração e trecho da música** (`blocoNarracao`): "Inserir áudio" (`P.narr` = {nome, dados, url, ini}), ouvir, tirar e "Narração começa em" (de 0,5 em 0,5 s); "Música começa em" de 0 a 30 s (`P.musIni`, `musicaRenderizada` renderiza a partir do ponto); a música abaixa enquanto a narração fala (no `audioFechamento`). "Copiar a fala" (vai na caixa de texto do AI Studio) e "Copiar o estilo" (prompt `narracao`, editável em Ajustes › Prompts, vai no botão Estilo; o modelo TTS lê tudo o que está na caixa). A prévia com som toca a mistura pronta.
 - **Montar o vídeo › bloco "Som do vídeo"** (`.pe-audio`): música, "Música começa em" (`blocoTrecho`, logo abaixo da música), "Sem o som original", narração e "Narração entra em", e os botões de copiar.
 - **Computador, logo desalinhado:** o `.topo` (sticky, com backdrop-filter) andava junto com a rolagem lateral quando algo passava da largura, e o menu fixo não. Agora `html, body { overflow-x: clip }`.
-- **Arquivos (pasta na nuvem):** aba "Arquivos" (`#aba-arquivos`, `pintarArquivos`). Enviar (input, ou arrastar no PC, com XHR e porcentagem, até 100 MB), Baixar (fetch com `cabecalhoConta` e `baixarBlob`) e Apagar. Worker `rotaArquivos` em `/api/arquivos` (GET lista, PUT ?nome=, GET ?k=, DELETE ?k=) no R2 com o binding `ARQUIVOS` (bucket `miga-arquivos`). Sem o binding, responde `sem-r2` e o app mostra o aviso.
+- **Arquivos (pasta na nuvem):** aba "Arquivos" (`#aba-arquivos`, `pintarArquivos`). Sem o R2: fica no próprio Firestore. A ficha fica em `espacos/miga/arquivos/{id}` ({nome, tam, tipo, partes, em, pronto}) e o conteúdo em pedaços de 950 KB (Bytes) em `espacos/miga/arqpartes/{id}_{i}`. Limite de 60 MB por arquivo e 1 GB no total (o plano grátis). Enviar (input ou arrastar), Baixar (junta os pedaços) e Apagar (ficha e pedaços). As regras já cobrem `espacos/miga/**`. Testado com um Firebase de mentira (scratchpad `fakefb/`).
