@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=440` → próxima `?v=441`
-- `app/sw.js`: `VERSAO = "miga-promo-v443"` → próxima `v444`
-- Comando usado: `sed -i 's/?v=440/?v=441/g' app/index.html app/sw.js && sed -i 's/miga-promo-v443/miga-promo-v444/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=441` → próxima `?v=442`
+- `app/sw.js`: `VERSAO = "miga-promo-v444"` → próxima `v445`
+- Comando usado: `sed -i 's/?v=441/?v=442/g' app/index.html app/sw.js && sed -i 's/miga-promo-v444/miga-promo-v445/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -184,5 +184,6 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Montar o vídeo › Narração e trecho da música** (`blocoNarracao`): "Inserir áudio" (`P.narr` = {nome, dados, url, ini}), ouvir, tirar e "Narração começa em" (de 0,5 em 0,5 s); "Música começa em" de 0 a 30 s (`P.musIni`, `musicaRenderizada` renderiza a partir do ponto); a música abaixa enquanto a narração fala (no `audioFechamento`). "Copiar a fala" (vai na caixa de texto do AI Studio) e "Copiar o estilo" (prompt `narracao`, editável em Ajustes › Prompts, vai no botão Estilo; o modelo TTS lê tudo o que está na caixa). A prévia com som toca a mistura pronta.
 - **Montar o vídeo › bloco "Som do vídeo"** (`.pe-audio`): música, "Música começa em" (`blocoTrecho`, logo abaixo da música), "Sem o som original", narração e "Narração entra em", e os botões de copiar.
 - **Computador, logo desalinhado:** o `.topo` (sticky, com backdrop-filter) andava junto com a rolagem lateral quando algo passava da largura, e o menu fixo não. Agora `html, body { overflow-x: clip }`.
-- **Arquivos (pasta na nuvem):** aba "Arquivos" (`#aba-arquivos`, `pintarArquivos`). Sem o R2: fica no próprio Firestore. A ficha fica em `espacos/miga/arquivos/{id}` ({nome, tam, tipo, partes, em, pronto}) e o conteúdo em pedaços de 950 KB (Bytes) em `espacos/miga/arqpartes/{id}_{i}`. Limite de 60 MB por arquivo e 1 GB no total (o plano grátis). Enviar (input ou arrastar), Baixar (junta os pedaços) e Apagar (ficha e pedaços). As regras já cobrem `espacos/miga/**`. Testado com um Firebase de mentira (scratchpad `fakefb/`).
+- **Arquivos:** a pasta foi tirada do app a pedido (o menu voltou a ter 3 itens). Ficou só o ícone `i-pasta` no sprite.
 - **Extensão 1.8.1:** HLS com `EXT-X-BYTERANGE` (um arquivo só, em faixas) agora baixa o arquivo UMA vez (antes repetia o arquivo inteiro a cada pedaço). Em fMP4, `zerarTempo` faz o `tfdt` de cada trilha começar em 0 (antes o player mostrava ~13 h, o relógio de 33 bits do vídeo). Em `.ts`, junta tudo e converte de uma vez (um único flush). Testado com HLS de tempo inicial 47000 s nos três formatos: 8 s e 240 quadros.
+- **Esboço do fluxo novo da Criação IA** (aguardando aprovação): 1 Escolher (tipo em 3 cartões, produto com busca, formato) → 2 Foto (NOVO: junta a foto do produto com as fotos da Miga; cenário, pose e enquadramento em chips; anexar a foto criada) → 3 Vídeo (a partir da foto do passo 2; ação, fala editável, duração em cenas; anexar o vídeo) → 4 Montar (o que aparece na tela e o bloco Som) → 5 Postar.

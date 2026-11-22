@@ -205,60 +205,6 @@
       renovandoML = null; })();
     await renovandoML; return (config.mlConta && config.mlConta.a) || "";
   }
-  /* ===================== Arquivos: pasta na nuvem para passar arquivos do PC para o celular =====================
-     Fica no próprio Firebase da Miga (sem configurar nada): o arquivo é guardado em pedaços de ~950 KB em espacos/miga/arqpartes
-     e a ficha dele (nome, tamanho, tipo, quantos pedaços) em espacos/miga/arquivos. O plano grátis tem 1 GB no total. */
-  const LIMITE_ARQ = 60 * 1024 * 1024, ESPACO_ARQ = 1024 ** 3, PEDACO_ARQ = 950 * 1024;
-  const tamTxt = (n) => n >= 1024 ** 3 ? (n / 1024 ** 3).toFixed(1).replace(".", ",") + " GB" : n >= 1024 ** 2 ? (n / 1024 ** 2).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
-  const tipoArq = (t, nome) => /^video|\.(mp4|mov|webm|m4v)$/i.test(t + " " + nome) ? "Vídeo" : /^audio|\.(mp3|wav|m4a|ogg|aac)$/i.test(t + " " + nome) ? "Áudio" : /^image|\.(jpe?g|png|webp|gif|heic)$/i.test(t + " " + nome) ? "Imagem" : /pdf/i.test(t + " " + nome) ? "PDF" : "Arquivo";
-  let arqItens = null;
-  const arqFB = () => (conta.fb && conta.uid ? conta.fb : null);
-  const docArq = (f, ...c) => f.fs.doc(f.db, "espacos", "miga", ...c);
-  async function pintarArquivos() {
-    const box = $("#arqLista"); if (!box) return; const f = arqFB();
-    if (!f) { box.innerHTML = '<p class="aviso">Entre com a sua conta Google no app para usar a pasta de arquivos.</p>'; $("#arqUso").textContent = ""; return; }
-    try { const snap = await f.fs.getDocs(f.fs.collection(f.db, "espacos", "miga", "arquivos")); arqItens = snap.docs.map((d) => d.data()).filter((x) => x.pronto).sort((a, b) => (b.em || 0) - (a.em || 0));
-      const usado = arqItens.reduce((t, x) => t + (x.tam || 0), 0);
-      box.innerHTML = arqItens.length ? `<div class="arq-lista">${arqItens.map((x) => `<div class="arq-item"><span class="arq-tipo arq-tipo--${tipoArq(x.tipo, x.nome).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()}">${tipoArq(x.tipo, x.nome)}</span><span class="arq-info"><b>${esc(x.nome)}</b><small>${tamTxt(x.tam)} · ${x.em ? new Date(x.em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + new Date(x.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</small></span><button type="button" class="btn btn--branco" data-arq-baixar="${esc(x.id)}">Baixar</button><button type="button" class="bt-icone bt-icone--perigo" data-arq-apagar="${esc(x.id)}" aria-label="Apagar"><svg><use href="#i-lixo"/></svg></button></div>`).join("")}</div>` : '<p class="vazio-lista">A pasta está vazia. Envie um arquivo pelo computador e baixe aqui no celular.</p>';
-      $("#arqUso").textContent = `${tamTxt(usado)} de 1 GB usados${usado > ESPACO_ARQ * 0.8 ? " · apague os que já postou" : ""}`;
-    } catch (e) { box.innerHTML = `<p class="aviso">Não consegui abrir a pasta: ${esc(e.message || "erro")}</p>`; $("#arqUso").textContent = ""; }
-  }
-  async function enviarArquivo(file) {
-    const f = arqFB(); const linha = document.createElement("div"); linha.className = "arq-envio"; linha.innerHTML = `<b>${esc(file.name)}</b><i><s></s></i><small>0%</small>`; $("#arqEnvios").appendChild(linha);
-    const fim = (txt, certo) => { linha.querySelector("small").textContent = txt; linha.classList.add(certo ? "ok" : "erro"); setTimeout(() => linha.remove(), certo ? 1500 : 6000); return certo; };
-    if (!f) return fim("Entre com a conta Google primeiro", false);
-    if (file.size > LIMITE_ARQ) return fim("Maior que 60 MB: não dá para enviar", false);
-    const usado = (arqItens || []).reduce((t, x) => t + (x.tam || 0), 0); if (usado + file.size > ESPACO_ARQ) return fim("A pasta está cheia: apague alguns arquivos", false);
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6), dados = new Uint8Array(await file.arrayBuffer()), n = Math.max(1, Math.ceil(dados.length / PEDACO_ARQ));
-    try {
-      for (let i = 0; i < n; i++) {
-        await f.fs.setDoc(docArq(f, "arqpartes", id + "_" + i), { id, i, d: f.fs.Bytes.fromUint8Array(dados.subarray(i * PEDACO_ARQ, (i + 1) * PEDACO_ARQ)) });
-        const p = Math.round(((i + 1) / n) * 100); linha.querySelector("s").style.width = p + "%"; linha.querySelector("small").textContent = p + "%";
-      }
-      await f.fs.setDoc(docArq(f, "arquivos", id), { id, nome: file.name.slice(0, 160), tam: file.size, tipo: file.type || "", partes: n, em: Date.now(), pronto: true });
-      return fim("Enviado", true);
-    } catch (e) { for (let i = 0; i < n; i++) f.fs.deleteDoc(docArq(f, "arqpartes", id + "_" + i)).catch(() => {}); return fim("Não consegui enviar (sem internet?)", false); }
-  }
-  async function enviarArquivos(lista) { const l = [...lista]; if (!l.length) return; if (!arqItens) await pintarArquivos(); for (const fl of l) await enviarArquivo(fl); pintarArquivos(); }
-  document.addEventListener("change", (e) => { if (e.target.id === "arqEnviar") { enviarArquivos(e.target.files); e.target.value = ""; } });
-  document.addEventListener("click", async (e) => {
-    if (e.target.closest("#arqAtualizar")) { pintarArquivos(); return; }
-    const bx = e.target.closest("[data-arq-baixar]");
-    if (bx) { const x = (arqItens || []).find((i) => i.id === bx.dataset.arqBaixar), f = arqFB(); if (!x || !f) return; const txt = bx.textContent; bx.disabled = true;
-      try { const partes = []; for (let i = 0; i < x.partes; i++) { bx.textContent = `${Math.round((i / x.partes) * 100)}%`; const d = await f.fs.getDoc(docArq(f, "arqpartes", x.id + "_" + i)); if (!d.exists()) throw new Error("faltou um pedaço"); partes.push(d.data().d.toUint8Array()); }
-        baixarBlob(new Blob(partes, { type: x.tipo || "application/octet-stream" }), x.nome); toast("Arquivo baixado"); }
-      catch (er) { toast("Não consegui baixar. Tente de novo."); } finally { bx.disabled = false; bx.textContent = txt; } return; }
-    const ap = e.target.closest("[data-arq-apagar]");
-    if (ap) { const x = (arqItens || []).find((i) => i.id === ap.dataset.arqApagar), f = arqFB(); if (!x || !f) return;
-      if (!(await confirmar({ titulo: "Apagar o arquivo?", texto: `"${x.nome}" sai da pasta e não dá para recuperar.`, ok: "Apagar" }))) return;
-      try { await f.fs.deleteDoc(docArq(f, "arquivos", x.id)); for (let i = 0; i < x.partes; i++) await f.fs.deleteDoc(docArq(f, "arqpartes", x.id + "_" + i)); toast("Arquivo apagado"); } catch (er) { toast("Não consegui apagar"); }
-      pintarArquivos(); return; }
-  });
-  ["dragover", "drop"].forEach((ev) => document.addEventListener(ev, (e) => {
-    const alvo = e.target.closest && e.target.closest("#aba-arquivos"); if (!alvo) return; e.preventDefault();
-    const z = $("#arqSoltar"); if (ev === "dragover") { z.classList.add("on"); return; } z.classList.remove("on"); if (e.dataTransfer && e.dataTransfer.files.length) enviarArquivos(e.dataTransfer.files);
-  }));
-  document.addEventListener("dragleave", (e) => { if (!e.relatedTarget || !(e.relatedTarget.closest && e.relatedTarget.closest("#aba-arquivos"))) { const z = $("#arqSoltar"); if (z) z.classList.remove("on"); } });
   async function api(caminho, corpo) {
     const r = await fetch("api/" + caminho, {
       method: corpo ? "POST" : "GET",
@@ -743,7 +689,6 @@
     document.dispatchEvent(new CustomEvent("miga-aba", { detail: aba }));
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
-    if (aba === "arquivos") pintarArquivos();
     if (aba === "achados" && (!catalogoCarregado || (catEm && Date.now() - catEm > 36e5))) carregarCatalogo();
     if (aba === "site") { renderSite(); carregarCliquesSite(); }
     if (aba === "acessos") carregarAcessos();

@@ -11,13 +11,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Miga Promo">
-  <link rel="manifest" href="manifest.json?v=440">
+  <link rel="manifest" href="manifest.json?v=441">
   <link rel="icon" type="image/png" href="favicon-redondo.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;500;600;700;800&family=Roboto+Condensed:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=440">
+  <link rel="stylesheet" href="style.css?v=441">
 </head>
 <body class="travado">
   <!-- Ícones: traço fino, uma cor só -->
@@ -69,7 +69,7 @@
   <!-- ===== Tela de entrada (login com Google) ===== -->
   <section class="entrada" id="telaEntrada">
     <div class="entrada__caixa">
-      <img src="logo.png?v=440" alt="Miga Promo" class="entrada__icone">
+      <img src="logo.png?v=441" alt="Miga Promo" class="entrada__icone">
       <h1 class="entrada__titulo">Achadinhos prontos<br>para o seu grupo</h1>
       <p class="entrada__texto">Cole o link do produto e o app monta a postagem, o Reels e o vídeo para o WhatsApp e o Instagram.</p>
       <div class="entrada__form" id="passoGoogle">
@@ -95,7 +95,7 @@
 
   <!-- Dica de instalação (iPhone) -->
   <div class="dica" id="dicaIos" hidden>
-    <img src="logo.png?v=440" alt="">
+    <img src="logo.png?v=441" alt="">
     <p>Para instalar: toque em <svg><use href="#i-compartilhar-ios"/></svg> <b>Compartilhar</b> e em <b>Adicionar à Tela de Início</b>.</p>
     <button type="button" id="fecharDica" aria-label="Fechar"><svg><use href="#i-x"/></svg></button>
   </div>
@@ -397,16 +397,6 @@
 
   </div>
 
-  <div class="aba" id="aba-arquivos" hidden>
-    <section class="bloco arq">
-      <div class="cabecalho-aba"><h2 class="passo">Arquivos</h2><button type="button" class="link" id="arqAtualizar">Atualizar</button></div>
-      <p class="nota">Guarde aqui vídeos, áudios e imagens pelo computador e baixe no celular (até 60 MB cada). Depois de postar, apague para liberar espaço.</p>
-      <label class="arq-soltar" id="arqSoltar"><input type="file" id="arqEnviar" multiple hidden><svg><use href="#i-pasta"/></svg><b>Enviar arquivos</b><small>ou arraste e solte aqui</small></label>
-      <div id="arqEnvios"></div>
-      <div id="arqLista"><p class="nota">Carregando…</p></div>
-      <p class="nota arq-uso" id="arqUso"></p>
-    </section>
-  </div>
   <div class="aba" id="aba-acessos" hidden>
     <section class="bloco st-acessos" id="stTelaAcessos">
       <div class="cabecalho-aba">
@@ -631,7 +621,6 @@
       <button type="button" data-aba="historico" hidden><svg><use href="#i-historico"/></svg>Histórico <b id="contHistorico" hidden></b></button>
       <button type="button" data-aba="achados" hidden><svg><use href="#i-etiqueta"/></svg>Achados</button>
       <button type="button" data-aba="site" hidden><svg><use href="#i-site"/></svg>Site <b id="contSite" hidden></b></button>
-      <button type="button" data-aba="arquivos"><svg><use href="#i-pasta"/></svg>Arquivos</button>
       <button type="button" id="navAjustes" class="nav-ajustes"><svg><use href="#i-engrenagem"/></svg>Ajustes</button>
     </nav>
   </div>
@@ -920,7 +909,7 @@
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="firebase-config.js?v=440"></script>
-  <script src="app.js?v=440"></script>
+  <script src="firebase-config.js?v=441"></script>
+  <script src="app.js?v=441"></script>
 </body>
 </html>
