@@ -123,31 +123,32 @@
   barra.querySelector(".miga-este").addEventListener("click", () => { const l = produtoDaPagina(); if (l) alternar(l, null); });
 
   /* ---------- Baixar o vídeo do anúncio (o do próprio vendedor) ---------- */
-  function videosDaPagina() {
-    const achados = new Set();
-    // 1) Vídeos que estão na tela (o player do anúncio)
-    document.querySelectorAll("video").forEach((v) => {
-      [v.currentSrc, v.src, ...[...v.querySelectorAll("source")].map((x) => x.src)].forEach((u) => { if (/^https?:\/\//.test(u || "")) achados.add(u); });
-    });
-    // 2) Endereços de vídeo .mp4 escritos na página (o anúncio às vezes só carrega o vídeo depois do play)
-    const html = document.documentElement.innerHTML.replace(/\\u002F/gi, "/").replace(/\\\//g, "/");
-    (html.match(/https?:\/\/[^"'\s<>()\\]+?\.mp4(\?[^"'\s<>()\\]*)?/gi) || []).forEach((u) => achados.add(u.replace(/&amp;/g, "&")));
-    // Só vídeos das lojas (Shopee e Mercado Livre); tira os de propaganda e os repetidos
-    return [...achados].filter((u) => /susercontent\.com|shopee|mlstatic\.com|mercadoli|mercadolibre/i.test(u)).slice(0, 6);
+  const ehLoja = (u) => /susercontent\.com|shopee|mlstatic\.com|mercadoli|mercadolibre/i.test(u || "");
+  /** O vídeo que está aberto: o que está tocando (ou o maior visível na tela). Só UM. */
+  function videoAberto() {
+    const vis = (v) => { const r = v.getBoundingClientRect(), w = Math.max(0, Math.min(r.right, innerWidth) - Math.max(r.left, 0)), h = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)); return w * h; };
+    const vids = [...document.querySelectorAll("video")].map((v) => ({ v, u: v.currentSrc || v.src || (v.querySelector("source") || {}).src || "", nota: (!v.paused ? 1e9 : 0) + vis(v) })).filter((x) => x.nota > 0 || !x.v.paused).sort((a, b) => b.nota - a.nota);
+    const top = vids[0];
+    if (top && /^https?:\/\//.test(top.u)) return { url: top.u };
+    // O player do Mercado Livre (e às vezes o da Shopee) toca em pedaços (blob:): procura o arquivo .mp4 que a página baixou por último
+    const mp4 = performance.getEntriesByType("resource").map((e) => e.name).filter((u) => /\.mp4(\?|$)/i.test(u) && ehLoja(u));
+    if (mp4.length) return { url: mp4[mp4.length - 1] };
+    const hls = performance.getEntriesByType("resource").some((e) => /\.m3u8(\?|$)|\.m4s(\?|$)|\.ts(\?|$)/i.test(e.name));
+    return { url: "", pedacos: (top && /^blob:/.test(top.u)) || hls, semVideo: !document.querySelector("video") };
   }
   function nomeDoArquivo() {
     const n = (document.querySelector("h1") || {}).textContent || document.title || "video";
     return n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "video";
   }
-  function temVideoBloqueado() { return [...document.querySelectorAll("video")].some((v) => /^blob:/.test(v.currentSrc || v.src || "")); }
   barra.querySelector(".miga-video").addEventListener("click", () => {
-    const urls = videosDaPagina();
-    if (!urls.length) {
-      alert(temVideoBloqueado()
-        ? "Este vídeo vem em pedacinhos e o navegador não deixa baixar direto. Use a gravação de tela ou peça o vídeo ao vendedor."
-        : "Não achei vídeo neste anúncio. Abra o vídeo nas fotos do produto (toque no play) e tente de novo.");
+    const v = videoAberto();
+    if (!v.url) {
+      alert(v.pedacos
+        ? "Esta loja entrega o vídeo em pedacinhos protegidos e o navegador não deixa baixar (é o caso do Mercado Livre). Use a gravação de tela ou peça o vídeo ao vendedor."
+        : v.semVideo ? "Não achei vídeo nesta página. Abra o vídeo nas fotos do produto e dê o play." : "Dê o play no vídeo do produto e clique em Baixar vídeo enquanto ele toca.");
       return;
     }
+    const urls = [v.url];
     const bt = barra.querySelector(".miga-video"); bt.disabled = true; bt.textContent = "Baixando…";
     chrome.runtime.sendMessage({ tipo: "baixarVideo", urls, nome: nomeDoArquivo() }, (r) => {
       bt.disabled = false; bt.textContent = "Baixar vídeo";
@@ -179,7 +180,7 @@
     document.querySelectorAll(".miga-bt").forEach((bt) => pintarBotao(bt, bt.dataset.migaLink));
     const n = marcados.length, aqui = produtoDaPagina();
     barra.querySelector(".miga-n").textContent = n ? `${n} ${n === 1 ? "produto marcado" : "produtos marcados"}` : "Marque os produtos no quadradinho";
-    barra.querySelector(".miga-video").hidden = !aqui || !(document.querySelector("video") || videosDaPagina().length);
+    barra.querySelector(".miga-video").hidden = !aqui || !document.querySelector("video");
     const este = barra.querySelector(".miga-este"); este.hidden = !aqui; if (aqui) este.textContent = marcados.includes(aqui) ? "Tirar este produto" : "+ Este produto";
     barra.querySelector(".miga-todos").hidden = !document.querySelector("[data-miga]");
     barra.querySelector(".miga-limpar").hidden = !n; barra.querySelector(".miga-desfazer").hidden = !n;
