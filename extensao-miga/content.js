@@ -149,25 +149,54 @@
       if (!melhor) return "erro"; url = abs(melhor.trim(), url); m3u = await texto(url);
     }
     if (/#EXT-X-KEY:METHOD=(?!NONE)/.test(m3u)) return "protegido";
-    const ls = m3u.split(/\r?\n/), mapa = /#EXT-X-MAP:URI="([^"]+)"/.exec(m3u), segs = ls.filter((l) => l && !l.startsWith("#")).map((l) => abs(l.trim(), url));
+    // Lê a lista: cada pedaço pode ser um arquivo ou uma faixa (BYTERANGE) de um arquivo só
+    const ls = m3u.split(/\r?\n/), segs = []; let faixa = null, fimAnt = {}, mapa = null;
+    const lerFaixa = (txt, u) => { const k = /(\d+)(?:@(\d+))?/.exec(txt || ""); if (!k) return null; const len = +k[1], ini = k[2] != null ? +k[2] : (fimAnt[u] || 0); fimAnt[u] = ini + len; return [ini, ini + len - 1]; };
+    ls.forEach((l) => {
+      const mp = /#EXT-X-MAP:URI="([^"]+)"(?:,BYTERANGE="([^"]+)")?/.exec(l); if (mp) { const u = abs(mp[1], url); mapa = { u, r: mp[2] ? lerFaixa(mp[2], u) : null }; return; }
+      const br = /#EXT-X-BYTERANGE:(.+)/.exec(l); if (br) { faixa = br[1]; return; }
+      if (l && !l.startsWith("#")) { const u = abs(l.trim(), url); segs.push({ u, r: faixa ? lerFaixa(faixa, u) : null }); faixa = null; }
+    });
     if (!segs.length) return "erro";
-    const pedaco = async (u) => { const r = await fetch(u, { credentials: "omit" }); if (!r.ok) throw new Error("http " + r.status); return new Uint8Array(await r.arrayBuffer()); };
-    const partes = [];
-    if (mapa) partes.push(await pedaco(abs(mapa[1], url)));
-    for (let i = 0; i < segs.length; i++) { bt.textContent = `Baixando ${Math.round((i / segs.length) * 100)}%`; partes.push(await pedaco(segs[i])); }
+    const pedaco = async (p) => { const r = await fetch(p.u, { credentials: "omit", headers: p.r ? { Range: `bytes=${p.r[0]}-${p.r[1]}` } : {} }); if (!r.ok) throw new Error("http " + r.status); return new Uint8Array(await r.arrayBuffer()); };
+    const unicos = new Set([...(mapa ? [mapa.u] : []), ...segs.map((p) => p.u)]);
     let blob;
-    if (mapa || /\.(m4s|mp4)(\?|$)/i.test(segs[0])) blob = new Blob(partes, { type: "video/mp4" }); // já é MP4 em pedaços: só juntar
-    else { // pedaços .ts: converte para MP4
-      if (!window.muxjs) return "erro";
-      const tm = new muxjs.mp4.Transmuxer(), saida = []; let ini = null;
-      tm.on("data", (seg) => { if (!ini && seg.initSegment) ini = seg.initSegment; saida.push(seg.data); });
-      partes.forEach((p) => { tm.push(p); tm.flush(); });
-      if (!ini || !saida.length) return "erro";
-      blob = new Blob([ini, ...saida], { type: "video/mp4" });
+    if (unicos.size === 1 && /\.(mp4|m4v|m4s)(\?|$)/i.test([...unicos][0])) { // o vídeo é um arquivo só, em faixas: baixa ele inteiro, uma vez
+      bt.textContent = "Baixando…"; blob = new Blob([zerarTempo(await pedaco({ u: [...unicos][0], r: null }))], { type: "video/mp4" });
+    } else {
+      const partes = [];
+      if (mapa) partes.push(await pedaco(mapa));
+      for (let i = 0; i < segs.length; i++) { bt.textContent = `Baixando ${Math.round((i / segs.length) * 100)}%`; partes.push(await pedaco(segs[i])); }
+      if (mapa || /\.(m4s|mp4)(\?|$)/i.test(segs[0].u)) { // já é MP4 em pedaços: junta e zera o relógio do vídeo (senão o player mostra horas de duração)
+        const tot = partes.reduce((t, p) => t + p.length, 0), tudo = new Uint8Array(tot); let o = 0; partes.forEach((p) => { tudo.set(p, o); o += p.length; });
+        blob = new Blob([zerarTempo(tudo)], { type: "video/mp4" });
+      } else { // pedaços .ts: converte tudo de uma vez para MP4, começando do zero
+        if (!window.muxjs) return "erro";
+        const tm = new muxjs.mp4.Transmuxer({ keepOriginalTimestamps: false }), saida = []; let ini = null;
+        tm.on("data", (seg) => { if (!ini && seg.initSegment) ini = seg.initSegment; saida.push(seg.data); });
+        partes.forEach((p) => tm.push(p)); tm.flush();
+        if (!ini || !saida.length) return "erro";
+        blob = new Blob([ini, ...saida], { type: "video/mp4" });
+      }
     }
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome + ".mp4"; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     return "ok";
+  }
+  /** MP4 em fragmentos: faz o relógio de cada trilha (tfdt) começar em 0, para o vídeo ter a duração certa */
+  function zerarTempo(b) {
+    try {
+      const dv = new DataView(b.buffer, b.byteOffset, b.byteLength), base = {};
+      const caixas = (ini, fim, fn) => { let o = ini; while (o + 8 <= fim) { let tam = dv.getUint32(o), cab = 8; const tipo = String.fromCharCode(b[o + 4], b[o + 5], b[o + 6], b[o + 7]);
+        if (tam === 1) { tam = Number(dv.getBigUint64(o + 8)); cab = 16; } else if (tam === 0) tam = fim - o; if (tam < 8 || o + tam > fim) break; fn(tipo, o, o + cab, o + tam); o += tam; } };
+      caixas(0, b.length, (t, o, c, f) => { if (t !== "moof") return;
+        caixas(c, f, (t2, o2, c2, f2) => { if (t2 !== "traf") return; let trilha = 0;
+          caixas(c2, f2, (t3, o3, c3) => { if (t3 === "tfhd") trilha = dv.getUint32(c3 + 4);
+            if (t3 === "tfdt") { const v = b[c3]; const atual = v === 1 ? dv.getBigUint64(c3 + 4) : BigInt(dv.getUint32(c3 + 4));
+              if (base[trilha] == null) base[trilha] = atual; const novo = atual - base[trilha];
+              if (v === 1) dv.setBigUint64(c3 + 4, novo); else dv.setUint32(c3 + 4, Number(novo)); } }); }); });
+    } catch (e) { /* se der algo errado, entrega como veio */ }
+    return b;
   }
   function nomeDoArquivo() {
     const n = (document.querySelector("h1") || {}).textContent || document.title || "video";

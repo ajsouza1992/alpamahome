@@ -27,7 +27,7 @@ Também funciona no Microsoft Edge (`edge://extensions`, mesmo caminho).
 
 Se o app mudar de endereço, troque a linha `const APP = "https://www.migapromo.com/app/";` no `content.js`.
 
-## Baixar o vídeo do anúncio (versão 1.8)
+## Baixar o vídeo do anúncio (versão 1.8.1)
 
 1. Abra a página do produto na **Shopee** ou no **Mercado Livre**.
 2. Se o anúncio tiver vídeo, aparece o botão **Baixar vídeo** na barra da Miga, embaixo.

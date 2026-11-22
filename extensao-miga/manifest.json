@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Miga Promo · Achadinhos",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Marque produtos no Mercado Livre e na Shopee, mande todos de uma vez para a Caixa de importação da Miga Promo e baixe o vídeo do anúncio.",
   "icons": {
     "16": "icone-16.png",
