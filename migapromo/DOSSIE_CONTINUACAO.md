@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=437` → próxima `?v=438`
-- `app/sw.js`: `VERSAO = "miga-promo-v440"` → próxima `v441`
-- Comando usado: `sed -i 's/?v=437/?v=438/g' app/index.html app/sw.js && sed -i 's/miga-promo-v440/miga-promo-v441/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=438` → próxima `?v=439`
+- `app/sw.js`: `VERSAO = "miga-promo-v441"` → próxima `v442`
+- Comando usado: `sed -i 's/?v=438/?v=439/g' app/index.html app/sw.js && sed -i 's/miga-promo-v441/miga-promo-v442/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -184,3 +184,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Montar o vídeo › Narração e trecho da música** (`blocoNarracao`): "Inserir áudio" (`P.narr` = {nome, dados, url, ini}), ouvir, tirar e "Narração começa em" (de 0,5 em 0,5 s); "Música começa em" de 0 a 30 s (`P.musIni`, `musicaRenderizada` renderiza a partir do ponto); a música abaixa enquanto a narração fala (no `audioFechamento`). "Copiar a fala" (vai na caixa de texto do AI Studio) e "Copiar o estilo" (prompt `narracao`, editável em Ajustes › Prompts, vai no botão Estilo; o modelo TTS lê tudo o que está na caixa). A prévia com som toca a mistura pronta.
 - **Montar o vídeo › bloco "Som do vídeo"** (`.pe-audio`): música, "Música começa em" (`blocoTrecho`, logo abaixo da música), "Sem o som original", narração e "Narração entra em", e os botões de copiar.
 - **Computador, logo desalinhado:** o `.topo` (sticky, com backdrop-filter) andava junto com a rolagem lateral quando algo passava da largura, e o menu fixo não. Agora `html, body { overflow-x: clip }`.
+- **Arquivos (pasta na nuvem):** aba "Arquivos" (`#aba-arquivos`, `pintarArquivos`). Enviar (input, ou arrastar no PC, com XHR e porcentagem, até 100 MB), Baixar (fetch com `cabecalhoConta` e `baixarBlob`) e Apagar. Worker `rotaArquivos` em `/api/arquivos` (GET lista, PUT ?nome=, GET ?k=, DELETE ?k=) no R2 com o binding `ARQUIVOS` (bucket `miga-arquivos`). Sem o binding, responde `sem-r2` e o app mostra o aviso.

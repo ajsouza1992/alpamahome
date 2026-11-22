@@ -205,6 +205,53 @@
       renovandoML = null; })();
     await renovandoML; return (config.mlConta && config.mlConta.a) || "";
   }
+  /* ===================== Arquivos: pasta na nuvem (Cloudflare R2) para passar arquivos do PC para o celular ===================== */
+  const LIMITE_ARQ = 100 * 1024 * 1024, ESPACO_ARQ = 10 * 1024 ** 3;
+  const tamTxt = (n) => n >= 1024 ** 3 ? (n / 1024 ** 3).toFixed(1).replace(".", ",") + " GB" : n >= 1024 ** 2 ? (n / 1024 ** 2).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+  const tipoArq = (t, nome) => /^video|\.(mp4|mov|webm|m4v)$/i.test(t + " " + nome) ? "Vídeo" : /^audio|\.(mp3|wav|m4a|ogg|aac)$/i.test(t + " " + nome) ? "Áudio" : /^image|\.(jpe?g|png|webp|gif|heic)$/i.test(t + " " + nome) ? "Imagem" : /pdf/i.test(t + " " + nome) ? "PDF" : "Arquivo";
+  let arqItens = null;
+  async function pintarArquivos() {
+    const box = $("#arqLista"); if (!box) return;
+    try { const d = await api("arquivos"); arqItens = d.itens || [];
+      box.innerHTML = arqItens.length ? `<div class="arq-lista">${arqItens.map((x) => `<div class="arq-item"><span class="arq-tipo arq-tipo--${tipoArq(x.tipo, x.nome).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()}">${tipoArq(x.tipo, x.nome)}</span><span class="arq-info"><b>${esc(x.nome)}</b><small>${tamTxt(x.tam)} · ${x.em ? new Date(x.em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + new Date(x.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}</small></span><button type="button" class="btn btn--branco" data-arq-baixar="${esc(x.k)}">Baixar</button><button type="button" class="bt-icone bt-icone--perigo" data-arq-apagar="${esc(x.k)}" aria-label="Apagar"><svg><use href="#i-lixo"/></svg></button></div>`).join("")}</div>` : '<p class="vazio-lista">A pasta está vazia. Envie um arquivo pelo computador e baixe aqui no celular.</p>';
+      $("#arqUso").textContent = `${tamTxt(d.usado || 0)} de 10 GB usados`;
+    } catch (e) {
+      box.innerHTML = e.codigo === "sem-r2" ? '<p class="aviso">A pasta ainda não está ligada no Cloudflare. Siga o passo a passo: crie o R2 "miga-arquivos" e ligue no projeto com o nome ARQUIVOS.</p>' : `<p class="aviso">Não consegui abrir a pasta: ${esc(e.message || "erro")}</p>`;
+      $("#arqUso").textContent = "";
+    }
+  }
+  function enviarArquivo(f) {
+    return new Promise(async (ok) => {
+      const linha = document.createElement("div"); linha.className = "arq-envio"; linha.innerHTML = `<b>${esc(f.name)}</b><i><s></s></i><small>0%</small>`; $("#arqEnvios").appendChild(linha);
+      if (f.size > LIMITE_ARQ) { linha.querySelector("small").textContent = "Maior que 100 MB: não dá para enviar"; linha.classList.add("erro"); return ok(false); }
+      const xhr = new XMLHttpRequest(); xhr.open("PUT", "api/arquivos?nome=" + encodeURIComponent(f.name));
+      const cab = await cabecalhoConta(); Object.entries(cab).forEach(([k, v]) => { if (!/content-type/i.test(k)) xhr.setRequestHeader(k, v); });
+      xhr.setRequestHeader("Content-Type", f.type || "application/octet-stream");
+      xhr.upload.onprogress = (e) => { if (e.lengthComputable) { const p = Math.round((e.loaded / e.total) * 100); linha.querySelector("s").style.width = p + "%"; linha.querySelector("small").textContent = p + "%"; } };
+      xhr.onload = () => { const certo = xhr.status >= 200 && xhr.status < 300; linha.querySelector("small").textContent = certo ? "Enviado" : "Não consegui enviar"; linha.classList.add(certo ? "ok" : "erro"); setTimeout(() => linha.remove(), certo ? 1500 : 6000); ok(certo); };
+      xhr.onerror = () => { linha.querySelector("small").textContent = "Sem conexão"; linha.classList.add("erro"); ok(false); };
+      xhr.send(f);
+    });
+  }
+  async function enviarArquivos(lista) { const l = [...lista]; if (!l.length) return; for (const f of l) await enviarArquivo(f); pintarArquivos(); }
+  document.addEventListener("change", (e) => { if (e.target.id === "arqEnviar") { enviarArquivos(e.target.files); e.target.value = ""; } });
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("#arqAtualizar")) { pintarArquivos(); return; }
+    const bx = e.target.closest("[data-arq-baixar]");
+    if (bx) { const x = (arqItens || []).find((i) => i.k === bx.dataset.arqBaixar); if (!x) return; const txt = bx.textContent; bx.disabled = true; bx.textContent = "Baixando…";
+      try { const r = await fetch("api/arquivos?k=" + encodeURIComponent(x.k), { headers: await cabecalhoConta() }); if (!r.ok) throw new Error(); baixarBlob(await r.blob(), x.nome); toast("Arquivo baixado"); }
+      catch (er) { toast("Não consegui baixar. Tente de novo."); } finally { bx.disabled = false; bx.textContent = txt; } return; }
+    const ap = e.target.closest("[data-arq-apagar]");
+    if (ap) { const x = (arqItens || []).find((i) => i.k === ap.dataset.arqApagar); if (!x) return;
+      if (!(await confirmar({ titulo: "Apagar o arquivo?", texto: `"${x.nome}" sai da pasta e não dá para recuperar.`, ok: "Apagar" }))) return;
+      try { const r = await fetch("api/arquivos?k=" + encodeURIComponent(x.k), { method: "DELETE", headers: await cabecalhoConta() }); if (!r.ok) throw new Error(); toast("Arquivo apagado"); } catch (er) { toast("Não consegui apagar"); }
+      pintarArquivos(); return; }
+  });
+  ["dragover", "drop"].forEach((ev) => document.addEventListener(ev, (e) => {
+    const alvo = e.target.closest && e.target.closest("#aba-arquivos"); if (!alvo) return; e.preventDefault();
+    const z = $("#arqSoltar"); if (ev === "dragover") { z.classList.add("on"); return; } z.classList.remove("on"); if (e.dataTransfer && e.dataTransfer.files.length) enviarArquivos(e.dataTransfer.files);
+  }));
+  document.addEventListener("dragleave", (e) => { if (!e.relatedTarget || !(e.relatedTarget.closest && e.relatedTarget.closest("#aba-arquivos"))) { const z = $("#arqSoltar"); if (z) z.classList.remove("on"); } });
   async function api(caminho, corpo) {
     const r = await fetch("api/" + caminho, {
       method: corpo ? "POST" : "GET",
@@ -689,6 +736,7 @@
     document.dispatchEvent(new CustomEvent("miga-aba", { detail: aba }));
     if (aba === "historico") { visaoLista = "postados"; aba = "postar"; document.querySelectorAll(".aba").forEach((el) => { el.hidden = el.id !== "aba-postar"; }); renderFila(); }
     if (aba === "grupos") renderGrupos();
+    if (aba === "arquivos") pintarArquivos();
     if (aba === "achados" && (!catalogoCarregado || (catEm && Date.now() - catEm > 36e5))) carregarCatalogo();
     if (aba === "site") { renderSite(); carregarCliquesSite(); }
     if (aba === "acessos") carregarAcessos();
