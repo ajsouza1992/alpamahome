@@ -4914,7 +4914,7 @@
   }
   const guardarAjVideo = (V) => { try { localStorage.setItem("miga_vd_aj_" + V.tema, JSON.stringify(V.aj || {})); } catch (e) { /* segue */ } };
   /** Quebra as linhas do título (com as partes destacadas) para caber na largura */
-  function quebrarPartesTitulo(ctx, linhas, fonte, larg) {
+  function quebrarPartesTitulo(ctx, linhas, fonte, larg, max = 5) {
     ctx.save(); ctx.font = fonte; const saida = [];
     linhas.forEach((partes) => {
       let atual = [], w = 0;
@@ -4926,7 +4926,7 @@
       }));
       if (atual.length) { const u = atual[atual.length - 1]; u[0] = u[0].replace(/\s+$/, ""); saida.push(atual); }
     });
-    ctx.restore(); return saida.slice(0, 5);
+    ctx.restore(); return saida.slice(0, max);
   }
   /** Desenha um quadro: o vídeo + o tema por cima. Medidas em 1080 × 1920. */
   function quadroVideo(ctx, W, H, fonte, V) {
@@ -4940,7 +4940,8 @@
       ctx.save(); ctx.beginPath(); ctx.rect(x, y, ww, hh); ctx.clip(); ctx.drawImage(fonte, x + (ww - iw) / 2, y + (hh - ih) / 2, iw, ih); ctx.restore();
     };
     const sombraTexto = (on) => { ctx.shadowColor = on ? "rgba(0,0,0,.55)" : "transparent"; ctx.shadowBlur = on ? 18 : 0; ctx.shadowOffsetY = on ? 3 : 0; };
-    const linhas = quebrarPartesTitulo(ctx, linhasTitulo(V.titulo), "800 100px Poppins", 940); // título comprido quebra sozinho
+    // título comprido quebra sozinho usando a largura toda; se você diminuir (A−), cabem mais palavras por linha
+    const escT = Math.max(0.5, (ajVideo(V).titulo || {}).s || 1), linhas = quebrarPartesTitulo(ctx, linhasTitulo(V.titulo), "800 100px Poppins", Math.min(1900, 1000 / escT), escT < 1 ? 7 : 5);
     const titulo0 = (y, cor, dest, tam = 92, sombra = false) => {
       ctx.font = `800 ${tam}px Poppins`; sombraTexto(sombra);
       linhas.forEach((partes, j) => {
@@ -4987,7 +4988,7 @@
     const regCaixa = (k, x0, y0, x1, y1) => { if (AJ[k] && AJ[k].off) return; const b = bx[k]; bx[k] = b ? [Math.min(b[0], x0), Math.min(b[1], y0), Math.max(b[2], x1), Math.max(b[3], y1)] : [x0, y0, x1, y1]; };
     const comAj = (k, ax, ay, fn) => { const a = AJ[k] || {}, sc = a.s || 1, dx = a.dx || 0, dy = a.dy || 0; ctx.save(); if (a.off) ctx.globalAlpha = 0; ctx.translate(ax + dx, ay + dy); ctx.scale(sc, sc); ctx.translate(-ax, -ay); let r; try { r = fn(); } finally { ctx.restore(); } return { r, map: (x, y) => [ax + dx + (x - ax) * sc, ay + dy + (y - ay) * sc] }; };
     const bloco = (k, ax, ay, fn, x0, y0, x1, y1) => { const { r, map } = comAj(k, ax, ay, fn); const [a0, b0] = map(x0, y0), [a1, b1] = map(x1, y1); regCaixa(k, a0, b0, a1, b1); return r; };
-    const titulo = (y, cor, dest, tam = 92, sombra = false) => { const fim = y + nl * tam * 1.08; return bloco("titulo", 540, y, () => titulo0(y, cor, dest, tam, sombra), 90, y - tam * 0.6, 990, fim - tam * 0.45); };
+    const titulo = (y, cor, dest, tam = 92, sombra = false) => { const fim = y + nl * tam * 1.08; return bloco("titulo", 540, y, () => titulo0(y, cor, dest, tam, sombra), 540 - 510 / escT, y - tam * 0.6, 540 + 510 / escT, fim - tam * 0.45); };
     const infos = (y, ...a) => { let alt = 0; const { map } = comAj("infos", 540, y, () => { alt = infos0(y, ...a); }); if (alt > 0) { const [a0, b0] = map(110, y - 10), [a1, b1] = map(970, y + alt); regCaixa("infos", a0, b0, a1, b1); } return alt; };
     const pilula = (texto, cx, cy, fundo, cor, tam = 44) => { const cb = AJ.botao && CORES_BOTAO_VD[AJ.botao.cor]; if (cb && cb[0]) { fundo = cb[0]; cor = cb[1]; } ultPil = null; let ph = 0; const { map } = comAj("botao", cx, cy, () => { ph = pilula0(texto, cx, cy, fundo, cor, tam); }); if (ultPil) { const [a0, b0] = map(ultPil[0], ultPil[1]), [a1, b1] = map(ultPil[2], ultPil[3]); regCaixa("botao", a0, b0, a1, b1); } return ph; };
     const marca = (x, y, sz, fundo) => {
