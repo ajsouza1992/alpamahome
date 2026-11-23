@@ -4907,7 +4907,7 @@
   }
   /** Posição e tamanho do título, do preço, do botão e da logo no vídeo (guardados por estilo: vale para os próximos vídeos) */
   const CORES_BOTAO_VD = { tema: ["", "", "Cor do estilo"], rosa: ["#e8336d", "#ffffff", "Rosa"], amarelo: ["#ffd23f", "#1d1d1f", "Amarelo"], preto: ["#1d1d1f", "#ffffff", "Preto"], branco: ["#ffffff", "#1d1d1f", "Branco"], verde: ["#1f7a4d", "#ffffff", "Verde"], roxo: ["#7b3fe4", "#ffffff", "Roxo"], vermelho: ["#d7262e", "#ffffff", "Vermelho"] };
-  const NOMES_AJ = { titulo: "Título", infos: "Preço e descrição", botao: "Botão (Link na bio)", logo: "Logo da Miga" };
+  const NOMES_AJ = { titulo: "Título", infos: "Preço e descrição", botao: "Botão do link", logo: "Logo da Miga" };
   function ajVideo(V) {
     if (!V.aj || V.ajTema !== V.tema) { let g = null; try { g = JSON.parse(localStorage.getItem("miga_vd_aj_" + V.tema) || "null"); } catch (e) { g = null; } V.aj = g && typeof g === "object" ? g : {}; V.ajTema = V.tema; }
     return V.aj;
@@ -5229,7 +5229,8 @@
       const k = V.sel.slice(3), a = ajVideo(V)[k] || {}, pct = Math.round((a.s || 1) * 100);
       const cantos = k === "logo" ? `<div class="ed-cantos">${[["se", "Em cima, à esquerda"], ["sd", "Em cima, à direita"], ["ie", "Embaixo, à esquerda"], ["id", "Embaixo, à direita"]].map(([c, n]) => `<button type="button" data-ed-aj-canto="${c}" class="ed-canto ed-canto--${c}${a.canto === c ? " on" : ""}" aria-label="${n}" title="${n}"><i></i></button>`).join("")}</div>` : "";
       const coresB = k === "botao" ? `<div class="ed-cores">${Object.entries(CORES_BOTAO_VD).map(([c, [bg, , n]]) => `<button type="button" data-ed-aj-cor="${c}" class="${(a.cor || "tema") === c ? "on" : ""}${c === "tema" ? " ed-cor-tema" : ""}" style="${bg ? `background:${bg}` : ""}" aria-label="${n}" title="${n}"></button>`).join("")}</div>` : "";
-      return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto" : "Arraste na prévia para mudar o lugar"}</span></p>${cantos}${coresB}
+      const txtB = k === "botao" ? `<input id="edAjBotao" maxlength="40" value="${esc(V.botao == null ? "Link na bio" : V.botao)}" placeholder="Ex.: Link na legenda" autocomplete="off"><div class="ed-chips">${["Link na bio", "Link na legenda", "Link nos comentários", "Comenta EU QUERO"].map((x) => `<button type="button" data-ed-aj-txt="${esc(x)}">${esc(x)}</button>`).join("")}</div>` : "";
+      return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto" : "Arraste na prévia para mudar o lugar"}</span></p>${txtB}${cantos}${coresB}
         <div class="ed-linha"><button type="button" data-ed-aj-tam="-" aria-label="Diminuir">A−</button><span class="ed-aj-pct">${pct}%</span><button type="button" data-ed-aj-tam="+" aria-label="Aumentar">A+</button><button type="button" data-ed-aj-zero>Voltar ao padrão</button><button type="button" data-ed-aj-tirar class="ed-del">Tirar</button><button type="button" data-ed-ok class="ed-ok">Pronto</button></div></div>`;
     }
     if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases prontas</button></div>
@@ -5257,6 +5258,7 @@
       const k = V.sel.slice(3), A = ajVideo(V), a = (A[k] = A[k] || {});
       const tz = t.closest("[data-ed-aj-tam]"); if (tz) { a.s = Math.round(Math.max(0.5, Math.min(2, (a.s || 1) + (tz.dataset.edAjTam === "+" ? 0.1 : -0.1))) * 100) / 100; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
       const cn = t.closest("[data-ed-aj-canto]"); if (cn) { a.canto = cn.dataset.edAjCanto; delete a.livre; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
+      const tx = t.closest("[data-ed-aj-txt]"); if (tx) { V.botao = tx.dataset.edAjTxt; V.resultado = null; V.legendaInsta = null; const i = $("#edAjBotao"); if (i) i.value = V.botao; return; }
       const ac2 = t.closest("[data-ed-aj-cor]"); if (ac2) { if (ac2.dataset.edAjCor === "tema") delete a.cor; else a.cor = ac2.dataset.edAjCor; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
       if (t.closest("[data-ed-aj-tirar]")) { a.off = true; guardarAjVideo(V); V.sel = null; V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} saiu do vídeo`); return; }
       if (t.closest("[data-ed-aj-zero]")) { delete A[k]; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} voltou para o lugar do estilo`); return; }
@@ -5285,6 +5287,7 @@
     if (t.closest("[data-ed-del]")) { V.camadas = V.camadas.filter((x) => x !== cm); V.sel = null; V.resultado = null; atualizarBarraEditor(); return; }
     if (t.closest("[data-ed-ok]")) { V.sel = null; atualizarBarraEditor(); return; }
   });
+  $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id === "edAjBotao" && wz.canal === "video") { const V = vd(); V.botao = e.target.value.trim(); V.resultado = null; V.legendaInsta = null; } });
   $("#wzCorpo").addEventListener("input", (e) => { if (e.target.id !== "edTxt") return; const V = vd(), cm = (V.camadas || []).find((x) => x.id === V.sel); if (cm) { cm.txt = e.target.value; V.resultado = null; } });
   // Tocar e arrastar as camadas na prévia
   let arrasto = null;
@@ -10519,7 +10522,11 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function legendaVideo() {
     const V = vd(), tit = String(V.titulo || "").replace(/[*]/g, "").replace(/\s*\n\s*/g, " ").trim();
     const l = V.nome || V.novo ? [{ nome: V.nome, precoNovo: V.novo, precoAntigo: V.antigo, cupom: V.cupom }] : [];
-    return legendaReels({ modelo: V.modelo || "achadinho", camp: V.camp || "", titulo: V.tituloProp || "", chamada: tit ? `✨ ${tit}` : "", semLink: !l.length && !V.itemId }, l);
+    let t = legendaReels({ modelo: V.modelo || "achadinho", camp: V.camp || "", titulo: V.tituloProp || "", chamada: tit ? `✨ ${tit}` : "", semLink: !l.length && !V.itemId }, l);
+    // Botão "Link na legenda": o link do produto vai na legenda no lugar do aviso da bio
+    const it = V.itemId && itemPorId(V.itemId), lk = it && linkPost(it);
+    if (/legenda/i.test(V.botao || "") && lk) { const linha = "🔗 " + linkLoja(it.loja, lk); t = t.includes(AVISO_BIO) ? t.replace(AVISO_BIO, linha) : t + "\n\n" + linha; }
+    return t;
   }
   const blocoLegenda = (R) => `<div class="leg-bloco">
       <div class="leg-topo"><span>Legenda pronta</span><div><button type="button" class="leg-btn" id="rCopiarLegenda"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copiar</button><button type="button" class="leg-btn" id="rRefazerLegenda"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg>Refazer</button></div></div>
