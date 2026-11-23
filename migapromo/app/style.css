@@ -2970,3 +2970,14 @@ html, body { overflow-x: clip; }
 .ka2-fundos .rp-cores button { flex: none !important; aspect-ratio: 1; padding: 0; }
 .ka2-fauto { display: grid; place-items: center; }
 .ka2-fauto svg { width: 18px; height: 18px; fill: none; stroke: #1d1d1f; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .75; }
+/* Vídeo: mudar lugar e tamanho do título, preço, botão e logo */
+.ed-aj-nome { display: grid; gap: 2px; margin: 0; text-align: center; }
+.ed-aj-nome b { font-size: 15px; }
+.ed-aj-nome span { font-size: 12px; color: var(--cinza); }
+.ed-aj-pct { min-width: 46px; text-align: center; font-weight: 700; font-size: 13px; align-self: center; }
+.ed-cantos { display: grid; grid-template-columns: repeat(4, 52px); gap: 10px; justify-content: center; }
+.ed-canto { position: relative; width: 52px; height: 72px; border-radius: 10px; border: 2px solid #e5dccb; background: #fff; cursor: pointer; padding: 0; }
+.ed-canto.on { border-color: var(--rosa, #e8336d); background: #fff5f8; }
+.ed-canto i { position: absolute; width: 14px; height: 14px; border-radius: 4px; background: var(--rosa, #e8336d); }
+.ed-canto--se i { top: 6px; left: 6px; } .ed-canto--sd i { top: 6px; right: 6px; }
+.ed-canto--ie i { bottom: 6px; left: 6px; } .ed-canto--id i { bottom: 6px; right: 6px; }
