@@ -2981,3 +2981,6 @@ html, body { overflow-x: clip; }
 .ed-canto i { position: absolute; width: 14px; height: 14px; border-radius: 4px; background: var(--rosa, #e8336d); }
 .ed-canto--se i { top: 6px; left: 6px; } .ed-canto--sd i { top: 6px; right: 6px; }
 .ed-canto--ie i { bottom: 6px; left: 6px; } .ed-canto--id i { bottom: 6px; right: 6px; }
+.ed-fora { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; margin-top: 8px; }
+.ed-fora span { font-size: 12.5px; color: var(--cinza); }
+.ed-fora button { padding: 6px 12px; border-radius: 999px; border: 1.5px solid #e5dccb; background: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }

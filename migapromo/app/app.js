@@ -4968,16 +4968,15 @@
     const nl = linhas.length;
     // Ajustes que você fez arrastando na prévia: título, preço/descrição, botão (Link na bio) e logo
     const AJ = ajVideo(V), bx = (V._bx = {});
-    const regCaixa = (k, x0, y0, x1, y1) => { const b = bx[k]; bx[k] = b ? [Math.min(b[0], x0), Math.min(b[1], y0), Math.max(b[2], x1), Math.max(b[3], y1)] : [x0, y0, x1, y1]; };
-    const comAj = (k, ax, ay, fn) => { const a = AJ[k] || {}, sc = a.s || 1, dx = a.dx || 0, dy = a.dy || 0; ctx.save(); ctx.translate(ax + dx, ay + dy); ctx.scale(sc, sc); ctx.translate(-ax, -ay); let r; try { r = fn(); } finally { ctx.restore(); } return { r, map: (x, y) => [ax + dx + (x - ax) * sc, ay + dy + (y - ay) * sc] }; };
+    const regCaixa = (k, x0, y0, x1, y1) => { if (AJ[k] && AJ[k].off) return; const b = bx[k]; bx[k] = b ? [Math.min(b[0], x0), Math.min(b[1], y0), Math.max(b[2], x1), Math.max(b[3], y1)] : [x0, y0, x1, y1]; };
+    const comAj = (k, ax, ay, fn) => { const a = AJ[k] || {}, sc = a.s || 1, dx = a.dx || 0, dy = a.dy || 0; ctx.save(); if (a.off) ctx.globalAlpha = 0; ctx.translate(ax + dx, ay + dy); ctx.scale(sc, sc); ctx.translate(-ax, -ay); let r; try { r = fn(); } finally { ctx.restore(); } return { r, map: (x, y) => [ax + dx + (x - ax) * sc, ay + dy + (y - ay) * sc] }; };
     const bloco = (k, ax, ay, fn, x0, y0, x1, y1) => { const { r, map } = comAj(k, ax, ay, fn); const [a0, b0] = map(x0, y0), [a1, b1] = map(x1, y1); regCaixa(k, a0, b0, a1, b1); return r; };
     const titulo = (y, cor, dest, tam = 92, sombra = false) => { const fim = y + nl * tam * 1.08; return bloco("titulo", 540, y, () => titulo0(y, cor, dest, tam, sombra), 90, y - tam * 0.6, 990, fim - tam * 0.45); };
     const infos = (y, ...a) => { let alt = 0; const { map } = comAj("infos", 540, y, () => { alt = infos0(y, ...a); }); if (alt > 0) { const [a0, b0] = map(110, y - 10), [a1, b1] = map(970, y + alt); regCaixa("infos", a0, b0, a1, b1); } return alt; };
     const pilula = (texto, cx, cy, fundo, cor, tam = 44) => { ultPil = null; let ph = 0; const { map } = comAj("botao", cx, cy, () => { ph = pilula0(texto, cx, cy, fundo, cor, tam); }); if (ultPil) { const [a0, b0] = map(ultPil[0], ultPil[1]), [a1, b1] = map(ultPil[2], ultPil[3]); regCaixa("botao", a0, b0, a1, b1); } return ph; };
     const marca = (x, y, sz, fundo) => {
-      if (!edMarca) return; const L = AJ.logo || {}, s2 = sz * (L.s || 1), m = 50;
-      if (L.livre) { x = L.livre[0] - s2 / 2; y = L.livre[1] - s2 / 2; }
-      else if (L.canto) { x = L.canto[1] === "e" ? m : w - s2 - m; y = L.canto[0] === "s" ? m + 10 : h - s2 - m - 10; }
+      if (!edMarca) return; const L = AJ.logo || {}, s2 = sz * (L.s || 1), m = 50; if (L.off) return;
+      if (L.canto) { x = L.canto[1] === "e" ? m : w - s2 - m; y = L.canto[0] === "s" ? m + 10 : h - s2 - m - 10; }
       else { x += (sz - s2) / 2; y += (sz - s2) / 2; }
       marca0(x, y, s2, fundo); regCaixa("logo", x - 10, y - 10, x + s2 + 10, y + s2 + 10);
     };
@@ -5221,16 +5220,17 @@
     }
     ctx.restore();
   }
+  const foraAj = (V) => { const A = ajVideo(V), f = Object.keys(NOMES_AJ).filter((k) => A[k] && A[k].off); return f.length ? `<div class="ed-fora"><span>Pôr de volta:</span>${f.map((k) => `<button type="button" data-ed-aj-volta="${k}">${NOMES_AJ[k]}</button>`).join("")}</div>` : ""; };
   function barraEditor() {
     const V = vd(), cm = (V.camadas || []).find((x) => x.id === V.sel);
     if (typeof V.sel === "string" && V.sel.startsWith("aj:")) {
       const k = V.sel.slice(3), a = ajVideo(V)[k] || {}, pct = Math.round((a.s || 1) * 100);
       const cantos = k === "logo" ? `<div class="ed-cantos">${[["se", "Em cima, à esquerda"], ["sd", "Em cima, à direita"], ["ie", "Embaixo, à esquerda"], ["id", "Embaixo, à direita"]].map(([c, n]) => `<button type="button" data-ed-aj-canto="${c}" class="ed-canto ed-canto--${c}${a.canto === c ? " on" : ""}" aria-label="${n}" title="${n}"><i></i></button>`).join("")}</div>` : "";
-      return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto ou arraste" : "Arraste na prévia para mudar o lugar"}</span></p>${cantos}
-        <div class="ed-linha"><button type="button" data-ed-aj-tam="-" aria-label="Diminuir">A−</button><span class="ed-aj-pct">${pct}%</span><button type="button" data-ed-aj-tam="+" aria-label="Aumentar">A+</button><button type="button" data-ed-aj-zero>Voltar ao padrão</button><button type="button" data-ed-ok class="ed-ok">Pronto</button></div></div>`;
+      return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto" : "Arraste na prévia para mudar o lugar"}</span></p>${cantos}
+        <div class="ed-linha"><button type="button" data-ed-aj-tam="-" aria-label="Diminuir">A−</button><span class="ed-aj-pct">${pct}%</span><button type="button" data-ed-aj-tam="+" aria-label="Aumentar">A+</button><button type="button" data-ed-aj-zero>Voltar ao padrão</button><button type="button" data-ed-aj-tirar class="ed-del">Tirar</button><button type="button" data-ed-ok class="ed-ok">Pronto</button></div></div>`;
     }
     if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases prontas</button></div>
-      <p class="nota ed-dica">Toque no título, no preço, no botão ou na logo da prévia para mudar o lugar e o tamanho. Arraste para posicionar.</p>`;
+      <p class="nota ed-dica">Toque no título, no preço, no botão ou na logo da prévia para mudar o lugar, o tamanho ou tirar.</p>${foraAj(V)}`;
     const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
     const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
     const fim = `<button type="button" data-ed-del class="ed-del">Excluir</button><button type="button" data-ed-ok class="ed-ok">Pronto</button>`;
@@ -5254,8 +5254,10 @@
       const k = V.sel.slice(3), A = ajVideo(V), a = (A[k] = A[k] || {});
       const tz = t.closest("[data-ed-aj-tam]"); if (tz) { a.s = Math.round(Math.max(0.5, Math.min(2, (a.s || 1) + (tz.dataset.edAjTam === "+" ? 0.1 : -0.1))) * 100) / 100; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
       const cn = t.closest("[data-ed-aj-canto]"); if (cn) { a.canto = cn.dataset.edAjCanto; delete a.livre; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
+      if (t.closest("[data-ed-aj-tirar]")) { a.off = true; guardarAjVideo(V); V.sel = null; V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} saiu do vídeo`); return; }
       if (t.closest("[data-ed-aj-zero]")) { delete A[k]; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} voltou para o lugar do estilo`); return; }
     }
+    const vo = t.closest("[data-ed-aj-volta]"); if (vo) { const A = ajVideo(V), k = vo.dataset.edAjVolta; if (A[k]) delete A[k].off; guardarAjVideo(V); V.sel = "aj:" + k; V.resultado = null; atualizarBarraEditor(); return; }
     if (t.closest("[data-ed-frases]")) { folhaFrases(); return; }
     const ad = t.closest("[data-ed-add]");
     if (ad) {
@@ -5307,16 +5309,16 @@
     const cm = [...(V.camadas || [])].reverse().find((c) => c._box && x >= c._box[0] && x <= c._box[0] + c._box[2] && y >= c._box[1] && y <= c._box[1] + c._box[3]);
     if (!cm) {
       const B = V._bx || {}, k = ["logo", "botao", "infos", "titulo"].find((q) => B[q] && x >= B[q][0] - 16 && x <= B[q][2] + 16 && y >= B[q][1] - 16 && y <= B[q][3] + 16);
-      if (k) { e.preventDefault(); const A = ajVideo(V), a = (A[k] = A[k] || {}); if (V.sel !== "aj:" + k) { V.sel = "aj:" + k; atualizarBarraEditor(); } arrasto = { aj: k, a, x0: x, y0: y, dx0: a.dx || 0, dy0: a.dy || 0, cv }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* segue */ } return; }
+      if (k) { e.preventDefault(); const A = ajVideo(V), a = (A[k] = A[k] || {}); if (V.sel !== "aj:" + k) { V.sel = "aj:" + k; atualizarBarraEditor(); } if (k === "logo") return; /* a logo só troca de canto */ arrasto = { aj: k, a, x0: x, y0: y, dx0: a.dx || 0, dy0: a.dy || 0, cv }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* segue */ } return; }
       if (V.sel) { V.sel = null; atualizarBarraEditor(); } return;
     }
     e.preventDefault(); if (V.sel !== cm.id) { V.sel = cm.id; atualizarBarraEditor(); }
     arrasto = { cm, dx: x - cm.x, dy: y - cm.y, cv }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* segue */ }
   });
   $("#wzCorpo").addEventListener("pointermove", (e) => { if (!arrasto) return; const [x, y] = pontoNaPrevia(e, arrasto.cv);
-    if (arrasto.aj) { const a = arrasto.a; if (arrasto.aj === "logo") a.livre = [Math.max(60, Math.min(1020, x)), Math.max(60, Math.min(1860, y))]; else { a.dx = Math.round(arrasto.dx0 + x - arrasto.x0); a.dy = Math.round(arrasto.dy0 + y - arrasto.y0); } vd().resultado = null; return; } arrasto.cm.x = Math.max(40, Math.min(1040, x - arrasto.dx)); arrasto.cm.y = Math.max(60, Math.min(1860, y - arrasto.dy)); vd().resultado = null; });
+    if (arrasto.aj) { const a = arrasto.a; a.dx = Math.round(arrasto.dx0 + x - arrasto.x0); a.dy = Math.round(arrasto.dy0 + y - arrasto.y0); vd().resultado = null; return; } arrasto.cm.x = Math.max(40, Math.min(1040, x - arrasto.dx)); arrasto.cm.y = Math.max(60, Math.min(1860, y - arrasto.dy)); vd().resultado = null; });
   ["pointerup", "pointercancel"].forEach((ev) => $("#wzCorpo").addEventListener(ev, () => {
-    if (arrasto && arrasto.aj) { const a = arrasto.a, V = vd(); if (arrasto.aj === "logo" && a.livre) { const [lx, ly] = a.livre; a.canto = (ly < 960 ? "s" : "i") + (lx < 540 ? "e" : "d"); delete a.livre; } guardarAjVideo(V); if (arrasto.aj === "logo") atualizarBarraEditor(); }
+    if (arrasto && arrasto.aj) guardarAjVideo(vd());
     arrasto = null;
   }));
   // Selos prontos para pôr no vídeo: [fundo, letra, cor do editor]

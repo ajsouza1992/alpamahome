@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=447` → próxima `?v=448`
-- `app/sw.js`: `VERSAO = "miga-promo-v450"` → próxima `v451`
-- Comando usado: `sed -i 's/?v=447/?v=448/g' app/index.html app/sw.js && sed -i 's/miga-promo-v450/miga-promo-v451/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=448` → próxima `?v=449`
+- `app/sw.js`: `VERSAO = "miga-promo-v451"` → próxima `v452`
+- Comando usado: `sed -i 's/?v=448/?v=449/g' app/index.html app/sw.js && sed -i 's/miga-promo-v451/miga-promo-v452/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -194,3 +194,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Carrossel: bugs** — "Começar um carrossel novo" (tela Pronto) agora apaga o salvo; Montar zera a legenda antiga; Colar: aceita ```json, vírgula sobrando, aspas curvas dentro do texto; avisa se colou o pedido em vez da resposta ou a resposta do carrossel antigo.
 - **Story**: o aviso "Promoção pode mudar…" fica logo abaixo do campo do link (`fimCampoLink`, guardado em `campoCupomLink`).
 - **Publicar vídeo (vTema): mudar lugar/tamanho do título, preço/descrição, botão (Link na bio) e logo** — toque no item na prévia `#vdQuadro` e arraste. `quadroVideo` envolve `titulo/infos/pilula/marca` (originais `titulo0/infos0/pilula0/marca0`) com `comAj` (translate+scale) e grava as caixas em `V._bx`; estilos com desenho próprio (selo, story, polaroid, legenda, mínimo) usam `bloco()`/`blocoInfos()`. Ajustes em `V.aj` = {titulo|infos|botao: {dx,dy,s}, logo: {canto "se|sd|ie|id", s}} guardados por estilo em `localStorage miga_vd_aj_<tema>` (valem para os próximos vídeos). Seleção `V.sel = "aj:<k>"`, barra com A−/A+, cantos (logo), "Voltar ao padrão". A logo, ao soltar, vai para o canto mais perto.
+- Vídeo: cada item pode ser **tirado** (`aj[k].off`: desenha invisível para manter o layout, sem caixa de toque; "Pôr de volta" na barra padrão via `foraAj`). A **logo não arrasta**: só escolhe o canto.
