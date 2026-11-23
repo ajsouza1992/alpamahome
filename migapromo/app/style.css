@@ -2986,3 +2986,4 @@ html, body { overflow-x: clip; }
 .ed-fora button { padding: 6px 12px; border-radius: 999px; border: 1.5px solid #e5dccb; background: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .ed-aj .ed-cores { justify-content: center; }
 .ed-cor-tema { background: conic-gradient(#e8336d 0 25%, #ffd23f 0 50%, #1d1d1f 0 75%, #fff3c4 0); }
+.conta-letras { float: right; font-weight: 600; color: var(--cinza); }

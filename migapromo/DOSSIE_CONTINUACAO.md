@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=451` → próxima `?v=452`
-- `app/sw.js`: `VERSAO = "miga-promo-v454"` → próxima `v455`
-- Comando usado: `sed -i 's/?v=451/?v=452/g' app/index.html app/sw.js && sed -i 's/miga-promo-v454/miga-promo-v455/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=452` → próxima `?v=453`
+- `app/sw.js`: `VERSAO = "miga-promo-v455"` → próxima `v456`
+- Comando usado: `sed -i 's/?v=452/?v=453/g' app/index.html app/sw.js && sed -i 's/miga-promo-v455/miga-promo-v456/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -198,3 +198,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Vídeo: **cor do botão Link na bio** (`aj.botao.cor`, paleta `CORES_BOTAO_VD`; "tema" = cor do estilo). **Música**: saiu a chave "Música no vídeo"; na folha Música há "Sem música" (`V.musica=false` → sem trilha nenhuma, nem na abertura/final); a chave "Sem o som original" não liga mais a música sozinha. **Final desligado**: a folga do fim da gravação desenhava `quadroFinal` (tela creme) mesmo com final off → agora segura o último quadro do vídeo. **Capa**: padrão "Igual ao vídeo" (`capaTipo "quadro"` = `quadroVideo` com o estilo); "Título grande" é a antiga.
 - Vídeo: ao tocar no botão do link, dá para **escrever o texto** (`#edAjBotao` → `V.botao`) ou escolher "Link na bio / Link na legenda / Link nos comentários / Comenta EU QUERO". Se o texto tiver "legenda", `legendaVideo` troca o `AVISO_BIO` pelo link do produto (`linkPost`, com nome da loja).
 - Vídeo: **guias como no Instagram** ao arrastar (itens e camadas): perto do meio (26 px em 1080) encaixa no centro e mostra linha azul (`V._guia {v,h}`, desenhada só na prévia). Botão **Centralizar** na barra (itens: ajusta `dx`; camadas: `x=540`).
+- Título (folha `folhaTituloModelo`, `#estTitTxt`): limite 60 → 100 letras (com 60 o título com emojis travava e "não digitava"), contador `#estTitConta`. No vídeo, `quebrarPartesTitulo` quebra linhas compridas (até 5 linhas, 940 px).

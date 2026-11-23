@@ -4913,6 +4913,21 @@
     return V.aj;
   }
   const guardarAjVideo = (V) => { try { localStorage.setItem("miga_vd_aj_" + V.tema, JSON.stringify(V.aj || {})); } catch (e) { /* segue */ } };
+  /** Quebra as linhas do título (com as partes destacadas) para caber na largura */
+  function quebrarPartesTitulo(ctx, linhas, fonte, larg) {
+    ctx.save(); ctx.font = fonte; const saida = [];
+    linhas.forEach((partes) => {
+      let atual = [], w = 0;
+      partes.forEach(([t, d]) => t.split(/(\s+)/).filter((x) => x !== "").forEach((pal) => {
+        const pw = ctx.measureText(pal).width;
+        if (w + pw > larg && atual.length && pal.trim()) { saida.push(atual); atual = []; w = 0; }
+        if (!atual.length && !pal.trim()) return;
+        const ult = atual[atual.length - 1]; if (ult && ult[1] === d) ult[0] += pal; else atual.push([pal, d]); w += pw;
+      }));
+      if (atual.length) { const u = atual[atual.length - 1]; u[0] = u[0].replace(/\s+$/, ""); saida.push(atual); }
+    });
+    ctx.restore(); return saida.slice(0, 5);
+  }
   /** Desenha um quadro: o vídeo + o tema por cima. Medidas em 1080 × 1920. */
   function quadroVideo(ctx, W, H, fonte, V) {
     const k = W / 1080; ctx.save(); ctx.scale(k, k);
@@ -4925,7 +4940,7 @@
       ctx.save(); ctx.beginPath(); ctx.rect(x, y, ww, hh); ctx.clip(); ctx.drawImage(fonte, x + (ww - iw) / 2, y + (hh - ih) / 2, iw, ih); ctx.restore();
     };
     const sombraTexto = (on) => { ctx.shadowColor = on ? "rgba(0,0,0,.55)" : "transparent"; ctx.shadowBlur = on ? 18 : 0; ctx.shadowOffsetY = on ? 3 : 0; };
-    const linhas = linhasTitulo(V.titulo);
+    const linhas = quebrarPartesTitulo(ctx, linhasTitulo(V.titulo), "800 100px Poppins", 940); // título comprido quebra sozinho
     const titulo0 = (y, cor, dest, tam = 92, sombra = false) => {
       ctx.font = `800 ${tam}px Poppins`; sombraTexto(sombra);
       linhas.forEach((partes, j) => {
@@ -9977,12 +9992,13 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function folhaTituloModelo() {
     const e = estLer(), tit = e.titulo || tituloBase(e), atual = e.icone || ((decorDe({ modelo: e.modelo, camp: e.camp, icone: "" }).ic || [])[0] || "");
     folhaEst(wz.canal === "video" ? "Título do vídeo" : "Título e figurinha", `<p class="nota">Escreva o título do seu jeito. Use *asteriscos* para destacar e Enter para quebrar a linha. Dá para usar emojis.</p>
-      <label class="ch-campo"><span>Título</span><textarea id="estTitTxt" rows="2" maxlength="60">${esc(tit)}</textarea></label>
+      <label class="ch-campo"><span>Título <small id="estTitConta" class="conta-letras">${[...tit].length}/100</small></span><textarea id="estTitTxt" rows="3" maxlength="100">${esc(tit)}</textarea></label>
       <b class="ch-rot">Figurinha</b><div class="ch-figs">${FIGURAS.map((f) => `<button type="button" data-est-fig="${f}" class="${f === atual ? "on" : ""}" aria-label="${f}"><canvas width="60" height="60" data-fig-est="${f}"></canvas></button>`).join("")}</div>
       <button type="button" class="btn btn--rosa" id="estTitSalvar">Salvar</button>
       <button type="button" class="btn btn--branco" id="estTitPadrao">Voltar ao padrão do modelo</button>`);
     document.querySelectorAll("[data-fig-est]").forEach((c) => { const x = c.getContext("2d"); x.translate(30, 30); iconeReels(x, c.dataset.figEst, 46); });
   }
+  $("#folhaEst").addEventListener("input", (e) => { if (e.target.id === "estTitTxt") { const c = $("#estTitConta"); if (c) c.textContent = `${e.target.value.length}/100`; } });
   function folhaModelo(aba) {
     const reels = wz.canal === "reels", R = estLer();
     aba = aba || wz.abaModelo || "sugestoes"; wz.abaModelo = aba;
