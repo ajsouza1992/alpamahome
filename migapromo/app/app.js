@@ -5259,8 +5259,8 @@
       return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto" : "Arraste na prévia para mudar o lugar"}</span></p>${txtB}${cantos}${coresB}
         <div class="ed-linha"><button type="button" data-ed-aj-tam="-" aria-label="Diminuir">A−</button><span class="ed-aj-pct">${pct}%</span><button type="button" data-ed-aj-tam="+" aria-label="Aumentar">A+</button>${k === "logo" ? "" : '<button type="button" data-ed-aj-centro>Centralizar</button>'}<button type="button" data-ed-aj-zero>Voltar ao padrão</button><button type="button" data-ed-aj-tirar class="ed-del">Tirar</button><button type="button" data-ed-ok class="ed-ok">Pronto</button></div></div>`;
     }
-    if (!cm) return `${foraAj(V)}<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases prontas</button></div>
-      <p class="nota ed-dica">Toque no título, no preço, no botão ou na logo da prévia para mudar o lugar, o tamanho ou tirar.</p>`;
+    if (!cm) return `${foraAj(V)}<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases</button></div>
+      <p class="nota ed-dica">Toque no que está no vídeo para mudar.</p>`;
     const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
     const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
     const fim = `<button type="button" data-ed-centro>Centralizar</button><button type="button" data-ed-del class="ed-del">Excluir</button><button type="button" data-ed-ok class="ed-ok">Pronto</button>`;
@@ -5525,7 +5525,7 @@
     }
     if (wz.passo === "vTema") {
       const e = estLer(), nomeM = e.titulo || (CAMPANHAS[e.camp] ? CAMPANHAS[e.camp].nome : MODELOS_REELS[e.modelo].nome);
-      c.innerHTML = `<div class="estudio">
+      c.innerHTML = `<div class="estudio vd-estudio"><p class="rt-etapa">Vídeo · Reels e Story</p>
         <div class="est-previa est-previa--img vd-editor"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
         <div class="ed-barra" id="edBarra">${barraEditor()}</div>
         <div class="est-ctrl est-ctrl--6">${botaoEst("estiloVideo", "Estilo", TEMAS_VIDEO[V.tema])}${botaoEst("modelo", "Título", nomeM)}${botaoEst("textosVideo", "Textos", [V.nome && "descrição", V.novo && "preço", V.cupom && "cupom"].filter(Boolean).join(", ") || "escrever")}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", V.musica === false ? "Sem música" : NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || "sem abertura")}</div>
@@ -5639,7 +5639,7 @@
       el = document.createElement("video"); el.src = V.url; el.muted = !!V.semSomPrevia; el.loop = true; el.playsInline = true;
       el.play().catch(() => { el.muted = true; el.play().catch(() => {}); pintarSom(); });
       let bt = $("#vdSom"); if (!bt && cv.parentElement) { bt = document.createElement("button"); bt.type = "button"; bt.id = "vdSom"; bt.className = "btn btn--branco btn-previa vd-som-b"; cv.parentElement.insertAdjacentElement("afterend", bt); }
-      const pintarSom = () => { const b = $("#vdSom"); if (b) { b.innerHTML = el.muted ? "🔇 Ligar o som" : "🔊 Som ligado"; b.classList.toggle("off", el.muted); } };
+      const pintarSom = () => { const b = $("#vdSom"); if (b) { b.innerHTML = el.muted ? '<svg class="ic-som" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>Ligar o som' : '<svg class="ic-som" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>Som ligado'; b.classList.toggle("off", el.muted); } };
       if (bt) bt.onclick = () => { el.muted = !el.muted; V.semSomPrevia = el.muted; if (!el.muted) el.play().catch(() => {}); pintarSom(); };
       pintarSom(); el.addEventListener("volumechange", pintarSom);
     }
