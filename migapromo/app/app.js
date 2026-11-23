@@ -5231,13 +5231,13 @@
       const coresB = k === "botao" ? `<div class="ed-cores">${Object.entries(CORES_BOTAO_VD).map(([c, [bg, , n]]) => `<button type="button" data-ed-aj-cor="${c}" class="${(a.cor || "tema") === c ? "on" : ""}${c === "tema" ? " ed-cor-tema" : ""}" style="${bg ? `background:${bg}` : ""}" aria-label="${n}" title="${n}"></button>`).join("")}</div>` : "";
       const txtB = k === "botao" ? `<input id="edAjBotao" maxlength="40" value="${esc(V.botao == null ? "Link na bio" : V.botao)}" placeholder="Ex.: Link na legenda" autocomplete="off"><div class="ed-chips">${["Link na bio", "Link na legenda", "Link nos comentários", "Comenta EU QUERO"].map((x) => `<button type="button" data-ed-aj-txt="${esc(x)}">${esc(x)}</button>`).join("")}</div>` : "";
       return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto" : "Arraste na prévia para mudar o lugar"}</span></p>${txtB}${cantos}${coresB}
-        <div class="ed-linha"><button type="button" data-ed-aj-tam="-" aria-label="Diminuir">A−</button><span class="ed-aj-pct">${pct}%</span><button type="button" data-ed-aj-tam="+" aria-label="Aumentar">A+</button><button type="button" data-ed-aj-zero>Voltar ao padrão</button><button type="button" data-ed-aj-tirar class="ed-del">Tirar</button><button type="button" data-ed-ok class="ed-ok">Pronto</button></div></div>`;
+        <div class="ed-linha"><button type="button" data-ed-aj-tam="-" aria-label="Diminuir">A−</button><span class="ed-aj-pct">${pct}%</span><button type="button" data-ed-aj-tam="+" aria-label="Aumentar">A+</button>${k === "logo" ? "" : '<button type="button" data-ed-aj-centro>Centralizar</button>'}<button type="button" data-ed-aj-zero>Voltar ao padrão</button><button type="button" data-ed-aj-tirar class="ed-del">Tirar</button><button type="button" data-ed-ok class="ed-ok">Pronto</button></div></div>`;
     }
     if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases prontas</button></div>
       <p class="nota ed-dica">Toque no título, no preço, no botão ou na logo da prévia para mudar o lugar, o tamanho ou tirar.</p>${foraAj(V)}`;
     const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
     const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
-    const fim = `<button type="button" data-ed-del class="ed-del">Excluir</button><button type="button" data-ed-ok class="ed-ok">Pronto</button>`;
+    const fim = `<button type="button" data-ed-centro>Centralizar</button><button type="button" data-ed-del class="ed-del">Excluir</button><button type="button" data-ed-ok class="ed-ok">Pronto</button>`;
     const girar = `<button type="button" class="ed-ico" data-ed-giro="-" aria-label="Girar para a esquerda"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button><button type="button" class="ed-ico" data-ed-giro="+" aria-label="Girar para a direita"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>`;
     const anim = `<button type="button" data-ed-anim class="${cm.anim === "batida" ? "on" : ""}">${cm.anim === "batida" ? "Entra na batida" : "Fixo"}</button>`;
     if (cm.tipo === "figura" || cm.tipo === "emoji") return `<div class="ed-sel"><div class="ed-figuras">${FIGURAS.map((f) => `<button type="button" data-ed-fig="${f}" class="${cm.txt === f ? "on" : ""}" aria-label="${f}"><canvas width="88" height="88" data-fig="${f}"></canvas></button>`).join("")}</div><div class="ed-linha">${tam}${girar}${anim}${fim}</div></div>`;
@@ -5258,6 +5258,7 @@
       const k = V.sel.slice(3), A = ajVideo(V), a = (A[k] = A[k] || {});
       const tz = t.closest("[data-ed-aj-tam]"); if (tz) { a.s = Math.round(Math.max(0.5, Math.min(2, (a.s || 1) + (tz.dataset.edAjTam === "+" ? 0.1 : -0.1))) * 100) / 100; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
       const cn = t.closest("[data-ed-aj-canto]"); if (cn) { a.canto = cn.dataset.edAjCanto; delete a.livre; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
+      if (t.closest("[data-ed-aj-centro]")) { const b = V._bx && V._bx[k]; if (b) { a.dx = Math.round((a.dx || 0) + 540 - (b[0] + b[2]) / 2); guardarAjVideo(V); V.resultado = null; toast("Centralizado no meio"); } return; }
       const tx = t.closest("[data-ed-aj-txt]"); if (tx) { V.botao = tx.dataset.edAjTxt; V.resultado = null; V.legendaInsta = null; const i = $("#edAjBotao"); if (i) i.value = V.botao; return; }
       const ac2 = t.closest("[data-ed-aj-cor]"); if (ac2) { if (ac2.dataset.edAjCor === "tema") delete a.cor; else a.cor = ac2.dataset.edAjCor; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
       if (t.closest("[data-ed-aj-tirar]")) { a.off = true; guardarAjVideo(V); V.sel = null; V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} saiu do vídeo`); return; }
@@ -5274,6 +5275,7 @@
       V.camadas.push(n); V.sel = n.id; V.resultado = null; atualizarBarraEditor(); return;
     }
     if (!cm) return;
+    if (t.closest("[data-ed-centro]")) { cm.x = 540; V.resultado = null; toast("Centralizado no meio"); return; }
     const co = t.closest("[data-ed-cor]"); if (co) { cm.cor = co.dataset.edCor; atualizarBarraEditor(); return; }
     const tm = t.closest("[data-ed-tam]"); if (tm) { cm.tam = Math.max(28, Math.min(180, cm.tam + (tm.dataset.edTam === "+" ? 8 : -8))); return; }
     if (t.closest("[data-ed-fundo]")) { cm.fundo = !cm.fundo; atualizarBarraEditor(); return; }
@@ -5316,15 +5318,24 @@
     const cm = [...(V.camadas || [])].reverse().find((c) => c._box && x >= c._box[0] && x <= c._box[0] + c._box[2] && y >= c._box[1] && y <= c._box[1] + c._box[3]);
     if (!cm) {
       const B = V._bx || {}, k = ["logo", "botao", "infos", "titulo"].find((q) => B[q] && x >= B[q][0] - 16 && x <= B[q][2] + 16 && y >= B[q][1] - 16 && y <= B[q][3] + 16);
-      if (k) { e.preventDefault(); const A = ajVideo(V), a = (A[k] = A[k] || {}); if (V.sel !== "aj:" + k) { V.sel = "aj:" + k; atualizarBarraEditor(); } if (k === "logo") return; /* a logo só troca de canto */ arrasto = { aj: k, a, x0: x, y0: y, dx0: a.dx || 0, dy0: a.dy || 0, cv }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* segue */ } return; }
+      if (k) { e.preventDefault(); const A = ajVideo(V), a = (A[k] = A[k] || {}); if (V.sel !== "aj:" + k) { V.sel = "aj:" + k; atualizarBarraEditor(); } if (k === "logo") return; /* a logo só troca de canto */ arrasto = { aj: k, a, x0: x, y0: y, dx0: a.dx || 0, dy0: a.dy || 0, cv, cx0: (B[k][0] + B[k][2]) / 2, cy0: (B[k][1] + B[k][3]) / 2 }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* segue */ } return; }
       if (V.sel) { V.sel = null; atualizarBarraEditor(); } return;
     }
     e.preventDefault(); if (V.sel !== cm.id) { V.sel = cm.id; atualizarBarraEditor(); }
     arrasto = { cm, dx: x - cm.x, dy: y - cm.y, cv }; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* segue */ }
   });
   $("#wzCorpo").addEventListener("pointermove", (e) => { if (!arrasto) return; const [x, y] = pontoNaPrevia(e, arrasto.cv);
-    if (arrasto.aj) { const a = arrasto.a; a.dx = Math.round(arrasto.dx0 + x - arrasto.x0); a.dy = Math.round(arrasto.dy0 + y - arrasto.y0); vd().resultado = null; return; } arrasto.cm.x = Math.max(40, Math.min(1040, x - arrasto.dx)); arrasto.cm.y = Math.max(60, Math.min(1860, y - arrasto.dy)); vd().resultado = null; });
+    // Guias como no Instagram: perto do meio, encaixa no centro e mostra a linha
+    const V = vd(), IMA = 26, g = (V._guia = { v: false, h: false });
+    if (arrasto.aj) { const a = arrasto.a; let dx = arrasto.dx0 + x - arrasto.x0, dy = arrasto.dy0 + y - arrasto.y0;
+      const cx = arrasto.cx0 + dx - arrasto.dx0, cy = arrasto.cy0 + dy - arrasto.dy0;
+      if (Math.abs(cx - 540) < IMA) { dx += 540 - cx; g.v = true; } if (Math.abs(cy - 960) < IMA) { dy += 960 - cy; g.h = true; }
+      a.dx = Math.round(dx); a.dy = Math.round(dy); V.resultado = null; return; }
+    let nx = Math.max(40, Math.min(1040, x - arrasto.dx)), ny = Math.max(60, Math.min(1860, y - arrasto.dy));
+    if (Math.abs(nx - 540) < IMA) { nx = 540; g.v = true; } if (Math.abs(ny - 960) < IMA) { ny = 960; g.h = true; }
+    arrasto.cm.x = nx; arrasto.cm.y = ny; V.resultado = null; });
   ["pointerup", "pointercancel"].forEach((ev) => $("#wzCorpo").addEventListener(ev, () => {
+    if (arrasto) vd()._guia = null;
     if (arrasto && arrasto.aj) guardarAjVideo(vd());
     arrasto = null;
   }));
@@ -5610,6 +5621,7 @@
       const fonte = el && el.readyState >= 2 ? el : V.semVideo && V.fotoBmp ? fotoComZoom(V.fotoBmp, ((performance.now() - t0) / 1000 % 6) / 6) : V.quadroImg;
       V.iniMeio = 0; videoRelogio = ((performance.now() - t0) / 1000) % 8; quadroVideo(cx, 540, 960, fonte, V); videoRelogio = 99;
       const sel = (V.camadas || []).find((x) => x.id === V.sel);
+      if (V._guia && (V._guia.v || V._guia.h)) { cx.save(); cx.strokeStyle = "#00b7ff"; cx.lineWidth = 1.5; cx.shadowColor = "rgba(0,0,0,.35)"; cx.shadowBlur = 2; cx.beginPath(); if (V._guia.v) { cx.moveTo(270, 0); cx.lineTo(270, 960); } if (V._guia.h) { cx.moveTo(0, 480); cx.lineTo(540, 480); } cx.stroke(); cx.restore(); }
       const ajSel = typeof V.sel === "string" && V.sel.startsWith("aj:") && V._bx && V._bx[V.sel.slice(3)];
       if (ajSel) { const [x0, y0, x1, y1] = ajSel.map((n) => n / 2); cx.save(); cx.setLineDash([8, 6]); cx.lineWidth = 2.5; cx.strokeStyle = "#ffffff"; cx.shadowColor = "rgba(0,0,0,.6)"; cx.shadowBlur = 4; cx.strokeRect(x0 - 4, y0 - 4, x1 - x0 + 8, y1 - y0 + 8); cx.restore(); }
       if (sel && sel._box) { const [bx, by, bw, bh] = sel._box.map((n) => n / 2); cx.save(); cx.setLineDash([8, 6]); cx.lineWidth = 2.5; cx.strokeStyle = "#ffffff"; cx.shadowColor = "rgba(0,0,0,.6)"; cx.shadowBlur = 4; cx.strokeRect(bx - 6, by - 6, bw + 12, bh + 12); cx.restore(); }
