@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=445` → próxima `?v=446`
-- `app/sw.js`: `VERSAO = "miga-promo-v448"` → próxima `v449`
-- Comando usado: `sed -i 's/?v=445/?v=446/g' app/index.html app/sw.js && sed -i 's/miga-promo-v448/miga-promo-v449/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=446` → próxima `?v=447`
+- `app/sw.js`: `VERSAO = "miga-promo-v449"` → próxima `v450`
+- Comando usado: `sed -i 's/?v=446/?v=447/g' app/index.html app/sw.js && sed -i 's/miga-promo-v449/miga-promo-v450/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -188,3 +188,8 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - **Extensão 1.8.1:** HLS com `EXT-X-BYTERANGE` (um arquivo só, em faixas) agora baixa o arquivo UMA vez (antes repetia o arquivo inteiro a cada pedaço). Em fMP4, `zerarTempo` faz o `tfdt` de cada trilha começar em 0 (antes o player mostrava ~13 h, o relógio de 33 bits do vídeo). Em `.ts`, junta tudo e converte de uma vez (um único flush). Testado com HLS de tempo inicial 47000 s nos três formatos: 8 s e 240 quadros.
 - **Criação IA (fluxo novo, aplicado):** os passos dependem do tipo (`passosBase`): foto com produto = Escolher › Foto › Montar › Postar; vídeo com produto = Escolher › Foto › Vídeo › Montar › Postar; vídeo sem produto = Escolher › Vídeo › Montar › Postar. Todas as telas têm o cabeçalho "Passo X de Y" (`cabPasso`). Escolher tem 3 cartões (`data-pe-tipo-card`), o produto com busca e o formato. Foto (`peFoto`) junta o produto com a Miga: cenário e roupa, fundo, enquadramento, quantidade e pose; 1 baixar, 2 copiar o prompt (no vídeo, `promptFotoBase`), 3 anexar (`#peFotoArq`). Na foto com produto, anexar já vai para Montar. No vídeo, a foto vira `P.fotoBase` e o prompt do vídeo passa por `promptVideoDaFoto` ("Anime a foto anexada…"). Vídeo (`pePrompt`): duração (`duracaoChips`), fala editável (`P.falaEd`, usada em `falaPersonagem`) e copiar; 2 ou 3 cenas continuam na `telaCenasPrompt`.
 - **Aviso de promoção:** `AVISO_PRECO` ("⚠️ _Preço e promoção podem mudar a qualquer momento._") entra nas mensagens do WhatsApp (`comAviso` dentro de `comConvite`, e no texto editado de `enviarProdutoNoWhats`) e no texto do Status (`textoStatus`). No story/status (arte 1080x1920), `avisoPrecoArte` desenha "Promoção pode mudar a qualquer momento." em H-222, na cor suave do tema (`C.antigo`, a mesma do "antes R$"), sem pílula.
+
+## Atualização (23/11/2026) — carrossel com foto + aviso do story
+- **Carrossel: foto na capa e no final** (`blocoFotoCarta`, `cartaComFoto`, `fotoNaCarta`, `lerFotoCarta`, `corBordaFoto`). `tela.foto = {src (JPEG dataURL até 1350 px), z, x, y, auto, fundo}`. O fundo pega a cor da borda da foto (ou uma cor do tema, `auto:false`). Foto "contida" (z=1) com bordas esfumadas; arrastar na prévia (pointer, `.ka2-arrasta`) e slider "Tamanho". Título no topo (900 96px) com cor automática: mede a luz atrás do texto (getImageData) → letra escura + destaque rosa, ou branca + destaque amarelo. Exporta esperando as fotos (`esperarFotosCarta`). `guardarCartas` tenta sem as fotos se faltar espaço.
+- **Carrossel: bugs** — "Começar um carrossel novo" (tela Pronto) agora apaga o salvo; Montar zera a legenda antiga; Colar: aceita ```json, vírgula sobrando, aspas curvas dentro do texto; avisa se colou o pedido em vez da resposta ou a resposta do carrossel antigo.
+- **Story**: o aviso "Promoção pode mudar…" fica logo abaixo do campo do link (`fimCampoLink`, guardado em `campoCupomLink`).

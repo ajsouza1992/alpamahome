@@ -6783,12 +6783,16 @@
   }
   /** Arte parada (Status, Story, feed) com o mesmo modelo dos Reels */
   let telaArte = null;
+  let fimCampoLink = 0; // onde termina o campo do link no Story (o aviso de preço vai logo abaixo)
   /** Story e Status: "Promoção pode mudar a qualquer momento." em letra pequena, na cor suave do tema escolhido (a mesma do "antes R$") */
   function avisoPrecoArte(ctx, W, H, C) {
     ctx.save(); ctx.font = "600 26px Poppins, sans-serif"; ctx.fillStyle = (C && (C.antigo || C.texto)) || "#8a817b"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText("Promoção pode mudar a qualquer momento.", W / 2, H - 222); ctx.restore();
+    // sempre logo abaixo do campo do link (quando tem); senão, no pé da arte
+    const y = fimCampoLink ? Math.min(H - 150, fimCampoLink + 46) : H - 222;
+    ctx.fillText("Promoção pode mudar a qualquer momento.", W / 2, y); ctx.restore();
   }
   function artePost(tela, R, it, bmp, formato, tAnim) {
+    fimCampoLink = 0;
     const W = 1080, H = formato === "post" ? 1350 : formato === "quadrado" ? 1080 : 1920;
     if (tela.width !== W) tela.width = W; if (tela.height !== H) tela.height = H; const ctx = tela.getContext("2d"); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
     temposDoModelo(R); const C = CORES_VIDEO[R.cor] || CORES_VIDEO.rosa, M = modeloEfetivo(R);
@@ -7652,15 +7656,77 @@
     wz = { canal: "cartas", passo: "kaInicio", veioDaLista: true, car: { telas: temSalvo ? salvo.telas : padrao, padrao, legenda: (salvo && salvo.legenda) || "", assunto: (salvo && salvo.assunto) || "", ideia: (salvo && salvo.ideia) || "", qtd: (salvo && salvo.qtd) || 5, corBase: (salvo && salvo.corBase) || "alterna", temSalvo, resp: null, sel: 0, campo: "titulo" } };
     marcados.clear(); irPara("criar"); mostrarPasso();
   }
-  const guardarCartas = () => { const K = car(); try { localStorage.setItem("miga_carrossel", JSON.stringify({ telas: K.telas, legenda: K.legenda || "", assunto: K.assunto || "", ideia: K.ideia || "", qtd: K.qtd || 5, corBase: K.corBase || "alterna" })); } catch (e) { /* segue */ } };
+  const guardarCartas = () => { const K = car(), dados = (telas) => JSON.stringify({ telas, legenda: K.legenda || "", assunto: K.assunto || "", ideia: K.ideia || "", qtd: K.qtd || 5, corBase: K.corBase || "alterna" });
+    try { localStorage.setItem("miga_carrossel", dados(K.telas)); } catch (e) { try { localStorage.setItem("miga_carrossel", dados(K.telas.map(({ foto, ...r }) => r))); } catch (e2) { /* segue */ } } }; // sem espaço: guarda sem as fotos
   function quebrarCarta(ctx, txt, larg) {
     const saida = [];
     String(txt || "").split("\n").forEach((par) => { let linha = ""; par.split(" ").forEach((p) => { const t = linha ? linha + " " + p : p; if (ctx.measureText(t.replace(/\*/g, "")).width > larg && linha) { saida.push(linha); linha = p; } else linha = t; }); saida.push(linha); });
     // um destaque *aberto* numa linha continua na seguinte
     let aberto = false; return saida.map((l) => { let s = (aberto ? "*" : "") + l; const n = (l.match(/\*/g) || []).length; if (n % 2) aberto = !aberto; if (aberto) s += "*"; return s; });
   }
+  /* ===== Foto na capa e no final do carrossel (ex.: ensaio da Miga) ===== */
+  const fotosCarta = new Map(); // src → imagem já carregada
+  function imgCarta(src) {
+    if (!src) return null; let im = fotosCarta.get(src);
+    if (!im) { im = new Image(); im.onload = () => { if (wz.canal === "cartas") document.querySelectorAll("[data-ka2-cv]").forEach((cv) => { const K = car(), i = +cv.dataset.ka2Cv; if (K.telas[i] && K.telas[i].foto && K.telas[i].foto.src === src) desenharCarta(cv.getContext("2d"), 540, K.telas[i], i, K.telas.length); }); }; im.src = src; fotosCarta.set(src, im); }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  const esperarFotosCarta = (T) => Promise.all(T.filter((t) => t.foto && t.foto.src).map((t) => new Promise((ok) => { const im = imgCarta(t.foto.src) || fotosCarta.get(t.foto.src); if (!im || (im.complete && im.naturalWidth)) return ok(); im.addEventListener("load", ok, { once: true }); im.addEventListener("error", ok, { once: true }); setTimeout(ok, 4000); })));
+  /** Lê a foto escolhida, diminui (até 1350 px) e descobre a cor do fundo dela (a borda da foto) */
+  async function lerFotoCarta(arq) {
+    const url = URL.createObjectURL(arq);
+    try {
+      const im = await new Promise((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = erro; i.src = url; });
+      const k = Math.min(1, 1350 / Math.max(im.naturalWidth, im.naturalHeight)), w = Math.round(im.naturalWidth * k), h = Math.round(im.naturalHeight * k);
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(im, 0, 0, w, h);
+      return { src: cv.toDataURL("image/jpeg", 0.86), z: 1, x: 0, y: 0, auto: true, fundo: corBordaFoto(cv) };
+    } finally { URL.revokeObjectURL(url); }
+  }
+  function corBordaFoto(cv) {
+    const m = document.createElement("canvas"); m.width = 48; m.height = 48; const x = m.getContext("2d"); x.drawImage(cv, 0, 0, 48, 48);
+    const d = x.getImageData(0, 0, 48, 48).data; let r = 0, g = 0, b = 0, n = 0;
+    for (let yy = 0; yy < 48; yy++) for (let xx = 0; xx < 48; xx++) { if (yy > 2 && xx > 2 && xx < 45) continue; /* borda de cima e dos lados */ const o = (yy * 48 + xx) * 4; r += d[o]; g += d[o + 1]; b += d[o + 2]; n++; }
+    const h2 = (v) => Math.round(v / n).toString(16).padStart(2, "0"); return "#" + h2(r) + h2(g) + h2(b);
+  }
+  const luzCor = (hex) => { const v = parseInt(String(hex || "#ffffff").slice(1), 16); return (0.299 * (v >> 16 & 255) + 0.587 * (v >> 8 & 255) + 0.114 * (v & 255)) / 255; };
+  /** Desenha a foto no tamanho e no lugar escolhidos, com as bordas sumindo no fundo */
+  function fotoNaCarta(x, im, F, k = 1) {
+    const s0 = Math.min(1080 / im.naturalWidth, 1080 / im.naturalHeight) * (F.z || 1), w = im.naturalWidth * s0, h = im.naturalHeight * s0;
+    const px = 540 + (F.x || 0) * 1080 - w / 2, py = 540 + (F.y || 0) * 1080 - h / 2;
+    const tmp = document.createElement("canvas"); tmp.width = Math.max(1, Math.round(w * k)); tmp.height = Math.max(1, Math.round(h * k)); const t = tmp.getContext("2d");
+    t.drawImage(im, 0, 0, tmp.width, tmp.height); t.globalCompositeOperation = "destination-out";
+    const esf = Math.min(90, w * 0.12, h * 0.12) * k;
+    const borda = (x0, y0, x1, y1, rx, ry, rw, rh) => { const g = t.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(1, "rgba(0,0,0,0)"); t.fillStyle = g; t.fillRect(rx, ry, rw, rh); };
+    if (px > 1) borda(0, 0, esf, 0, 0, 0, esf, tmp.height);
+    if (px + w < 1079) borda(tmp.width, 0, tmp.width - esf, 0, tmp.width - esf, 0, esf, tmp.height);
+    if (py > 1) borda(0, 0, 0, esf, 0, 0, tmp.width, esf);
+    if (py + h < 1079) borda(0, tmp.height, 0, tmp.height - esf, 0, tmp.height - esf, tmp.width, esf);
+    x.drawImage(tmp, px, py, w, h);
+  }
+  /** Capa/final com foto: fundo na cor da foto, foto posicionada e o título no topo com a cor que dá leitura */
+  function cartaComFoto(x, S, tela) {
+    const F = tela.foto, fundo = F.auto !== false ? (F.fundo || "#ffffff") : (CORES_CARTA[tela.cor] || CORES_CARTA.branco).fundo;
+    x.fillStyle = fundo; x.fillRect(0, 0, 1080, 1080);
+    const im = imgCarta(F.src); if (im) fotoNaCarta(x, im, F, Math.min(1, S / 1080 * 1.25));
+    x.font = "900 96px Poppins"; const lt = quebrarCarta(x, tela.titulo, 940);
+    x.font = "600 44px Poppins"; const lp = tela.texto ? quebrarCarta(x, tela.texto, 900) : [];
+    const hT = lt.length * 100, hP = lp.length ? 22 + lp.length * 56 : 0, hB = tela.botao ? 30 + 100 : 0;
+    // o "modelo" do título sai sozinho: olha a luz atrás do texto e escolhe letra escura ou clara
+    let luz = luzCor(fundo);
+    try { const k = S / 1080, d = x.getImageData(0, Math.round(50 * k), Math.round(S), Math.max(1, Math.round((hT + hP + hB) * k))).data; let soma = 0, n = 0; for (let o = 0; o < d.length; o += 4 * 37) { soma += (0.299 * d[o] + 0.587 * d[o + 1] + 0.114 * d[o + 2]) / 255; n++; } if (n) luz = soma / n; } catch (e) { /* segue com a cor do fundo */ }
+    const claro = luz < 0.56, cTx = claro ? "#ffffff" : "#1d1d1f", cEm = claro ? "#ffd23f" : "#e8336d";
+    x.textAlign = "left"; x.textBaseline = "middle";
+    x.shadowColor = claro ? "rgba(0,0,0,.45)" : "rgba(255,255,255,.55)"; x.shadowBlur = 22;
+    const linha = (l, yy, fonte) => { x.font = fonte; const ps = partesDestaque(l, cTx, cEm), w = ps.reduce((s, [p]) => s + x.measureText(p).width, 0); let xx = 540 - w / 2; ps.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, yy); xx += x.measureText(p).width; }); };
+    let y = 60; lt.forEach((l) => { linha(l, y + 50, "900 96px Poppins"); y += 100; });
+    if (lp.length) { y += 22; lp.forEach((l) => { linha(l, y + 28, "600 44px Poppins"); y += 56; }); }
+    x.shadowColor = "transparent"; x.shadowBlur = 0;
+    if (tela.botao) { y += 30; x.save(); x.translate(540, y + 50); x.rotate(-0.052); x.font = "800 42px Poppins"; const w = x.measureText(tela.botao).width + 100, h = 92; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = "#ffd23f"; x.fill(); x.lineWidth = 6; x.strokeStyle = "#1d1d1f"; x.stroke(); x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.fillText(tela.botao, 0, 2); x.restore(); }
+    if (edMarca) x.drawImage(edMarca, 1080 - 165, 1080 - 160, 130, 130);
+  }
   function desenharCarta(ctx, S, tela, idx, total) {
     const C = CORES_CARTA[tela.cor] || CORES_CARTA.branco, x = ctx; x.save(); x.scale(S / 1080, S / 1080);
+    if (tela.foto && tela.foto.src) { cartaComFoto(x, S, tela); x.restore(); return; }
     if (C.grad) { const g = x.createRadialGradient(540, 378, 0, 540, 378, 800); g.addColorStop(0, "#fff8e4"); g.addColorStop(0.55, "#fff3c4"); g.addColorStop(1, "#ffeaa6"); x.fillStyle = g; } else x.fillStyle = C.fundo;
     x.fillRect(0, 0, 1080, 1080);
     x.fillStyle = C.b1; x.beginPath(); x.arc(60, 60, 200, 0, 7); x.fill(); // mesmos cantos das artes do app
@@ -7715,7 +7781,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   /** Texto alternativo feito pelo app: diz o que aparece e copia exatamente o que está escrito na imagem */
   function altCarta(tela, i, n) {
     const cor = { branco: "branco", rosa: "rosa", creme: "creme", preto: "preto", rose: "rosê", verde: "verde pastel" }[tela.cor] || "branco";
-    const partes = [`Imagem ${i + 1} de ${n}. Arte de fundo ${cor}${tela.ic ? ` com a figurinha de ${NOME_FIG[tela.ic] || tela.ic}` : ""}.`];
+    const partes = [tela.foto ? `Imagem ${i + 1} de ${n}. Foto da Miga, a personagem do perfil, com o texto por cima.` : `Imagem ${i + 1} de ${n}. Arte de fundo ${cor}${tela.ic ? ` com a figurinha de ${NOME_FIG[tela.ic] || tela.ic}` : ""}.`];
     if (tela.titulo) partes.push(`Título: "${semDestaque(tela.titulo)}".`); if (tela.texto) partes.push(`Texto: "${semDestaque(tela.texto)}".`); if (tela.botao) partes.push(`Botão: "${semDestaque(tela.botao)}".`);
     return partes.join(" ");
   }
@@ -7726,12 +7792,17 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   /** Aceita a resposta da IA mesmo com quebras de linha dentro dos textos */
   function jsonTolerante(s) {
+    try { return jsonTolerante1(s, false); } catch (e) { return jsonTolerante1(s, true); }
+  }
+  function jsonTolerante1(s, aspasCurvas) {
     let out = "", dentro = false, esc2 = false;
-    for (const ch of s.replace(/[“”]/g, '"')) { if (dentro) { if (esc2) { esc2 = false; out += ch; continue; } if (ch === "\\") { esc2 = true; out += ch; continue; } if (ch === '"') dentro = false; if (ch === "\n") { out += "\\n"; continue; } if (ch === "\r") continue; out += ch; } else { if (ch === '"') dentro = true; out += ch; } }
-    return JSON.parse(out);
+    for (const ch of (aspasCurvas ? s.replace(/[“”]/g, '"') : s)) { if (dentro) { if (esc2) { esc2 = false; out += ch; continue; } if (ch === "\\") { esc2 = true; out += ch; continue; } if (ch === '"') dentro = false; if (ch === "\n") { out += "\\n"; continue; } if (ch === "\r") continue; out += ch; } else { if (ch === '"') dentro = true; out += ch; } }
+    return JSON.parse(out.replace(/,\s*([}\]])/g, "$1")); // vírgula sobrando no fim
   }
   /** Lê a resposta da IA (o bloco [ ... ]) e monta as telas */
   function lerRespostaCartas(txt) {
+    txt = String(txt || "").replace(/```(?:json)?/gi, "");
+    if (/ASSUNTO DO CARROSSEL/.test(txt) && /Responda SOMENTE/.test(txt)) return { pedido: true };
     let l = null, legenda = "";
     const i0 = txt.indexOf("{"), j0 = txt.lastIndexOf("}");
     if (i0 >= 0 && (txt.indexOf("[") < 0 || i0 < txt.indexOf("["))) { try { const o = jsonTolerante(txt.slice(i0, j0 + 1)); l = o.telas; legenda = String(o.legenda || ""); } catch (e) { l = null; } }
@@ -7775,6 +7846,18 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   const IDEIAS_CARTAS = { Economia: ["Como achar cupom na Shopee", "Dicas pra economizar nas compras", "Erros ao comprar online", "Como comprar sem pagar taxa"], Achadinhos: ["Achadinhos da semana", "Achadinhos até R$ 50", "Os mais vendidos do mês", "Presentes baratos e lindos"], Categorias: ["Perfumes que valem a pena", "Make barata que funciona", "Casa organizada gastando pouco", "Moda fitness baratinha"] };
   const corTelaCarta = (K, i) => (K.corBase && K.corBase !== "alterna" ? K.corBase : ["branco", "rosa", "creme", "preto"][i % 4]);
   const BOLA_ALTERNA = "conic-gradient(#fff 0 25%, #e8336d 0 50%, #fff3c4 0 75%, #1d1d1f 0)";
+  const ICO_FOTO_KA = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 8"/></svg>';
+  /** Capa e final: pôr a foto (ex.: ensaio da Miga), posicionar, tamanho e cor do fundo */
+  function blocoFotoCarta(t, i, n) {
+    if (!t.foto && i !== 0 && i !== n - 1) return "";
+    const onde = i === 0 ? "na capa" : "no final";
+    if (!t.foto) return `<label class="ka2-pofoto">${ICO_FOTO_KA}<span><b>Pôr uma foto ${onde}</b><small>Ex.: uma foto do ensaio da Miga. O fundo pega a cor da foto.</small></span><input type="file" accept="image/*" data-ka2-foto="${i}" hidden></label>`;
+    const F = t.foto, auto = F.auto !== false;
+    return `<div class="ka2-foto"><p class="ka2-dica">Arraste a foto na imagem para posicionar</p>
+      <label class="ka2-zoom"><span>Tamanho da foto</span><input type="range" min="50" max="250" step="1" value="${Math.round((F.z || 1) * 100)}" data-ka2-zoom="${i}"></label>
+      <div class="ka2-fundos"><span>Fundo (o primeiro é a cor da foto)</span><div class="rp-cores ka2-cores"><button type="button" data-ka2-fauto="${i}" class="ka2-fauto${auto ? " on" : ""}" style="background:${esc(F.fundo || "#fff")}" aria-label="Cor da foto" title="Cor da foto">${ICO_FOTO_KA}</button>${Object.entries(CORES_CARTA).map(([k, v]) => `<button type="button" data-ka2-tcor="${i}:${k}" class="${!auto && t.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}" title="${v.nome}"></button>`).join("")}</div></div>
+      <div class="rp-duas"><label class="btn btn--branco rp-adesivo">Trocar foto<input type="file" accept="image/*" data-ka2-foto="${i}" hidden></label><button type="button" class="btn btn--branco rp-adesivo" data-ka2-semfoto="${i}">Tirar a foto</button></div></div>`;
+  }
   function telaCartasNova(c) {
     const K = car(), T = K.telas, pd = (h) => h.replace('class="wz-rodape"', 'class="wz-rodape pr-rodape"');
     if (wz.passo === "kaInicio") {
@@ -7799,13 +7882,14 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (wz.passo === "kaRevisar") {
       c.innerHTML = `<div class="ka2">${T.map((t, i) => `<section class="ka2-tela" data-ka2-tela="${i}">
           <p class="rt-etapa">Tela ${i + 1} de ${T.length}${i === 0 ? " · capa" : i === T.length - 1 && T.length > 1 ? " · final" : ""}</p>
-          <div class="wz-previa rp-prev ka2-prev"><canvas width="540" height="540" data-ka2-cv="${i}"></canvas></div>
+          <div class="wz-previa rp-prev ka2-prev"><canvas width="540" height="540" data-ka2-cv="${i}"${t.foto ? ' class="ka2-arrasta"' : ""}></canvas></div>
+          ${blocoFotoCarta(t, i, T.length)}
           <div class="ka2-alt"><span><b>Texto alternativo:</b> <i data-ka2-alt="${i}">${esc(t.alt || altCarta(t, i, T.length))}</i></span><button type="button" data-ka2-copalt="${i}">Copiar</button></div>
           <label class="ka2-campo"><span>Título (use *asteriscos* para destacar)</span><textarea rows="2" maxlength="80" data-ka2-campo="titulo" data-i="${i}">${esc(t.titulo || "")}</textarea></label>
           <label class="ka2-campo"><span>Texto</span><textarea rows="2" maxlength="200" data-ka2-campo="texto" data-i="${i}">${esc(t.texto || "")}</textarea></label>
           <label class="ka2-campo"><span>Botão amarelo (vazio para não ter)</span><input maxlength="34" data-ka2-campo="botao" data-i="${i}" value="${esc(t.botao || "")}"></label>
-          <div class="rp-duas"><button type="button" class="rp-modelo ka2-fig" data-ka2-fig="${i}"><span><small>Figurinha</small><b>${esc(t.ic ? (NOME_FIG[t.ic] || t.ic) : "Sem figurinha")}</b></span><i>Trocar</i></button><button type="button" class="btn btn--branco rp-adesivo" data-ka2-emo="${i}">😀 Emojis</button></div>
-          <div class="rp-cores ka2-cores">${Object.entries(CORES_CARTA).map(([k, v]) => `<button type="button" data-ka2-tcor="${i}:${k}" class="${t.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}"></button>`).join("")}</div>
+          ${t.foto ? `<button type="button" class="btn btn--branco rp-adesivo" data-ka2-emo="${i}">😀 Emojis</button>` : `<div class="rp-duas"><button type="button" class="rp-modelo ka2-fig" data-ka2-fig="${i}"><span><small>Figurinha</small><b>${esc(t.ic ? (NOME_FIG[t.ic] || t.ic) : "Sem figurinha")}</b></span><i>Trocar</i></button><button type="button" class="btn btn--branco rp-adesivo" data-ka2-emo="${i}">😀 Emojis</button></div>
+          <div class="rp-cores ka2-cores">${Object.entries(CORES_CARTA).map(([k, v]) => `<button type="button" data-ka2-tcor="${i}:${k}" class="${t.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}"></button>`).join("")}</div>`}
           <div class="ka2-ops"><button type="button" data-ka2-op="sobe:${i}"${i === 0 ? " disabled" : ""}>↑ Subir</button><button type="button" data-ka2-op="desce:${i}"${i === T.length - 1 ? " disabled" : ""}>↓ Descer</button><button type="button" data-ka2-op="dup:${i}"${T.length >= 10 ? " disabled" : ""}>Duplicar</button><button type="button" class="ka2-tirar" data-ka2-op="tirar:${i}"${T.length <= 1 ? " disabled" : ""}>Tirar</button></div>
         </section>`).join("")}
         ${T.length < 10 ? '<button type="button" class="ka2-nova" id="ka2NovaTela">+ Nova tela</button>' : ""}</div>
@@ -7854,21 +7938,26 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     if (t.closest("#ka2Copiar")) { const as = (K.assunto || K.ideia || "").trim(); if (!as) { toast("Escolha uma ideia ou escreva do que vai falar"); return; } if (await copiarTexto(promptCartas(as, K.qtd || 5, K.corBase))) toast("Prompt copiado: cole no ChatGPT ou no Gemini"); return; }
     if (t.closest("#ka2Colar")) {
       let txt = ""; try { txt = await navigator.clipboard.readText(); } catch (err) { txt = ""; }
-      const r = txt ? lerRespostaCartas(txt) : null;
+      const r0 = txt ? lerRespostaCartas(txt) : null;
+      if (r0 && r0.pedido) { toast("Você copiou o pedido. Cole no ChatGPT ou no Gemini e copie a RESPOSTA"); return; }
+      const velha = K.temSalvo && r0 && r0.telas[0] && T[0] && semDestaque(r0.telas[0].titulo) === semDestaque(T[0].titulo), r = velha ? null : r0;
+      if (velha) toast("Essa é a resposta do carrossel antigo: copie a resposta nova da IA ou cole aqui");
       if (!r) { folhaEst("Colar resposta da IA", `<p class="nota">Cole aqui a resposta inteira da IA (o bloco que começa com { ).</p><label class="ch-campo"><span>Resposta</span><textarea id="kaResp" rows="9"></textarea></label><button type="button" class="btn btn--rosa" id="ka2Aplicar">Usar esta resposta</button>`); return; }
-      K.resp = r; toast(`${r.telas.length} telas prontas: toque em Montar o carrossel`); re(); return;
+      K.resp = r; toast(`${r.telas.length} telas prontas: “${semDestaque(r.telas[0].titulo).slice(0, 40)}”. Toque em Montar o carrossel`); re(); return;
     }
-    if (t.closest("#ka2Montar")) { if (!K.resp) { K.telas = K.padrao.map((x, i) => ({ ...x, cor: corTelaCarta(K, i) })); K.temSalvo = true; K.postado = false; guardarCartas(); wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; } /* sem a IA: telas prontas para escrever */ K.telas = K.resp.telas.map((x, i) => (K.corBase && K.corBase !== "alterna" ? { ...x, cor: K.corBase } : x)); if (K.resp.legenda) K.legenda = K.resp.legenda; K.resp = null; K.temSalvo = true; K.postado = false; guardarCartas(); wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; }
+    if (t.closest("#ka2Montar")) { if (!K.resp) { K.telas = K.padrao.map((x, i) => ({ ...x, cor: corTelaCarta(K, i) })); K.legenda = ""; K.temSalvo = true; K.postado = false; guardarCartas(); wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; } /* sem a IA: telas prontas para escrever */ K.telas = K.resp.telas.map((x, i) => (K.corBase && K.corBase !== "alterna" ? { ...x, cor: K.corBase } : x)); K.legenda = K.resp.legenda || ""; K.resp = null; K.temSalvo = true; K.postado = false; guardarCartas(); wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; }
     if (t.closest("#ka2Zero")) { K.telas = K.padrao.map((x, i) => ({ ...x, cor: corTelaCarta(K, i) })); K.resp = null; K.temSalvo = true; K.postado = false; guardarCartas(); wz.passo = "kaRevisar"; mostrarPasso(); scrollTo(0, 0); return; }
     const ca = t.closest("[data-ka2-copalt]"); if (ca) { const i = +ca.dataset.ka2Copalt; if (await copiarTexto(T[i].alt || altCarta(T[i], i, T.length))) toast(`Texto alternativo da tela ${i + 1} copiado`); return; }
+    const fa = t.closest("[data-ka2-fauto]"); if (fa) { const i = +fa.dataset.ka2Fauto; if (T[i].foto) T[i].foto.auto = true; fa.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === fa)); guardarCartas(); redesenharTelaKa(i); return; }
+    const sf = t.closest("[data-ka2-semfoto]"); if (sf) { delete T[+sf.dataset.ka2Semfoto].foto; re(); return; }
     const fg = t.closest("[data-ka2-fig]"); if (fg) { folhaFig(+fg.dataset.ka2Fig); return; }
     const em = t.closest("[data-ka2-emo]"); if (em) { const i = +em.dataset.ka2Emo; K.campoI = i; folhaEst("Emojis", `<p class="nota">Entram no campo que você tocou por último (${K.campo === "texto" ? "texto" : K.campo === "botao" ? "botão" : "título"} da tela ${i + 1}).</p><div class="ka-emojis">${EMOJIS_CARTA.map((x) => `<button type="button" data-ka2-emoji="${x}">${x}</button>`).join("")}</div>`); return; }
-    const tc = t.closest("[data-ka2-tcor]"); if (tc) { const [i, k] = tc.dataset.ka2Tcor.split(":"); T[+i].cor = k; tc.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === tc)); guardarCartas(); redesenharTelaKa(+i); return; }
+    const tc = t.closest("[data-ka2-tcor]"); if (tc) { const [i, k] = tc.dataset.ka2Tcor.split(":"); T[+i].cor = k; if (T[+i].foto) { T[+i].foto.auto = false; tc.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === tc)); guardarCartas(); redesenharTelaKa(+i); return; } tc.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === tc)); guardarCartas(); redesenharTelaKa(+i); return; }
     const op = t.closest("[data-ka2-op]"); if (op) { const [o, i0] = op.dataset.ka2Op.split(":"), i = +i0;
-      if (o === "sobe" && i > 0) [T[i - 1], T[i]] = [T[i], T[i - 1]]; else if (o === "desce" && i < T.length - 1) [T[i + 1], T[i]] = [T[i], T[i + 1]]; else if (o === "dup" && T.length < 10) T.splice(i + 1, 0, { ...T[i] }); else if (o === "tirar" && T.length > 1) T.splice(i, 1); re(); return; }
+      if (o === "sobe" && i > 0) [T[i - 1], T[i]] = [T[i], T[i - 1]]; else if (o === "desce" && i < T.length - 1) [T[i + 1], T[i]] = [T[i], T[i + 1]]; else if (o === "dup" && T.length < 10) T.splice(i + 1, 0, { ...T[i], ...(T[i].foto ? { foto: { ...T[i].foto } } : {}) }); else if (o === "tirar" && T.length > 1) T.splice(i, 1); re(); return; }
     if (t.closest("#ka2NovaTela")) { const fim = T.length > 1 ? T.length - 1 : T.length; T.splice(fim, 0, { cor: corTelaCarta(K, fim), ic: "estrela", titulo: `*${fim}.* Seu título aqui`, texto: "Escreva a dica aqui.", botao: "" }); re(); return; }
     if (t.closest("#ka2Postar")) {
-      K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas(); await carregarMarca(); const arqs = [];
+      K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas(); await carregarMarca(); await esperarFotosCarta(T); const arqs = [];
       for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, i === 0 ? "00-capa.jpg" : `${String(i).padStart(2, "0")}.jpg`)); }
       if (K.legenda) await copiarTexto(K.legenda);
       let ok = false;
@@ -7878,7 +7967,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       K.postado = true; re(); return;
     }
     if (t.closest("#ka2Fim")) { wz.passo = "kaPronto"; mostrarPasso(); scrollTo(0, 0); return; }
-    if (t.closest("#ka2Outro")) { abrirCartas(); return; }
+    if (t.closest("#ka2Outro")) { try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } abrirCartas(); return; }
     if (t.closest("#ka2Inicio")) { wz = {}; irPara("inicio"); return; }
   });
   $("#folhaEst").addEventListener("click", (e) => {
@@ -7888,8 +7977,31 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const pk = t.closest("[data-ka2-pick]"); if (pk) { const [i, f] = pk.dataset.ka2Pick.split(":"); K.telas[+i].ic = f; guardarCartas(); $("#folhaEst").close(); const y = scrollY; mostrarPasso(); scrollTo(0, y); return; }
     const em = t.closest("[data-ka2-emoji]"); if (em) { const i = K.campoI || 0, campo = K.campo || "titulo", el = document.querySelector(`[data-ka2-campo="${campo}"][data-i="${i}"]`); if (!el) return;
       const p = el.selectionStart ?? el.value.length; el.value = el.value.slice(0, p) + em.dataset.ka2Emoji + el.value.slice(el.selectionEnd ?? p); K.telas[i][campo] = el.value; guardarCartas(); redesenharTelaKa(i); toast("Emoji colocado"); return; }
-    if (t.closest("#ka2Aplicar")) { const r = lerRespostaCartas($("#kaResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } K.resp = r; $("#folhaEst").close(); mostrarPasso(); toast(`${r.telas.length} telas prontas: toque em Montar o carrossel`); }
+    if (t.closest("#ka2Aplicar")) { const r = lerRespostaCartas($("#kaResp").value || ""); if (r && r.pedido) { toast("Isso é o pedido: cole aqui a RESPOSTA que a IA deu"); return; } if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; } K.resp = r; $("#folhaEst").close(); mostrarPasso(); toast(`${r.telas.length} telas prontas: toque em Montar o carrossel`); }
   });
+  $("#wzCorpo").addEventListener("change", async (e) => {
+    if (wz.canal !== "cartas" || !e.target.dataset || e.target.dataset.ka2Foto == null) return;
+    const K = car(), i = +e.target.dataset.ka2Foto, arq = e.target.files && e.target.files[0]; if (!arq || !K.telas[i]) return;
+    try { const F = await lerFotoCarta(arq), velha = K.telas[i].foto; K.telas[i].foto = velha ? { ...F, z: velha.z, x: velha.x, y: velha.y } : F; }
+    catch (err) { toast("Não consegui abrir essa foto"); return; }
+    guardarCartas(); const y = scrollY; mostrarPasso(); scrollTo(0, y); toast("Foto colocada: arraste para posicionar");
+  });
+  $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal !== "cartas" || !e.target.dataset || e.target.dataset.ka2Zoom == null) return;
+    const K = car(), i = +e.target.dataset.ka2Zoom; if (!K.telas[i] || !K.telas[i].foto) return; K.telas[i].foto.z = +e.target.value / 100; redesenharTelaKa(i); clearTimeout(K._tg); K._tg = setTimeout(guardarCartas, 400);
+  });
+  { // arrastar a foto na prévia para posicionar
+    let arr = null;
+    $("#wzCorpo").addEventListener("pointerdown", (e) => {
+      if (wz.canal !== "cartas" || wz.passo !== "kaRevisar") return; const cv = e.target.closest && e.target.closest("canvas[data-ka2-cv]"); if (!cv) return;
+      const i = +cv.dataset.ka2Cv, F = car().telas[i] && car().telas[i].foto; if (!F) return;
+      e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (err) { /* segue */ }
+      arr = { cv, i, F, px: e.clientX, py: e.clientY, x0: F.x || 0, y0: F.y || 0, w: cv.getBoundingClientRect().width || 1 };
+    });
+    $("#wzCorpo").addEventListener("pointermove", (e) => { if (!arr) return; arr.F.x = Math.max(-1, Math.min(1, arr.x0 + (e.clientX - arr.px) / arr.w)); arr.F.y = Math.max(-1, Math.min(1, arr.y0 + (e.clientY - arr.py) / arr.w)); if (!arr.raf) arr.raf = requestAnimationFrame(() => { if (arr) { arr.raf = 0; redesenharTelaKa(arr.i); } }); });
+    const solta = () => { if (arr) { const i = arr.i; arr = null; redesenharTelaKa(i); guardarCartas(); } };
+    $("#wzCorpo").addEventListener("pointerup", solta); $("#wzCorpo").addEventListener("pointercancel", solta);
+  }
   $("#wzCorpo").addEventListener("focusin", (e) => { if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.ka2Campo) { car().campo = e.target.dataset.ka2Campo; car().campoI = +e.target.dataset.i; } });
   $("#wzCorpo").addEventListener("input", (e) => {
     if (wz.canal !== "cartas") return; const K = car(), d = e.target.dataset || {};
@@ -7924,7 +8036,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       <label class="ch-campo"><span>Resposta</span><textarea id="kaResp" rows="9"></textarea></label><button type="button" class="btn btn--rosa" id="kaAplicar">Montar o carrossel</button>`); return; }
     if (t.closest("#kaZerar")) { try { localStorage.removeItem("miga_carrossel"); } catch (err) { /* segue */ } abrirCartas(); return; }
     if (t.closest("#kaBaixar") || t.closest("#kaZip")) {
-      const zip = !!t.closest("#kaZip") || ehComputador(), b = t.closest("button"); const txt0 = b.textContent; b.disabled = true; b.textContent = "Preparando…"; await carregarMarca(); const arqs = [];
+      const zip = !!t.closest("#kaZip") || ehComputador(), b = t.closest("button"); const txt0 = b.textContent; b.disabled = true; b.textContent = "Preparando…"; await carregarMarca(); await esperarFotosCarta(T); const arqs = [];
       for (let i = 0; i < T.length; i++) { const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 1080; desenharCarta(cv.getContext("2d"), 1080, T[i], i, T.length); arqs.push(await telaParaJpeg(cv, i === 0 ? "00-capa.jpg" : `${String(i).padStart(2, "0")}.jpg`)); }
       b.disabled = false; b.textContent = txt0; K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas();
       if (zip) {
@@ -7938,7 +8050,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   });
   $("#folhaEst").addEventListener("click", (e) => {
     if (wz.canal !== "cartas" || !e.target.closest("#kaAplicar")) return;
-    const r = lerRespostaCartas($("#kaResp").value || ""); if (!r) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; }
+    const r = lerRespostaCartas($("#kaResp").value || ""); if (!r || r.pedido) { toast("Não consegui ler a resposta: copie o bloco inteiro, do { até o }"); return; }
     car().telas = r.telas; car().sel = 0; if (r.legenda) car().legenda = r.legenda; guardarCartas(); $("#folhaEst").close(); mostrarPasso(); toast(`${r.telas.length} telas montadas${r.legenda ? " com legenda" : ""}`);
   });
   $("#wzCorpo").addEventListener("focusin", (e) => { if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.kaCampo) car().campo = e.target.dataset.kaCampo; });
@@ -8621,6 +8733,7 @@ Responda SOMENTE com o bloco abaixo, sem explicação:
     let estreita = false; try { estreita = document.fonts && document.fonts.check(`500 66px "Roboto Condensed"`); } catch (e) { /* segue */ }
     // largura do adesivo de link (ícone + texto, letra do tamanho do Instagram) com folga; vai até 1000 (o campo fica acima do círculo do logo)
     const larg = Math.min(980, 30 + 66 + 16 + ctx.measureText(tx).width * (estreita ? 1 : 0.82) + 34 + 50), h = 140, r = 28, x = (1080 - larg) / 2;
+    fimCampoLink = y + h;
     const corpo = () => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + larg, y, x + larg, y + h, r); ctx.arcTo(x + larg, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + larg, y, r); ctx.closePath(); };
     ctx.shadowColor = "rgba(0,0,0,.12)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4; corpo(); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.shadowColor = "transparent";
     ctx.setLineDash([18, 12]); ctx.lineWidth = 6; ctx.strokeStyle = cor || "#e8336d"; corpo(); ctx.stroke(); ctx.setLineDash([]); // borda tracejada na cor do tema
