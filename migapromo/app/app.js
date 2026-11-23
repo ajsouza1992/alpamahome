@@ -5238,7 +5238,17 @@
     }
     ctx.restore();
   }
-  const foraAj = (V) => { const A = ajVideo(V), f = Object.keys(NOMES_AJ).filter((k) => A[k] && A[k].off); return f.length ? `<div class="ed-fora"><span>Pôr de volta:</span>${f.map((k) => `<button type="button" data-ed-aj-volta="${k}">${NOMES_AJ[k]}</button>`).join("")}</div>` : ""; };
+  /** Itens que sumiram do vídeo (tirados, sem texto ou arrastados para fora da tela) */
+  function sumidosAj(V) {
+    const A = ajVideo(V), B = V._bx || {};
+    return Object.keys(NOMES_AJ).filter((k) => {
+      if (A[k] && A[k].off) return true;
+      if (k === "botao" && V.botao != null && !String(V.botao).trim()) return true;
+      const b = B[k]; if (b && A[k] && (A[k].dx || A[k].dy)) { const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2; if (cx < 0 || cx > 1080 || cy < 0 || cy > 1920) return true; }
+      return false;
+    });
+  }
+  const foraAj = (V) => { const f = sumidosAj(V), A = ajVideo(V), mexeu = Object.keys(A).length || f.length; return mexeu ? `<div class="ed-fora">${f.length ? `<span>Sumiu algo? Pôr de volta:</span>${f.map((k) => `<button type="button" data-ed-aj-volta="${k}">${NOMES_AJ[k]}</button>`).join("")}` : ""}<button type="button" class="ed-restaurar" data-ed-aj-tudo>Restaurar tudo</button></div>` : ""; };
   function barraEditor() {
     const V = vd(), cm = (V.camadas || []).find((x) => x.id === V.sel);
     if (typeof V.sel === "string" && V.sel.startsWith("aj:")) {
@@ -5249,8 +5259,8 @@
       return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto" : "Arraste na prévia para mudar o lugar"}</span></p>${txtB}${cantos}${coresB}
         <div class="ed-linha"><button type="button" data-ed-aj-tam="-" aria-label="Diminuir">A−</button><span class="ed-aj-pct">${pct}%</span><button type="button" data-ed-aj-tam="+" aria-label="Aumentar">A+</button>${k === "logo" ? "" : '<button type="button" data-ed-aj-centro>Centralizar</button>'}<button type="button" data-ed-aj-zero>Voltar ao padrão</button><button type="button" data-ed-aj-tirar class="ed-del">Tirar</button><button type="button" data-ed-ok class="ed-ok">Pronto</button></div></div>`;
     }
-    if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases prontas</button></div>
-      <p class="nota ed-dica">Toque no título, no preço, no botão ou na logo da prévia para mudar o lugar, o tamanho ou tirar.</p>${foraAj(V)}`;
+    if (!cm) return `${foraAj(V)}<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases prontas</button></div>
+      <p class="nota ed-dica">Toque no título, no preço, no botão ou na logo da prévia para mudar o lugar, o tamanho ou tirar.</p>`;
     const cores = `<div class="ed-cores">${Object.entries(CORES_EDITOR).map(([k, c]) => `<button type="button" data-ed-cor="${k}" class="${cm.cor === k ? "on" : ""}" style="background:${c}" aria-label="${k}"></button>`).join("")}</div>`;
     const tam = `<button type="button" data-ed-tam="-" aria-label="Diminuir">A−</button><button type="button" data-ed-tam="+" aria-label="Aumentar">A+</button>`;
     const fim = `<button type="button" data-ed-centro>Centralizar</button><button type="button" data-ed-del class="ed-del">Excluir</button><button type="button" data-ed-ok class="ed-ok">Pronto</button>`;
@@ -5280,7 +5290,8 @@
       if (t.closest("[data-ed-aj-tirar]")) { a.off = true; guardarAjVideo(V); V.sel = null; V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} saiu do vídeo`); return; }
       if (t.closest("[data-ed-aj-zero]")) { delete A[k]; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} voltou para o lugar do estilo`); return; }
     }
-    const vo = t.closest("[data-ed-aj-volta]"); if (vo) { const A = ajVideo(V), k = vo.dataset.edAjVolta; if (A[k]) delete A[k].off; guardarAjVideo(V); V.sel = "aj:" + k; V.resultado = null; atualizarBarraEditor(); return; }
+    const vo = t.closest("[data-ed-aj-volta]"); if (vo) { const A = ajVideo(V), k = vo.dataset.edAjVolta, a = A[k]; if (a) { delete a.off; const b = V._bx && V._bx[k]; if (!b || (b[0] + b[2]) / 2 < 0 || (b[0] + b[2]) / 2 > 1080 || (b[1] + b[3]) / 2 < 0 || (b[1] + b[3]) / 2 > 1920) { delete a.dx; delete a.dy; } } if (k === "botao" && !String(V.botao || "").trim()) V.botao = "Link na bio"; guardarAjVideo(V); V.sel = "aj:" + k; V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} voltou`); return; }
+    if (t.closest("[data-ed-aj-tudo]")) { V.aj = {}; guardarAjVideo(V); if (!String(V.botao || "").trim()) V.botao = "Link na bio"; V.sel = null; V.resultado = null; atualizarBarraEditor(); toast("Título, preço, botão e logo voltaram ao padrão do estilo"); return; }
     if (t.closest("[data-ed-frases]")) { folhaFrases(); return; }
     const ad = t.closest("[data-ed-add]");
     if (ad) {
@@ -5290,6 +5301,7 @@
       if (tipo === "emoji") Object.assign(n, { tipo: "figura", txt: "brilho", x: 200, y: 560, tam: 60 });
       V.camadas.push(n); V.sel = n.id; V.resultado = null; atualizarBarraEditor(); return;
     }
+    if (t.closest("[data-ed-ok]")) { V.sel = null; atualizarBarraEditor(); return; }
     if (!cm) return;
     if (t.closest("[data-ed-centro]")) { cm.x = 540; V.resultado = null; toast("Centralizado no meio"); return; }
     const co = t.closest("[data-ed-cor]"); if (co) { cm.cor = co.dataset.edCor; atualizarBarraEditor(); return; }

@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=453` → próxima `?v=454`
-- `app/sw.js`: `VERSAO = "miga-promo-v456"` → próxima `v457`
-- Comando usado: `sed -i 's/?v=453/?v=454/g' app/index.html app/sw.js && sed -i 's/miga-promo-v456/miga-promo-v457/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=454` → próxima `?v=455`
+- `app/sw.js`: `VERSAO = "miga-promo-v457"` → próxima `v458`
+- Comando usado: `sed -i 's/?v=454/?v=455/g' app/index.html app/sw.js && sed -i 's/miga-promo-v457/miga-promo-v458/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -200,3 +200,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Vídeo: **guias como no Instagram** ao arrastar (itens e camadas): perto do meio (26 px em 1080) encaixa no centro e mostra linha azul (`V._guia {v,h}`, desenhada só na prévia). Botão **Centralizar** na barra (itens: ajusta `dx`; camadas: `x=540`).
 - Título (folha `folhaTituloModelo`, `#estTitTxt`): limite 60 → 100 letras (com 60 o título com emojis travava e "não digitava"), contador `#estTitConta`. No vídeo, `quebrarPartesTitulo` quebra linhas compridas (até 5 linhas, 940 px).
 - Título do vídeo usa a largura toda: quebra em 1000 px / escala do título (`escT` = `aj.titulo.s`), então ao diminuir (A−) cabem mais palavras por linha (até 7 linhas).
+- Vídeo: **"Sumiu algo? Pôr de volta"** no topo da barra (`sumidosAj`: tirado, botão sem texto ou arrastado para fora da tela) + **Restaurar tudo** (`V.aj = {}` do estilo e botão volta a "Link na bio"). Corrigido: "Pronto" não fechava a edição do título/preço/botão/logo (o `data-ed-ok` ficava depois do `if (!cm) return`).
