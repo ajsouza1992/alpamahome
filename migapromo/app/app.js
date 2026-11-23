@@ -4992,8 +4992,8 @@
     const infos = (y, ...a) => { let alt = 0; const { map } = comAj("infos", 540, y, () => { alt = infos0(y, ...a); }); if (alt > 0) { const [a0, b0] = map(110, y - 10), [a1, b1] = map(970, y + alt); regCaixa("infos", a0, b0, a1, b1); } return alt; };
     const pilula = (texto, cx, cy, fundo, cor, tam = 44) => { const cb = AJ.botao && CORES_BOTAO_VD[AJ.botao.cor]; if (cb && cb[0]) { fundo = cb[0]; cor = cb[1]; } ultPil = null; let ph = 0; const { map } = comAj("botao", cx, cy, () => { ph = pilula0(texto, cx, cy, fundo, cor, tam); }); if (ultPil) { const [a0, b0] = map(ultPil[0], ultPil[1]), [a1, b1] = map(ultPil[2], ultPil[3]); regCaixa("botao", a0, b0, a1, b1); } return ph; };
     const marca = (x, y, sz, fundo) => {
-      if (!edMarca) return; const L = AJ.logo || {}, s2 = sz * (L.s || 1), m = 50; if (L.off) return;
-      if (L.canto) { x = L.canto[1] === "e" ? m : w - s2 - m; y = L.canto[0] === "s" ? m + 10 : h - s2 - m - 10; }
+      if (!edMarca) return; const L = AJ.logo || {}, s2 = sz * (L.s || 1), m = 6 + (fundo ? s2 * 0.12 : 0); if (L.off) return; // bem no cantinho
+      if (L.canto) { x = L.canto[1] === "e" ? m : w - s2 - m; y = L.canto[0] === "s" ? m : h - s2 - m; }
       else { x += (sz - s2) / 2; y += (sz - s2) / 2; }
       marca0(x, y, s2, fundo); regCaixa("logo", x - 10, y - 10, x + s2 + 10, y + s2 + 10);
     };

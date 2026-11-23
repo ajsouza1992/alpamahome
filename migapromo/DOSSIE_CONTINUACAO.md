@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=455` → próxima `?v=456`
-- `app/sw.js`: `VERSAO = "miga-promo-v458"` → próxima `v459`
-- Comando usado: `sed -i 's/?v=455/?v=456/g' app/index.html app/sw.js && sed -i 's/miga-promo-v458/miga-promo-v459/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=456` → próxima `?v=457`
+- `app/sw.js`: `VERSAO = "miga-promo-v459"` → próxima `v460`
+- Comando usado: `sed -i 's/?v=456/?v=457/g' app/index.html app/sw.js && sed -i 's/miga-promo-v459/miga-promo-v460/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -202,3 +202,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Título do vídeo usa a largura toda: quebra em 1000 px / escala do título (`escT` = `aj.titulo.s`), então ao diminuir (A−) cabem mais palavras por linha (até 7 linhas).
 - Vídeo: **"Sumiu algo? Pôr de volta"** no topo da barra (`sumidosAj`: tirado, botão sem texto ou arrastado para fora da tela) + **Restaurar tudo** (`V.aj = {}` do estilo e botão volta a "Link na bio"). Corrigido: "Pronto" não fechava a edição do título/preço/botão/logo (o `data-ed-ok` ficava depois do `if (!cm) return`).
 - Publicar vídeo (vTema) no padrão das outras telas (a usuária recusou esboços com blocos/abas: "não fuja do padrão"): etiqueta rosa `rt-etapa` "Vídeo · Reels e Story", botões Texto/Selo/Figurinha/Frases como quadrinhos brancos (`.vd-estudio .ed-add`, igual `.est-btn`), dica curta, botão de som com ícone SVG (sem emoji).
+- Vídeo: logo no canto escolhido agora bem no cantinho (margem 6 px + folga do círculo de fundo, antes 50/60).
