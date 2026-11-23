@@ -6112,7 +6112,8 @@
     }
     const bt = ajustarGrade(MUSICAS[V.batida || "house"].bpm);
     const tA = V.abertura ? emTempos(T_ABERTURA, bt) : 0, tF = V.final ? emTempos(T_FINAL, bt) : 0;
-    const tM = Math.ceil((tA + duracaoMeio() + (V.semVideo ? 0 : 0.9)) / bt) * bt - tA, total = tA + tM + tF; // folga: a fala termina antes do final // o final começa num tempo da música
+    // Sem o final: termina junto com o seu vídeo (antes sobrava até 1,5 s parado no último quadro e parecia travar)
+    const tM = V.final ? Math.ceil((tA + duracaoMeio() + (V.semVideo ? 0 : 0.9)) / bt) * bt - tA : duracaoMeio(), total = tA + tM + tF; // folga: a fala termina antes do final // o final começa num tempo da música
     V.iniFinal = tA + tM;
     const fluxo = tela.captureStream(30);
     let t0 = 0;
@@ -6144,7 +6145,7 @@
     await new Promise((ok) => {
       const passo = async () => {
         const t = Math.min(agora(), total + 0.5);
-        if (t >= total + 0.45) { ok(); return; } // folga: segura a tela final um pouco, o celular às vezes perde os últimos quadros
+        if (t >= total + (V.final ? 0.45 : 0.12)) { ok(); return; } // folga: segura a tela final um pouco, o celular às vezes perde os últimos quadros
         const ultimoQuadro = () => quadroVideo(ctx, W, H, v ? (v.readyState >= 2 ? v : V.quadroImg || v) : fotoComZoom(V.fotoBmp, 1), V); // final desligado: segura o último quadro do seu vídeo
         if (t >= total) { if (V.final) quadroFinal(ctx, W, total - tA - tM, V); else ultimoQuadro(); previa.drawImage(tela, 0, 0, 540, 960); requestAnimationFrame(passo); return; }
         if (t < tA) { quadroAbertura(ctx, W, Math.max(0, t), V); if (v && !videoTocando && t > tA - 0.15) { videoTocando = true; v.play().catch(() => { v.muted = true; v.play().catch(() => {}); }); if (V.somOriginal === false) v.muted = true; } } // começa um tiquinho antes, para cair no tempo

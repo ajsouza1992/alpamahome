@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=456` → próxima `?v=457`
-- `app/sw.js`: `VERSAO = "miga-promo-v459"` → próxima `v460`
-- Comando usado: `sed -i 's/?v=456/?v=457/g' app/index.html app/sw.js && sed -i 's/miga-promo-v459/miga-promo-v460/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=457` → próxima `?v=458`
+- `app/sw.js`: `VERSAO = "miga-promo-v460"` → próxima `v461`
+- Comando usado: `sed -i 's/?v=457/?v=458/g' app/index.html app/sw.js && sed -i 's/miga-promo-v460/miga-promo-v461/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -203,3 +203,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Vídeo: **"Sumiu algo? Pôr de volta"** no topo da barra (`sumidosAj`: tirado, botão sem texto ou arrastado para fora da tela) + **Restaurar tudo** (`V.aj = {}` do estilo e botão volta a "Link na bio"). Corrigido: "Pronto" não fechava a edição do título/preço/botão/logo (o `data-ed-ok` ficava depois do `if (!cm) return`).
 - Publicar vídeo (vTema) no padrão das outras telas (a usuária recusou esboços com blocos/abas: "não fuja do padrão"): etiqueta rosa `rt-etapa` "Vídeo · Reels e Story", botões Texto/Selo/Figurinha/Frases como quadrinhos brancos (`.vd-estudio .ed-add`, igual `.est-btn`), dica curta, botão de som com ícone SVG (sem emoji).
 - Vídeo: logo no canto escolhido agora bem no cantinho (margem 6 px + folga do círculo de fundo, antes 50/60).
+- Vídeo sem o final: `tM = duracaoMeio()` (sem folga de 0,9 s nem arredondar na batida) e folga final 0,12 s — antes ficava até ~1,5 s parado no último quadro ("travada no final"). Teste: vídeo de 4,0 s gravou 4,04 s.
