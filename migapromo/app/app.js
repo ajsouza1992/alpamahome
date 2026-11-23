@@ -4906,6 +4906,7 @@
     return ['video/mp4;codecs="avc1.42E01E,mp4a.40.2"', "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) || null;
   }
   /** Posição e tamanho do título, do preço, do botão e da logo no vídeo (guardados por estilo: vale para os próximos vídeos) */
+  const CORES_BOTAO_VD = { tema: ["", "", "Cor do estilo"], rosa: ["#e8336d", "#ffffff", "Rosa"], amarelo: ["#ffd23f", "#1d1d1f", "Amarelo"], preto: ["#1d1d1f", "#ffffff", "Preto"], branco: ["#ffffff", "#1d1d1f", "Branco"], verde: ["#1f7a4d", "#ffffff", "Verde"], roxo: ["#7b3fe4", "#ffffff", "Roxo"], vermelho: ["#d7262e", "#ffffff", "Vermelho"] };
   const NOMES_AJ = { titulo: "Título", infos: "Preço e descrição", botao: "Botão (Link na bio)", logo: "Logo da Miga" };
   function ajVideo(V) {
     if (!V.aj || V.ajTema !== V.tema) { let g = null; try { g = JSON.parse(localStorage.getItem("miga_vd_aj_" + V.tema) || "null"); } catch (e) { g = null; } V.aj = g && typeof g === "object" ? g : {}; V.ajTema = V.tema; }
@@ -4973,7 +4974,7 @@
     const bloco = (k, ax, ay, fn, x0, y0, x1, y1) => { const { r, map } = comAj(k, ax, ay, fn); const [a0, b0] = map(x0, y0), [a1, b1] = map(x1, y1); regCaixa(k, a0, b0, a1, b1); return r; };
     const titulo = (y, cor, dest, tam = 92, sombra = false) => { const fim = y + nl * tam * 1.08; return bloco("titulo", 540, y, () => titulo0(y, cor, dest, tam, sombra), 90, y - tam * 0.6, 990, fim - tam * 0.45); };
     const infos = (y, ...a) => { let alt = 0; const { map } = comAj("infos", 540, y, () => { alt = infos0(y, ...a); }); if (alt > 0) { const [a0, b0] = map(110, y - 10), [a1, b1] = map(970, y + alt); regCaixa("infos", a0, b0, a1, b1); } return alt; };
-    const pilula = (texto, cx, cy, fundo, cor, tam = 44) => { ultPil = null; let ph = 0; const { map } = comAj("botao", cx, cy, () => { ph = pilula0(texto, cx, cy, fundo, cor, tam); }); if (ultPil) { const [a0, b0] = map(ultPil[0], ultPil[1]), [a1, b1] = map(ultPil[2], ultPil[3]); regCaixa("botao", a0, b0, a1, b1); } return ph; };
+    const pilula = (texto, cx, cy, fundo, cor, tam = 44) => { const cb = AJ.botao && CORES_BOTAO_VD[AJ.botao.cor]; if (cb && cb[0]) { fundo = cb[0]; cor = cb[1]; } ultPil = null; let ph = 0; const { map } = comAj("botao", cx, cy, () => { ph = pilula0(texto, cx, cy, fundo, cor, tam); }); if (ultPil) { const [a0, b0] = map(ultPil[0], ultPil[1]), [a1, b1] = map(ultPil[2], ultPil[3]); regCaixa("botao", a0, b0, a1, b1); } return ph; };
     const marca = (x, y, sz, fundo) => {
       if (!edMarca) return; const L = AJ.logo || {}, s2 = sz * (L.s || 1), m = 50; if (L.off) return;
       if (L.canto) { x = L.canto[1] === "e" ? m : w - s2 - m; y = L.canto[0] === "s" ? m + 10 : h - s2 - m - 10; }
@@ -5104,7 +5105,8 @@
       retArredondado(ctx, -tw / 2, -th / 2, tw, th, 30); ctx.fillStyle = C.fundo; ctx.fill(); ctx.fillStyle = C.texto; tl.forEach((x, j) => ctx.fillText(x, 0, -((tl.length - 1) * 43) + j * 86 + 4)); ctx.restore(); }, 120, h * 0.58 - 140, 960, h * 0.58 + 140);
       if (V.novo) blocoInfos(h * 0.58 + 220, () => { ctx.save(); ctx.translate(w / 2, h * 0.58 + 220); ctx.rotate(0.04); ctx.font = "900 70px Poppins"; const t = (V.antigo > V.novo ? "por " : "") + brl(V.novo), qw = ctx.measureText(t).width + 80; retArredondado(ctx, -qw / 2, -58, qw, 116, 24); ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(t, 0, 4); ctx.restore(); });
       ctx.font = "800 44px Poppins"; const lk = String(V.botao == null ? "Link na bio" : V.botao).replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").trim().toUpperCase(), lw = ctx.measureText(lk).width + 80;
-      if (lk) bloco("botao", 540, h - 280, () => { retArredondado(ctx, w / 2 - lw / 2, h - 330, lw, 100, 20); ctx.fillStyle = "#fff"; ctx.fill(); ctx.fillStyle = "#1d1d1f"; ctx.fillText(lk, w / 2, h - 278); }, w / 2 - lw / 2, h - 330, w / 2 + lw / 2, h - 230);
+      const cbS = AJ.botao && CORES_BOTAO_VD[AJ.botao.cor] && CORES_BOTAO_VD[AJ.botao.cor][0] ? CORES_BOTAO_VD[AJ.botao.cor] : ["#fff", "#1d1d1f"];
+      if (lk) bloco("botao", 540, h - 280, () => { retArredondado(ctx, w / 2 - lw / 2, h - 330, lw, 100, 20); ctx.fillStyle = cbS[0]; ctx.fill(); ctx.fillStyle = cbS[1]; ctx.fillText(lk, w / 2, h - 278); }, w / 2 - lw / 2, h - 330, w / 2 + lw / 2, h - 230);
     } else if (V.tema === "desfoque") { // o próprio vídeo desfocado no fundo e o vídeo nítido num cartão
       if (vw) { ctx.save(); ctx.filter = "blur(30px) brightness(.7)"; pintar(-60, -60, w + 120, h + 120); ctx.restore(); } else pintar(0, 0, w, h);
       titulo(180, "#ffffff", "#ffd23f", 92, true);
@@ -5226,7 +5228,8 @@
     if (typeof V.sel === "string" && V.sel.startsWith("aj:")) {
       const k = V.sel.slice(3), a = ajVideo(V)[k] || {}, pct = Math.round((a.s || 1) * 100);
       const cantos = k === "logo" ? `<div class="ed-cantos">${[["se", "Em cima, à esquerda"], ["sd", "Em cima, à direita"], ["ie", "Embaixo, à esquerda"], ["id", "Embaixo, à direita"]].map(([c, n]) => `<button type="button" data-ed-aj-canto="${c}" class="ed-canto ed-canto--${c}${a.canto === c ? " on" : ""}" aria-label="${n}" title="${n}"><i></i></button>`).join("")}</div>` : "";
-      return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto" : "Arraste na prévia para mudar o lugar"}</span></p>${cantos}
+      const coresB = k === "botao" ? `<div class="ed-cores">${Object.entries(CORES_BOTAO_VD).map(([c, [bg, , n]]) => `<button type="button" data-ed-aj-cor="${c}" class="${(a.cor || "tema") === c ? "on" : ""}${c === "tema" ? " ed-cor-tema" : ""}" style="${bg ? `background:${bg}` : ""}" aria-label="${n}" title="${n}"></button>`).join("")}</div>` : "";
+      return `<div class="ed-sel ed-aj"><p class="ed-aj-nome"><b>${NOMES_AJ[k]}</b><span>${k === "logo" ? "Escolha o canto" : "Arraste na prévia para mudar o lugar"}</span></p>${cantos}${coresB}
         <div class="ed-linha"><button type="button" data-ed-aj-tam="-" aria-label="Diminuir">A−</button><span class="ed-aj-pct">${pct}%</span><button type="button" data-ed-aj-tam="+" aria-label="Aumentar">A+</button><button type="button" data-ed-aj-zero>Voltar ao padrão</button><button type="button" data-ed-aj-tirar class="ed-del">Tirar</button><button type="button" data-ed-ok class="ed-ok">Pronto</button></div></div>`;
     }
     if (!cm) return `<div class="ed-add"><button type="button" data-ed-add="texto"><b><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></b>Texto</button><button type="button" data-ed-add="selo"><b><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.2l6.1-.6z"/></svg></b>Selo</button><button type="button" data-ed-add="emoji"><b><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></b>Figurinha</button><button type="button" data-ed-frases><b><svg viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 10h8M8 14h5"/></svg></b>Frases prontas</button></div>
@@ -5254,6 +5257,7 @@
       const k = V.sel.slice(3), A = ajVideo(V), a = (A[k] = A[k] || {});
       const tz = t.closest("[data-ed-aj-tam]"); if (tz) { a.s = Math.round(Math.max(0.5, Math.min(2, (a.s || 1) + (tz.dataset.edAjTam === "+" ? 0.1 : -0.1))) * 100) / 100; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
       const cn = t.closest("[data-ed-aj-canto]"); if (cn) { a.canto = cn.dataset.edAjCanto; delete a.livre; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
+      const ac2 = t.closest("[data-ed-aj-cor]"); if (ac2) { if (ac2.dataset.edAjCor === "tema") delete a.cor; else a.cor = ac2.dataset.edAjCor; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); return; }
       if (t.closest("[data-ed-aj-tirar]")) { a.off = true; guardarAjVideo(V); V.sel = null; V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} saiu do vídeo`); return; }
       if (t.closest("[data-ed-aj-zero]")) { delete A[k]; guardarAjVideo(V); V.resultado = null; atualizarBarraEditor(); toast(`${NOMES_AJ[k]} voltou para o lugar do estilo`); return; }
     }
@@ -5482,7 +5486,7 @@
       c.innerHTML = `<div class="estudio">
         <div class="est-previa est-previa--img vd-editor"><canvas id="vdQuadro" width="540" height="960"></canvas></div>
         <div class="ed-barra" id="edBarra">${barraEditor()}</div>
-        <div class="est-ctrl est-ctrl--6">${botaoEst("estiloVideo", "Estilo", TEMAS_VIDEO[V.tema])}${botaoEst("modelo", "Título", nomeM)}${botaoEst("textosVideo", "Textos", [V.nome && "descrição", V.novo && "preço", V.cupom && "cupom"].filter(Boolean).join(", ") || "escrever")}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || "sem abertura")}</div>
+        <div class="est-ctrl est-ctrl--6">${botaoEst("estiloVideo", "Estilo", TEMAS_VIDEO[V.tema])}${botaoEst("modelo", "Título", nomeM)}${botaoEst("textosVideo", "Textos", [V.nome && "descrição", V.novo && "preço", V.cupom && "cupom"].filter(Boolean).join(", ") || "escrever")}${botaoEst("cor", "Cor", CORES_VIDEO[V.cor].nome)}${botaoEst("musica", "Música", V.musica === false ? "Sem música" : NOMES_MUSICA[V.batida || "house"][0])}${botaoEst("ajustesVideo", "Ajustes", [V.abertura && "abertura", V.final && "final"].filter(Boolean).join(" + ") || "sem abertura")}</div>
         <div class="vd-criar">
           <div class="vd-progresso" id="vdProgresso" hidden><i></i></div>
           <button type="button" class="btn btn--rosa" id="vdGerar">Criar o vídeo · ${Math.round(duracaoReels())} s</button>
@@ -5500,7 +5504,7 @@
         <div class="rp-grade">
           <div class="rp-midia">
             <figure class="rp-video"><video src="${r.url}" controls playsinline></video><figcaption>Vídeo · ${r.mp4 ? "MP4" : "WebM"}</figcaption></figure>
-            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa"><figcaption>Capa</figcaption><div class="rp-capa-op"><button type="button" data-vd-capa="titulo" class="${(V.capaTipo || "titulo") === "titulo" ? "on" : ""}">Título</button><button type="button" data-vd-capa="quadro" class="${V.capaTipo === "quadro" ? "on" : ""}">Quadro</button></div>${V.url && V.duracao ? `<label class="rp-capa-momento"><span>Momento da capa</span><input type="range" id="vdCapaMomento" min="0" max="${Math.max(0.1, V.duracao - 0.1).toFixed(1)}" step="0.1" value="${(V.capaT != null ? V.capaT : V.duracao / 3).toFixed(1)}"></label>` : ""}</figure>` : ""}
+            ${r.capa ? `<figure class="rp-capa"><img src="${URL.createObjectURL(r.capa)}" alt="Capa"><figcaption>Capa</figcaption><div class="rp-capa-op"><button type="button" data-vd-capa="quadro" class="${(V.capaTipo || "quadro") === "quadro" ? "on" : ""}">Igual ao vídeo</button><button type="button" data-vd-capa="titulo" class="${V.capaTipo === "titulo" ? "on" : ""}">Título grande</button></div>${V.url && V.duracao ? `<label class="rp-capa-momento"><span>Momento da capa</span><input type="range" id="vdCapaMomento" min="0" max="${Math.max(0.1, V.duracao - 0.1).toFixed(1)}" step="0.1" value="${(V.capaT != null ? V.capaT : V.duracao / 3).toFixed(1)}"></label>` : ""}</figure>` : ""}
           </div>
           <div class="rp-acoes">
             <button type="button" class="btn btn--rosa" id="vdPostar">Postar</button>
@@ -5577,7 +5581,7 @@
       capaVideoEl.currentTime = seg; await new Promise((ok) => { capaVideoEl.addEventListener("seeked", ok, { once: true }); setTimeout(ok, 2000); });
       const q = document.createElement("canvas"); q.width = capaVideoEl.videoWidth || 720; q.height = capaVideoEl.videoHeight || 1280; q.getContext("2d").drawImage(capaVideoEl, 0, 0, q.width, q.height);
       V.capaFrame = q; V.capaT = seg; await carregarMarca();
-      V.resultado.capa = await telaParaJpeg(capaDoVideo(V.capaTipo || "titulo"), "miga-promo-capa.jpg");
+      V.resultado.capa = await telaParaJpeg(capaDoVideo(V.capaTipo || "quadro"), "miga-promo-capa.jpg");
       const img = document.querySelector(".rp-capa img"); if (img) img.src = URL.createObjectURL(V.resultado.capa);
     }, 180);
   }
@@ -6080,9 +6084,9 @@
       if (V.final) { const f = tA + tM; [0.1, 0.55, 1.6].forEach((s) => pops.push(f + noTempo(s))); whooshes.push(f - 0.3); }
       if (V.abertura) whooshes.push(tA - 0.3);
       // Com abertura/final: a música toca nelas; no meio fica baixinha (ou some)
-      const temTrilha = V.abertura || V.final || V.musica;
+      const temTrilha = V.musica !== false; // "Sem música": nem na abertura/final
       if (temTrilha) { btn.textContent = "Preparando a música…"; await carregarSons(ac, MUSICAS[V.batida || "house"]); }
-      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, V.musica ? (v && !semSom ? 0.18 : 0.8) : 0.0001], MUSICAS[V.batida || "house"], V.final ? tA + tM + acentosDe(MUSICAS[V.batida || "house"], tA + tM, 8)[arroba(config.instagram) ? 2 : 3] : null);
+      if (temTrilha) t0 = tocarTrilha(ac, dest, total, pops, whooshes, [tA, tA + tM, v && !semSom ? 0.18 : 0.8], MUSICAS[V.batida || "house"], V.final ? tA + tM + acentosDe(MUSICAS[V.batida || "house"], tA + tM, 8)[arroba(config.instagram) ? 2 : 3] : null);
       dest.stream.getAudioTracks().forEach((t) => fluxo.addTrack(t));
     } catch (e) { if (v) v.muted = true; }
     const rec = new MediaRecorder(fluxo, { mimeType: tipo, videoBitsPerSecond: 8e6 });
@@ -6098,7 +6102,8 @@
       const passo = async () => {
         const t = Math.min(agora(), total + 0.5);
         if (t >= total + 0.45) { ok(); return; } // folga: segura a tela final um pouco, o celular às vezes perde os últimos quadros
-        if (t >= total) { quadroFinal(ctx, W, total - tA - tM, V); previa.drawImage(tela, 0, 0, 540, 960); requestAnimationFrame(passo); return; }
+        const ultimoQuadro = () => quadroVideo(ctx, W, H, v ? (v.readyState >= 2 ? v : V.quadroImg || v) : fotoComZoom(V.fotoBmp, 1), V); // final desligado: segura o último quadro do seu vídeo
+        if (t >= total) { if (V.final) quadroFinal(ctx, W, total - tA - tM, V); else ultimoQuadro(); previa.drawImage(tela, 0, 0, 540, 960); requestAnimationFrame(passo); return; }
         if (t < tA) { quadroAbertura(ctx, W, Math.max(0, t), V); if (v && !videoTocando && t > tA - 0.15) { videoTocando = true; v.play().catch(() => { v.muted = true; v.play().catch(() => {}); }); if (V.somOriginal === false) v.muted = true; } } // começa um tiquinho antes, para cair no tempo
         else if (t < tA + tM) {
           if (v && !videoTocando) { videoTocando = true; try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) { /* segue */ } } }
@@ -6113,7 +6118,7 @@
           } else quadroVideo(ctx, W, H, fonteV, V);
           videoRelogio = 99;
           if (v && !V.capaFrame && v.readyState >= 2 && v.currentTime >= Math.min(1.5, (v.duration || 3) / 3)) { try { const q = document.createElement("canvas"); q.width = v.videoWidth || 720; q.height = v.videoHeight || 1280; q.getContext("2d").drawImage(v, 0, 0, q.width, q.height); V.capaFrame = q; } catch (e) { /* segue */ } }
-        } else { if (v && !v.paused) v.pause(); quadroFinal(ctx, W, t - tA - tM, V); }
+        } else { if (v && !v.paused) v.pause(); if (V.final) quadroFinal(ctx, W, t - tA - tM, V); else ultimoQuadro(); }
         previa.drawImage(tela, 0, 0, 540, 960);
         const pct = Math.min(100, Math.round((t / total) * 100));
         btn.textContent = `Gravando… ${pct}%`; barra.querySelector("i").style.width = pct + "%";
@@ -6128,7 +6133,7 @@
     let blob = await comDuracao(new Blob(partes, { type: mp4 ? "video/mp4" : "video/webm" }), total);
     blob = await somCompativel(blob, tipo, (m) => { btn.textContent = m; });
     // Capa no modelo e na cor escolhidos (dá para trocar na tela de pronto)
-    const capa = await telaParaJpeg(capaDoVideo(V.capaTipo || "titulo"), "miga-promo-capa.jpg");
+    const capa = await telaParaJpeg(capaDoVideo(V.capaTipo || "quadro"), "miga-promo-capa.jpg");
     V.legendaInsta = null; // legenda nova, com os textos atuais do vídeo
     V.resultado = { blob, url: URL.createObjectURL(blob), mp4, nome: `miga-promo-video.${mp4 ? "mp4" : "webm"}`, capa };
     V.gravando = false; wz.passo = "vPronto"; mostrarPasso();
@@ -6202,7 +6207,7 @@
   $("#wzCorpo").addEventListener("change", async (e) => {
     if (e.target.dataset && e.target.dataset.vdOp) { vd()[e.target.dataset.vdOp] = e.target.checked; vd().resultado = null; semSomPedeMusica(e.target); return; }
     if (e.target.id === "vdSemSom") { // chave ligada: tira o som original; a música do app toca no lugar
-      const V = vd(); V.somOriginal = !e.target.checked; V.resultado = null; if (!V.somOriginal && !V.musica) V.musica = true;
+      const V = vd(); V.somOriginal = !e.target.checked; V.resultado = null;
       document.querySelectorAll("video.vd-previa").forEach((x) => { x.muted = V.somOriginal === false; }); return;
     }
     if (e.target.id === "vdFotoNova") {
@@ -10011,7 +10016,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   }
   function folhaMusica() {
     const atual = wz.canal === "video" ? vd().batida || "house" : musicaDe(rr());
-    folhaEst("Música", `<div class="lista-mod">${LISTA_MUSICAS.map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${(ALIAS_MUS[atual] || atual) === k ? " on" : ""}"><button type="button" data-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`);
+    const semMus = wz.canal === "video" && vd().musica === false;
+    folhaEst("Música", `<div class="lista-mod">${wz.canal === "video" ? `<div class="mus-linha${semMus ? " on" : ""}"><button type="button" data-escolhe-mus=""><b>Sem música</b><small>Só o som do seu vídeo</small></button></div>` : ""}${LISTA_MUSICAS.map((k) => [k, NOMES_MUSICA[k]]).map(([k, [n, d]]) => `<div class="mus-linha${!semMus && (ALIAS_MUS[atual] || atual) === k ? " on" : ""}"><button type="button" data-escolhe-mus="${k}"><b>${esc(n)}</b><small>${esc(d)}</small></button><button type="button" class="mus-play" data-ouvir="${k}" aria-label="Ouvir ${esc(n)}">${ICO_PLAY}</button></div>`).join("")}</div>`);
   }
   function folhaProdutos() {
     const R = rr(), sel = itensReels(), resto = fila().filter((x) => !x.carregando && !R.itens.includes(x.id));
@@ -10035,7 +10041,6 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       <div class="vd-chaves">
         <label class="aj-chave"><span><b>Abertura</b></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Final</b></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
-        <label class="aj-chave"><span><b>Música no vídeo</b></span><input type="checkbox" data-vd-op="musica"${V.musica ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Som original do vídeo</b></span><input type="checkbox" data-vd-op="somOriginal"${V.somOriginal === false ? "" : " checked"}><i></i></label>
       </div>`);
   }
@@ -10044,7 +10049,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
   function semSomPedeMusica(el) {
     const V = vd(); if (el.dataset.vdOp !== "somOriginal") return;
     document.querySelectorAll('video.vd-previa').forEach((x) => { x.muted = V.somOriginal === false; });
-    if (V.somOriginal === false && !V.musica) { V.musica = true; const m = document.querySelector('[data-vd-op="musica"]'); if (m) m.checked = true; toast("Som do vídeo tirado. A música do app vai tocar no lugar"); }
+    if (V.somOriginal === false && V.musica === false) toast("Sem o som do vídeo e sem música, o vídeo fica mudo. Escolha uma música em Música, se quiser");
   }
   function aposMudarEstudio() { if (wz.rapido && wz.passo === "rpConferir") { const y = scrollY; rpMudou(); scrollTo(0, y); return; } if (wz.canal === "reels") { const R = rr(); R.legenda = null; R.resultado = null; } if (wz.canal === "livre") livre().legenda = ""; const y = scrollY; mostrarPasso(); scrollTo(0, y); }
   $("#wzCorpo").addEventListener("click", async (e) => {
@@ -10096,7 +10101,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const vs = t.closest("[data-vt-selo]"); if (vs) { const V = vd(); V.selo = vs.dataset.vtSelo; V.resultado = null; document.querySelectorAll("[data-vt-selo]").forEach((b) => b.classList.toggle("on", b === vs)); return; }
     const ve = t.closest("[data-vd-estilo]"); if (ve) { const V = vd(); V.tema = ve.dataset.vdEstilo; V.resultado = null; $("#folhaEst").close(); return; }
     const enq = t.closest("[data-vd-enq]"); if (enq) { const V = vd(); V.tema = enq.dataset.vdEnq; V.resultado = null; folhaAjustesVideo(); return; }
-    const mu = t.closest("[data-escolhe-mus]"); if (mu) { if (wz.canal === "video") { const V = vd(); V.batida = mu.dataset.escolheMus; V.resultado = null; } else R.musica = mu.dataset.escolheMus; tocarAmostra(""); $("#folhaEst").close(); aposMudarEstudio(); return; }
+    const mu = t.closest("[data-escolhe-mus]"); if (mu) { if (wz.canal === "video") { const V = vd(); if (mu.dataset.escolheMus) { V.batida = mu.dataset.escolheMus; V.musica = true; } else V.musica = false; V.resultado = null; } else R.musica = mu.dataset.escolheMus; tocarAmostra(""); $("#folhaEst").close(); aposMudarEstudio(); return; }
     const sobe = t.closest("[data-lp-sobe]"), desce = t.closest("[data-lp-desce]");
     if (sobe || desce) { const i = +(sobe ? sobe.dataset.lpSobe : desce.dataset.lpDesce), j = sobe ? i - 1 : i + 1; const ids = itensReels().map((x) => x.id); [ids[i], ids[j]] = [ids[j], ids[i]]; R.itens = ids; folhaProdutos(); return; }
     const tira = t.closest("[data-lp-tira]"); if (tira) { if (R.itens.length <= 1) { toast("Deixe pelo menos 1 produto"); return; } R.itens = R.itens.filter((x) => x !== tira.dataset.lpTira); folhaProdutos(); return; }
