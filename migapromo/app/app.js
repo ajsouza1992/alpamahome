@@ -4854,6 +4854,7 @@
   ];
   function vd() {
     if (!wz.video) wz.video = { abertura: true, final: true, musica: true, semVideo: false, arquivo: null, url: "", tema: "cheia", cor: proximaCor(), titulo: "Achadinho\n*do dia* ✨", nome: "", antigo: null, novo: null, cupom: "", botao: "Link na bio", itemId: null, resultado: null };
+    if (wz.video.qualidade == null) { try { wz.video.qualidade = localStorage.getItem("miga_vd_qual") || "alta"; } catch (e) { wz.video.qualidade = "alta"; } }
     return wz.video;
   }
   /** O WebM gravado pelo celular vem sem a duração (a galeria mostra só uns segundos): grava a duração no arquivo */
@@ -4941,7 +4942,9 @@
     };
     const sombraTexto = (on) => { ctx.shadowColor = on ? "rgba(0,0,0,.55)" : "transparent"; ctx.shadowBlur = on ? 18 : 0; ctx.shadowOffsetY = on ? 3 : 0; };
     // título comprido quebra sozinho usando a largura toda; se você diminuir (A−), cabem mais palavras por linha
-    const escT = Math.max(0.5, (ajVideo(V).titulo || {}).s || 1), linhas = quebrarPartesTitulo(ctx, linhasTitulo(V.titulo), "800 100px Poppins", Math.min(1900, 1000 / escT), escT < 1 ? 7 : 5);
+    const escT = Math.max(0.5, (ajVideo(V).titulo || {}).s || 1), chT = V.titulo + "|" + escT;
+    if (!V._linhasT || V._linhasT[0] !== chT) V._linhasT = [chT, quebrarPartesTitulo(ctx, linhasTitulo(V.titulo), "800 100px Poppins", Math.min(1900, 1000 / escT), escT < 1 ? 7 : 5)];
+    const linhas = V._linhasT[1];
     const titulo0 = (y, cor, dest, tam = 92, sombra = false) => {
       ctx.font = `800 ${tam}px Poppins`; sombraTexto(sombra);
       linhas.forEach((partes, j) => {
@@ -6099,8 +6102,8 @@
     if (V.semVideo && !V.fotoBmp) { if (ac) ac.close().catch(() => {}); toast("Este produto está sem foto: escolha um vídeo ou coloque uma foto no produto"); return; }
     const btn = $("#vdGerar"); btn.disabled = true; btn.textContent = "Gravando… 0%"; V.gravando = true; V.capaFrame = null;
     const barra = $("#vdProgresso"); ligarBarra(btn, barra);
-    const W = 1080, H = 1920, tela = document.createElement("canvas"); tela.width = W; tela.height = H;
-    const ctx = tela.getContext("2d"), previa = $("#vdQuadro").getContext("2d");
+    const rapido = V.qualidade === "rapido", W = rapido ? 720 : 1080, H = rapido ? 1280 : 1920, tela = document.createElement("canvas"); tela.width = W; tela.height = H; // "Rápido": 720p, mais leve para o celular
+    const ctx = tela.getContext("2d", { alpha: false }), previa = $("#vdQuadro").getContext("2d");
     let v = null;
     if (!V.semVideo) {
       v = document.createElement("video"); v.src = V.url; v.playsInline = true; v.preload = "auto";
@@ -6143,7 +6146,9 @@
     if (tA > 0) quadroAbertura(ctx, W, 0, V); else quadroVideo(ctx, W, H, (v && v.readyState >= 2) ? v : V.quadroImg || (V.fotoBmp && fotoComZoom(V.fotoBmp, 0)), V);
     rec.start(); manterTelaAcesa(true);
     await new Promise((ok) => {
+      let ultDesenho = 0, nQ = 0;
       const passo = async () => {
+        const agoraMs = performance.now(); if (agoraMs - ultDesenho < 31) { requestAnimationFrame(passo); return; } ultDesenho = agoraMs; nQ++;
         const t = Math.min(agora(), total + 0.5);
         if (t >= total + (V.final ? 0.45 : 0.12)) { ok(); return; } // folga: segura a tela final um pouco, o celular às vezes perde os últimos quadros
         const ultimoQuadro = () => quadroVideo(ctx, W, H, v ? (v.readyState >= 2 ? v : V.quadroImg || v) : fotoComZoom(V.fotoBmp, 1), V); // final desligado: segura o último quadro do seu vídeo
@@ -6163,7 +6168,7 @@
           videoRelogio = 99;
           if (v && !V.capaFrame && v.readyState >= 2 && v.currentTime >= Math.min(1.5, (v.duration || 3) / 3)) { try { const q = document.createElement("canvas"); q.width = v.videoWidth || 720; q.height = v.videoHeight || 1280; q.getContext("2d").drawImage(v, 0, 0, q.width, q.height); V.capaFrame = q; } catch (e) { /* segue */ } }
         } else { if (v && !v.paused) v.pause(); if (V.final) quadroFinal(ctx, W, t - tA - tM, V); else ultimoQuadro(); }
-        previa.drawImage(tela, 0, 0, 540, 960);
+        if (nQ % 3 === 0) previa.drawImage(tela, 0, 0, 540, 960); // a prévia não precisa de todo quadro
         const pct = Math.min(100, Math.round((t / total) * 100));
         btn.textContent = `Gravando… ${pct}%`; barra.querySelector("i").style.width = pct + "%";
         requestAnimationFrame(passo);
@@ -10090,7 +10095,9 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
         <label class="aj-chave"><span><b>Abertura</b></span><input type="checkbox" data-vd-op="abertura"${V.abertura ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Final</b></span><input type="checkbox" data-vd-op="final"${V.final ? " checked" : ""}><i></i></label>
         <label class="aj-chave"><span><b>Som original do vídeo</b></span><input type="checkbox" data-vd-op="somOriginal"${V.somOriginal === false ? "" : " checked"}><i></i></label>
-      </div>`);
+      </div>
+      <b class="ch-rot">Qualidade do vídeo</b><div class="alternar pe-tipo" role="radiogroup"><button type="button" role="radio" data-vd-qual="alta" aria-checked="${V.qualidade !== "rapido"}">Alta qualidade</button><button type="button" role="radio" data-vd-qual="rapido" aria-checked="${V.qualidade === "rapido"}">Rápido</button></div>
+      <p class="nota">Se o vídeo sair travando, use o Rápido: fica mais leve para o celular gravar.</p>`);
   }
   $("#folhaEst").addEventListener("change", (e) => { if (e.target.dataset && e.target.dataset.vdOp) { const V = vd(); V[e.target.dataset.vdOp] = e.target.checked; V.resultado = null; semSomPedeMusica(e.target); } });
   /** Tirou o som original do vídeo: a música do app liga sozinha (senão o vídeo fica mudo) */
@@ -10147,6 +10154,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     }
     const ou = t.closest("[data-ouvir]"); if (ou) { tocarAmostra(ou.dataset.ouvir); return; }
     const vs = t.closest("[data-vt-selo]"); if (vs) { const V = vd(); V.selo = vs.dataset.vtSelo; V.resultado = null; document.querySelectorAll("[data-vt-selo]").forEach((b) => b.classList.toggle("on", b === vs)); return; }
+    const vq = t.closest("[data-vd-qual]"); if (vq) { const V = vd(); V.qualidade = vq.dataset.vdQual; try { localStorage.setItem("miga_vd_qual", V.qualidade); } catch (err) { /* segue */ } V.resultado = null; document.querySelectorAll("[data-vd-qual]").forEach((b) => b.setAttribute("aria-checked", String(b === vq))); return; }
     const ve = t.closest("[data-vd-estilo]"); if (ve) { const V = vd(); V.tema = ve.dataset.vdEstilo; V.resultado = null; $("#folhaEst").close(); return; }
     const enq = t.closest("[data-vd-enq]"); if (enq) { const V = vd(); V.tema = enq.dataset.vdEnq; V.resultado = null; folhaAjustesVideo(); return; }
     const mu = t.closest("[data-escolhe-mus]"); if (mu) { if (wz.canal === "video") { const V = vd(); if (mu.dataset.escolheMus) { V.batida = mu.dataset.escolheMus; V.musica = true; } else V.musica = false; V.resultado = null; } else R.musica = mu.dataset.escolheMus; tocarAmostra(""); $("#folhaEst").close(); aposMudarEstudio(); return; }
