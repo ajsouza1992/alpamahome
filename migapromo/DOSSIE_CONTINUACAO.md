@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=457` → próxima `?v=458`
-- `app/sw.js`: `VERSAO = "miga-promo-v460"` → próxima `v461`
-- Comando usado: `sed -i 's/?v=457/?v=458/g' app/index.html app/sw.js && sed -i 's/miga-promo-v460/miga-promo-v461/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=458` → próxima `?v=459`
+- `app/sw.js`: `VERSAO = "miga-promo-v461"` → próxima `v462`
+- Comando usado: `sed -i 's/?v=458/?v=459/g' app/index.html app/sw.js && sed -i 's/miga-promo-v461/miga-promo-v462/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -204,3 +204,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Publicar vídeo (vTema) no padrão das outras telas (a usuária recusou esboços com blocos/abas: "não fuja do padrão"): etiqueta rosa `rt-etapa` "Vídeo · Reels e Story", botões Texto/Selo/Figurinha/Frases como quadrinhos brancos (`.vd-estudio .ed-add`, igual `.est-btn`), dica curta, botão de som com ícone SVG (sem emoji).
 - Vídeo: logo no canto escolhido agora bem no cantinho (margem 6 px + folga do círculo de fundo, antes 50/60).
 - Vídeo sem o final: `tM = duracaoMeio()` (sem folga de 0,9 s nem arredondar na batida) e folga final 0,12 s — antes ficava até ~1,5 s parado no último quadro ("travada no final"). Teste: vídeo de 4,0 s gravou 4,04 s.
+- Carrossel foto: além de arrastar, barrinhas "Para os lados" e "Para cima ou para baixo" (`data-ka2-pos="i:x|y"`, -100..100 → `foto.x/y`); o arrastar atualiza as barrinhas ao soltar. (A usuária não conseguia arrastar no celular; no teste com toque simulado funcionou.)

@@ -7953,6 +7953,8 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const F = t.foto, auto = F.auto !== false;
     return `<div class="ka2-foto"><p class="ka2-dica">Arraste a foto na imagem para posicionar</p>
       <label class="ka2-zoom"><span>Tamanho da foto</span><input type="range" min="50" max="250" step="1" value="${Math.round((F.z || 1) * 100)}" data-ka2-zoom="${i}"></label>
+      <label class="ka2-zoom"><span>Para os lados</span><input type="range" min="-100" max="100" step="1" value="${Math.round((F.x || 0) * 100)}" data-ka2-pos="${i}:x"></label>
+      <label class="ka2-zoom"><span>Para cima ou para baixo</span><input type="range" min="-100" max="100" step="1" value="${Math.round((F.y || 0) * 100)}" data-ka2-pos="${i}:y"></label>
       <div class="ka2-fundos"><span>Fundo (o primeiro é a cor da foto)</span><div class="rp-cores ka2-cores"><button type="button" data-ka2-fauto="${i}" class="ka2-fauto${auto ? " on" : ""}" style="background:${esc(F.fundo || "#fff")}" aria-label="Cor da foto" title="Cor da foto">${ICO_FOTO_KA}</button>${Object.entries(CORES_CARTA).map(([k, v]) => `<button type="button" data-ka2-tcor="${i}:${k}" class="${!auto && t.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}" title="${v.nome}"></button>`).join("")}</div></div>
       <div class="rp-duas"><label class="btn btn--branco rp-adesivo">Trocar foto<input type="file" accept="image/*" data-ka2-foto="${i}" hidden></label><button type="button" class="btn btn--branco rp-adesivo" data-ka2-semfoto="${i}">Tirar a foto</button></div></div>`;
   }
@@ -8085,6 +8087,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     guardarCartas(); const y = scrollY; mostrarPasso(); scrollTo(0, y); toast("Foto colocada: arraste para posicionar");
   });
   $("#wzCorpo").addEventListener("input", (e) => {
+    if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.ka2Pos) { const [i0, eixo] = e.target.dataset.ka2Pos.split(":"), T2 = car().telas[+i0]; if (!T2 || !T2.foto) return; T2.foto[eixo] = +e.target.value / 100; redesenharTelaKa(+i0); clearTimeout(car()._tg); car()._tg = setTimeout(guardarCartas, 400); return; }
     if (wz.canal !== "cartas" || !e.target.dataset || e.target.dataset.ka2Zoom == null) return;
     const K = car(), i = +e.target.dataset.ka2Zoom; if (!K.telas[i] || !K.telas[i].foto) return; K.telas[i].foto.z = +e.target.value / 100; redesenharTelaKa(i); clearTimeout(K._tg); K._tg = setTimeout(guardarCartas, 400);
   });
@@ -8097,7 +8100,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       arr = { cv, i, F, px: e.clientX, py: e.clientY, x0: F.x || 0, y0: F.y || 0, w: cv.getBoundingClientRect().width || 1 };
     });
     $("#wzCorpo").addEventListener("pointermove", (e) => { if (!arr) return; arr.F.x = Math.max(-1, Math.min(1, arr.x0 + (e.clientX - arr.px) / arr.w)); arr.F.y = Math.max(-1, Math.min(1, arr.y0 + (e.clientY - arr.py) / arr.w)); if (!arr.raf) arr.raf = requestAnimationFrame(() => { if (arr) { arr.raf = 0; redesenharTelaKa(arr.i); } }); });
-    const solta = () => { if (arr) { const i = arr.i; arr = null; redesenharTelaKa(i); guardarCartas(); } };
+    const solta = () => { if (arr) { const i = arr.i, F = arr.F; arr = null; redesenharTelaKa(i); guardarCartas(); ["x", "y"].forEach((k) => { const r = document.querySelector(`[data-ka2-pos="${i}:${k}"]`); if (r) r.value = Math.round((F[k] || 0) * 100); }); } };
     $("#wzCorpo").addEventListener("pointerup", solta); $("#wzCorpo").addEventListener("pointercancel", solta);
   }
   $("#wzCorpo").addEventListener("focusin", (e) => { if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.ka2Campo) { car().campo = e.target.dataset.ka2Campo; car().campoI = +e.target.dataset.i; } });
