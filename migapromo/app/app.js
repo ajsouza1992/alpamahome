@@ -7832,16 +7832,31 @@
     const hT = lt.length * 100, hP = lp.length ? 22 + lp.length * 56 : 0, hB = tela.botao ? 30 + 100 : 0;
     // posição e tamanho do texto (barrinhas): para os lados, para baixo e tamanho
     const TP = tela.tp || {}, sc = Math.max(0.6, Math.min(1.4, TP.s || 1)), altB = (hT + hP + hB) * sc, dx = (TP.x || 0) * 320, dy = Math.max(0, Math.min(1080 - 80 - altB, (TP.y || 0) * 1000));
-    // o "modelo" do título sai sozinho: olha a luz atrás do texto e escolhe letra escura ou clara
-    let luz = luzCor(fundo);
-    try { const k = S / 1080, d = x.getImageData(0, Math.round((50 + dy) * k), Math.round(S), Math.max(1, Math.round(altB * k))).data; let soma = 0, n = 0; for (let o = 0; o < d.length; o += 4 * 37) { soma += (0.299 * d[o] + 0.587 * d[o + 1] + 0.114 * d[o + 2]) / 255; n++; } if (n) luz = soma / n; } catch (e) { /* segue com a cor do fundo */ }
-    const claro = luz < 0.56, cTx = claro ? "#ffffff" : "#1d1d1f", cEm = claro ? "#ffd23f" : "#e8336d";
+    // A cor da letra muda sozinha onde o texto passa: em cima de parte escura fica clara, em cima de parte clara fica escura
+    const P = Math.round(S), noCanvas = (c) => { c.width = P; c.height = P; const g = c.getContext("2d"); g.scale(S / 1080, S / 1080); return g; };
+    const desenharTexto = (g, cTx, cEm, sombra) => {
+      g.save(); g.translate(540 + dx, 60 + dy); g.scale(sc, sc); g.translate(-540, -60);
+      g.textAlign = "left"; g.textBaseline = "middle"; g.shadowColor = sombra; g.shadowBlur = 22;
+      const linha = (l, yy, fonte) => { g.font = fonte; const ps = partesDestaque(l, cTx, cEm), w = ps.reduce((s2, [q]) => s2 + g.measureText(q).width, 0); let xx = 540 - w / 2; ps.forEach(([q, cor]) => { g.fillStyle = cor; g.fillText(q, xx, yy); xx += g.measureText(q).width; }); };
+      let yy = 60; lt.forEach((l) => { linha(l, yy + 50, "900 96px Poppins"); yy += 100; });
+      if (lp.length) { yy += 22; lp.forEach((l) => { linha(l, yy + 28, "600 44px Poppins"); yy += 56; }); }
+      g.restore();
+    };
+    let feito = false;
+    try {
+      const fundoPx = x.getImageData(0, 0, P, P), mc = document.createElement("canvas"); mc.width = P; mc.height = P; const mg = mc.getContext("2d"), md = mg.createImageData(P, P);
+      for (let o = 0; o < md.data.length; o += 4) { const l = (0.299 * fundoPx.data[o] + 0.587 * fundoPx.data[o + 1] + 0.114 * fundoPx.data[o + 2]) / 255; md.data[o + 3] = Math.max(0, Math.min(255, Math.round((0.62 - l) / 0.12 * 255))); } // escuro = 255
+      mg.putImageData(md, 0, 0);
+      const cE = document.createElement("canvas"), gE = noCanvas(cE), cC = document.createElement("canvas"), gC = noCanvas(cC);
+      desenharTexto(gE, "#1d1d1f", "#e8336d", "rgba(255,255,255,.55)"); // letra escura (fundo claro)
+      desenharTexto(gC, "#ffffff", "#ffd23f", "rgba(0,0,0,.45)"); // letra clara (fundo escuro)
+      gE.setTransform(1, 0, 0, 1, 0, 0); gE.globalCompositeOperation = "destination-out"; gE.drawImage(mc, 0, 0);
+      gC.setTransform(1, 0, 0, 1, 0, 0); gC.globalCompositeOperation = "destination-in"; gC.drawImage(mc, 0, 0);
+      x.drawImage(cE, 0, 0, 1080, 1080); x.drawImage(cC, 0, 0, 1080, 1080); feito = true;
+    } catch (e) { /* sem leitura do fundo: usa uma cor só */ }
+    if (!feito) { const claro = luzCor(fundo) < 0.56; desenharTexto(x, claro ? "#ffffff" : "#1d1d1f", claro ? "#ffd23f" : "#e8336d", claro ? "rgba(0,0,0,.45)" : "rgba(255,255,255,.55)"); }
     x.save(); x.translate(540 + dx, 60 + dy); x.scale(sc, sc); x.translate(-540, -60);
-    x.textAlign = "left"; x.textBaseline = "middle";
-    x.shadowColor = claro ? "rgba(0,0,0,.45)" : "rgba(255,255,255,.55)"; x.shadowBlur = 22;
-    const linha = (l, yy, fonte) => { x.font = fonte; const ps = partesDestaque(l, cTx, cEm), w = ps.reduce((s, [p]) => s + x.measureText(p).width, 0); let xx = 540 - w / 2; ps.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, yy); xx += x.measureText(p).width; }); };
-    let y = 60; lt.forEach((l) => { linha(l, y + 50, "900 96px Poppins"); y += 100; });
-    if (lp.length) { y += 22; lp.forEach((l) => { linha(l, y + 28, "600 44px Poppins"); y += 56; }); }
+    let y = 60 + lt.length * 100 + (lp.length ? 22 + lp.length * 56 : 0);
     x.shadowColor = "transparent"; x.shadowBlur = 0;
     if (tela.botao) { y += 30; x.save(); x.translate(540, y + 50); x.rotate(-0.052); x.font = "800 42px Poppins"; const w = x.measureText(tela.botao).width + 100, h = 92; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = "#ffd23f"; x.fill(); x.lineWidth = 6; x.strokeStyle = "#1d1d1f"; x.stroke(); x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.fillText(tela.botao, 0, 2); x.restore(); }
     x.restore();
