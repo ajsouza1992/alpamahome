@@ -7804,7 +7804,23 @@
     if (px + w < 1079) borda(tmp.width, 0, tmp.width - esf, 0, tmp.width - esf, 0, esf, tmp.height);
     if (py > 1) borda(0, 0, 0, esf, 0, 0, tmp.width, esf);
     if (py + h < 1079) borda(0, tmp.height, 0, tmp.height - esf, 0, tmp.height - esf, tmp.width, esf);
+    if (F.auto !== false) estenderBordas(x, im, px, py, w, h); // o fundo continua a própria foto (mesma cor de cada lado)
     x.drawImage(tmp, px, py, w, h);
+  }
+  /** Preenche o que sobra em volta da foto esticando a beirada dela (fica da mesma cor e sem emenda) */
+  function estenderBordas(x, im, px, py, w, h) {
+    const iw = im.naturalWidth, ih = im.naturalHeight, e = 3, D = 1080;
+    x.save(); try { x.filter = "blur(14px)"; } catch (err) { /* segue sem desfoque */ }
+    const L = Math.max(0, px), R = Math.max(0, D - (px + w)), T = Math.max(0, py), B = Math.max(0, D - (py + h)), m = 20; // m: sobreposição
+    if (L) x.drawImage(im, 0, 0, e, ih, -m, py, L + m * 2, h);
+    if (R) x.drawImage(im, iw - e, 0, e, ih, px + w - m, py, R + m * 2, h);
+    if (T) x.drawImage(im, 0, 0, iw, e, px, -m, w, T + m * 2);
+    if (B) x.drawImage(im, 0, ih - e, iw, e, px, py + h - m, w, B + m * 2);
+    if (L && T) x.drawImage(im, 0, 0, e, e, -m, -m, L + m * 2, T + m * 2);
+    if (R && T) x.drawImage(im, iw - e, 0, e, e, px + w - m, -m, R + m * 2, T + m * 2);
+    if (L && B) x.drawImage(im, 0, ih - e, e, e, -m, py + h - m, L + m * 2, B + m * 2);
+    if (R && B) x.drawImage(im, iw - e, ih - e, e, e, px + w - m, py + h - m, R + m * 2, B + m * 2);
+    x.restore();
   }
   /** Capa/final com foto: fundo na cor da foto, foto posicionada e o título no topo com a cor que dá leitura */
   function cartaComFoto(x, S, tela) {
@@ -7814,10 +7830,13 @@
     x.font = "900 96px Poppins"; const lt = quebrarCarta(x, tela.titulo, 940);
     x.font = "600 44px Poppins"; const lp = tela.texto ? quebrarCarta(x, tela.texto, 900) : [];
     const hT = lt.length * 100, hP = lp.length ? 22 + lp.length * 56 : 0, hB = tela.botao ? 30 + 100 : 0;
+    // posição e tamanho do texto (barrinhas): para os lados, para baixo e tamanho
+    const TP = tela.tp || {}, sc = Math.max(0.6, Math.min(1.4, TP.s || 1)), altB = (hT + hP + hB) * sc, dx = (TP.x || 0) * 320, dy = Math.max(0, Math.min(1080 - 80 - altB, (TP.y || 0) * 1000));
     // o "modelo" do título sai sozinho: olha a luz atrás do texto e escolhe letra escura ou clara
     let luz = luzCor(fundo);
-    try { const k = S / 1080, d = x.getImageData(0, Math.round(50 * k), Math.round(S), Math.max(1, Math.round((hT + hP + hB) * k))).data; let soma = 0, n = 0; for (let o = 0; o < d.length; o += 4 * 37) { soma += (0.299 * d[o] + 0.587 * d[o + 1] + 0.114 * d[o + 2]) / 255; n++; } if (n) luz = soma / n; } catch (e) { /* segue com a cor do fundo */ }
+    try { const k = S / 1080, d = x.getImageData(0, Math.round((50 + dy) * k), Math.round(S), Math.max(1, Math.round(altB * k))).data; let soma = 0, n = 0; for (let o = 0; o < d.length; o += 4 * 37) { soma += (0.299 * d[o] + 0.587 * d[o + 1] + 0.114 * d[o + 2]) / 255; n++; } if (n) luz = soma / n; } catch (e) { /* segue com a cor do fundo */ }
     const claro = luz < 0.56, cTx = claro ? "#ffffff" : "#1d1d1f", cEm = claro ? "#ffd23f" : "#e8336d";
+    x.save(); x.translate(540 + dx, 60 + dy); x.scale(sc, sc); x.translate(-540, -60);
     x.textAlign = "left"; x.textBaseline = "middle";
     x.shadowColor = claro ? "rgba(0,0,0,.45)" : "rgba(255,255,255,.55)"; x.shadowBlur = 22;
     const linha = (l, yy, fonte) => { x.font = fonte; const ps = partesDestaque(l, cTx, cEm), w = ps.reduce((s, [p]) => s + x.measureText(p).width, 0); let xx = 540 - w / 2; ps.forEach(([p, cor]) => { x.fillStyle = cor; x.fillText(p, xx, yy); xx += x.measureText(p).width; }); };
@@ -7825,6 +7844,7 @@
     if (lp.length) { y += 22; lp.forEach((l) => { linha(l, y + 28, "600 44px Poppins"); y += 56; }); }
     x.shadowColor = "transparent"; x.shadowBlur = 0;
     if (tela.botao) { y += 30; x.save(); x.translate(540, y + 50); x.rotate(-0.052); x.font = "800 42px Poppins"; const w = x.measureText(tela.botao).width + 100, h = 92; retArredondado(x, -w / 2, -h / 2, w, h, h / 2); x.fillStyle = "#ffd23f"; x.fill(); x.lineWidth = 6; x.strokeStyle = "#1d1d1f"; x.stroke(); x.fillStyle = "#1d1d1f"; x.textAlign = "center"; x.fillText(tela.botao, 0, 2); x.restore(); }
+    x.restore();
     if (edMarca) x.drawImage(edMarca, 1080 - 165, 1080 - 160, 130, 130);
   }
   function desenharCarta(ctx, S, tela, idx, total) {
@@ -7956,10 +7976,12 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const onde = i === 0 ? "na capa" : "no final";
     if (!t.foto) return `<label class="ka2-pofoto">${ICO_FOTO_KA}<span><b>Pôr uma foto ${onde}</b><small>Ex.: uma foto do ensaio da Miga. O fundo pega a cor da foto.</small></span><input type="file" accept="image/*" data-ka2-foto="${i}" hidden></label>`;
     const F = t.foto, auto = F.auto !== false;
-    return `<div class="ka2-foto"><p class="ka2-dica">Arraste a foto na imagem para posicionar</p>
+    return `<div class="ka2-foto"><p class="ka2-dica">Arraste a foto na imagem para mudar o lugar dela</p>
       <label class="ka2-zoom"><span>Tamanho da foto</span><input type="range" min="50" max="250" step="1" value="${Math.round((F.z || 1) * 100)}" data-ka2-zoom="${i}"></label>
-      <label class="ka2-zoom"><span>Para os lados</span><input type="range" min="-100" max="100" step="1" value="${Math.round((F.x || 0) * 100)}" data-ka2-pos="${i}:x"></label>
-      <label class="ka2-zoom"><span>Para cima ou para baixo</span><input type="range" min="-100" max="100" step="1" value="${Math.round((F.y || 0) * 100)}" data-ka2-pos="${i}:y"></label>
+      <b class="ka2-sub">Texto</b>
+      <label class="ka2-zoom"><span>Para os lados</span><input type="range" min="-100" max="100" step="1" value="${Math.round(((t.tp || {}).x || 0) * 100)}" data-ka2-tp="${i}:x"></label>
+      <label class="ka2-zoom"><span>Para baixo</span><input type="range" min="0" max="100" step="1" value="${Math.round(((t.tp || {}).y || 0) * 100)}" data-ka2-tp="${i}:y"></label>
+      <label class="ka2-zoom"><span>Tamanho do texto</span><input type="range" min="60" max="140" step="1" value="${Math.round(((t.tp || {}).s || 1) * 100)}" data-ka2-tp="${i}:s"></label>
       <div class="ka2-fundos"><span>Fundo (o primeiro é a cor da foto)</span><div class="rp-cores ka2-cores"><button type="button" data-ka2-fauto="${i}" class="ka2-fauto${auto ? " on" : ""}" style="background:${esc(F.fundo || "#fff")}" aria-label="Cor da foto" title="Cor da foto">${ICO_FOTO_KA}</button>${Object.entries(CORES_CARTA).map(([k, v]) => `<button type="button" data-ka2-tcor="${i}:${k}" class="${!auto && t.cor === k ? "on" : ""}" style="background:${v.fundo}" aria-label="${v.nome}" title="${v.nome}"></button>`).join("")}</div></div>
       <div class="rp-duas"><label class="btn btn--branco rp-adesivo">Trocar foto<input type="file" accept="image/*" data-ka2-foto="${i}" hidden></label><button type="button" class="btn btn--branco rp-adesivo" data-ka2-semfoto="${i}">Tirar a foto</button></div></div>`;
   }
@@ -8059,7 +8081,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     const em = t.closest("[data-ka2-emo]"); if (em) { const i = +em.dataset.ka2Emo; K.campoI = i; folhaEst("Emojis", `<p class="nota">Entram no campo que você tocou por último (${K.campo === "texto" ? "texto" : K.campo === "botao" ? "botão" : "título"} da tela ${i + 1}).</p><div class="ka-emojis">${EMOJIS_CARTA.map((x) => `<button type="button" data-ka2-emoji="${x}">${x}</button>`).join("")}</div>`); return; }
     const tc = t.closest("[data-ka2-tcor]"); if (tc) { const [i, k] = tc.dataset.ka2Tcor.split(":"); T[+i].cor = k; if (T[+i].foto) { T[+i].foto.auto = false; tc.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === tc)); guardarCartas(); redesenharTelaKa(+i); return; } tc.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === tc)); guardarCartas(); redesenharTelaKa(+i); return; }
     const op = t.closest("[data-ka2-op]"); if (op) { const [o, i0] = op.dataset.ka2Op.split(":"), i = +i0;
-      if (o === "sobe" && i > 0) [T[i - 1], T[i]] = [T[i], T[i - 1]]; else if (o === "desce" && i < T.length - 1) [T[i + 1], T[i]] = [T[i], T[i + 1]]; else if (o === "dup" && T.length < 10) T.splice(i + 1, 0, { ...T[i], ...(T[i].foto ? { foto: { ...T[i].foto } } : {}) }); else if (o === "tirar" && T.length > 1) T.splice(i, 1); re(); return; }
+      if (o === "sobe" && i > 0) [T[i - 1], T[i]] = [T[i], T[i - 1]]; else if (o === "desce" && i < T.length - 1) [T[i + 1], T[i]] = [T[i], T[i + 1]]; else if (o === "dup" && T.length < 10) T.splice(i + 1, 0, { ...T[i], ...(T[i].foto ? { foto: { ...T[i].foto } } : {}), ...(T[i].tp ? { tp: { ...T[i].tp } } : {}) }); else if (o === "tirar" && T.length > 1) T.splice(i, 1); re(); return; }
     if (t.closest("#ka2NovaTela")) { const fim = T.length > 1 ? T.length - 1 : T.length; T.splice(fim, 0, { cor: corTelaCarta(K, fim), ic: "estrela", titulo: `*${fim}.* Seu título aqui`, texto: "Escreva a dica aqui.", botao: "" }); re(); return; }
     if (t.closest("#ka2Postar")) {
       K.legenda = $("#kaLegenda") ? $("#kaLegenda").value : K.legenda; guardarCartas(); await carregarMarca(); await esperarFotosCarta(T); const arqs = [];
@@ -8092,7 +8114,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
     guardarCartas(); const y = scrollY; mostrarPasso(); scrollTo(0, y); toast("Foto colocada: arraste para posicionar");
   });
   $("#wzCorpo").addEventListener("input", (e) => {
-    if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.ka2Pos) { const [i0, eixo] = e.target.dataset.ka2Pos.split(":"), T2 = car().telas[+i0]; if (!T2 || !T2.foto) return; T2.foto[eixo] = +e.target.value / 100; redesenharTelaKa(+i0); clearTimeout(car()._tg); car()._tg = setTimeout(guardarCartas, 400); return; }
+    if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.ka2Tp) { const [i0, eixo] = e.target.dataset.ka2Tp.split(":"), T2 = car().telas[+i0]; if (!T2) return; T2.tp = T2.tp || {}; T2.tp[eixo] = +e.target.value / 100; redesenharTelaKa(+i0); clearTimeout(car()._tg); car()._tg = setTimeout(guardarCartas, 400); return; }
     if (wz.canal !== "cartas" || !e.target.dataset || e.target.dataset.ka2Zoom == null) return;
     const K = car(), i = +e.target.dataset.ka2Zoom; if (!K.telas[i] || !K.telas[i].foto) return; K.telas[i].foto.z = +e.target.value / 100; redesenharTelaKa(i); clearTimeout(K._tg); K._tg = setTimeout(guardarCartas, 400);
   });
@@ -8105,7 +8127,7 @@ Responda SOMENTE com o bloco abaixo (sem explicação), no mesmo formato:
       arr = { cv, i, F, px: e.clientX, py: e.clientY, x0: F.x || 0, y0: F.y || 0, w: cv.getBoundingClientRect().width || 1 };
     });
     $("#wzCorpo").addEventListener("pointermove", (e) => { if (!arr) return; arr.F.x = Math.max(-1, Math.min(1, arr.x0 + (e.clientX - arr.px) / arr.w)); arr.F.y = Math.max(-1, Math.min(1, arr.y0 + (e.clientY - arr.py) / arr.w)); if (!arr.raf) arr.raf = requestAnimationFrame(() => { if (arr) { arr.raf = 0; redesenharTelaKa(arr.i); } }); });
-    const solta = () => { if (arr) { const i = arr.i, F = arr.F; arr = null; redesenharTelaKa(i); guardarCartas(); ["x", "y"].forEach((k) => { const r = document.querySelector(`[data-ka2-pos="${i}:${k}"]`); if (r) r.value = Math.round((F[k] || 0) * 100); }); } };
+    const solta = () => { if (arr) { const i = arr.i, F = arr.F; arr = null; redesenharTelaKa(i); guardarCartas(); void F; } };
     $("#wzCorpo").addEventListener("pointerup", solta); $("#wzCorpo").addEventListener("pointercancel", solta);
   }
   $("#wzCorpo").addEventListener("focusin", (e) => { if (wz.canal === "cartas" && e.target.dataset && e.target.dataset.ka2Campo) { car().campo = e.target.dataset.ka2Campo; car().campoI = +e.target.dataset.i; } });

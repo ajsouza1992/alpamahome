@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=460` → próxima `?v=461`
-- `app/sw.js`: `VERSAO = "miga-promo-v463"` → próxima `v464`
-- Comando usado: `sed -i 's/?v=460/?v=461/g' app/index.html app/sw.js && sed -i 's/miga-promo-v463/miga-promo-v464/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=461` → próxima `?v=462`
+- `app/sw.js`: `VERSAO = "miga-promo-v464"` → próxima `v465`
+- Comando usado: `sed -i 's/?v=461/?v=462/g' app/index.html app/sw.js && sed -i 's/miga-promo-v464/miga-promo-v465/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -207,3 +207,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Carrossel foto: além de arrastar, barrinhas "Para os lados" e "Para cima ou para baixo" (`data-ka2-pos="i:x|y"`, -100..100 → `foto.x/y`); o arrastar atualiza as barrinhas ao soltar. (A usuária não conseguia arrastar no celular; no teste com toque simulado funcionou.)
 - Publicar vídeo "ficou lento": gravação em tempo real agora desenha no máximo 30 quadros/s (telas 90/120 Hz desenhavam até 4x mais), prévia copiada a cada 3 quadros, quebra do título guardada (`V._linhasT`), canvas `alpha:false`. Nova opção em Ajustes "Qualidade do vídeo": Alta (1080x1920) / Rápido (720x1280), guardada em `miga_vd_qual`.
 - Folha do produto: ícone do botão Postar (`.fi-principal svg`) sem o quadrado branco: fundo rosa-claro translúcido e ícone branco.
+- Carrossel com foto: (1) fundo "cor da foto" agora estica a beirada da própria foto em cada lado (`estenderBordas`, com blur 14px) em vez de uma cor média — some a emenda de cor. (2) As barrinhas mexem o TEXTO, não a foto: `tela.tp = {x (-1..1, ±320px), y (0..1, até 1000px, limitado para caber), s (0,6..1,4)}`; a foto continua no arrastar + "Tamanho da foto".
