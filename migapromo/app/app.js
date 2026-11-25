@@ -7832,29 +7832,33 @@
     const hT = lt.length * 100, hP = lp.length ? 22 + lp.length * 56 : 0, hB = tela.botao ? 30 + 100 : 0;
     // posição e tamanho do texto (barrinhas): para os lados, para baixo e tamanho
     const TP = tela.tp || {}, sc = Math.max(0.6, Math.min(1.4, TP.s || 1)), altB = (hT + hP + hB) * sc, dx = (TP.x || 0) * 320, dy = Math.max(0, Math.min(1080 - 80 - altB, (TP.y || 0) * 1000));
-    // A cor da letra muda sozinha onde o texto passa: em cima de parte escura fica clara, em cima de parte clara fica escura
-    const P = Math.round(S), noCanvas = (c) => { c.width = P; c.height = P; const g = c.getContext("2d"); g.scale(S / 1080, S / 1080); return g; };
-    const desenharTexto = (g, cTx, cEm, sombra) => {
+    // A cor muda por palavra inteira: palavra em cima de parte escura fica clara; em cima de parte clara fica escura
+    const P = Math.round(S), k = S / 1080; let luzPx = null;
+    try { luzPx = x.getImageData(0, 0, P, P).data; } catch (e) { luzPx = null; }
+    const luzFundo = luzCor(fundo);
+    const escuroEm = (x0, y0, x1, y1) => { // média da luz atrás da palavra (em pixels do canvas)
+      if (!luzPx) return luzFundo < 0.56;
+      const a0 = Math.max(0, Math.floor(x0 * k)), a1 = Math.min(P - 1, Math.ceil(x1 * k)), b0 = Math.max(0, Math.floor(y0 * k)), b1 = Math.min(P - 1, Math.ceil(y1 * k)); let soma = 0, n = 0;
+      const pa = Math.max(1, Math.round((a1 - a0) / 24)), pb = Math.max(1, Math.round((b1 - b0) / 8));
+      for (let yy = b0; yy <= b1; yy += pb) for (let xx = a0; xx <= a1; xx += pa) { const o = (yy * P + xx) * 4; if ((0.299 * luzPx[o] + 0.587 * luzPx[o + 1] + 0.114 * luzPx[o + 2]) / 255 < 0.56) soma++; n++; }
+      return n ? soma / n >= 0.4 : luzFundo < 0.56; // 40% ou mais da palavra em cima de parte escura: letra clara
+    };
+    const desenharTexto = (g) => {
       g.save(); g.translate(540 + dx, 60 + dy); g.scale(sc, sc); g.translate(-540, -60);
-      g.textAlign = "left"; g.textBaseline = "middle"; g.shadowColor = sombra; g.shadowBlur = 22;
-      const linha = (l, yy, fonte) => { g.font = fonte; const ps = partesDestaque(l, cTx, cEm), w = ps.reduce((s2, [q]) => s2 + g.measureText(q).width, 0); let xx = 540 - w / 2; ps.forEach(([q, cor]) => { g.fillStyle = cor; g.fillText(q, xx, yy); xx += g.measureText(q).width; }); };
-      let yy = 60; lt.forEach((l) => { linha(l, yy + 50, "900 96px Poppins"); yy += 100; });
-      if (lp.length) { yy += 22; lp.forEach((l) => { linha(l, yy + 28, "600 44px Poppins"); yy += 56; }); }
+      g.textAlign = "left"; g.textBaseline = "middle"; g.shadowBlur = 22;
+      const linha = (l, yy, fonte, tam) => {
+        g.font = fonte; const ps = partesDestaque(l, 0, 1), w = ps.reduce((s2, [q]) => s2 + g.measureText(q).width, 0); let xx = 540 - w / 2;
+        ps.forEach(([q, dest]) => q.split(/(\s+)/).filter((pd) => pd !== "").forEach((pd) => {
+          const pw = g.measureText(pd).width;
+          if (pd.trim()) { const X0 = 540 + dx + (xx - 540) * sc, X1 = X0 + pw * sc, Ym = 60 + dy + (yy - 60) * sc, esc = escuroEm(X0, Ym - tam * 0.4 * sc, X1, Ym + tam * 0.4 * sc);
+            g.shadowColor = esc ? "rgba(0,0,0,.45)" : "rgba(255,255,255,.55)"; g.fillStyle = dest ? (esc ? "#ffd23f" : "#e8336d") : (esc ? "#ffffff" : "#1d1d1f"); g.fillText(pd, xx, yy); }
+          xx += pw; }));
+      };
+      let yy = 60; lt.forEach((l) => { linha(l, yy + 50, "900 96px Poppins", 96); yy += 100; });
+      if (lp.length) { yy += 22; lp.forEach((l) => { linha(l, yy + 28, "600 44px Poppins", 44); yy += 56; }); }
       g.restore();
     };
-    let feito = false;
-    try {
-      const fundoPx = x.getImageData(0, 0, P, P), mc = document.createElement("canvas"); mc.width = P; mc.height = P; const mg = mc.getContext("2d"), md = mg.createImageData(P, P);
-      for (let o = 0; o < md.data.length; o += 4) { const l = (0.299 * fundoPx.data[o] + 0.587 * fundoPx.data[o + 1] + 0.114 * fundoPx.data[o + 2]) / 255; md.data[o + 3] = Math.max(0, Math.min(255, Math.round((0.62 - l) / 0.12 * 255))); } // escuro = 255
-      mg.putImageData(md, 0, 0);
-      const cE = document.createElement("canvas"), gE = noCanvas(cE), cC = document.createElement("canvas"), gC = noCanvas(cC);
-      desenharTexto(gE, "#1d1d1f", "#e8336d", "rgba(255,255,255,.55)"); // letra escura (fundo claro)
-      desenharTexto(gC, "#ffffff", "#ffd23f", "rgba(0,0,0,.45)"); // letra clara (fundo escuro)
-      gE.setTransform(1, 0, 0, 1, 0, 0); gE.globalCompositeOperation = "destination-out"; gE.drawImage(mc, 0, 0);
-      gC.setTransform(1, 0, 0, 1, 0, 0); gC.globalCompositeOperation = "destination-in"; gC.drawImage(mc, 0, 0);
-      x.drawImage(cE, 0, 0, 1080, 1080); x.drawImage(cC, 0, 0, 1080, 1080); feito = true;
-    } catch (e) { /* sem leitura do fundo: usa uma cor só */ }
-    if (!feito) { const claro = luzCor(fundo) < 0.56; desenharTexto(x, claro ? "#ffffff" : "#1d1d1f", claro ? "#ffd23f" : "#e8336d", claro ? "rgba(0,0,0,.45)" : "rgba(255,255,255,.55)"); }
+    desenharTexto(x);
     x.save(); x.translate(540 + dx, 60 + dy); x.scale(sc, sc); x.translate(-540, -60);
     let y = 60 + lt.length * 100 + (lp.length ? 22 + lp.length * 56 : 0);
     x.shadowColor = "transparent"; x.shadowBlur = 0;
