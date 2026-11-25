@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=459` → próxima `?v=460`
-- `app/sw.js`: `VERSAO = "miga-promo-v462"` → próxima `v463`
-- Comando usado: `sed -i 's/?v=459/?v=460/g' app/index.html app/sw.js && sed -i 's/miga-promo-v462/miga-promo-v463/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=460` → próxima `?v=461`
+- `app/sw.js`: `VERSAO = "miga-promo-v463"` → próxima `v464`
+- Comando usado: `sed -i 's/?v=460/?v=461/g' app/index.html app/sw.js && sed -i 's/miga-promo-v463/miga-promo-v464/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -206,3 +206,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Vídeo sem o final: `tM = duracaoMeio()` (sem folga de 0,9 s nem arredondar na batida) e folga final 0,12 s — antes ficava até ~1,5 s parado no último quadro ("travada no final"). Teste: vídeo de 4,0 s gravou 4,04 s.
 - Carrossel foto: além de arrastar, barrinhas "Para os lados" e "Para cima ou para baixo" (`data-ka2-pos="i:x|y"`, -100..100 → `foto.x/y`); o arrastar atualiza as barrinhas ao soltar. (A usuária não conseguia arrastar no celular; no teste com toque simulado funcionou.)
 - Publicar vídeo "ficou lento": gravação em tempo real agora desenha no máximo 30 quadros/s (telas 90/120 Hz desenhavam até 4x mais), prévia copiada a cada 3 quadros, quebra do título guardada (`V._linhasT`), canvas `alpha:false`. Nova opção em Ajustes "Qualidade do vídeo": Alta (1080x1920) / Rápido (720x1280), guardada em `miga_vd_qual`.
+- Folha do produto: ícone do botão Postar (`.fi-principal svg`) sem o quadrado branco: fundo rosa-claro translúcido e ícone branco.

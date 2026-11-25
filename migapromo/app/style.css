@@ -2999,3 +2999,4 @@ html, body { overflow-x: clip; }
 .vd-estudio .ed-add button { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
 .vd-estudio > .rt-etapa { width: 100%; text-align: left !important; }
 .ic-som { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; margin-right: 6px; }
+.fi-principal svg { background: rgba(255,255,255,.22) !important; stroke: #fff !important; } /* ícone do Postar no padrão dos botões rosa (sem quadrado branco) */
