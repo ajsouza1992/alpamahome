@@ -97,11 +97,16 @@ function completarShopee() {
       }
     } catch (e) { console.log('Shopee ' + id + ': ' + e.message); }
     var tentativas = ((pend.tentativas || {})[id] || 0) + 1;
-    if (feito || tentativas >= 6) tirarPendente(id); // depois de 6 tentativas (30 min) desiste: complete pelo app
+    if (feito || tentativas >= 6) { tirarPendente(id); if (!feito) fsReq('patch', 'espacos/miga/robo/pendentes?updateMask.fieldPaths=' + encodeURIComponent('desistiu.`' + id + '`'), { fields: { desistiu: { mapValue: { fields: (function () { var f = {}; f[id] = { integerValue: String(Date.now()) }; return f; })() } } } }); } // depois de 6 tentativas (30 min) desiste: complete pelo app
     else { res.falhas++; fsReq('patch', 'espacos/miga/robo/pendentes?updateMask.fieldPaths=' + encodeURIComponent('tentativas.`' + id + '`'), { fields: { tentativas: { mapValue: { fields: (function () { var f = {}; f[id] = { integerValue: String(tentativas) }; return f; })() } } } }); }
   });
   console.log('Shopee pendente: ' + JSON.stringify(res));
   return res;
+}
+var _pendCache = null;
+function estadoShopee_() { if (_pendCache === null) { var d = fsGet('espacos/miga/robo/pendentes') || {}; _pendCache = Object.assign({}, d.itens || {}, d.desistiu || {}); } return _pendCache; }
+function marcarPendente(id, link) {
+  fsReq('patch', 'espacos/miga/robo/pendentes?updateMask.fieldPaths=' + encodeURIComponent('itens.`' + id + '`'), { fields: { itens: { mapValue: { fields: (function () { var f = {}; f[id] = { stringValue: String(link) }; return f; })() } } } });
 }
 function tirarPendente(id) {
   var mask = ['itens.`' + id + '`', 'tentativas.`' + id + '`'].map(function (k) { return 'updateMask.fieldPaths=' + encodeURIComponent(k); }).join('&');
@@ -141,6 +146,9 @@ function rodar() {
     var site = fsList('vitrine/miga/produtos'), lista = fsList('espacos/miga/lista');
     var siteMap = {}; site.forEach(function (p) { if (p.id) siteMap[p.id] = p; });
     var listaMap = {}; lista.forEach(function (i) { if (i.id) listaMap[i.id] = i; });
+    // Shopee que ficou sem foto/preço (link curto que o site não leu): entra na fila da conferência rápida
+    var semDados = lista.filter(function (i) { return i.id && loja(i) === 'shopee' && (!i.imagem || !i.precoNovo) && !idsShopee(i.urlFinal || i.link) && !(estadoShopee_()[i.id]); }).slice(0, 20);
+    semDados.forEach(function (i) { marcarPendente(i.id, i.link); });
 
     // O que conferir: Minha lista + produtos só do site, dos mais antigos para os mais novos
     var estado = fsGet('espacos/miga/robo/estado') || {}; // memória do robô (as Propriedades do script são pequenas demais)
