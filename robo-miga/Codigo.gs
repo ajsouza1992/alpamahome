@@ -301,7 +301,7 @@ function shopeeAfiliado(x, chave) {
 function refazerPacotes() {
   var l = fsList('vitrine/miga/produtos').map(function (p) {
     var x = {}; for (var k in p) x[k] = p[k];
-    if (String(x.imagem || '').indexOf('data:') === 0 && x.imagem.length > 60000) x.imagem = '';
+    if (String(x.imagem || '').indexOf('data:') === 0 && x.imagem.length > 60000) { x.imagem = ''; x.imgCortada = true; }
     delete x.atualizadoEm; return x;
   });
   var pacotes = []; for (var i = 0; i < l.length; i += 150) pacotes.push(l.slice(i, i + 150));

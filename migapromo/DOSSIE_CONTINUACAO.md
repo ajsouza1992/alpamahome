@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=467` → próxima `?v=468`
-- `app/sw.js`: `VERSAO = "miga-promo-v470"` → próxima `v471`
-- Comando usado: `sed -i 's/?v=467/?v=468/g' app/index.html app/sw.js && sed -i 's/miga-promo-v470/miga-promo-v471/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=468` → próxima `?v=469`
+- `app/sw.js`: `VERSAO = "miga-promo-v471"` → próxima `v472`
+- Comando usado: `sed -i 's/?v=468/?v=469/g' app/index.html app/sw.js && sed -i 's/miga-promo-v471/miga-promo-v472/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -222,3 +222,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - ML: link com /p/MLB… e wid=MLB… ia só pelo anúncio (idItem) e não tentava o catálogo; agora, se o anúncio não der foto e preço, completa pelo catálogo (/products). Robô `paginaML` registra para onde o ML redireciona (deu 302 no teste: o ML também barra o Google na página).
 - PC com "Arquivos" e tela velha: suspeita de **migapromo.com (sem www) apontando para outro projeto/implantação** no Cloudflare; o celular e o robô usam www.migapromo.com.
 - **Site com cópia no Cloudflare** (o site ficou vazio com a cota do Firestore estourada): rota `GET /api/vitrine` (worker `rotaVitrine`) lê `vitrine/miga` + pacotes pelo REST (chave do firebase-config.js), guarda cópia "fresca" 5 min e "reserva" 7 dias no Cache API; se o Firestore falhar, devolve a reserva. `POST /api/vitrine` (com login/robô) renova na hora: o app chama depois de gravar os pacotes e o robô no fim do `refazerPacotes`. O site (index.html `carregar`) tenta `/api/vitrine` primeiro e cai no Firestore direto se falhar.
+- **App lê os produtos do site pelos pacotes** (`vitrineListar` → `GET api/vitrine`, cópia do Cloudflare; cai no getDocs se falhar ou se for a reserva). Pacotes marcam `imgCortada:true` quando a foto grande (data: >60 KB) fica de fora; `vitrineSalvar` busca a foto completa no Firestore antes de gravar um desses, para não apagar a foto. Economiza ~500 leituras por abertura do app.

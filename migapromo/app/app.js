@@ -452,8 +452,17 @@
         await Promise.all(tarefas);
       },
       // Vitrine (site público): vitrine/miga = canal, grupo e Instagram; vitrine/miga/produtos/{id} = só o que aparece no site
-      vitrineListar: async () => (await fs.getDocs(fs.collection(db, "vitrine", "miga", "produtos"))).docs.map((d) => d.data()),
-      vitrineSalvar: (p) => fs.setDoc(fs.doc(db, "vitrine", "miga", "produtos", p.id), p),
+      // Lê os produtos do site pela cópia em pacotes do Cloudflare (quase sem gastar leituras do Firestore); se falhar, lê um por um
+      vitrineListar: async () => {
+        try { const r = await fetch("api/vitrine", { cache: "no-store" }); if (r.ok) { const d = await r.json(); if (d && Array.isArray(d.produtos) && d.produtos.length && !d.reserva) return d.produtos; } } catch (e) { /* segue */ }
+        return (await fs.getDocs(fs.collection(db, "vitrine", "miga", "produtos"))).docs.map((d) => d.data());
+      },
+      // Produto que veio do pacote sem a foto grande (imgCortada): busca a foto completa antes de gravar, para não apagar
+      vitrineSalvar: async (p) => {
+        const ref = fs.doc(db, "vitrine", "miga", "produtos", p.id), q = { ...p }; delete q.imgCortada;
+        if (p.imgCortada && !q.imagem) { try { const d = await fs.getDoc(ref); if (d.exists() && d.data().imagem) q.imagem = d.data().imagem; } catch (e) { /* segue */ } }
+        return fs.setDoc(ref, q);
+      },
       vitrineApagar: (id) => fs.deleteDoc(fs.doc(db, "vitrine", "miga", "produtos", id)),
       // Contador do site: acessos/miga/eventos (o site só cria; aqui só lê)
       acessosListar: async (desde) => (await fs.getDocs(fs.query(fs.collection(db, "acessos", "miga", "eventos"), fs.where("em", ">=", new Date(desde)), fs.orderBy("em", "desc"), fs.limit(5000))))
@@ -3189,7 +3198,7 @@
   function agendarPacotes() { clearTimeout(pacoteT); pacoteT = setTimeout(gravarPacotes, 2500); }
   async function gravarPacotes() {
     if (!dados.vitrineGravarPacotes) return;
-    const leve = (p) => { const x = { ...p }; if (String(x.imagem || "").startsWith("data:") && x.imagem.length > 60000) x.imagem = ""; delete x.atualizadoEm; return x; };
+    const leve = (p) => { const x = { ...p }; if (String(x.imagem || "").startsWith("data:") && x.imagem.length > 60000) { x.imagem = ""; x.imgCortada = true; } delete x.atualizadoEm; return x; };
     const l = [...vitrineMap.values()].map(leve), pacotes = [];
     for (let i = 0; i < l.length; i += 150) pacotes.push(l.slice(i, i + 150));
     try { await dados.vitrineGravarPacotes(pacotes); vitrineCfg = { ...vitrineCfg, pacotes: pacotes.length, pacotesEm: Date.now() }; if (conta && conta.fb) api("vitrine", {}).catch(() => {}); /* o site lê a cópia do Cloudflare: renova na hora */ } catch (e) { console.warn("pacotes", e); }
