@@ -1,7 +1,7 @@
 /**
  * Robô da Miga Promo (Google Apps Script)
  * ---------------------------------------
- * Roda sozinho a cada 30 minutos, mesmo com o app fechado:
+ * Roda sozinho a cada 2 horas, mesmo com o app fechado:
  *  1. Confere na loja o preço dos produtos do SITE e da MINHA LISTA (cada um no máximo a cada 6 horas).
  *  2. Põe o seu link de afiliado (Shopee) e o link direto do Mercado Livre com o seu código.
  *  3. Tira do site os anúncios ENCERRADOS e esconde os PAUSADOS.
@@ -17,7 +17,7 @@
  *  - QUEDA_MIN: queda mínima em % para avisar (padrão 10).
  *
  * Funções para rodar à mão (menu "Executar"):
- *  - instalar(): liga o robô (a cada 30 minutos + a conferência rápida da Shopee a cada 5 minutos).
+ *  - instalar(): liga o robô (a cada 2 horas + a conferência rápida da Shopee a cada 5 minutos).
  *  - testar(): roda uma vez agora e mostra o resumo no registro.
  *  - desinstalar(): desliga o robô.
  */
@@ -27,7 +27,7 @@ var CFG = {
   site: 'https://www.migapromo.com',
   validadeHoras: 6,      // cada produto é conferido no máximo a cada 6 horas
   semLinkHoras: 1,       // produto do ML ainda sem o link direto: tenta de novo a cada 1 hora
-  porRodada: 120,        // quantos produtos por rodada
+  porRodada: 200,        // quantos produtos por rodada
   lote: 8,               // quantos pedidos ao mesmo tempo
   tempoMaxMs: 4.5 * 60 * 1000 // para antes do limite de 6 minutos do Google
 };
@@ -37,9 +37,9 @@ var ML_FORA = ['closed', 'inactive'], ML_PAUSADO = ['paused', 'under_review', 's
 /* ===================== Funções para você rodar ===================== */
 function instalar() {
   desinstalar();
-  ScriptApp.newTrigger('rodar').timeBased().everyMinutes(30).create();
+  ScriptApp.newTrigger('rodar').timeBased().everyHours(2).create(); // cada rodada lê a lista e o site inteiros: a cada 2 h para não estourar a cota grátis do Firestore (50 mil leituras/dia)
   ScriptApp.newTrigger('completarShopee').timeBased().everyMinutes(5).create();
-  Logger.log('Robô ligado: roda a cada 30 minutos (e a Shopee pendente a cada 5). Rodando a primeira vez agora...');
+  Logger.log('Robô ligado: roda a cada 2 horas (e a Shopee pendente a cada 5 minutos). Rodando a primeira vez agora...');
   rodar();
 }
 function desinstalar() {
