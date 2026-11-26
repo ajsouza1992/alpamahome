@@ -212,6 +212,15 @@ async function idsPeloRobo(link, env) {
     return d && d.loja && d.item ? { loja: String(d.loja), item: String(d.item) } : null;
   } catch (e) { return null; }
 }
+/** Mercado Livre: o robô segue o link curto (meli.la ou /sec/) pelo Google e devolve os endereços e o código MLB que achou */
+async function cadeiaPeloRobo(link, env) {
+  if (!env.ROBO_URL || !env.ROBO_CHAVE || !/^https:\/\/(?:meli\.la\/|(?:www\.)?mercadolivre\.com(?:\.br)?\/sec\/)/i.test(link)) return "";
+  try {
+    const r = await fetch(env.ROBO_URL + "?link=" + encodeURIComponent(link) + "&chave=" + encodeURIComponent(env.ROBO_CHAVE), { redirect: "follow" });
+    const d = await r.json().catch(() => null);
+    return d && Array.isArray(d.cadeia) ? d.cadeia.concat(d.pista ? [d.pista] : []).join(" ") : "";
+  } catch (e) { return ""; }
+}
 /** Chamada assinada à API de Afiliados da Shopee (GraphQL) */
 async function shopeeGQL(query, env) {
   const corpo = JSON.stringify({ query });
@@ -263,7 +272,9 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
   if (!(env.ML_APP_ID && env.ML_SECRET)) return dados;
   // O ML às vezes manda o servidor para a verificação de robô (/gz/account-verification?go=...): o endereço do produto vem no "go"
   let go = ""; try { const f = new URL(dados.urlFinal || urlPedida); go = f.searchParams.get("go") || ""; } catch (e) { go = ""; }
-  const u = [dados.urlFinal || "", go, urlPedida, dados.pistaML || ""].join(" ");
+  let u = [dados.urlFinal || "", go, urlPedida, dados.pistaML || ""].join(" ");
+  // link curto do ML (meli.la ou /sec/) que o ML não deixou o servidor abrir: o robô do Google abre e devolve o caminho
+  if (!/MLB-?U?\d{6,}/i.test(u)) { const rb = await cadeiaPeloRobo(urlPedida || dados.urlFinal || "", env); if (rb) { u += " " + rb; if (!dados.urlFinal || /meli\.la|\/sec\//i.test(dados.urlFinal)) { const fim = (rb.match(/https?:\/\/[^\s]*mercadoli[^\s]*MLB[^\s]*/i) || [])[0]; if (fim) dados.urlFinal = fim; } } }
   const idUP = ((u.match(/\b(MLBU\d{6,})/i) || [])[1] || "").toUpperCase();
   const norm = (s) => s ? s.toUpperCase().replace("-", "") : null;
   const idProduto = norm((u.match(/\/p\/(MLB\d+)/i) || [])[1]);

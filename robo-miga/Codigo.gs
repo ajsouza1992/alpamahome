@@ -54,9 +54,32 @@ function testar() { var r = rodar(); Logger.log(JSON.stringify(r, null, 2)); }
 function doGet(e) {
   var p = (e && e.parameter) || {}, link = String(p.link || ''), out;
   if (!prop('ROBO_CHAVE') || p.chave !== prop('ROBO_CHAVE')) out = { erro: 'chave' };
+  else if (ehLinkCurtoML(link)) { try { out = seguirML(link); } catch (err) { out = { erro: err.message }; } }
   else if (!/^https:\/\/(s\.shopee\.com\.br|shope\.ee|shp\.ee)\//i.test(link)) out = { erro: 'link não aceito' };
   else { try { out = codigoShopee(link) || { erro: 'não achei o produto' }; } catch (err) { out = { erro: err.message }; } }
   return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+}
+/* ---------- Mercado Livre: link curto de afiliado (meli.la ou /sec/) ---------- */
+function ehLinkCurtoML(u) { return /^https:\/\/(meli\.la\/|(www\.)?mercadolivre\.com(\.br)?\/sec\/)/i.test(String(u || '')); }
+/** Segue os redirecionamentos e procura o código MLB do produto no caminho (ou na página final) */
+function seguirML(link) {
+  var atual = link, cadeia = [link], pista = '';
+  for (var pulo = 0; pulo < 8; pulo++) {
+    var r = UrlFetchApp.fetch(atual, { followRedirects: false, muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36', 'Accept-Language': 'pt-BR,pt;q=0.9' } });
+    var h = r.getHeaders(), destino = h.Location || h.location;
+    console.log('ML ' + r.getResponseCode() + ' ' + atual.slice(0, 90) + (destino ? ' -> ' + String(destino).slice(0, 90) : ''));
+    if (destino) { atual = destino.indexOf('http') === 0 ? destino : 'https://www.mercadolivre.com.br' + destino; cadeia.push(atual); if (/MLB-?U?\d{6,}/i.test(decodeURIComponent(atual))) break; continue; }
+    var html = r.getContentText().slice(0, 600000);
+    pista = (html.match(/https?:\/\/[^"'\s<>]*mercadolivre\.com\.br\/[^"'\s<>]*MLB-?\d{6,}[^"'\s<>]*/i) || html.match(/\/p\/MLB\d{6,}/i) || html.match(/MLBU\d{6,}/i) || html.match(/MLB-?\d{8,}/i) || [''])[0];
+    break;
+  }
+  return { cadeia: cadeia, pista: pista };
+}
+/** Rode à mão para ver se o Google consegue abrir um link curto do Mercado Livre da sua lista */
+function testarML() {
+  var l = fsList('espacos/miga/lista').map(function (i) { return i.linkOriginal || i.link || ''; }).filter(ehLinkCurtoML)[0];
+  if (!l) { Logger.log('Não achei nenhum link meli.la ou /sec/ na sua lista.'); return; }
+  Logger.log('Testando ' + l); Logger.log('Resultado: ' + JSON.stringify(seguirML(l)));
 }
 /** Rode à mão para ver se o Google consegue abrir o link curto da Shopee */
 function testarShopee() {
