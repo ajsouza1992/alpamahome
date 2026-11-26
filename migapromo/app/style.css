@@ -3001,3 +3001,4 @@ html, body { overflow-x: clip; }
 .ic-som { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; margin-right: 6px; }
 .fi-principal svg { background: rgba(255,255,255,.22) !important; stroke: #fff !important; } /* ícone do Postar no padrão dos botões rosa (sem quadrado branco) */
 .ka2-sub { font-size: 13px; color: var(--preto, #1d1d1f); margin-top: 4px; }
+.pp-longo { display: block; width: 100%; min-height: 46px; margin: 8px 0 14px; font-size: 14.5px; }

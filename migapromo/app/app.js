@@ -3501,11 +3501,45 @@
     ppEditando = false; $("#ppSalvar").hidden = !modoCompletar && !ppNovo; if (!ppNovo) { $("#ppNovoTopo").hidden = true; $("#ppSalvar").textContent = "Próximo para completar →"; } pintarCampanhaBotoes(); pintarMarcados();
     if (!ehPC()) window.scrollTo({ top: 0 });
   }
+  /** Link da Shopee com o código do produto (o link comprido); o curto s.shopee.com.br não tem */
+  const idsShopeeLink = (u) => /-i\.\d{3,}\.\d{3,}|\/product\/\d{3,}\/\d{3,}|\/opaanlp\/\d{3,}\/\d{3,}|shopid=\d+.*itemid=\d+|itemid=\d+.*shopid=\d+/i.test(decodeURIComponentSeguro(String(u || "")));
+  function decodeURIComponentSeguro(u) { try { return decodeURIComponent(u); } catch (e) { return u; } }
+  // A Shopee às vezes não deixa o servidor ler o link curto: puxa os dados pelo link comprido que a pessoa copia do navegador
+  $("#ppLongo").addEventListener("click", () => {
+    const it = ppAtual; if (!it) return;
+    folhaEst("Puxar foto, nome e preço", `<p class="nota">A Shopee às vezes não deixa o app ler o link curto. É rapidinho:</p>
+      <div class="ia-passos"><div class="ia-p"><b>1</b><span>Abra o produto na Shopee</span><a class="btn btn--branco" href="${esc(it.link)}" target="_blank" rel="noopener">Abrir</a></div>
+      <div class="ia-p"><b>2</b><span>Copie o endereço comprido que aparece em cima, no navegador (começa com shopee.com.br/…)</span></div>
+      <div class="ia-p"><b>3</b><span>Volte aqui e cole</span></div></div>
+      <label class="ch-campo"><span>Link comprido do produto</span><input id="ppLongoTxt" inputmode="url" autocomplete="off" placeholder="https://shopee.com.br/…-i.123.456"></label>
+      <button type="button" class="btn btn--rosa" id="ppLongoOk">Puxar foto, nome e preço</button>
+      <p class="nota">O seu link de afiliado continua o mesmo: o comprido só serve para o app achar o produto.</p>`);
+  });
+  $("#folhaEst").addEventListener("click", async (e) => {
+    if (!e.target.closest("#ppLongoOk")) return; const it = ppAtual, inp = $("#ppLongoTxt"); if (!it || !inp) return;
+    let u = inp.value.trim(); if (!u) { try { u = (await navigator.clipboard.readText()).trim(); inp.value = u; } catch (err) { u = ""; } }
+    u = (u.match(/https?:\/\/\S+/) || [u])[0];
+    if (!u) { toast("Cole o link comprido do produto"); inp.focus(); return; }
+    if (!idsShopeeLink(u)) { toast(/s\.shopee|shope\.ee|shp\.ee/.test(u) ? "Esse ainda é o link curto: copie o endereço comprido do navegador" : "Esse link não tem o código do produto da Shopee"); return; }
+    const b = e.target.closest("button"); b.disabled = true; b.textContent = "Puxando…";
+    try {
+      const d = await api("produto", { url: u });
+      if (d.nome && !it.nome) it.nome = limparNome(d.nome);
+      if (d.preco) it.precoNovo = d.preco; if (d.precoAntigo) it.precoAntigo = d.precoAntigo; if (d.imagem) it.imagem = d.imagem;
+      it.urlFinal = u; Object.assign(it, extrasDe(d)); if (d.diag) it.diag = d.diag; else delete it.diag;
+      if (!semAfiliado(it) || !d.linkAfiliado) { /* mantém o seu link de afiliado */ } else { it.linkOriginal = it.link; it.link = d.linkAfiliado; }
+      if (!it.categoria || it.categoria === "outros") it.categoria = adivinharCategoria(it.nome);
+      renderFila(); salvarFila(true); $("#folhaEst").close(); abrirItemFila(it);
+      toast(it.imagem && it.precoNovo ? "Pronto: foto, nome e preço puxados" : "Puxei o que a Shopee mandou: complete o que faltar");
+    } catch (err) { toast("Não consegui ler esse link: tente de novo ou complete à mão"); }
+    finally { b.disabled = false; b.textContent = "Puxar foto, nome e preço"; }
+  });
   function mostrarFalta(destacar) {
     const it = ppAtual; if (!it) return;
     const falta = [!it.imagem && "a foto", !it.nome && "o nome", !it.precoNovo && "o preço"].filter(Boolean);
     const loja = NOME_LOJA[it.loja] || "A loja";
     aviso($("#ppFalta"), falta.length ? `${loja} não mandou ${falta.join(", ").replace(/, ([^,]*)$/, " e $1")}. Complete aqui:${!it.imagem ? " toque em “Escolher foto” (salve a imagem do produto na galeria antes)." : ""}${!it.precoNovo ? " Digite o preço novo." : ""}${it.diag ? ` (Motivo: ${it.diag}.)` : ""}` : "");
+    $("#ppLongo").hidden = !(falta.length && it.loja === "shopee" && !idsShopeeLink(it.urlFinal || it.link));
     $("#ppFotoBtn").classList.toggle("pedir", !it.imagem && !!destacar);
     $("#ppNovo").classList.toggle("pedir", !it.precoNovo && !!destacar);
     $("#ppNome").classList.toggle("pedir", !it.nome && !!destacar);

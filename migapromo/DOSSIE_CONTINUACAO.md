@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=463` → próxima `?v=464`
-- `app/sw.js`: `VERSAO = "miga-promo-v466"` → próxima `v467`
-- Comando usado: `sed -i 's/?v=463/?v=464/g' app/index.html app/sw.js && sed -i 's/miga-promo-v466/miga-promo-v467/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=464` → próxima `?v=465`
+- `app/sw.js`: `VERSAO = "miga-promo-v467"` → próxima `v468`
+- Comando usado: `sed -i 's/?v=464/?v=465/g' app/index.html app/sw.js && sed -i 's/miga-promo-v467/miga-promo-v468/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -210,3 +210,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Carrossel com foto: (1) fundo "cor da foto" agora estica a beirada da própria foto em cada lado (`estenderBordas`, com blur 14px) em vez de uma cor média — some a emenda de cor. (2) As barrinhas mexem o TEXTO, não a foto: `tela.tp = {x (-1..1, ±320px), y (0..1, até 1000px, limitado para caber), s (0,6..1,4)}`; a foto continua no arrastar + "Tamanho da foto".
 - Carrossel com foto: cor da letra muda **ponto a ponto** onde o texto passa (máscara de luz do fundo: `(0,62 - luz)/0,12`; camada escura #1d1d1f/rosa com `destination-out`, camada clara branco/amarelo com `destination-in`). O botão amarelo não muda.
 - Carrossel com foto: a cor da letra agora muda **por palavra inteira** (a pedido): cada palavra mede a luz atrás dela (`escuroEm`); se 40% ou mais estiver em parte escura → branco/amarelo, senão preto/rosa. Substituiu a máscara ponto a ponto.
+- Shopee link curto (s.shopee.com.br) sem dados ("não achei o código do produto no link": a Shopee não deixa o servidor seguir o link curto): botão `#ppLongo` "Puxar pelo link comprido" no produto (aparece quando falta foto/nome/preço e não há código no link). Folha com Abrir → copiar endereço comprido → colar; chama `api("produto")` com o link comprido, preenche nome/preço/foto/extras e mantém o link de afiliado curto. `idsShopeeLink` reconhece -i.loja.item, /product/, /opaanlp/, shopid/itemid.
