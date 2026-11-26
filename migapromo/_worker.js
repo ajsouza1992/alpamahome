@@ -307,9 +307,11 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
       else if (r.status === 404) dados.statusML = "sumiu";
       if (r.status === 200) { dados.nome = dados.nome || limparTitulo(r.dados.title); dados.imagem = dados.imagem || mlHttps(((r.dados.pictures || [])[0] || {}).secure_url || r.dados.thumbnail); Object.assign(dados, extrasML(r.dados)); }
       Object.assign(dados, await notaML(idItem, token));
-    } else if (idProduto) {
+    }
+    // link com o produto (/p/MLB...) e o anúncio (wid/item_id): se o anúncio não deu foto e preço, completa pelo catálogo
+    if (idProduto && !(idUP && !idItem) && !(dados.preco && dados.imagem)) {
       const r = await getML(`/products/${idProduto}`, token);
-      dados.linkML = `https://www.mercadolivre.com.br/p/${idProduto}`;
+      if (!dados.linkML) dados.linkML = `https://www.mercadolivre.com.br/p/${idProduto}`;
       const b = r.dados || {};
       let preco = (b.buy_box_winner || {}).price, antigo = (b.buy_box_winner || {}).original_price;
       if (!preco) {
@@ -317,7 +319,7 @@ async function completarPelaApiML(dados, env, urlPedida = "") {
         const x = ((it.dados && it.dados.results) || [])[0];
         if (x) { preco = x.price; antigo = x.original_price; }
       }
-      if (preco) { dados.preco = preco; dados.precoAntigo = antigo && antigo > preco ? antigo : null; dados.fontePreco = "catálogo " + idProduto; }
+      if (preco && !dados.preco) { dados.preco = preco; dados.precoAntigo = antigo && antigo > preco ? antigo : null; dados.fontePreco = "catálogo " + idProduto; }
       if (r.status === 404) dados.statusML = "sumiu"; else if (r.status === 200) dados.statusML = preco ? "active" : (b.status === "inactive" ? "closed" : "paused");
       if (!dados.nome && b.name) dados.nome = b.name;
       if (!dados.descricao) { const sd = (b.short_description && b.short_description.content) || ""; const mf = (b.main_features || []).map((f) => f.text).filter(Boolean).join("\n"); if (sd || mf) dados.descricao = limparDescricao(sd || mf); }

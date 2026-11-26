@@ -78,7 +78,13 @@ function seguirML(link) {
 }
 /** Abre a página do produto do ML pelo Google e lê nome, foto e preço */
 function paginaML(link) {
-  var r = UrlFetchApp.fetch(link.split('#')[0], { followRedirects: true, muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36', 'Accept-Language': 'pt-BR,pt;q=0.9' } });
+  var atual = link.split('#')[0], r = null;
+  for (var pulo = 0; pulo < 6; pulo++) { // segue os redirecionamentos à mão para ver para onde o ML manda
+    r = UrlFetchApp.fetch(atual, { followRedirects: false, muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36', 'Accept-Language': 'pt-BR,pt;q=0.9' } });
+    var h = r.getHeaders(), destino = h.Location || h.location; if (!destino) break;
+    console.log('ML ' + r.getResponseCode() + ' -> ' + String(destino).slice(0, 120));
+    atual = destino.indexOf('http') === 0 ? destino : 'https://www.mercadolivre.com.br' + destino;
+  }
   var html = r.getContentText(), meta = function (p) { var m = html.match(new RegExp('<meta[^>]+(?:property|name|itemprop)=["\']' + p + '["\'][^>]*content=["\']([^"\']+)', 'i')) || html.match(new RegExp('<meta[^>]+content=["\']([^"\']+)["\'][^>]*(?:property|name|itemprop)=["\']' + p + '["\']', 'i')); return m ? m[1] : ''; };
   var num = function (t) { var v = parseFloat(String(t || '').replace(/[^\d.,]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')); return isFinite(v) && v > 0 ? v : null; };
   var preco = num(meta('price')) || num((html.match(/"price"\s*:\s*([\d.]+)/) || [])[1]);

@@ -219,3 +219,5 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - PC: conteúdo passava da tela (o `zoom` 1.1/1.2 de telas grandes multiplicava largura e margem). Regras no fim do style.css dividem max-width/margin-left pelo zoom. SW: navegação e .js/.css com `cache: "no-cache"` (o PC ficava preso numa versão velha com "Arquivos").
 - `_headers`: `/app/` também com `Cache-Control: no-cache` (o PC continuava com a versão antiga).
 - **Cota do Firestore estourou** (429 RESOURCE_EXHAUSTED, grátis = 50 mil leituras/dia): o robô lia a lista + o site inteiros (~850 docs) a cada 30 min (~41 mil/dia). Agora `rodar` a cada 2 h (porRodada 200). A cota zera à meia-noite do Pacífico (~5h de Brasília).
+- ML: link com /p/MLB… e wid=MLB… ia só pelo anúncio (idItem) e não tentava o catálogo; agora, se o anúncio não der foto e preço, completa pelo catálogo (/products). Robô `paginaML` registra para onde o ML redireciona (deu 302 no teste: o ML também barra o Google na página).
+- PC com "Arquivos" e tela velha: suspeita de **migapromo.com (sem www) apontando para outro projeto/implantação** no Cloudflare; o celular e o robô usam www.migapromo.com.
