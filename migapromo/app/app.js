@@ -400,7 +400,8 @@
       vitrineGravarPacotes: async (pacotes) => { ls.gravar("miga_vitrine_pacotes", JSON.stringify(pacotes)); },
       acessosListar: async (desde) => ls.lerJson("miga_acessos", []).filter((e) => e.em >= desde).sort((a, b) => b.em - a.em),
       vitrineLerConfig: async () => ls.lerJson("miga_vitrine_cfg", {}),
-      vitrineGravarConfig: async (c) => { ls.gravar("miga_vitrine_cfg", JSON.stringify(c)); }
+      vitrineGravarConfig: async (c) => { ls.gravar("miga_vitrine_cfg", JSON.stringify(c)); },
+      pendenteShopee: async () => {}, listaLerItem: async () => null
     };
   })();
 
@@ -465,7 +466,10 @@
         for (let i = pacotes.length; i < antes; i++) { try { await fs.deleteDoc(fs.doc(db, "vitrine", "miga", "pacotes", "p" + i)); } catch (e) { /* segue */ } }
         await fs.setDoc(fs.doc(db, "vitrine", "miga"), { pacotes: pacotes.length, pacotesEm: Date.now() }, { merge: true });
       },
-      vitrineGravarConfig: (c) => fs.setDoc(fs.doc(db, "vitrine", "miga"), { ...c, atualizadoEm: Date.now() }, { merge: true })
+      vitrineGravarConfig: (c) => fs.setDoc(fs.doc(db, "vitrine", "miga"), { ...c, atualizadoEm: Date.now() }, { merge: true }),
+      // Shopee que não deixou ler o link curto: o robô (Google Apps Script) puxa os dados em alguns minutos
+      pendenteShopee: (id, link) => fs.setDoc(fs.doc(db, "espacos", "miga", "robo", "pendentes"), { itens: { [id]: link }, em: Date.now() }, { merge: true }),
+      listaLerItem: async (id) => { const d = await fs.getDoc(fs.doc(colLista(), id)); return d.exists() ? d.data() : null; }
     };
   }
   let dados = ligarPacotes(local);
@@ -2661,6 +2665,10 @@
       if (e.codigo === "senha") { bloquear("Entre de novo com a sua conta Google."); return null; }
       toast("Não consegui ler o produto: toque nele e complete à mão");
     }
+    if (item.loja === "shopee" && (!item.imagem || !item.precoNovo) && !idsShopeeLink(item.urlFinal || item.link) && dados.pendenteShopee) {
+      item.pendenteRobo = Date.now(); dados.pendenteShopee(item.id, item.link).catch(() => {});
+      toast("A Shopee não deixou ler agora: o robô puxa a foto, o nome e o preço em alguns minutos");
+    }
     item.categoria = catNova === "auto" ? adivinharCategoria(item.nome) : catNova;
     if (naLista === "lote" && adicionarTexto.cat) item.categoria = adicionarTexto.cat;
     item.catV2 = true;
@@ -3526,7 +3534,7 @@
       const d = await api("produto", { url: u });
       if (d.nome && !it.nome) it.nome = limparNome(d.nome);
       if (d.preco) it.precoNovo = d.preco; if (d.precoAntigo) it.precoAntigo = d.precoAntigo; if (d.imagem) it.imagem = d.imagem;
-      it.urlFinal = u; Object.assign(it, extrasDe(d)); if (d.diag) it.diag = d.diag; else delete it.diag;
+      it.urlFinal = u; Object.assign(it, extrasDe(d)); if (d.diag) it.diag = d.diag; else delete it.diag; delete it.pendenteRobo;
       if (!semAfiliado(it) || !d.linkAfiliado) { /* mantém o seu link de afiliado */ } else { it.linkOriginal = it.link; it.link = d.linkAfiliado; }
       if (!it.categoria || it.categoria === "outros") it.categoria = adivinharCategoria(it.nome);
       renderFila(); salvarFila(true); $("#folhaEst").close(); abrirItemFila(it);
@@ -3534,8 +3542,13 @@
     } catch (err) { toast("Não consegui ler esse link: tente de novo ou complete à mão"); }
     finally { b.disabled = false; b.textContent = "Puxar foto, nome e preço"; }
   });
+  async function puxarDoRobo(it) {
+    if (!it || !it.pendenteRobo || !dados.listaLerItem || it._lendoRobo) return; it._lendoRobo = true;
+    try { const r = await dados.listaLerItem(it.id); if (r && (r.imagem || r.precoNovo) && !r.pendenteRobo) { ["nome", "precoNovo", "precoAntigo", "imagem", "urlFinal", "categoria"].forEach((k) => { if (r[k] && !it[k]) it[k] = r[k]; }); if (r.precoNovo) it.precoNovo = r.precoNovo; Object.assign(it, extrasDe(r)); delete it.pendenteRobo; delete it.diag; renderFila(); if (ppAtual === it) abrirItemFila(it); toast("O robô já puxou a foto, o nome e o preço"); } }
+    catch (e) { /* segue */ } finally { delete it._lendoRobo; }
+  }
   function mostrarFalta(destacar) {
-    const it = ppAtual; if (!it) return;
+    const it = ppAtual; if (!it) return; if (it.pendenteRobo) puxarDoRobo(it);
     const falta = [!it.imagem && "a foto", !it.nome && "o nome", !it.precoNovo && "o preço"].filter(Boolean);
     const loja = NOME_LOJA[it.loja] || "A loja";
     aviso($("#ppFalta"), falta.length ? `${loja} não mandou ${falta.join(", ").replace(/, ([^,]*)$/, " e $1")}. Complete aqui:${!it.imagem ? " toque em “Escolher foto” (salve a imagem do produto na galeria antes)." : ""}${!it.precoNovo ? " Digite o preço novo." : ""}${it.diag ? ` (Motivo: ${it.diag}.)` : ""}` : "");

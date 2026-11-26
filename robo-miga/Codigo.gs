@@ -7,6 +7,8 @@
  *  3. Tira do site os anúncios ENCERRADOS e esconde os PAUSADOS.
  *  4. Refaz os pacotes que o site lê (vitrine/miga/pacotes).
  *  5. Manda um e-mail quando algum preço BAIXA (para você postar na hora).
+ *  6. A cada 5 minutos: completa foto, nome e preço dos produtos da Shopee que o app não conseguiu ler
+ *     (link curto s.shopee.com.br que a Shopee não deixa o servidor do site abrir).
  *
  * Precisa (Projeto > Configurações > Propriedades do script):
  *  - ROBO_CHAVE: a mesma chave cadastrada no Cloudflare (Variáveis e segredos) com o nome ROBO_CHAVE.
@@ -15,7 +17,7 @@
  *  - QUEDA_MIN: queda mínima em % para avisar (padrão 10).
  *
  * Funções para rodar à mão (menu "Executar"):
- *  - instalar(): liga o robô (a cada 30 minutos).
+ *  - instalar(): liga o robô (a cada 30 minutos + a conferência rápida da Shopee a cada 5 minutos).
  *  - testar(): roda uma vez agora e mostra o resumo no registro.
  *  - desinstalar(): desliga o robô.
  */
@@ -36,14 +38,79 @@ var ML_FORA = ['closed', 'inactive'], ML_PAUSADO = ['paused', 'under_review', 's
 function instalar() {
   desinstalar();
   ScriptApp.newTrigger('rodar').timeBased().everyMinutes(30).create();
-  Logger.log('Robô ligado: roda a cada 30 minutos. Rodando a primeira vez agora...');
+  ScriptApp.newTrigger('completarShopee').timeBased().everyMinutes(5).create();
+  Logger.log('Robô ligado: roda a cada 30 minutos (e a Shopee pendente a cada 5). Rodando a primeira vez agora...');
   rodar();
 }
 function desinstalar() {
-  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'rodar') ScriptApp.deleteTrigger(t); });
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (['rodar', 'completarShopee'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t); });
   Logger.log('Robô desligado.');
 }
 function testar() { var r = rodar(); Logger.log(JSON.stringify(r, null, 2)); }
+
+/* ===================== Shopee pendente (a cada 5 minutos) ===================== */
+/** O app marca em espacos/miga/robo/pendentes os produtos da Shopee que não conseguiu ler.
+ *  Daqui (servidores do Google) o link curto abre: achamos o código do produto e pedimos os dados ao site. */
+function completarShopee() {
+  var pend = fsGet('espacos/miga/robo/pendentes'); // 1 leitura só, mesmo sem nada pendente
+  var itens = (pend && pend.itens) || {}, ids = Object.keys(itens);
+  if (!ids.length) return { pendentes: 0 };
+  var chave = prop('ROBO_CHAVE'); if (!chave) throw new Error('Falta a ROBO_CHAVE nas Propriedades do script.');
+  var res = { pendentes: ids.length, completos: 0, falhas: 0 };
+  ids.slice(0, 15).forEach(function (id) {
+    var link = itens[id], feito = false;
+    try {
+      var cod = codigoShopee(link);
+      if (cod) {
+        var r = UrlFetchApp.fetch(CFG.site + '/api/produto', pedidoApi('produto', { url: 'https://shopee.com.br/product/' + cod.loja + '/' + cod.item }, chave));
+        var d = r.getResponseCode() === 200 ? JSON.parse(r.getContentText()) : null;
+        if (d && (d.imagem || d.preco)) {
+          var it = fsGet('espacos/miga/lista/' + id);
+          if (it) {
+            var m = { pendenteRobo: null, diag: null, urlFinal: 'https://shopee.com.br/product/' + cod.loja + '/' + cod.item };
+            if (d.nome && !it.nome) m.nome = d.nome;
+            if (d.preco) m.precoNovo = d.preco;
+            if (d.precoAntigo && d.precoAntigo > d.preco) m.precoAntigo = d.precoAntigo;
+            if (d.imagem && !it.imagem) m.imagem = d.imagem;
+            ['nota', 'vendidos', 'lojaOficial', 'comissao', 'comissaoValor'].forEach(function (k) { if (d[k] != null && d[k] !== false && d[k] !== '') m[k] = d[k]; });
+            if (!it.textoEditado) m.texto = '';
+            fsPatch('espacos/miga/lista/' + id, m);
+          }
+          feito = true; res.completos++;
+        }
+      }
+    } catch (e) { console.log('Shopee ' + id + ': ' + e.message); }
+    var tentativas = ((pend.tentativas || {})[id] || 0) + 1;
+    if (feito || tentativas >= 6) tirarPendente(id); // depois de 6 tentativas (30 min) desiste: complete pelo app
+    else { res.falhas++; fsReq('patch', 'espacos/miga/robo/pendentes?updateMask.fieldPaths=' + encodeURIComponent('tentativas.`' + id + '`'), { fields: { tentativas: { mapValue: { fields: (function () { var f = {}; f[id] = { integerValue: String(tentativas) }; return f; })() } } } }); }
+  });
+  console.log('Shopee pendente: ' + JSON.stringify(res));
+  return res;
+}
+function tirarPendente(id) {
+  var mask = ['itens.`' + id + '`', 'tentativas.`' + id + '`'].map(function (k) { return 'updateMask.fieldPaths=' + encodeURIComponent(k); }).join('&');
+  fsReq('patch', 'espacos/miga/robo/pendentes?' + mask, { fields: {} }); // campo no "mask" e sem valor = apaga
+}
+/** Segue o link curto da Shopee e devolve { loja, item } */
+function codigoShopee(link) {
+  var atual = link;
+  for (var pulo = 0; pulo < 8; pulo++) {
+    var achou = idsShopee(atual); if (achou) return achou;
+    var r = UrlFetchApp.fetch(atual, { followRedirects: false, muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36', 'Accept-Language': 'pt-BR,pt;q=0.9' } });
+    var h = r.getHeaders(), destino = h.Location || h.location;
+    if (destino) { atual = destino.indexOf('http') === 0 ? destino : 'https://shopee.com.br' + destino; continue; }
+    var html = r.getContentText().slice(0, 400000);
+    return idsShopee(html);
+  }
+  return idsShopee(atual);
+}
+function idsShopee(t) {
+  t = String(t || ''); for (var i = 0; i < 3; i++) { try { var d = decodeURIComponent(t); if (d === t) break; t = d; } catch (e) { break; } }
+  var m = t.match(/-i\.(\d{3,})\.(\d{3,})/) || t.match(/\/(?:product|opaanlp)\/(\d{3,})\/(\d{3,})/) || t.match(/shopid=(\d{3,})[^\d]+itemid=(\d{3,})/i);
+  if (m) return { loja: m[1], item: m[2] };
+  var m2 = t.match(/itemid=(\d{3,})[^\d]+shopid=(\d{3,})/i) || t.match(/"itemid"\s*:\s*(\d{3,})[^}]{0,200}?"shopid"\s*:\s*(\d{3,})/i);
+  return m2 ? { loja: m2[2], item: m2[1] } : null;
+}
 
 /* ===================== Rodada ===================== */
 function rodar() {

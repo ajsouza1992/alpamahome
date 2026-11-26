@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=464` → próxima `?v=465`
-- `app/sw.js`: `VERSAO = "miga-promo-v467"` → próxima `v468`
-- Comando usado: `sed -i 's/?v=464/?v=465/g' app/index.html app/sw.js && sed -i 's/miga-promo-v467/miga-promo-v468/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=465` → próxima `?v=466`
+- `app/sw.js`: `VERSAO = "miga-promo-v468"` → próxima `v469`
+- Comando usado: `sed -i 's/?v=465/?v=466/g' app/index.html app/sw.js && sed -i 's/miga-promo-v468/miga-promo-v469/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -211,3 +211,4 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Carrossel com foto: cor da letra muda **ponto a ponto** onde o texto passa (máscara de luz do fundo: `(0,62 - luz)/0,12`; camada escura #1d1d1f/rosa com `destination-out`, camada clara branco/amarelo com `destination-in`). O botão amarelo não muda.
 - Carrossel com foto: a cor da letra agora muda **por palavra inteira** (a pedido): cada palavra mede a luz atrás dela (`escuroEm`); se 40% ou mais estiver em parte escura → branco/amarelo, senão preto/rosa. Substituiu a máscara ponto a ponto.
 - Shopee link curto (s.shopee.com.br) sem dados ("não achei o código do produto no link": a Shopee não deixa o servidor seguir o link curto): botão `#ppLongo` "Puxar pelo link comprido" no produto (aparece quando falta foto/nome/preço e não há código no link). Folha com Abrir → copiar endereço comprido → colar; chama `api("produto")` com o link comprido, preenche nome/preço/foto/extras e mantém o link de afiliado curto. `idsShopeeLink` reconhece -i.loja.item, /product/, /opaanlp/, shopid/itemid.
+- **Shopee automático pelo robô:** ao adicionar um produto Shopee sem foto/preço e sem código no link, o app grava `espacos/miga/robo/pendentes {itens:{id:link}}` (`dados.pendenteShopee`) e marca `item.pendenteRobo`. O robô (`completarShopee`, gatilho a cada 5 min, 1 leitura por rodada) segue o link curto pelos servidores do Google (UrlFetchApp sem seguir redirecionamento), acha loja/item, chama `/api/produto` com `shopee.com.br/product/L/I` e faz patch no item da lista (nome, preço, foto, extras, `pendenteRobo:null`). Desiste depois de 6 tentativas. Ao abrir o produto, o app relê o item da nuvem (`listaLerItem` → `puxarDoRobo`). Precisa rodar `instalar()` de novo no Apps Script para criar o gatilho de 5 min.
