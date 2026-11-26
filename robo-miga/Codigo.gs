@@ -48,6 +48,22 @@ function desinstalar() {
 }
 function testar() { var r = rodar(); Logger.log(JSON.stringify(r, null, 2)); }
 
+/* ===================== App da Web: o site pergunta aqui qual é o produto do link curto da Shopee ===================== */
+/** Publique em Implantar > Nova implantação > App da Web (Executar como: Eu; Quem pode acessar: Qualquer pessoa).
+ *  Só responde a links curtos da Shopee e com a ROBO_CHAVE certa. */
+function doGet(e) {
+  var p = (e && e.parameter) || {}, link = String(p.link || ''), out;
+  if (!prop('ROBO_CHAVE') || p.chave !== prop('ROBO_CHAVE')) out = { erro: 'chave' };
+  else if (!/^https:\/\/(s\.shopee\.com\.br|shope\.ee|shp\.ee)\//i.test(link)) out = { erro: 'link não aceito' };
+  else { try { out = codigoShopee(link) || { erro: 'não achei o produto' }; } catch (err) { out = { erro: err.message }; } }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+}
+/** Rode à mão para ver se o Google consegue abrir o link curto da Shopee */
+function testarShopee() {
+  var link = 'https://s.shopee.com.br/80EWkd17Pz';
+  Logger.log('Resultado: ' + JSON.stringify(codigoShopee(link)));
+}
+
 /* ===================== Shopee pendente (a cada 5 minutos) ===================== */
 /** O app marca em espacos/miga/robo/pendentes os produtos da Shopee que não conseguiu ler.
  *  Daqui (servidores do Google) o link curto abre: achamos o código do produto e pedimos os dados ao site. */
@@ -97,7 +113,7 @@ function codigoShopee(link) {
   for (var pulo = 0; pulo < 8; pulo++) {
     var achou = idsShopee(atual); if (achou) return achou;
     var r = UrlFetchApp.fetch(atual, { followRedirects: false, muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36', 'Accept-Language': 'pt-BR,pt;q=0.9' } });
-    var h = r.getHeaders(), destino = h.Location || h.location;
+    var h = r.getHeaders(), destino = h.Location || h.location; console.log('Shopee ' + r.getResponseCode() + ' ' + atual.slice(0, 90) + (destino ? ' -> ' + String(destino).slice(0, 90) : ''));
     if (destino) { atual = destino.indexOf('http') === 0 ? destino : 'https://shopee.com.br' + destino; continue; }
     var html = r.getContentText().slice(0, 400000);
     return idsShopee(html);

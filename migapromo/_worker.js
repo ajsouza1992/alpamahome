@@ -202,6 +202,16 @@ async function cadeiaShopee(url) {
   }
   return lista;
 }
+/** A Shopee bloqueia o servidor do site: o robô (Google Apps Script, publicado como App da Web) abre o link curto pelo Google.
+ *  Precisa no Cloudflare: ROBO_URL (endereço do App da Web, termina em /exec) e ROBO_CHAVE (a mesma do robô). */
+async function idsPeloRobo(link, env) {
+  if (!env.ROBO_URL || !env.ROBO_CHAVE || !/^https:\/\/(?:s\.shopee\.com\.br|shope\.ee|shp\.ee)\//i.test(link)) return null;
+  try {
+    const r = await fetch(env.ROBO_URL + "?link=" + encodeURIComponent(link) + "&chave=" + encodeURIComponent(env.ROBO_CHAVE), { redirect: "follow" });
+    const d = await r.json().catch(() => null);
+    return d && d.loja && d.item ? { loja: String(d.loja), item: String(d.item) } : null;
+  } catch (e) { return null; }
+}
 /** Chamada assinada à API de Afiliados da Shopee (GraphQL) */
 async function shopeeGQL(query, env) {
   const corpo = JSON.stringify({ query });
@@ -232,7 +242,7 @@ async function completarPelaApiShopee(dados, env, html, urlColado) {
   if (dados.loja !== "shopee") return dados;
   if (!(env.SHOPEE_APP_ID && env.SHOPEE_SECRET)) { dados.diag = "chaves da Shopee não cadastradas no Cloudflare"; return dados; }
   let ids = idsShopee(dados.urlFinal) || idsShopee(urlColado) || idsShopee(html);
-  if (!ids && urlColado) { const cad = await cadeiaShopee(urlColado); ids = idsShopee(cad.join(" ")); if (!ids) dados.diag = "não achei o código do produto no link (" + cad.filter((u) => /^https?:/.test(u)).map((u) => { try { const x = new URL(u); return x.hostname + x.pathname.slice(0, 30); } catch (e) { return ""; } }).join(" → ") + ")"; }
+  if (!ids && urlColado) { const cad = await cadeiaShopee(urlColado); ids = idsShopee(cad.join(" ")) || await idsPeloRobo(urlColado, env); if (!ids) dados.diag = "não achei o código do produto no link (" + cad.filter((u) => /^https?:/.test(u)).map((u) => { try { const x = new URL(u); return x.hostname + x.pathname.slice(0, 30); } catch (e) { return ""; } }).join(" → ") + ")"; }
   try { const l = await linkAfiliadoShopee(ids ? `https://shopee.com.br/product/${ids.loja}/${ids.item}` : (dados.urlFinal || urlColado || ""), env); if (l) dados.linkAfiliado = l; } catch (e) { dados.diag = (dados.diag ? dados.diag + "; " : "") + "link de afiliado: " + e.message; }
   if (!ids) return dados;
   try {
