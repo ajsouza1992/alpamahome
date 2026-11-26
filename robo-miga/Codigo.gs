@@ -309,6 +309,7 @@ function refazerPacotes() {
   pacotes.forEach(function (pc, n) { fsSet('vitrine/miga/pacotes/p' + n, { itens: JSON.stringify(pc), n: pc.length, em: Date.now() }); });
   for (var m = pacotes.length; m < antes; m++) fsDelete('vitrine/miga/pacotes/p' + m);
   fsPatch('vitrine/miga', { pacotes: pacotes.length, pacotesEm: Date.now() });
+  try { var chave = prop('ROBO_CHAVE'); if (chave) UrlFetchApp.fetch(CFG.site + '/api/vitrine', pedidoApi('vitrine', {}, chave)); } catch (e) { /* o site renova sozinho em 5 min */ }
 }
 
 /* ===================== E-mail de preço que baixou ===================== */

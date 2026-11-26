@@ -640,6 +640,46 @@ async function apagarCache(tipo, valor) {
   if (temCache()) await caches.default.delete(chaveCache(tipo, valor));
 }
 
+/* ======================= Produtos do site com cópia no Cloudflare =======================
+   O site lia o Firestore a cada visita: se a cota grátis acabava, ficava vazio. Agora lê daqui:
+   uma cópia nova a cada 5 minutos e uma reserva de 7 dias para quando o Firestore falhar. */
+const PROJETO_FB = "miga-promo-d4f51";
+function valorFS(v) {
+  if (!v) return null;
+  if ("stringValue" in v) return v.stringValue; if ("integerValue" in v) return Number(v.integerValue); if ("doubleValue" in v) return v.doubleValue;
+  if ("booleanValue" in v) return v.booleanValue; if ("nullValue" in v) return null; if ("timestampValue" in v) return Date.parse(v.timestampValue);
+  if ("mapValue" in v) return camposFS(v.mapValue.fields); if ("arrayValue" in v) return (v.arrayValue.values || []).map(valorFS);
+  return null;
+}
+const camposFS = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, valorFS(v)]));
+async function chaveFirebase(request, env) {
+  try { const t = await (await env.ASSETS.fetch(new Request(new URL("/app/firebase-config.js", request.url)))).text(); return (t.match(/apiKey["']?\s*:\s*["']([^"']+)/) || [])[1] || ""; } catch (e) { return ""; }
+}
+async function lerVitrineFS(request, env) {
+  const k = await chaveFirebase(request, env), q = k ? "?key=" + encodeURIComponent(k) : "";
+  const base = `https://firestore.googleapis.com/v1/projects/${PROJETO_FB}/databases/(default)/documents/vitrine/miga`;
+  const r = await fetch(base + q); if (!r.ok) throw new Error("Firestore " + r.status);
+  const cfg = camposFS((await r.json()).fields), n = Number(cfg.pacotes || 0);
+  if (!n) throw new Error("sem pacotes");
+  const docs = await Promise.all(Array.from({ length: n }, (_, i) => fetch(`${base}/pacotes/p${i}${q}`).then((x) => (x.ok ? x.json() : null))));
+  if (!docs.every(Boolean)) throw new Error("pacote faltando");
+  return { cfg, produtos: docs.flatMap((d) => JSON.parse(camposFS(d.fields).itens || "[]")), em: Date.now() };
+}
+async function rotaVitrine(request, env) {
+  const renovar = request.method === "POST";
+  if (renovar && !(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
+  if (!renovar) { const f = await lerCache("vitrine", "fresca"); if (f) return json(f); }
+  try {
+    const d = await lerVitrineFS(request, env);
+    await gravarCache("vitrine", "fresca", d, 300); await gravarCache("vitrine", "reserva", d, 7 * 86400);
+    return json(renovar ? { ok: true, n: d.produtos.length } : d);
+  } catch (e) {
+    const r = await lerCache("vitrine", "reserva");
+    if (r) { await gravarCache("vitrine", "fresca", r, 120); return json(renovar ? { ok: false, reserva: true, erro: e.message } : { ...r, reserva: true }); }
+    return json({ erro: e.message }, 503);
+  }
+}
+
 async function rotaProduto(request, env) {
   if (!(await senhaOk(request, env))) return json({ erro: "Código de acesso inválido.", codigo: "senha" }, 401);
   let b;
@@ -1067,6 +1107,7 @@ export default {
     try {
       if (lp && metodo === "GET") return await rotaLinkProduto(request, env, lp[1]);
       if (m && m[1] === "produto" && metodo === "POST") return await rotaProduto(request, env);
+      if (m && m[1] === "vitrine" && (metodo === "GET" || metodo === "POST")) return await rotaVitrine(request, env);
       if (m && m[1] === "gerar" && metodo === "POST") return await rotaGerar(request, env);
       if (m && m[1] === "imagem" && metodo === "GET") return await rotaImagem(request);
       if (m && m[1] === "status" && metodo === "GET") return rotaStatus(request, env);

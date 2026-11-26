@@ -3192,7 +3192,7 @@
     const leve = (p) => { const x = { ...p }; if (String(x.imagem || "").startsWith("data:") && x.imagem.length > 60000) x.imagem = ""; delete x.atualizadoEm; return x; };
     const l = [...vitrineMap.values()].map(leve), pacotes = [];
     for (let i = 0; i < l.length; i += 150) pacotes.push(l.slice(i, i + 150));
-    try { await dados.vitrineGravarPacotes(pacotes); vitrineCfg = { ...vitrineCfg, pacotes: pacotes.length, pacotesEm: Date.now() }; } catch (e) { console.warn("pacotes", e); }
+    try { await dados.vitrineGravarPacotes(pacotes); vitrineCfg = { ...vitrineCfg, pacotes: pacotes.length, pacotesEm: Date.now() }; if (conta && conta.fb) api("vitrine", {}).catch(() => {}); /* o site lê a cópia do Cloudflare: renova na hora */ } catch (e) { console.warn("pacotes", e); }
   }
   /** Preços sempre em dia, sozinho: ao abrir o app (e a cada 30 minutos com ele aberto) confere na loja o preço
       de TODOS os produtos da Minha lista e do Site que não foram conferidos nas últimas 3 horas. Em segundo plano, 3 de cada vez. */

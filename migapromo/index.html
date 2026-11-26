@@ -309,6 +309,8 @@
         try { const pk = JSON.parse(localStorage.getItem("miga_vitrine_pacotes") || "null"); produtos = pk ? pk.flat() : Object.values(JSON.parse(localStorage.getItem("miga_vitrine") || "{}")); cfg = JSON.parse(localStorage.getItem("miga_vitrine_cfg") || "{}"); } catch (e) { produtos = []; }
         return;
       }
+      // 1º: a cópia do Cloudflare (rápida e funciona mesmo se a cota do Firestore acabar)
+      try { const r = await fetch("/api/vitrine"); if (r.ok) { const d = await r.json(); if (d && Array.isArray(d.produtos) && d.produtos.length) { cfg = d.cfg || {}; produtos = d.produtos; return; } } } catch (e) { /* segue direto no Firestore */ }
       const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(fb.projectId)}/databases/(default)/documents/vitrine/miga`, chave = fb.apiKey ? `key=${encodeURIComponent(fb.apiKey)}` : "";
       // Pacotes: lê 1 documento com a configuração e poucos documentos grandes com todos os produtos
       try { const r = await fetch(`${base}?${chave}`); if (r.ok) cfg = campos((await r.json()).fields); } catch (e) { cfg = {}; }
