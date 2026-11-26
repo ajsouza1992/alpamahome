@@ -55,6 +55,7 @@ function doGet(e) {
   var p = (e && e.parameter) || {}, link = String(p.link || ''), out;
   if (!prop('ROBO_CHAVE') || p.chave !== prop('ROBO_CHAVE')) out = { erro: 'chave' };
   else if (ehLinkCurtoML(link)) { try { out = seguirML(link); } catch (err) { out = { erro: err.message }; } }
+  else if (/^https:\/\/(www\.|produto\.|articulo\.)?mercadoli(vre|bre)\.com(\.br)?\//i.test(link)) { try { out = paginaML(link); } catch (err) { out = { erro: err.message }; } }
   else if (!/^https:\/\/(s\.shopee\.com\.br|shope\.ee|shp\.ee)\//i.test(link)) out = { erro: 'link não aceito' };
   else { try { out = codigoShopee(link) || { erro: 'não achei o produto' }; } catch (err) { out = { erro: err.message }; } }
   return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
@@ -74,6 +75,21 @@ function seguirML(link) {
     break;
   }
   return { cadeia: cadeia, pista: pista };
+}
+/** Abre a página do produto do ML pelo Google e lê nome, foto e preço */
+function paginaML(link) {
+  var r = UrlFetchApp.fetch(link.split('#')[0], { followRedirects: true, muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36', 'Accept-Language': 'pt-BR,pt;q=0.9' } });
+  var html = r.getContentText(), meta = function (p) { var m = html.match(new RegExp('<meta[^>]+(?:property|name|itemprop)=["\']' + p + '["\'][^>]*content=["\']([^"\']+)', 'i')) || html.match(new RegExp('<meta[^>]+content=["\']([^"\']+)["\'][^>]*(?:property|name|itemprop)=["\']' + p + '["\']', 'i')); return m ? m[1] : ''; };
+  var num = function (t) { var v = parseFloat(String(t || '').replace(/[^\d.,]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')); return isFinite(v) && v > 0 ? v : null; };
+  var preco = num(meta('price')) || num((html.match(/"price"\s*:\s*([\d.]+)/) || [])[1]);
+  var antigo = num((html.match(/"original_price"\s*:\s*([\d.]+)/) || [])[1]) || num((html.match(/andes-money-amount--previous[^>]*aria-label="[^"]*?([\d.]+(?:,\d{2})?)\s*reais/i) || [])[1]);
+  var nome = meta('og:title').replace(/\s*\|\s*Mercado Livre.*$/i, '');
+  console.log('ML página ' + r.getResponseCode() + ' nome=' + !!nome + ' preco=' + preco);
+  return { nome: nome, imagem: meta('og:image'), preco: preco, precoAntigo: antigo && preco && antigo > preco ? antigo : null, status: r.getResponseCode() };
+}
+/** Rode à mão para ver se o Google consegue abrir a página de um produto do Mercado Livre */
+function testarPaginaML() {
+  Logger.log('Resultado: ' + JSON.stringify(paginaML('https://www.mercadolivre.com.br/protetor-salva-porta-adesivo-comfort-door-de-70-cm-preto/p/MLB75875212?pdp_filters=item_id%3AMLB7277407626')));
 }
 /** Rode à mão para ver se o Google consegue abrir um link curto do Mercado Livre da sua lista */
 function testarML() {

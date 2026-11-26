@@ -3002,3 +3002,6 @@ html, body { overflow-x: clip; }
 .fi-principal svg { background: rgba(255,255,255,.22) !important; stroke: #fff !important; } /* ícone do Postar no padrão dos botões rosa (sem quadrado branco) */
 .ka2-sub { font-size: 13px; color: var(--preto, #1d1d1f); margin-top: 4px; }
 .pp-longo { display: block; width: 100%; min-height: 46px; margin: 8px 0 14px; font-size: 14.5px; }
+/* Computador com zoom (1.1 / 1.2): o tamanho e a margem do conteúdo também crescem com o zoom, então dividimos para caber na tela e ficar centralizado */
+@media (min-width: 1280px) { .conteudo { width: auto !important; max-width: min(1360px, calc((100vw - 240px - 48px) / 1.1)) !important; margin-left: calc((240px + max(0px, (100vw - 240px - 1360px * 1.1) / 2)) / 1.1) !important; } }
+@media (min-width: 1680px) { .conteudo { max-width: min(1360px, calc((100vw - 240px - 48px) / 1.2)) !important; margin-left: calc((240px + max(0px, (100vw - 240px - 1360px * 1.2) / 2)) / 1.2) !important; } }

@@ -4,9 +4,9 @@
  * para conviver com outros apps no mesmo domínio (ClockFit, Sort.IA...).
  * Estratégia "rede primeiro": pega a versão nova e, offline, usa a cópia.
  */
-const VERSAO = "miga-promo-v468";
+const VERSAO = "miga-promo-v469";
 const BASE = new URL("./", self.location).pathname; // ex.: "/miga/"
-const ARQUIVOS = ["./", "index.html", "style.css?v=465", "app.js?v=465", "firebase-config.js?v=465", "manifest.json", "favicon-redondo.png", "logo.png?v=465", "icone-192.png?v=465", "icone-512.png?v=465", "apple-touch-icon.png"];
+const ARQUIVOS = ["./", "index.html", "style.css?v=466", "app.js?v=466", "firebase-config.js?v=466", "manifest.json", "favicon-redondo.png", "logo.png?v=466", "icone-192.png?v=466", "icone-512.png?v=466", "apple-touch-icon.png"];
 
 self.addEventListener("install", (evento) => {
   evento.waitUntil(caches.open(VERSAO).then((cache) => cache.addAll(ARQUIVOS)).then(() => self.skipWaiting()));
@@ -25,7 +25,7 @@ self.addEventListener("fetch", (evento) => {
   if (evento.request.method !== "GET" || url.origin !== location.origin) return;
   if (!url.pathname.startsWith(BASE) || url.pathname.startsWith(BASE + "api/") || url.pathname.startsWith(BASE + "vitrine")) return; // o site público (vitrine) não passa pelo app
   evento.respondWith(
-    fetch(evento.request)
+    (evento.request.mode === "navigate" ? fetch(url.href, { cache: "no-cache", credentials: "same-origin" }) : /\.(js|css|html)$/.test(url.pathname) ? fetch(evento.request, { cache: "no-cache" }) : fetch(evento.request)) // sempre confere se há versão nova (o computador ficava com a antiga)
       .then((resposta) => {
         if (resposta.ok) {
           const copia = resposta.clone();

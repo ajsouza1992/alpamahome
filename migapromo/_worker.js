@@ -212,6 +212,11 @@ async function idsPeloRobo(link, env) {
     return d && d.loja && d.item ? { loja: String(d.loja), item: String(d.item) } : null;
   } catch (e) { return null; }
 }
+/** Mercado Livre: o robô abre a página do produto pelo Google e lê nome, foto e preço */
+async function paginaPeloRobo(link, env) {
+  if (!env.ROBO_URL || !env.ROBO_CHAVE || !/^https:\/\/(?:www\.|produto\.)?mercadolivre\.com\.br\//i.test(link)) return null;
+  try { const r = await fetch(env.ROBO_URL + "?link=" + encodeURIComponent(link) + "&chave=" + encodeURIComponent(env.ROBO_CHAVE), { redirect: "follow" }); const d = await r.json().catch(() => null); return d && !d.erro ? d : null; } catch (e) { return null; }
+}
 /** Mercado Livre: o robô segue o link curto (meli.la ou /sec/) pelo Google e devolve os endereços e o código MLB que achou */
 async function cadeiaPeloRobo(link, env) {
   if (!env.ROBO_URL || !env.ROBO_CHAVE || !/^https:\/\/(?:meli\.la\/|(?:www\.)?mercadolivre\.com(?:\.br)?\/sec\/)/i.test(link)) return "";
@@ -645,6 +650,11 @@ async function rotaProduto(request, env) {
     try { dados = await extrairProduto(url); }
     catch (e) { const lj = lojaDaUrl(url); if (lj !== "shopee" && lj !== "mercadolivre") throw e; dados = { loja: lj, urlFinal: url, pista: "" }; } // a loja às vezes bloqueia a página: a API resolve // a Shopee às vezes bloqueia a página: a API resolve
     if (dados.loja === "mercadolivre") dados = await completarPelaApiML(dados, env, url);
+    if (dados.loja === "mercadolivre" && !(dados.imagem && dados.preco)) { // a API e a página não deram: o robô abre a página pelo Google
+      const pg = await paginaPeloRobo(dados.linkML || url, env);
+      if (pg) { if (!dados.nome && pg.nome) dados.nome = limparTitulo(pg.nome); if (!dados.imagem && pg.imagem) dados.imagem = pg.imagem; if (!dados.preco && pg.preco) { dados.preco = pg.preco; if (pg.precoAntigo) dados.precoAntigo = pg.precoAntigo; } }
+      if (!(dados.imagem && dados.preco)) dados.diag = dados.diag || "o Mercado Livre não mandou os dados" + (pg && pg.status ? " (página " + pg.status + ")" : env.ROBO_URL ? "" : "; falta o ROBO_URL no Cloudflare");
+    }
     if (dados.loja === "shopee") dados = await completarPelaApiShopee(dados, env, dados.pista, url);
     delete dados.pista;
     delete dados.pistaML; const soPagina = dados.precoDaPagina && !dados.completo; delete dados.precoDaPagina;

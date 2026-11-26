@@ -54,9 +54,9 @@ Cole isto como primeira mensagem no chat novo (com o repositório `ajsouza1992/a
 | `app/sons/` | Amostras de som das músicas dos vídeos |
 
 ### Versões (trocar a cada mudança)
-- `app/index.html` e `app/sw.js`: `?v=465` → próxima `?v=466`
-- `app/sw.js`: `VERSAO = "miga-promo-v468"` → próxima `v469`
-- Comando usado: `sed -i 's/?v=465/?v=466/g' app/index.html app/sw.js && sed -i 's/miga-promo-v468/miga-promo-v469/' app/sw.js`
+- `app/index.html` e `app/sw.js`: `?v=466` → próxima `?v=467`
+- `app/sw.js`: `VERSAO = "miga-promo-v469"` → próxima `v470`
+- Comando usado: `sed -i 's/?v=466/?v=467/g' app/index.html app/sw.js && sed -i 's/miga-promo-v469/miga-promo-v470/' app/sw.js`
 
 ### Segredos esperados no Cloudflare (nomes, nunca valores)
 `ML_APP_ID`, `ML_SECRET` (catálogo Mercado Livre) · `SHOPEE_APP_ID`, `SHOPEE_SECRET` · `GEMINI_API_KEY` · `APP_SENHA` · `MIGA_EMAILS`.
@@ -215,3 +215,5 @@ Capa com os 5 maiores descontos, faixa, atalhos de categoria (iguais às do app)
 - Shopee pelo robô na hora: o worker, quando não acha o código no link curto, pergunta ao robô publicado como **App da Web** (`idsPeloRobo`: `ROBO_URL?link=&chave=ROBO_CHAVE`; segredos no Cloudflare: `ROBO_URL` (termina em /exec) e `ROBO_CHAVE`). No robô: `doGet` (só links curtos da Shopee e com a chave), `testarShopee()` para conferir se o Google abre o link, e log de cada redirecionamento em `codigoShopee`.
 - Robô: a rodada de 30 min também põe na fila rápida os itens Shopee da lista já sem foto/preço (link curto), até 20 por vez; os que falharam 6 vezes ficam em `desistiu` e não voltam.
 - Mercado Livre pelo robô: quando o link curto (meli.la ou /sec/) não traz código MLB, o worker chama `cadeiaPeloRobo` (mesmo App da Web, `ROBO_URL`); o robô `seguirML` segue os redirecionamentos pelo Google e devolve `{cadeia, pista}` (MLB/MLBU/p/). `testarML()` testa com o 1º link curto do ML da lista. Lembrar: depois de mudar o Codigo.gs, atualizar a implantação do App da Web (Gerenciar implantações → editar → Nova versão).
+- ML link comprido da barra (ex.: /p/MLB75875212?...wid=MLB7277407626) não puxava: provavelmente a API de itens/página bloqueada para o servidor. Agora, se faltar foto ou preço, o worker pede ao robô (`paginaPeloRobo` → robô `paginaML`: abre a página pelo Google e lê og:title, og:image, price/original_price) e mostra `diag` se ainda faltar. Robô: `testarPaginaML()`.
+- PC: conteúdo passava da tela (o `zoom` 1.1/1.2 de telas grandes multiplicava largura e margem). Regras no fim do style.css dividem max-width/margin-left pelo zoom. SW: navegação e .js/.css com `cache: "no-cache"` (o PC ficava preso numa versão velha com "Arquivos").
